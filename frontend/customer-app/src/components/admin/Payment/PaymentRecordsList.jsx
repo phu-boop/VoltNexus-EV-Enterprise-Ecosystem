@@ -68,7 +68,6 @@ export default function PaymentRecordsList() {
             }
 
             const response = await filterPaymentRecords(params);
-            console.log('Payment records response:', response); // Debug log
             setRecords(response.content || []);
             setTotalPages(response.totalPages || 0);
         } catch (error) {

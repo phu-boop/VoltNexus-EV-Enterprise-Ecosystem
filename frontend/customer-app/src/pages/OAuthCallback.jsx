@@ -15,7 +15,6 @@ export default function OAuthCallback() {
     const processOAuth = async () => {
       // Prevent duplicate execution (React Strict Mode runs useEffect twice)
       if (hasProcessed.current) {
-        console.log("[OAuth] Already processed, skipping...");
         return;
       }
       hasProcessed.current = true;
@@ -35,11 +34,9 @@ export default function OAuthCallback() {
 
         if (response.code === "1000") {
           const responseData = response.data;
-          console.log("[OAuth] Response data received:", responseData);
           
           // Extract user data from userRespond (nested object)
           const userData = responseData.userRespond || responseData;
-          console.log("[OAuth] User data:", userData);
           
           // Handle roles - check if it exists and is an array
           const rolesArray = userData.roles 
@@ -48,7 +45,6 @@ export default function OAuthCallback() {
                 : [userData.roles])
             : [];
 
-          console.log("[OAuth] Roles extracted:", rolesArray);
 
           // Check if user is CUSTOMER
           if (!rolesArray.includes("CUSTOMER")) {
@@ -62,7 +58,6 @@ export default function OAuthCallback() {
 
           //Extract memberId from customerProfile if available
           const memberId = userData.customerProfile?.customerId || userData.memberId || null;
-          console.log("[OAuth] Member ID:", memberId);
 
           // Store user data in AuthProvider
           login(

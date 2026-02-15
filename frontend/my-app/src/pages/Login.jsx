@@ -114,7 +114,6 @@ export default function Login() {
   const handleCaptchaChange = (token) => {
     setForm((prev) => ({ ...prev, captchaToken: token }));
   };
-  console.log("VITE_RECAPTCHA_SITE_KEY", import.meta.env.VITE_RECAPTCHA_SITE_KEY);
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);

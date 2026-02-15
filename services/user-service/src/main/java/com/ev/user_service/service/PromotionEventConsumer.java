@@ -13,7 +13,6 @@ public class PromotionEventConsumer {
 
     @KafkaListener(topics = "promotion-events", groupId = "user-service-group")
     public void handlePromotionCreated(PromotionCreatedEvent event) {
-        System.out.println("📨 Received PromotionCreatedEvent: " + event);
         notificationService.sendPromotionFCM(event);
     }
 }

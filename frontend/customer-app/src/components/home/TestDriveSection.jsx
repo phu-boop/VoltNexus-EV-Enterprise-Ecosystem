@@ -19,7 +19,6 @@ const TestDriveSection = () => {
       navigate("/login");
       return;
     }
-    console.log('Đặt lịch lái thử:', formData);
     toast.success("Đã gửi yêu cầu đặt lịch lái thử!");
     setFormData({ name: '', phone: '', email: '', date: '', time: '', location: '', vehicle: '' });
   };

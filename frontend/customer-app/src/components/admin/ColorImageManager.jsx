@@ -11,7 +11,7 @@ export default function ColorImageManager({ colorImages, onChange }) {
       return [];
     }
   });
-  
+
   const [uploading, setUploading] = useState(null);
 
   const handleAddColor = () => {

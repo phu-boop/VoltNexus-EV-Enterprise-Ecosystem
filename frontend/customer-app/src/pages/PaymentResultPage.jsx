@@ -61,12 +61,10 @@ const PaymentResultPage = () => {
 
       if (response.ok) {
         const data = await response.json();
-        console.log('Payment callback successful:', data);
         
         // Lấy orderId từ response (tự động tạo đơn hàng)
         if (data.orderId) {
           setOrderId(data.orderId);
-          console.log('Auto-created order ID:', data.orderId);
         }
       } else {
         console.error('Payment callback failed:', response.status);

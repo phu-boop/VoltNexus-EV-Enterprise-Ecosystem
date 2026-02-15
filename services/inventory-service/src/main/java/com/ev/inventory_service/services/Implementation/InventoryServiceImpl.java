@@ -184,8 +184,6 @@ public class InventoryServiceImpl implements InventoryService {
             String userId = (String) detailsMap.get("userId");
             String profileId = (String) detailsMap.get("profileId");
 
-            System.out.println("User ID: " + userId);
-            System.out.println("Profile ID: " + profileId);
         }
 
         List<Specification<CentralInventory>> specs = new ArrayList<>();
@@ -807,7 +805,6 @@ public class InventoryServiceImpl implements InventoryService {
             return;
         }
 
-        System.out.println("Bắt đầu trả " + vehiclesToReturn.size() + " xe về kho trung tâm cho Order ID: " + orderId);
 
         // Phân nhóm các xe theo VariantId (ví dụ: 2 xe Variant 1, 1 xe Variant 2)
         Map<Long, Long> variantCounts = vehiclesToReturn.stream()
@@ -979,7 +976,6 @@ public class InventoryServiceImpl implements InventoryService {
                     });
         } catch (Exception e) {
             System.err.println("Failed to call vehicle-service /details-by-ids: " + e.getMessage());
-            e.printStackTrace();
             throw new AppException(ErrorCode.DOWNSTREAM_SERVICE_UNAVAILABLE);
         }
 

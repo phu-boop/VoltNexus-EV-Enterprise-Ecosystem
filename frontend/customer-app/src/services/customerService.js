@@ -9,7 +9,6 @@ export const getAllCustomers = async (searchTerm = '') => {
   try {
     const params = searchTerm ? { search: searchTerm } : {};
     const response = await api.get('/customers', { params });
-    console.log('[CustomerService] getAllCustomers response:', response.data);
     return response.data.data || [];
   } catch (error) {
     console.error('[CustomerService] Error fetching customers:', error);
@@ -21,7 +20,6 @@ export const getAllCustomers = async (searchTerm = '') => {
 export const getCustomerById = async (customerId) => {
   try {
     const response = await api.get(`/customers/${customerId}`);
-    console.log('[CustomerService] getCustomerById response:', response.data);
     return response.data.data;
   } catch (error) {
     console.error('[CustomerService] Error fetching customer:', error);
@@ -33,7 +31,6 @@ export const getCustomerById = async (customerId) => {
 export const createCustomer = async (customerData) => {
   try {
     const response = await api.post('/customers', customerData);
-    console.log('[CustomerService] createCustomer response:', response.data);
     return response.data.data;
   } catch (error) {
     console.error('[CustomerService] Error creating customer:', error);
@@ -50,7 +47,6 @@ export const updateCustomer = async (customerId, customerData) => {
         'X-Modified-By': userEmail
       }
     });
-    console.log('[CustomerService] updateCustomer response:', response.data);
     return response.data.data;
   } catch (error) {
     console.error('[CustomerService] Error updating customer:', error);
@@ -62,7 +58,6 @@ export const updateCustomer = async (customerId, customerData) => {
 export const deleteCustomer = async (customerId) => {
   try {
     const response = await api.delete(`/customers/${customerId}`);
-    console.log('[CustomerService] deleteCustomer response:', response.data);
     return response.data;
   } catch (error) {
     console.error('[CustomerService] Error deleting customer:', error);
@@ -74,7 +69,6 @@ export const deleteCustomer = async (customerId) => {
 export const getCustomerStatuses = async () => {
   try {
     const response = await api.get('/customers/enums/statuses');
-    console.log('[CustomerService] getCustomerStatuses response:', response.data);
     return response.data.data || [];
   } catch (error) {
     console.error('[CustomerService] Error fetching statuses:', error);
@@ -86,7 +80,6 @@ export const getCustomerStatuses = async () => {
 export const getCustomerTypes = async () => {
   try {
     const response = await api.get('/customers/enums/types');
-    console.log('[CustomerService] getCustomerTypes response:', response.data);
     return response.data.data || [];
   } catch (error) {
     console.error('[CustomerService] Error fetching types:', error);

@@ -19,7 +19,6 @@ export default function Login() {
   const handleCaptchaChange = (token) => {
     setForm((prev) => ({ ...prev, captchaToken: token }));
   };
-  console.log("VITE_RECAPTCHA_SITE_KEY", import.meta.env.VITE_RECAPTCHA_SITE_KEY);
   const handleGoogleLogin = () => {
     const baseUrl = import.meta.env.VITE_API_BASE_URL;
     const redirectUri = window.location.origin;

@@ -36,7 +36,6 @@ public class RecaptchaService {
         ResponseEntity<Map> resp = restTemplate.postForEntity(VERIFY_URL, requestEntity, Map.class);
 
         Map<String, Object> json = resp.getBody();
-        System.out.println("Recaptcha response: " + json + "secret: " + secret);
 
         return json != null && Boolean.TRUE.equals(json.get("success"));
     }

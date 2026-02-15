@@ -62,9 +62,7 @@ export default function AdminPromotionsPage() {
     try {
       setLoading(true);
       const data = await getAllPromotions();
-      console.log('Promotions data:', data); // Debug: Kiểm tra dữ liệu trả về
       if (data && data.length > 0) {
-        console.log('Sample promotion status:', data[0].status); // Debug: Kiểm tra status
       }
       setPromotions(data);
     } catch (error) {

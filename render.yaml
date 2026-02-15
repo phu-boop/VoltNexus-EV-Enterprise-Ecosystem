@@ -1,162 +1,40 @@
 services:
-  # ==============================================================================
-  # INFRASTRUCTURE (Private Services)
-  # ==============================================================================
-  - type: pserv # Zookeeper
-    name: zookeeper
-    runtime: image
-    image:
-      url: confluentinc/cp-zookeeper:latest
-    envVars:
-      - key: ZOOKEEPER_CLIENT_PORT
-        value: 2181
-
-  - type: pserv # Kafka
-    name: kafka
-    runtime: image
-    image:
-      url: confluentinc/cp-kafka:7.4.0
-    envVars:
-      - key: KAFKA_ZOOKEEPER_CONNECT
-        value: zookeeper:2181
-      - key: KAFKA_ADVERTISED_LISTENERS
-        value: INTERNAL://kafka:29092
-      - key: KAFKA_LISTENER_SECURITY_PROTOCOL_MAP
-        value: INTERNAL:PLAINTEXT
-      - key: KAFKA_INTER_BROKER_LISTENER_NAME
-        value: INTERNAL
-      - key: KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR
-        value: 1
-
-  - type: keyvalue
-    name: redis-db
-    plan: free # Change to paid for Redis Stack if needed
-    ipAllowList: [] # Required for security, empty list blocks all external access
-    # Note: Render Redis doesn't support Redis Stack Vector Search on Free.
-    # If the user really needs Vector Search, we might need a custom Docker worker for Redis Stack.
-    # For now, following the docker-compose requirement:
-  - type: pserv # Redis Stack Worker (to support Vector Search)
-    name: redis-stack
-    runtime: image
-    image:
-      url: redis/redis-stack-server:latest
-    # Note: ports property removed as it is not allowed for pserv in Render Blueprints.
-    # Services connect to redis-stack:6379 internally.
-
-  # ==============================================================================
-  # MICROSERVICES (Private Services)
-  # ==============================================================================
-  - type: pserv
-    name: user-service
-    runtime: docker
-    dockerContext: .
-    dockerfilePath: services/user-service/Dockerfile
-    envVars:
-      - fromGroup: common-secrets
-      - key: SPRING_DATASOURCE_URL
-        value: jdbc:mysql://evmclient12-vmscommerce1.l.aivencloud.com:27504/user_db?sslMode=REQUIRED
-      - key: KAFKA_BOOTSTRAP_SERVERS
-        value: kafka:29092
-      - key: SPRING_REDIS_HOST
-        value: redis-stack
-
-  - type: pserv
-    name: vehicle-service
-    runtime: docker
-    dockerContext: .
-    dockerfilePath: services/vehicle-service/Dockerfile
-    envVars:
-      - fromGroup: common-secrets
-      - key: SPRING_KAFKA_BOOTSTRAP_SERVERS
-        value: kafka:29092
-
-  - type: pserv
-    name: inventory-service
-    runtime: docker
-    dockerContext: .
-    dockerfilePath: services/inventory-service/Dockerfile
-    envVars:
-      - fromGroup: common-secrets
-      - key: SPRING_KAFKA_BOOTSTRAP_SERVERS
-        value: kafka:29092
-
-  - type: pserv
-    name: sales-service
-    runtime: docker
-    dockerContext: .
-    dockerfilePath: services/sales-service/Dockerfile
-    envVars:
-      - fromGroup: common-secrets
-      - key: KAFKA_BOOTSTRAP_SERVERS
-        value: kafka:29092
-
-  - type: pserv
+  # AI Service - Primary Application
+  - type: web
     name: ai-service
     runtime: docker
     dockerContext: .
     dockerfilePath: services/ai-service/Dockerfile
+    plan: free
+    healthCheckPath: /actuator/health
     envVars:
-      - fromGroup: common-secrets
+      - key: SPRING_APP_NAME
+        value: ai-service
+      - key: SERVER_PORT
+        value: 8500
+      - key: DB_URL
+        value: jdbc:mysql://vms-commerce14-tmdtvmscommerce.i.aivencloud.com:25858/ai_service_db?sslMode=REQUIRED&autoReconnect=true&useUnicode=true&characterEncoding=UTF-8
+      - key: DB_USERNAME
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      - key: GOOGLE_AI_API_KEY
+        sync: false
+      - key: REDIS_HOST
+        fromService:
+          name: ai-redis
+          type: host
+      - key: REDIS_PORT
+        fromService:
+          name: ai-redis
+          type: port
       - key: KAFKA_BOOTSTRAP_SERVERS
-        value: kafka:29092
+        value: kafka-external:9092
+      - key: NOTIFICATION_ENABLED
+        value: "true"
 
-  # ==============================================================================
-  # GATEWAY (Public Web Service)
-  # ==============================================================================
-  - type: web
-    name: api-gateway
-    runtime: docker
-    dockerContext: .
-    dockerfilePath: gateway/Dockerfile
-    plan: standard
-    envVars:
-      - fromGroup: common-secrets
-      - key: USER_SERVICE_URI
-        value: http://user-service:8081
-      - key: VEHICLE_SERVICE_URI
-        value: http://vehicle-service:8087
-      - key: INVENTORY_SERVICE_URI
-        value: http://inventory-service:8084
-      - key: SALES_SERVICE_URI
-        value: http://sales-service:8086
-      - key: AI_SERVICE_URI
-        value: http://ai-service:8500
-      - key: SPRING_REDIS_HOST
-        value: redis-stack
-
-  # ==============================================================================
-  # FRONTEND (Web Services)
-  # ==============================================================================
-  - type: web
-    name: customer-app
-    runtime: docker
-    dockerContext: .
-    dockerfilePath: frontend/customer-app/Dockerfile
-    envVars:
-      - key: VITE_API_BASE_URL
-        fromService:
-          name: api-gateway
-          type: web
-          property: host
-
-  - type: web
-    name: my-app
-    runtime: docker
-    dockerContext: .
-    dockerfilePath: frontend/my-app/Dockerfile
-    envVars:
-      - key: VITE_API_BASE_URL
-        fromService:
-          name: api-gateway
-          type: web
-          property: host
-
-envVarGroups:
-  - name: common-secrets
-    envVars:
-      - key: JWT_SECRET_KEY
-        value: YzIxZDEyM2Y0NTY3YWFkMmMzZDQ1NmFiY2QxMjM0NTY3ODlhYmNkZQ==
-      - key: SPRING_DATASOURCE_USERNAME
-        value: avnadmin
-      - key: SPRING_DATASOURCE_PASSWORD
-        sync: false # Set in Render Dashboard
+  # Redis Service - Required for AI Vector Store
+  - type: redis
+    name: ai-redis
+    plan: free
+    ipAllowList: [] # Only allow internal connections

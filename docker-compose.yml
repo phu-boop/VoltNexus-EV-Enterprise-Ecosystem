@@ -29,7 +29,7 @@ services:
       - app-network
 
   redis-db:
-    image: redis:7
+    image: redis/redis-stack-server:latest
     container_name: redis-db
     ports:
       - "6380:6379"

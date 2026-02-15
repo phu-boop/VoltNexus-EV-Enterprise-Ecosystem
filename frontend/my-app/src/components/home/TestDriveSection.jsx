@@ -9,7 +9,6 @@ const TestDriveSection = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log('Đặt lịch lái thử:', formData);
   };
 
   const inputClass = "w-full pl-3 pr-3 py-3 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all";

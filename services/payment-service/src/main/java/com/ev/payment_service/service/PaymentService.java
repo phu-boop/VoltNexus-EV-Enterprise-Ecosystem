@@ -68,13 +68,6 @@
 //                + "&vnp_SecureHash=" + vnp_SecureHash;
 //
 //        // Log debug
-//        System.out.println(">>> Params: " + params);
-//        System.out.println(">>> Hash Data String: " + hashData);
-//        System.out.println(">>> Query String: " + queryString);
-//        System.out.println(">>> Generated vnp_SecureHash: " + vnp_SecureHash);
-//        System.out.println(">>> Client IP: " + getClientIpAddr(request));
-//        System.out.println(">>> Return URL: " + returnUrlToUse);
-//        System.out.println(">>> Final VNPAY URL: " + finalUrl);
 //
 //        return finalUrl;
 //    }
@@ -167,7 +160,6 @@
 //    public boolean verifyVnpayHash(Map<String, String> params) {
 //        String vnp_SecureHash = params.get("vnp_SecureHash");
 //        if (vnp_SecureHash == null || vnp_SecureHash.isEmpty()) {
-//            System.out.println(">>> [Verify] vnp_SecureHash is missing");
 //            return false;
 //        }
 //
@@ -198,10 +190,6 @@
 //        String hashDataStr = hashData.toString();
 //        String checkHash = hmacSHA512(hashSecret, hashDataStr);
 //
-//        System.out.println(">>> [Verify] HashDataStr: " + hashDataStr);
-//        System.out.println(">>> [Verify] Received vnp_SecureHash: " + vnp_SecureHash);
-//        System.out.println(">>> [Verify] Calculated vnp_SecureHash: " + checkHash);
-//        System.out.println(">>> [Verify] Hash match: " + checkHash.equalsIgnoreCase(vnp_SecureHash));
 //
 //        return checkHash.equalsIgnoreCase(vnp_SecureHash);
 //    }

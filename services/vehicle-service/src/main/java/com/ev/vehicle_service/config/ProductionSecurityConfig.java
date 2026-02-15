@@ -22,7 +22,6 @@ public class ProductionSecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        System.out.println(">>> Running in PRODUCTION security mode. JWT is required. <<<");
 
         http
                 .csrf(csrf -> csrf.disable())

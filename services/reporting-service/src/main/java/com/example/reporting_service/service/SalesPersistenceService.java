@@ -14,7 +14,6 @@ public class SalesPersistenceService {
 
     @Transactional
     public void saveSaleSummary(SaleEventDTO event) {
-        System.out.println("LOGGING: Transactional Sales save initiated for " + event.getDealershipName());
 
         salesRepository.upsertSalesSummary(
             event.getRegion(),

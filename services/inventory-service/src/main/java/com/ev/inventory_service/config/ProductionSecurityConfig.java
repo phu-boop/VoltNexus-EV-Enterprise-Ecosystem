@@ -27,7 +27,6 @@ public class ProductionSecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         // In môi trường dev, cho phép tất cả request đi qua
-        System.out.println("!!! ATTENTION: Running in DOCKER security mode. All requests are permitted. !!!");
 
         http
                 .csrf(csrf -> csrf.disable())
