@@ -8,10 +8,8 @@ export default function GalleryImageManager({ images, onChange, title, type }) {
 
   // Update imageList when images prop changes
   useEffect(() => {
-    console.log(`[${type}] Images prop received:`, images);
     try {
       const parsed = images ? JSON.parse(images) : [];
-      console.log(`[${type}] Parsed images:`, parsed);
       setImageList(Array.isArray(parsed) ? parsed : []);
     } catch (e) {
       console.error(`[${type}] Error parsing images:`, e);
@@ -95,7 +93,6 @@ export default function GalleryImageManager({ images, onChange, title, type }) {
                   alt={`${type} ${index + 1}`}
                   className="w-full h-full object-cover relative z-10"
                   onLoad={(e) => {
-                    console.log(`[${type}] Image loaded successfully:`, imageUrl);
                   }}
                   onError={(e) => {
                     console.error(`[${type}] Failed to load image:`, imageUrl);

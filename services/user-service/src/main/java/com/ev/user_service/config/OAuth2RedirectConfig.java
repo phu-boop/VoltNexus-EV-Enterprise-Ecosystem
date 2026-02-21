@@ -50,8 +50,6 @@ public class OAuth2RedirectConfig {
             HttpServletRequest request) {
         
         String redirectUri = request.getParameter("redirect_uri");
-        System.out.println("[OAuth2Config] redirect_uri from request: " + redirectUri);
-        System.out.println("[OAuth2Config] Allowed origins: " + allowedOrigins);
         
         String state = authorizationRequest.getState();
         
@@ -61,19 +59,16 @@ public class OAuth2RedirectConfig {
             boolean isAllowed = allowedOriginList.stream()
                 .anyMatch(origin -> redirectUri.trim().startsWith(origin.trim()));
             
-            System.out.println("[OAuth2Config] Validation result: " + isAllowed);
             
             if (isAllowed) {
                 // Encode redirect_uri vào state parameter
                 // Format: state|base64(redirect_uri)
                 String encodedRedirectUri = Base64.getUrlEncoder().encodeToString(redirectUri.getBytes());
                 state = authorizationRequest.getState() + "|" + encodedRedirectUri;
-                System.out.println("[OAuth2Config] ✅ Encoded redirect_uri into state");
             } else {
                 System.err.println("[SECURITY BLOCK] Invalid redirect_uri: " + redirectUri);
             }
         } else {
-            System.out.println("[OAuth2Config] ⚠️ No redirect_uri in request - will use fallback");
         }
         
         return OAuth2AuthorizationRequest.from(authorizationRequest)

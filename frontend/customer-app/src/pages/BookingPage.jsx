@@ -38,15 +38,12 @@ const BookingPage = () => {
         const response = await api.get(`/customers/profile/${memberId}`);
         if (response.data?.data?.customerId) {
           setCustomerId(response.data.data.customerId);
-          console.log('Fetched existing customerId:', response.data.data.customerId);
           return;
         }
       } catch (error) {
         // Customer not found (404) or database error (500)
         if (error.response?.status === 404 || error.response?.status === 500) {
           // Customer not found or error, create new one
-          console.log('Customer not found or error, creating new customer record...');
-          console.log('Error details:', error.response?.status, error.response?.data);
           try {
             // Get user info from sessionStorage
             const userEmail = sessionStorage.getItem('email');
@@ -82,12 +79,10 @@ const BookingPage = () => {
               profileId: memberId
             };
 
-            console.log('Creating customer with data:', newCustomerData);
             const createResponse = await api.post('/customers', newCustomerData);
             
             if (createResponse.data?.data?.customerId) {
               setCustomerId(createResponse.data.data.customerId);
-              console.log('✅ Created new customerId:', createResponse.data.data.customerId);
               toast.success('Đã tạo hồ sơ khách hàng thành công!');
             }
           } catch (createError) {
@@ -477,9 +472,6 @@ const BookingPage = () => {
         orderInfo: `Dat coc xe ${vehicleData.modelName} - ${formData.fullName}`
       };
 
-      console.log('🚀 Booking data:', bookingData);
-      console.log('📋 Customer ID:', customerId);
-      console.log('👤 User memberId:', sessionStorage.getItem('memberId')); // Debug log
 
       // Call API to initiate VNPay payment
       const response = await initiateVNPayBooking(bookingData);

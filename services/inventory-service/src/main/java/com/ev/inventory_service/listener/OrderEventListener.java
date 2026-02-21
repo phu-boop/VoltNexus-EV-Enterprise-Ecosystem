@@ -17,7 +17,6 @@
 //     // Lắng nghe các sự kiện từ topic 'order-confirmed'
 //     @KafkaListener(topics = "order-confirmed-topic", groupId = "inventory-group")
 //     public void handleOrderConfirmed(OrderConfirmedEvent event) {
-//         System.out.println(">>> Received order confirmation event: " + event.getOrderId());
 
 //         // 1. Tạo một yêu cầu giao dịch kho từ thông tin sự kiện
 //         TransactionRequestDto saleTransaction = new TransactionRequestDto();
@@ -32,7 +31,6 @@
 //         // 2. Gọi service để thực hiện việc trừ kho
 //         try {
 //             inventoryService.executeTransaction(saleTransaction);
-//             System.out.println(">>> Stock successfully deducted for order: " + event.getOrderId());
 //         } catch (Exception e) {
 //             // Xử lý lỗi: Ghi log, gửi vào một "dead-letter queue" để xử lý lại sau
 //             System.err.println("!!! Failed to process stock deduction for order: " + event.getOrderId() + ". Error: " + e.getMessage());

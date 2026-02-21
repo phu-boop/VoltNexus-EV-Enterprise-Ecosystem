@@ -27,7 +27,6 @@ public class StockAlertServiceImpl implements StockAlertService {
     @Scheduled(cron = "0 0 1 * * ?") // Chạy vào 1h sáng mỗi ngày
     @Transactional
     public void checkStockLevelsAndCreateAlerts() {
-        System.out.println(">>> [SCHEDULED TASK] Running job: Checking all stock levels...");
 
         // --- 1. KIỂM TRA TỒN KHO TRUNG TÂM ---
         List<CentralInventory> allCentralInventory = centralRepo.findAll();
@@ -40,7 +39,6 @@ public class StockAlertServiceImpl implements StockAlertService {
                 boolean alertExists = !alertRepo.findByVariantIdAndDealerIdAndStatus(inventory.getVariantId(), null, "NEW").isEmpty();
 
                 if (!alertExists) {
-                    System.out.println("!!! LOW STOCK [CENTRAL] for Variant ID: " + inventory.getVariantId());
                     createAlert(inventory.getVariantId(), null, "LOW_STOCK_CENTRAL", inventory.getAvailableQuantity(), inventory.getReorderLevel());
                 }
             }
@@ -57,13 +55,11 @@ public class StockAlertServiceImpl implements StockAlertService {
                 boolean alertExists = !alertRepo.findByVariantIdAndDealerIdAndStatus(allocation.getVariantId(), allocation.getDealerId(), "NEW").isEmpty();
 
                 if (!alertExists) {
-                    System.out.println("!!! LOW STOCK [DEALER " + allocation.getDealerId() + "] for Variant ID: " + allocation.getVariantId());
                     createAlert(allocation.getVariantId(), allocation.getDealerId(), "LOW_STOCK_DEALER", allocation.getAvailableQuantity(), allocation.getReorderLevel());
                 }
             }
         }
         
-        System.out.println(">>> [SCHEDULED TASK] Finished checking stock levels.");
     }
 
     @Override

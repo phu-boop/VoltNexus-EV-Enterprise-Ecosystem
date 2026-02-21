@@ -15,8 +15,6 @@ export const getAllBrands = async () => {
   try {
     const response = await api.get('/vehicles/vehicle-catalog/models');
     
-    console.log('[getAllBrands] Full Response:', response);
-    console.log('[getAllBrands] Response Data:', response.data);
     
     // Check response structure - có thể là response.data.data hoặc response.data
     const responseData = response.data;
@@ -26,9 +24,6 @@ export const getAllBrands = async () => {
       const paginatedData = responseData.data || {};
       const models = paginatedData.content || paginatedData || [];
       
-      console.log('[getAllBrands] Paginated data:', paginatedData);
-      console.log('[getAllBrands] Models array:', models);
-      console.log('[getAllBrands] Models count:', models.length);
       
       // Tạo map để đếm số lượng models theo brand
       const brandsMap = {};
@@ -59,7 +54,6 @@ export const getAllBrands = async () => {
         isActive: true
       }));
       
-      console.log('[getAllBrands] Processed brands:', brands);
       
       return brands;
     }

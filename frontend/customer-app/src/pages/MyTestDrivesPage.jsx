@@ -28,12 +28,10 @@ const MyTestDrivesPage = () => {
     setLoading(true);
     try {
       const response = await testDriveService.getMyAppointments(memberId);
-      console.log('Appointments response:', response);
       
       // Handle different response formats
       if (response.success || response.code === 200) {
         const appointments = response.data || response.result || [];
-        console.log('Loaded appointments:', appointments);
         setAppointments(appointments);
       } else {
         console.error('Failed to load appointments:', response);

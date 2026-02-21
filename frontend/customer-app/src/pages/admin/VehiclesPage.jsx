@@ -70,9 +70,7 @@ export default function AdminVehiclesPage() {
     if (!vehicleToDelete) return;
 
     try {
-      console.log('Deleting vehicle with variantId:', vehicleToDelete.variantId);
       const response = await deleteVehicle(vehicleToDelete.variantId);
-      console.log('Delete response:', response);
       
       if (response && response.code == 1000) {
         toast.success('Đã ngừng sản xuất xe thành công');

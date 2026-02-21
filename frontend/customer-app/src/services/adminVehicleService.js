@@ -32,8 +32,6 @@ export const getVehicleDetailAdmin = async (variantId) => {
 // Create new vehicle variant
 export const createVehicle = async (modelId, vehicleData) => {
   try {
-    console.log('[CREATE] Model ID:', modelId);
-    console.log('[CREATE] Payload being sent:', vehicleData);
     const response = await api.post(`/vehicles/vehicle-catalog/models/${modelId}/variants`, vehicleData);
     return response.data;
   } catch (error) {

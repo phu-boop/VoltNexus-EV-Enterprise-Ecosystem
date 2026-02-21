@@ -31,7 +31,6 @@
 //            HttpServletRequest request) {
 //
 //        try {
-//            System.out.println(">>> [Controller] Creating payment URL for order: " + orderId + ", amount: " + amount);
 //
 //            String paymentUrl = paymentService.createPaymentUrl(orderId, amount, request, returnUrl);
 //
@@ -44,8 +43,6 @@
 //            return ResponseEntity.ok(response);
 //
 //        } catch (Exception e) {
-//            System.out.println(">>> [Controller] Error creating payment URL: " + e.getMessage());
-//            e.printStackTrace();
 //
 //            Map<String, String> errorResponse = new HashMap<>();
 //            errorResponse.put("status", "error");
@@ -61,7 +58,6 @@
 //    @GetMapping("/return")
 //    public ResponseEntity<Map<String, Object>> paymentReturn(@RequestParam Map<String, String> params) {
 //
-//        System.out.println(">>> [Controller] VNPAY return params: " + params);
 //
 //        boolean validHash = paymentService.verifyVnpayHash(params);
 //        String responseCode = params.get("vnp_ResponseCode");
@@ -71,7 +67,6 @@
 //        try {
 //            amount = Long.parseLong(params.get("vnp_Amount")) / 100;
 //        } catch (Exception e) {
-//            System.out.println(">>> [Controller] Error parsing amount: " + e.getMessage());
 //        }
 //
 //        String message;
@@ -83,7 +78,6 @@
 //            message = "Thanh toán thành công";
 //        }
 //
-//        System.out.println(">>> [Controller] Payment result: " + message + ", amount: " + amount);
 //
 //        Map<String, Object> response = new HashMap<>();
 //        response.put("success", success);

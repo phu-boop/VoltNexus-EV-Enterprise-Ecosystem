@@ -201,7 +201,6 @@ const TestDriveBooking = () => {
         customerEmail: data.email || '',
       };
 
-      console.log('Test drive payload:', payload);
 
       // Call customer service to create test drive
       const response = await apiPublic.post('/customers/api/test-drives/public', payload);

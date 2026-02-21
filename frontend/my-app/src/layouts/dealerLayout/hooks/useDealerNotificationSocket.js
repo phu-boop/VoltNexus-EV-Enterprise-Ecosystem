@@ -18,7 +18,6 @@ export const useDealerNotificationSocket = () => {
             return;
         }
 
-        console.log("Initializing WebSocket for Dealer:", dealerId);
 
         const client = new Client({
             // Use SockJS fallback
@@ -35,12 +34,10 @@ export const useDealerNotificationSocket = () => {
             heartbeatOutgoing: 4000,
 
             onConnect: () => {
-                console.log("Connected to WebSocket");
                 
                 // Subscribe to Dealer's private topic
                 const topic = `/topic/dealer/${dealerId}`;
                 client.subscribe(topic, (message) => {
-                    console.log("Received notification:", message.body);
                     
                     try {
                         // 1. Invalidate Notifications List
@@ -72,14 +69,12 @@ export const useDealerNotificationSocket = () => {
             },
             
             onWebSocketClose: (evt) => {
-                console.log("WebSocket connection closed", evt);
             }
         });
 
         client.activate();
 
         return () => {
-            console.log("Deactivating WebSocket");
             client.deactivate();
         };
     }, [queryClient, token, dealerId]);

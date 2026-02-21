@@ -68,12 +68,8 @@ export default function VehicleFormPage() {
     try {
       setLoading(true);
       const response = await getVehicleDetailAdmin(variantId);
-      console.log('API Response:', response);
       if (response && response.code == 1000) {
         const vehicle = response.data;
-        console.log('Vehicle Data:', vehicle);
-        console.log('exteriorImages:', vehicle.exteriorImages);
-        console.log('interiorImages:', vehicle.interiorImages);
         setFormData({
           modelId: vehicle.modelId || '',
           variantName: vehicle.versionName || '', // Map versionName to variantName for form
@@ -193,7 +189,6 @@ export default function VehicleFormPage() {
         interiorImages: formData.interiorImages || null,
       };
 
-      console.log('Submit Payload:', basePayload);
 
       let response;
       if (isEditMode) {

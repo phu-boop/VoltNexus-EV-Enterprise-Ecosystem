@@ -107,14 +107,11 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
                 var customerProfile = customerProfileRepository.findByUserId(user.getId());
                 if (customerProfile.isPresent()) {
                     userRespond.setMemberId(customerProfile.get().getCustomerId());
-                    System.out.println("[OAuth2LoginSuccessHandler] ✅ Set memberId: " + customerProfile.get().getCustomerId());
                 } else {
-                    System.out.println("[OAuth2LoginSuccessHandler] ⚠️ No customer profile found for user: " + user.getEmail());
                 }
             }
         } catch (Exception e) {
             System.err.println("[OAuth2LoginSuccessHandler] ❌ Error fetching customer profile: " + e.getMessage());
-            e.printStackTrace();
         }
         
         LoginRespond loginRespond = new LoginRespond(userRespond, accessToken);
@@ -124,17 +121,12 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
         // Lấy redirect_uri từ state parameter (format: originalState|base64(redirect_uri))
         String redirectUri = extractRedirectUriFromRequest(request);
         
-        System.out.println("[OAuth2LoginSuccessHandler] redirect_uri from state: " + redirectUri);
-        System.out.println("[OAuth2LoginSuccessHandler] fallback URL: " + urlFrontend);
         
         if (redirectUri == null || redirectUri.isEmpty()) {
             redirectUri = urlFrontend;
-            System.out.println("[OAuth2LoginSuccessHandler] ⚠️ Using fallback URL: " + redirectUri);
         } else {
-            System.out.println("[OAuth2LoginSuccessHandler] ✅ Using state URL: " + redirectUri);
         }
         
-        System.out.println("[OAuth2LoginSuccessHandler] Final redirect: " + redirectUri + "/oauth-success");
         response.sendRedirect(redirectUri + "/oauth-success?accessToken=" + accessToken);
 
     }
@@ -143,7 +135,6 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
         try {
             // Get state parameter from request (sent back by Google OAuth)
             String state = request.getParameter("state");
-            System.out.println("[OAuth2LoginSuccessHandler] State from request: " + state);
             
             if (state != null && state.contains("|")) {
                 // Format: originalState|base64(redirect_uri)
@@ -152,7 +143,6 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
                     String encodedRedirectUri = parts[1];
                     byte[] decodedBytes = java.util.Base64.getUrlDecoder().decode(encodedRedirectUri);
                     String redirectUri = new String(decodedBytes);
-                    System.out.println("[OAuth2LoginSuccessHandler] Decoded redirect_uri: " + redirectUri);
                     return redirectUri;
                 }
             }

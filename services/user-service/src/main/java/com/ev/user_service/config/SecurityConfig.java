@@ -93,8 +93,8 @@ public class SecurityConfig {
 
     @Bean
     public LettuceConnectionFactory redisConnectionFactory(
-            @Value("${spring.redis.host}") String redisHost,
-            @Value("${spring.redis.port}") int redisPort) {
+            @Value("${spring.data.redis.host}") String redisHost,
+            @Value("${spring.data.redis.port}") int redisPort) {
         RedisStandaloneConfiguration config = new RedisStandaloneConfiguration(redisHost, redisPort);
         return new LettuceConnectionFactory(config);
     }

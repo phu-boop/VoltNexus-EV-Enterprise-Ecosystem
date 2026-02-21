@@ -13,8 +13,8 @@ cd "$ROOT_DIR" || exit
 # docker build --no-cache -f gateway/Dockerfile -t "$DOCKER_USERNAME/gateway:latest" .
 # docker push "$DOCKER_USERNAME/gateway:latest"
 
-2. Services inside services/ directory
-services=("gateway")
+# 2. Services inside services/ directory
+services=("ai-service")
 
 for service in "${services[@]}"; do
     echo "----------------------------------------------------"

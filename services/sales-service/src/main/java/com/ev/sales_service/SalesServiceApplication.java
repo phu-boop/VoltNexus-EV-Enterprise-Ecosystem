@@ -41,7 +41,6 @@ public class SalesServiceApplication {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        System.out.println("\n\n\n>>> HEY! SecurityConfig TỪ FILE MAIN (ĐÃ TẮT CORS) <<<\n\n\n");
 
         http
             .cors(cors -> cors.disable()) 

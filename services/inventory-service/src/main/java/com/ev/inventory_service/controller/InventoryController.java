@@ -26,6 +26,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.http.HttpHeaders;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
 import java.time.LocalDate;
@@ -34,14 +35,15 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping({"/inventory", ""})
+@RequestMapping({ "/inventory", "" })
 @RequiredArgsConstructor
+@Slf4j
 public class InventoryController {
 
     private final InventoryService inventoryService;
 
     // ==========================================================
-    //            ENDPOINTS FOR INVENTORY STATUS (TỒN KHO)
+    // ENDPOINTS FOR INVENTORY STATUS (TỒN KHO)
     // ==========================================================
 
     /**
@@ -55,7 +57,7 @@ public class InventoryController {
             @RequestParam(required = false) UUID dealerId,
             @RequestParam(required = false) String status,
             Pageable pageable) {
-        
+
         Page<InventoryStatusDto> results = inventoryService.getAllInventory(search, dealerId, status, pageable);
         return ResponseEntity.ok(ApiRespond.success("Fetched inventory successfully", results));
     }
@@ -82,14 +84,13 @@ public class InventoryController {
             @RequestHeader("X-User-Role") String role,
             @RequestHeader("X-User-Id") String userId,
             @RequestParam(required = false) String search) {
-        
+
         // Ưu tiên dùng DealerId (ID tổ chức đại lý), fallback sang ProfileId
         UUID dealerId = (dealerIdHeader != null) ? dealerIdHeader : profileIdHeader;
-        
-        System.out.println("[my-stock] X-User-DealerId=" + dealerIdHeader 
-                + " | X-User-ProfileId=" + profileIdHeader 
-                + " | Using dealerId=" + dealerId);
-        
+
+        log.info("My Stock Access: X-User-DealerId={} | X-User-ProfileId={} | Using dealerId={}",
+                dealerIdHeader, profileIdHeader, dealerId);
+
         // Tạo một đối tượng HttpHeaders để chuyển tiếp xác thực
         HttpHeaders headers = new HttpHeaders();
         headers.set("X-User-Email", email);
@@ -104,27 +105,28 @@ public class InventoryController {
     }
 
     /**
-     * API MỚI: Lấy trạng thái tồn kho chi tiết cho việc so sánh (cả kho TT và kho đại lý).
+     * API MỚI: Lấy trạng thái tồn kho chi tiết cho việc so sánh (cả kho TT và kho
+     * đại lý).
      * Được gọi bởi Vehicle-Service.
      */
     @PostMapping("/status-by-ids-detailed")
     // Cho phép tất cả các dịch vụ nội bộ đã xác thực gọi
-    @PreAuthorize("isAuthenticated()") 
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiRespond<List<InventoryComparisonDto>>> getDetailedInventoryStatus(
-            @RequestBody DetailedInventoryRequest request){
-        
+            @RequestBody DetailedInventoryRequest request) {
+
         // Lấy thông số từ body
         List<Long> variantIds = request.getVariantIds();
         UUID dealerId = request.getDealerId();
 
         // Gọi service để lấy dữ liệu
         List<InventoryComparisonDto> results = inventoryService.getDetailedInventoryByIds(variantIds, dealerId);
-        
+
         return ResponseEntity.ok(ApiRespond.success("Fetched detailed inventory status", results));
     }
 
     // ==========================================================
-    //            ENDPOINTS FOR TRANSACTIONS (GIAO DỊCH KHO)
+    // ENDPOINTS FOR TRANSACTIONS (GIAO DỊCH KHO)
     // ==========================================================
 
     /**
@@ -138,7 +140,7 @@ public class InventoryController {
             @RequestHeader("X-User-Email") String email,
             @RequestHeader("X-User-Role") String role,
             @RequestHeader("X-User-ProfileId") String profileId) {
-        
+
         inventoryService.executeTransaction(request, email, role, profileId);
         return ResponseEntity.ok(ApiRespond.success("Transaction executed successfully", null));
     }
@@ -152,7 +154,7 @@ public class InventoryController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
             Pageable pageable) {
-                
+
         Page<InventoryTransaction> history = inventoryService.getTransactionHistory(startDate, endDate, pageable);
         return ResponseEntity.ok(ApiRespond.success("Fetched transaction history", history));
     }
@@ -164,9 +166,10 @@ public class InventoryController {
     @PostMapping("/status-by-ids")
     public ResponseEntity<ApiRespond<List<InventoryStatusDto>>> getInventoryStatusByIds(
             @RequestBody List<Long> variantIds) {
-        
+
         List<InventoryStatusDto> results = inventoryService.getInventoryStatusByIds(variantIds);
-        return ResponseEntity.ok(ApiRespond.success("Fetched inventory status for " + results.size() + " items", results));
+        return ResponseEntity
+                .ok(ApiRespond.success("Fetched inventory status for " + results.size() + " items", results));
     }
 
     /**
@@ -177,13 +180,13 @@ public class InventoryController {
     @PreAuthorize("hasAnyRole('ADMIN','EVM_STAFF')") // Đảm bảo an toàn
     public ResponseEntity<ApiRespond<List<Long>>> getVariantIdsByStatus(
             @RequestParam("status") String status) {
-        
+
         List<Long> variantIds = inventoryService.getVariantIdsByStatus(status);
         return ResponseEntity.ok(ApiRespond.success("Fetched variant IDs by status", variantIds));
     }
 
     // ==========================================================
-    //      ENDPOINTS FOR B2B ORDER LIFECYCLE (ĐIỀU PHỐI ĐƠN HÀNG)
+    // ENDPOINTS FOR B2B ORDER LIFECYCLE (ĐIỀU PHỐI ĐƠN HÀNG)
     // ==========================================================
 
     /**
@@ -195,14 +198,15 @@ public class InventoryController {
     public ResponseEntity<ApiRespond<Void>> allocateStock(
             @Valid @RequestBody AllocationRequestDto request,
             @RequestHeader("X-User-Email") String email) {
-        
+
         inventoryService.allocateStockForOrder(request, email);
         return ResponseEntity.ok(ApiRespond.success("Stock allocated successfully", null));
     }
 
     /**
      * Xuất kho (giao hàng) cho một đơn hàng B2B đã được phân bổ.
-     * Cập nhật trạng thái xe theo VIN và di chuyển số lượng từ kho TT sang kho đại lý.
+     * Cập nhật trạng thái xe theo VIN và di chuyển số lượng từ kho TT sang kho đại
+     * lý.
      */
     @PostMapping("/ship-b2b")
     @PreAuthorize("hasAnyRole('ADMIN','EVM_STAFF')")
@@ -220,7 +224,7 @@ public class InventoryController {
     @PostMapping("/transfer-requests")
     public ResponseEntity<ApiRespond<Void>> createTransferRequest(
             @Valid @RequestBody CreateTransferRequestDto request) {
-        
+
         inventoryService.createTransferRequest(request);
         return ResponseEntity.ok(ApiRespond.success("Transfer request created successfully", null));
     }
@@ -232,29 +236,27 @@ public class InventoryController {
     @PreAuthorize("hasAnyRole('ADMIN','EVM_STAFF')")
     public ResponseEntity<ApiRespond<VinValidationResultDto>> validateVins(
             @RequestBody List<String> vins) {
-        
+
         // Gọi service
         VinValidationResultDto result = inventoryService.validateVinsForShipment(vins);
-        
+
         // Trả về kết quả
         return ResponseEntity.ok(
-            ApiRespond.success("VINs validated successfully.", result)
-        );
+                ApiRespond.success("VINs validated successfully.", result));
     }
 
     @GetMapping("/vehicles/available-vins")
-    @PreAuthorize("hasAnyRole('ADMIN','EVM_STAFF')") 
+    @PreAuthorize("hasAnyRole('ADMIN','EVM_STAFF')")
     public ResponseEntity<ApiRespond<List<String>>> getAvailableVins(
             @RequestParam Long variantId) {
-                
+
         List<String> vins = inventoryService.getAvailableVinsForVariant(variantId);
         return ResponseEntity.ok(
-            ApiRespond.success("Fetched available VINs", vins)
-        );
+                ApiRespond.success("Fetched available VINs", vins));
     }
 
     // ==========================================================
-    //            ENDPOINTS FOR CONFIGURATION (CẤU HÌNH)
+    // ENDPOINTS FOR CONFIGURATION (CẤU HÌNH)
     // ==========================================================
 
     /**
@@ -265,7 +267,7 @@ public class InventoryController {
     public ResponseEntity<ApiRespond<Void>> updateCentralReorderLevel(
             @Valid @RequestBody UpdateReorderLevelRequest request,
             @RequestHeader("X-User-Email") String email) {
-        
+
         inventoryService.updateCentralReorderLevel(request, email);
         return ResponseEntity.ok(ApiRespond.success("Central reorder level updated successfully", null));
     }
@@ -279,7 +281,7 @@ public class InventoryController {
     public ResponseEntity<ApiRespond<Void>> updateDealerReorderLevel(
             @Valid @RequestBody UpdateReorderLevelRequest request,
             @RequestHeader("X-User-ProfileId") UUID dealerId) {
-        
+
         inventoryService.updateDealerReorderLevel(dealerId, request);
         return ResponseEntity.ok(ApiRespond.success("Reorder level updated successfully", null));
     }
@@ -290,19 +292,19 @@ public class InventoryController {
      */
     @PostMapping("/allocate-sync")
     public ResponseEntity<ApiRespond<Void>> allocateStockSync(@RequestBody AllocationRequestDto request) {
-        
+
         // Lấy email/role từ SecurityContext (giống như trong các hàm khác của bạn)
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String staffEmail = authentication.getName(); 
-        
+        String staffEmail = authentication.getName();
+
         // Gọi hàm service 'allocateStockForOrder' mà bạn đã có sẵn
         inventoryService.allocateStockForOrder(request, staffEmail);
-        
+
         return ResponseEntity.ok(ApiRespond.success("Phân bổ kho thành công (Sync)", null));
     }
-    
+
     // ==========================================================
-    //            ENDPOINTS FOR REPORTING (BÁO CÁO)
+    // ENDPOINTS FOR REPORTING (BÁO CÁO)
     // ==========================================================
 
     /**
@@ -313,7 +315,7 @@ public class InventoryController {
     public void exportInventoryReport(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
-            @RequestParam(defaultValue = "xlsx") String format, 
+            @RequestParam(defaultValue = "xlsx") String format,
             HttpServletResponse response) throws IOException {
 
         if ("pdf".equalsIgnoreCase(format)) {
@@ -332,7 +334,7 @@ public class InventoryController {
     // ==========================================================
     // ===== ENDPOINT MỚI CHO VIỆC TRẢ HÀNG (KHIẾU NẠI) =====
     // ==========================================================
-    
+
     /**
      * Nhận yêu cầu trả hàng (hủy phân bổ/hủy giao) từ SalesService
      * khi một đơn hàng DISPUTED được giải quyết.
@@ -342,24 +344,23 @@ public class InventoryController {
     public ResponseEntity<ApiRespond<Void>> returnStockByOrder(
             @RequestBody Map<String, UUID> payload,
             @RequestHeader("X-User-Email") String staffEmail) {
-        
+
         UUID orderId = payload.get("orderId");
         if (orderId == null) {
             // Ném lỗi 400 nếu payload không chứa orderId
             throw new com.ev.common_lib.exception.AppException(
-                com.ev.common_lib.exception.ErrorCode.BAD_REQUEST
-            );
+                    com.ev.common_lib.exception.ErrorCode.BAD_REQUEST);
         }
-        
+
         inventoryService.returnStockForOrder(orderId, staffEmail);
-        
+
         return ResponseEntity.ok(ApiRespond.success("Hàng đã được trả về kho (Sync)", null));
     }
-    
+
     // ==========================================================
     // ============= FOR AI SERVICE ANALYTICS ===================
     // ==========================================================
-    
+
     /**
      * Lấy inventory snapshots cho AI forecasting
      * API này được gọi từ AI Service để lấy dữ liệu tồn kho
@@ -369,13 +370,11 @@ public class InventoryController {
             @RequestParam(required = false) Long variantId,
             @RequestParam(required = false) UUID dealerId,
             @RequestParam(defaultValue = "100") int limit) {
-        
+
         List<DealerInventoryDto> snapshots = inventoryService.getInventorySnapshotsForAnalytics(
-            variantId, dealerId, limit
-        );
-        
+                variantId, dealerId, limit);
+
         return ResponseEntity.ok(
-            ApiRespond.success("Inventory snapshots retrieved for AI Service", snapshots)
-        );
+                ApiRespond.success("Inventory snapshots retrieved for AI Service", snapshots));
     }
 }

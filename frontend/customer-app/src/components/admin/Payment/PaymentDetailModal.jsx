@@ -16,7 +16,6 @@ export default function PaymentDetailModal({ recordId, orderId, onClose, onRefre
         try {
             setLoading(true);
             const response = await getPaymentHistory(orderId);
-            console.log('Payment history response:', response); // Debug log
             setTransactions(response || []);
         } catch (error) {
             console.error('Error loading transactions:', error);

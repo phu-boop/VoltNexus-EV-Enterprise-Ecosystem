@@ -23,7 +23,6 @@ public class AppConfig {
     }
 //    @Bean
 //    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-//        System.out.println("!!! ATTENTION: Running in DEV security mode. All requests are permitted. !!!");
 //
 //        http
 //            .csrf(csrf -> csrf.disable())

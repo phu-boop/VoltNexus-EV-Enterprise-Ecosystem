@@ -50,7 +50,6 @@ public class NotificationService {
             try {
                 FirebaseMessaging.getInstance().send(message);
             } catch (FirebaseMessagingException e) {
-                e.printStackTrace();
             }
         }
     }

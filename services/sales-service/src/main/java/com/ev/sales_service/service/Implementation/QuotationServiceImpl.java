@@ -324,7 +324,6 @@ public class QuotationServiceImpl implements QuotationService {
             }
 
         } catch (Exception e) {
-            e.printStackTrace();
             return false;
         }
 

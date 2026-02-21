@@ -141,14 +141,11 @@ public class AuthService {
                 var customerProfile = customerProfileRepository.findByUserId(user.getId());
                 if (customerProfile.isPresent()) {
                     userRespond.setMemberId(customerProfile.get().getCustomerId());
-                    System.out.println("[AuthService.getCurrentUser] ✅ Set memberId: " + customerProfile.get().getCustomerId());
                 } else {
-                    System.out.println("[AuthService.getCurrentUser] ⚠️ No customer profile found for user: " + user.getEmail());
                 }
             }
         } catch (Exception e) {
             System.err.println("[AuthService.getCurrentUser] ❌ Error fetching customer profile: " + e.getMessage());
-            e.printStackTrace();
         }
 
         return new LoginRespond(userRespond, null);
@@ -187,8 +184,6 @@ public class AuthService {
     public void addTokenBlacklist(HttpServletRequest request) {
         String token = parseJwt(request);
         String tokenRefresh = getRefreshTokenFromRequest(request);
-        System.out.println(tokenRefresh);
-        System.out.println(token);
         if (token == null || tokenRefresh == null) {
             throw new AppException(ErrorCode.TOKEN_INVALID);
         }

@@ -64,15 +64,12 @@ export default function AdminCategoriesPage() {
   const loadData = async () => {
     try {
       setLoading(true);
-      console.log('[CategoriesPage] Starting to load data...');
       
       const [brandsData, statsData] = await Promise.all([
         getAllBrands(),
         getBrandStatistics()
       ]);
       
-      console.log('[CategoriesPage] Brands data received:', brandsData);
-      console.log('[CategoriesPage] Statistics data received:', statsData);
       
       setBrands(brandsData);
       setFilteredBrands(brandsData);
