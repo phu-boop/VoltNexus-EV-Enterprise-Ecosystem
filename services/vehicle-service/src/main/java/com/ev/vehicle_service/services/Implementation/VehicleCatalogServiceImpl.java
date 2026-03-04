@@ -246,6 +246,7 @@ public class VehicleCatalogServiceImpl implements VehicleCatalogService {
             newVariant.setVersionName(variantRequest.getVersionName());
             newVariant.setColor(variantRequest.getColor());
             newVariant.setPrice(variantRequest.getPrice());
+            newVariant.setWholesalePrice(variantRequest.getWholesalePrice());
             newVariant.setImageUrl(variantRequest.getImageUrl());
             newVariant.setSkuCode(variantRequest.getSkuCode());
             newVariant.setStatus(VehicleStatus.IN_PRODUCTION);
@@ -288,6 +289,7 @@ public class VehicleCatalogServiceImpl implements VehicleCatalogService {
         newVariant.setVersionName(request.getVersionName());
         newVariant.setColor(request.getColor());
         newVariant.setPrice(request.getPrice());
+        newVariant.setWholesalePrice(request.getWholesalePrice());
         newVariant.setSkuCode(request.getSkuCode());
         newVariant.setImageUrl(request.getImageUrl());
 

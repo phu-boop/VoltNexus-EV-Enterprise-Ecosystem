@@ -1,17 +1,25 @@
 import React, { useState, useEffect, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
-  FiPlus,
-  FiEdit,
-  FiTrash2,
-  FiSearch,
-  FiRefreshCw,
-} from "react-icons/fi";
+  Plus,
+  Edit,
+  Trash2,
+  Search,
+  RefreshCw,
+  Cpu,
+  Tag,
+  FileText,
+  AlertCircle,
+  MoreVertical,
+  CheckCircle2,
+  Box,
+} from "lucide-react";
 import {
   getAllFeatures,
   deleteFeature,
 } from "../services/vehicleCatalogService";
-import FeatureFormModal from "../components/FeatureFormModal"; // Import form modal mới
-import ConfirmationModal from "../components/ConfirmationModal"; // Tái sử dụng modal xác nhận
+import FeatureFormModal from "../components/FeatureFormModal";
+import ConfirmationModal from "../components/ConfirmationModal";
 
 const FeatureManagementPage = () => {
   const [features, setFeatures] = useState([]);
@@ -25,7 +33,6 @@ const FeatureManagementPage = () => {
   const [featureToEdit, setFeatureToEdit] = useState(null);
   const [featureToDelete, setFeatureToDelete] = useState(null);
 
-  // Hàm tải dữ liệu
   const fetchFeatures = useCallback(async () => {
     try {
       setIsLoading(true);
@@ -33,7 +40,7 @@ const FeatureManagementPage = () => {
       setFeatures(response.data.data || []);
       setError(null);
     } catch (err) {
-      setError("Không thể tải danh sách tính năng. Vui lòng thử lại.");
+      setError("Không thể tải thư viện tính năng. Vui lòng thử lại.");
       console.error(err);
     } finally {
       setIsLoading(false);
@@ -44,7 +51,6 @@ const FeatureManagementPage = () => {
     fetchFeatures();
   }, [fetchFeatures]);
 
-  // --- Các hàm xử lý modal ---
   const handleOpenAddForm = () => {
     setFeatureToEdit(null);
     setIsFormOpen(true);
@@ -67,134 +73,191 @@ const FeatureManagementPage = () => {
     setFeatureToDelete(null);
   };
 
-  // --- Hàm xử lý xóa ---
   const handleDeleteConfirm = async () => {
     if (!featureToDelete) return;
     try {
       await deleteFeature(featureToDelete.featureId);
-      fetchFeatures(); // Tải lại danh sách sau khi xóa
+      fetchFeatures();
     } catch (error) {
       alert(
         error.response?.data?.message ||
-          "Lỗi: Không thể xóa tính năng này. Có thể nó đang được sử dụng."
+        "Lỗi: Không thể xóa tính năng này. Có thể nó đang được sử dụng."
       );
-      console.error(error);
     } finally {
       handleCloseModals();
     }
   };
 
-  // Logic lọc/tìm kiếm
   const filteredFeatures = features.filter((feature) => {
-    const query = searchQuery.toLowerCase().replace(/\s+/g, "");
+    const query = searchQuery.toLowerCase().trim();
     const name = (feature.featureName || "").toLowerCase();
     const category = (feature.category || "").toLowerCase();
-    const combinedData = name + category;
-    return combinedData.includes(query);
+    return name.includes(query) || category.includes(query);
   });
 
   return (
-    <div className="animate-in fade-in-0 duration-500">
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-4xl font-bold text-gray-800">
-          Quản Lý Thư Viện Tính Năng
-        </h1>
-        <div className="flex items-center space-x-4">
+    <div className="min-h-screen bg-neutral-50/30">
+      {/* Header Section */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
+        <motion.div
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+        >
+          <div className="flex items-center gap-2 text-blue-600 font-semibold mb-2">
+            <Cpu className="w-5 h-5" />
+            <span className="uppercase tracking-widest text-xs">Thư viện Thành phần</span>
+          </div>
+          <h1 className="text-4xl font-extrabold text-neutral-900 tracking-tight">
+            Kho tính năng
+          </h1>
+          <p className="text-neutral-500 mt-2">Quản lý thư viện toàn cầu về các tính năng kỹ thuật và thông số có sẵn cho xe.</p>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="flex items-center gap-3"
+        >
           <button
             onClick={fetchFeatures}
-            className="flex items-center justify-center p-3 bg-white text-gray-600 rounded-full shadow-md hover:bg-gray-100"
-            title="Làm mới"
             disabled={isLoading}
+            className="p-3 bg-white border border-neutral-200 rounded-2xl text-neutral-600 hover:bg-neutral-50 transition-all shadow-sm active:scale-95"
           >
-            <FiRefreshCw
-              className={`w-5 h-5 ${isLoading ? "animate-spin" : ""}`}
-            />
+            <RefreshCw className={`w-5 h-5 ${isLoading ? "animate-spin" : ""}`} />
           </button>
           <button
             onClick={handleOpenAddForm}
-            className="flex items-center bg-blue-600 text-white px-5 py-3 rounded-full shadow-lg hover:bg-blue-700"
+            className="flex items-center gap-2 bg-blue-600 text-white px-6 py-3.5 rounded-2xl shadow-lg hover:bg-blue-700 transition-all font-bold active:scale-95"
           >
-            <FiPlus className="w-5 h-5 mr-2" />
-            <span className="font-semibold">Thêm Tính Năng Mới</span>
+            <Plus className="w-5 h-5" /> Thêm tính năng mới
           </button>
-        </div>
+        </motion.div>
       </div>
 
-      {/* Ô tìm kiếm */}
-      <div className="mb-6">
-        <div className="relative max-w-lg">
-          <span className="absolute inset-y-0 left-0 pl-3 flex items-center">
-            <FiSearch className="h-5 w-5 text-gray-400" />
-          </span>
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Tìm theo tên tính năng, danh mục..."
-            className="w-full p-3 pl-10 border rounded-lg shadow-sm"
-          />
-        </div>
-      </div>
+      {/* Main Content Card */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="bg-white rounded-3xl shadow-sm border border-neutral-100 overflow-hidden"
+      >
+        {/* Search and Filters */}
+        <div className="p-6 border-b border-neutral-100 bg-neutral-50/50 flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="relative w-full md:w-96">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400 w-5 h-5" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Tìm kiếm tính năng hoặc danh mục..."
+              className="w-full pl-12 pr-4 py-3 bg-white border border-neutral-200 rounded-2xl focus:ring-4 focus:ring-blue-500/10 outline-none transition-all"
+            />
+          </div>
 
-      {/* Bảng hiển thị */}
-      <div className="bg-white rounded-2xl shadow-lg p-6">
-        {isLoading ? (
-          <p className="text-center text-gray-500 py-4">Đang tải...</p>
-        ) : error ? (
-          <p className="text-center text-red-500 py-4">{error}</p>
-        ) : filteredFeatures.length > 0 ? (
-          <div className="overflow-x-auto">
+          <div className="flex items-center gap-3 text-sm text-neutral-500 font-medium">
+            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg">
+              <Box className="w-4 h-4" />
+              <span>{features.length} Tổng số tính năng</span>
+            </div>
+            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-600 rounded-lg">
+              <CheckCircle2 className="w-4 h-4" />
+              <span>Hệ thống đã xác minh</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Table/List Area */}
+        <div className="overflow-x-auto">
+          {isLoading ? (
+            <div className="py-24 text-center">
+              <div className="w-12 h-12 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin mx-auto mb-4" />
+              <p className="text-neutral-500 font-medium">Đang đồng bộ hóa kho lưu trữ...</p>
+            </div>
+          ) : error ? (
+            <div className="p-12 text-center">
+              <AlertCircle className="w-12 h-12 text-red-400 mx-auto mb-4" />
+              <p className="text-red-600 font-bold mb-2">Đã xảy ra lỗi</p>
+              <p className="text-neutral-500">{error}</p>
+            </div>
+          ) : filteredFeatures.length > 0 ? (
             <table className="w-full text-left">
               <thead>
-                <tr className="border-b bg-gray-50 text-sm text-gray-600 uppercase">
-                  <th className="p-3">ID</th>
-                  <th className="p-3">Tên Tính Năng</th>
-                  <th className="p-3">Danh Mục</th>
-                  <th className="p-3">Mô Tả</th>
-                  <th className="p-3 text-right">Hành Động</th>
+                <tr className="bg-neutral-50/30 text-[10px] uppercase font-bold tracking-widest text-neutral-400">
+                  <th className="px-8 py-4">Chi tiết tính năng</th>
+                  <th className="px-6 py-4">Phân loại</th>
+                  <th className="px-6 py-4">ID hệ thống</th>
+                  <th className="px-8 py-4 text-right">Hành động</th>
                 </tr>
               </thead>
-              <tbody>
-                {filteredFeatures.map((feature) => (
-                  <tr
-                    key={feature.featureId}
-                    className="border-b hover:bg-gray-50"
-                  >
-                    <td className="p-3 text-gray-700">{feature.featureId}</td>
-                    <td className="p-3 font-medium text-gray-900">
-                      {feature.featureName}
-                    </td>
-                    <td className="p-3 text-gray-700">{feature.category}</td>
-                    <td className="p-3 text-gray-700 truncate max-w-xs">
-                      {feature.description || "N/A"}
-                    </td>
-                    <td className="p-3 flex justify-end space-x-2">
-                      <button
-                        onClick={() => handleOpenEditForm(feature)}
-                        className="p-2 text-yellow-600 hover:bg-yellow-100 rounded-full"
-                        title="Chỉnh sửa"
-                      >
-                        <FiEdit />
-                      </button>
-                      <button
-                        onClick={() => handleOpenConfirmModal(feature)}
-                        className="p-2 text-red-600 hover:bg-red-100 rounded-full"
-                        title="Xóa"
-                      >
-                        <FiTrash2 />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
+              <tbody className="divide-y divide-neutral-100">
+                <AnimatePresence mode="popLayout">
+                  {filteredFeatures.map((feature) => (
+                    <motion.tr
+                      key={feature.featureId}
+                      layout
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      className="group hover:bg-neutral-50/50 transition-all"
+                    >
+                      <td className="px-8 py-5">
+                        <div className="flex flex-col">
+                          <span className="font-bold text-neutral-800 text-base">{feature.featureName}</span>
+                          <p className="text-sm text-neutral-500 mt-1 line-clamp-1 max-w-sm">
+                            {feature.description || "Không có mô tả kỹ thuật."}
+                          </p>
+                        </div>
+                      </td>
+                      <td className="px-6 py-5">
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-neutral-100 text-neutral-600 rounded-full text-xs font-bold border border-neutral-200">
+                          <Tag className="w-3 h-3" />
+                          {feature.category}
+                        </span>
+                      </td>
+                      <td className="px-6 py-5">
+                        <code className="text-xs bg-neutral-50 text-neutral-400 px-2 py-1 rounded font-mono">
+                          FT-{feature.featureId.toString().padStart(4, '0')}
+                        </code>
+                      </td>
+                      <td className="px-8 py-5">
+                        <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button
+                            onClick={() => handleOpenEditForm(feature)}
+                            className="p-2.5 text-neutral-500 hover:bg-amber-50 hover:text-amber-600 rounded-xl transition-all cursor-pointer"
+                            title="Chỉnh sửa"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleOpenConfirmModal(feature)}
+                            className="p-2.5 text-neutral-500 hover:bg-red-50 hover:text-red-600 rounded-xl transition-all cursor-pointer"
+                            title="Xóa"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </motion.tr>
+                  ))}
+                </AnimatePresence>
               </tbody>
             </table>
-          </div>
-        ) : (
-          <p className="text-center text-gray-500 py-4">
-            Không tìm thấy tính năng nào.
-          </p>
-        )}
-      </div>
+          ) : (
+            <div className="py-24 text-center">
+              <div className="inline-flex p-6 bg-neutral-50 rounded-full mb-6">
+                <Search className="w-10 h-10 text-neutral-300" />
+              </div>
+              <h3 className="text-lg font-bold text-neutral-800 mb-2">Không tìm thấy tính năng nào</h3>
+              <p className="text-neutral-500">Kho lưu trữ không chứa thành phần nào khớp với tiêu chí của bạn.</p>
+              <button
+                onClick={() => setSearchQuery("")}
+                className="mt-4 text-blue-600 font-bold hover:underline"
+              >
+                Xóa bộ lọc tìm kiếm
+              </button>
+            </div>
+          )}
+        </div>
+      </motion.div>
 
       {/* Modals */}
       {isFormOpen && (
@@ -213,8 +276,8 @@ const FeatureManagementPage = () => {
           isOpen={isConfirmOpen}
           onClose={handleCloseModals}
           onConfirm={handleDeleteConfirm}
-          title="Xác nhận Xóa Tính Năng"
-          message={`Bạn có chắc chắn muốn xóa tính năng "${featureToDelete?.featureName}" không? Hành động này không thể hoàn tác.`}
+          title="Xác nhận xóa thành phần"
+          message={`Bạn có chắc chắn muốn xóa vĩnh viễn "${featureToDelete?.featureName}" không? Thành phần này có thể được liên kết với các biến thể xe đang hoạt động.`}
         />
       )}
     </div>
