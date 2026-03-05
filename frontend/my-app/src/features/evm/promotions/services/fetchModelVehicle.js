@@ -3,7 +3,7 @@ import apiConstVehicleService from "../../../../services/apiConstVehicleService.
 export const fetchModelVehicle = {
   // Basic CRUD
   getAllModelVehicle: () =>
-    apiConstVehicleService.get("/vehicle-catalog/models"),
+    apiConstVehicleService.get("/vehicle-catalog/models?size=1000"),
 };
 
 export default fetchModelVehicle;

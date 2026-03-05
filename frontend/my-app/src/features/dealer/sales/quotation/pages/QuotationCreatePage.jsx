@@ -146,7 +146,8 @@ const QuotationCreatePage = () => {
       ]);
 
       setCustomers(customersRes.data?.data || customersRes.data || []);
-      setModels(modelsRes.data?.data || modelsRes.data || []);
+      const modelsData = modelsRes.data?.data;
+      setModels(Array.isArray(modelsData) ? modelsData : (modelsData?.content ?? []));
 
       // KIỂM TRA NẾU CÓ XE ĐƯỢC CHỌN TỪ TRƯỚC
       if (selectedVariantId) {

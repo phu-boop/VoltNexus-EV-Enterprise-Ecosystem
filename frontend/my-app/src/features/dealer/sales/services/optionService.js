@@ -10,7 +10,7 @@ export const getCustomers = () => {
 
 // --- Khai báo các API liên quan đến Xe (Vehicle Catalog) ---
 export const getVehicleModels = () => {
-  return apiConstVehicleService.get("/vehicle-catalog/models");
+  return apiConstVehicleService.get("/vehicle-catalog/models?size=1000");
 };
 
 export const getVehicleVariantsByModelId = (modelId) => {

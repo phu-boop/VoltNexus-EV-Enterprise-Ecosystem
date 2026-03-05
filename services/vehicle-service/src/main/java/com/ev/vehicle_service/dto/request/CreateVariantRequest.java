@@ -27,6 +27,9 @@ public class CreateVariantRequest {
     @Min(value = 0, message = "Price must be non-negative")
     private BigDecimal price;
 
+    @Min(value = 0, message = "Wholesale price must be non-negative")
+    private BigDecimal wholesalePrice;
+
     @NotNull(message = "Status is required")
     private VehicleStatus status; // Cập nhật trạng thái của Vehicle
 

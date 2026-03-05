@@ -18,7 +18,7 @@ export const getCustomers = () => {
  * @returns {Promise<any>}
  */
 export const getVehicleModels = () => {
-  return apiConstVehicleService.get("/vehicle-catalog/models");
+  return apiConstVehicleService.get("/vehicle-catalog/models?size=1000");
 };
 
 /**

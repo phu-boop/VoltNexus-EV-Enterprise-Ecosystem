@@ -135,7 +135,10 @@ export default function PromotionForm({ onSubmit, onCancel, initialData, isEdit 
     try {
       const response = await fetchModelVehicle.getAllModelVehicle();
       if (response.data && response.data.code === "1000") {
-        setVehicleModels(response.data.data || []);
+        const data = response.data.data;
+        // API trả về Page object (có .content) hoặc plain array
+        const models = Array.isArray(data) ? data : (data?.content ?? []);
+        setVehicleModels(models);
       }
     } catch (error) {
       console.error("Error loading vehicle models:", error);
@@ -468,11 +471,11 @@ export default function PromotionForm({ onSubmit, onCancel, initialData, isEdit 
     return "INACTIVE";
   };
 
-  const availableModels = vehicleModels.filter(
+  const availableModels = (Array.isArray(vehicleModels) ? vehicleModels : []).filter(
     model => !selectedModels.some(selected => selected.modelId === model.modelId)
   );
 
-  const availableDealers = dealers.filter(
+  const availableDealers = (Array.isArray(dealers) ? dealers : []).filter(
     dealer => !selectedDealers.some(selected => selected.dealerId === dealer.dealerId)
   );
 
