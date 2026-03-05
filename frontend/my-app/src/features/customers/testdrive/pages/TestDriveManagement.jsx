@@ -37,9 +37,7 @@ const TestDriveManagement = () => {
   const [totalElements, setTotalElements] = useState(0);
   const pageSize = 10;
 
-  // TODO: Sửa lại khi backend hỗ trợ dealer UUID
-  // Tạm dùng dealerId = 1 vì backend expect Long, không phải UUID
-  const dealerId = 1;
+  const dealerId = sessionStorage.getItem('dealerId') || sessionStorage.getItem('profileId') || '';
 
   useEffect(() => {
     loadAllForStats();

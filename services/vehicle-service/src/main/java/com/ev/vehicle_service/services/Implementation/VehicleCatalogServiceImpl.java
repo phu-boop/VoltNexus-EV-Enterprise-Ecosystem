@@ -288,6 +288,7 @@ public class VehicleCatalogServiceImpl implements VehicleCatalogService {
         newVariant.setVersionName(request.getVersionName());
         newVariant.setColor(request.getColor());
         newVariant.setPrice(request.getPrice());
+        newVariant.setWholesalePrice(request.getWholesalePrice());
         newVariant.setSkuCode(request.getSkuCode());
         newVariant.setImageUrl(request.getImageUrl());
 

@@ -1,5 +1,5 @@
 version: "3.8"
-
+name: VoltNexus-EV-Enterprise-Ecosystem
 services:
   zookeeper:
     image: confluentinc/cp-zookeeper:latest
@@ -37,7 +37,7 @@ services:
     networks:
       - app-network
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: [ "CMD", "redis-cli", "ping" ]
       interval: 5s
       timeout: 3s
       retries: 5

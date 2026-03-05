@@ -130,7 +130,7 @@ const Step1BasicInfo = ({ formData, customers, models, variants, onChange, onSub
                 className="w-full px-4 py-3.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-white hover:border-gray-300 text-gray-700 shadow-sm"
               >
                 <option value="" className="text-gray-400">Chọn khách hàng...</option>
-                {customers.map(customer => (
+                {(Array.isArray(customers) ? customers : []).map(customer => (
                   <option key={customer.customerId} value={customer.customerId} className="text-gray-700">
                     {customer.customerCode} - {customer.firstName} {customer.lastName} - {customer.phone}
                   </option>
@@ -191,7 +191,7 @@ const Step1BasicInfo = ({ formData, customers, models, variants, onChange, onSub
                   className="w-full px-4 py-3.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-white hover:border-gray-300 text-gray-700 shadow-sm"
                 >
                   <option value="" className="text-gray-400">Chọn dòng xe...</option>
-                  {models.map(model => (
+                  {(Array.isArray(models) ? models : []).map(model => (
                     <option key={model.modelId} value={model.modelId} className="text-gray-700">
                       {model.modelName} - {model.brand}
                     </option>
@@ -224,7 +224,7 @@ const Step1BasicInfo = ({ formData, customers, models, variants, onChange, onSub
                   <option value="" className="text-gray-400">
                     {formData.modelId ? 'Chọn phiên bản...' : 'Vui lòng chọn dòng xe trước'}
                   </option>
-                  {variants.map(variant => (
+                  {(Array.isArray(variants) ? variants : []).map(variant => (
                     <option key={variant.variantId} value={variant.variantId} className="text-gray-700">
                       {variant.versionName} - {variant.color} - {formatPrice(variant.price)}
                     </option>
