@@ -38,7 +38,7 @@ const VehicleCatalogPage = () => {
       const response = await getModels();
       // Ensure data is an array
       const responseData = response.data?.data;
-      
+
       let modelsArray = [];
       if (Array.isArray(responseData)) {
         modelsArray = responseData;
@@ -47,9 +47,9 @@ const VehicleCatalogPage = () => {
       } else {
         console.warn("API did not return an array or paginated content:", responseData);
       }
-      
+
       setModels(modelsArray);
-      
+
       setError(null);
     } catch (err) {
       setError("Không thể tải danh mục xe. Vui lòng thử lại.");
