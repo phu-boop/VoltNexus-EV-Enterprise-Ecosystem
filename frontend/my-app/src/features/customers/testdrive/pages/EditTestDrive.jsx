@@ -26,9 +26,11 @@ const EditTestDrive = () => {
     console.error('Error parsing roles:', error);
   }
   
+  const dealerUUID = sessionStorage.getItem('dealerId') || sessionStorage.getItem('profileId') || '6c8c229d-c8f6-43d8-b2f6-01261b46baa3';
+
   const [formData, setFormData] = useState({
     customerId: '',
-    dealerId: 1,
+    dealerId: dealerUUID,
     modelId: '',
     variantId: '',
     staffId: '',
@@ -48,8 +50,6 @@ const EditTestDrive = () => {
   const [loadingVehicles, setLoadingVehicles] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-
-  const dealerUUID = sessionStorage.getItem('dealerId') || sessionStorage.getItem('profileId') || '6c8c229d-c8f6-43d8-b2f6-01261b46baa3';
 
   // Load appointment data
   useEffect(() => {
@@ -88,7 +88,7 @@ const EditTestDrive = () => {
       
       setFormData({
         customerId: appointment.customerId || '',
-        dealerId: appointment.dealerId || 1,
+        dealerId: appointment.dealerId || dealerUUID,
         modelId: appointment.modelId || '',
         variantId: appointment.variantId || '',
         staffId: appointment.staffId || '',
@@ -111,7 +111,9 @@ const EditTestDrive = () => {
     setLoadingVehicles(true);
     try {
       const response = await getAllModels();
-      const modelsData = response.data || [];
+      // API trả về Page object { data: { content: [...] } } hoặc plain array
+      const raw = response.data;
+      const modelsData = Array.isArray(raw) ? raw : (raw?.content ?? []);
       setVehicles(modelsData);
     } catch (error) {
       console.error("Error fetching vehicles:", error);
@@ -307,7 +309,7 @@ const EditTestDrive = () => {
                     }`}
                   >
                     <option value="">-- Chọn mẫu xe --</option>
-                    {vehicles.map(vehicle => (
+                    {(Array.isArray(vehicles) ? vehicles : []).map(vehicle => (
                       <option key={vehicle.modelId} value={vehicle.modelId}>
                         {vehicle.modelName}
                       </option>
@@ -328,7 +330,7 @@ const EditTestDrive = () => {
                     className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
                   >
                     <option value="">-- Chọn phiên bản --</option>
-                    {variants.map(variant => (
+                    {(Array.isArray(variants) ? variants : []).map(variant => (
                       <option key={variant.variantId} value={variant.variantId}>
                         {variant.versionName} - {variant.color}
                       </option>

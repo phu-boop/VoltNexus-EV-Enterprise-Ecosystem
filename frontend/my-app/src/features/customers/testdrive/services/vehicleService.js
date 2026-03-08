@@ -49,7 +49,7 @@ vehicleAPI.interceptors.response.use(
  * GET /vehicles/vehicle-catalog/models
  */
 export const getAllModels = async () => {
-  const response = await vehicleAPI.get("/models");
+  const response = await vehicleAPI.get("/models?size=1000");
   return response.data;
 };
 

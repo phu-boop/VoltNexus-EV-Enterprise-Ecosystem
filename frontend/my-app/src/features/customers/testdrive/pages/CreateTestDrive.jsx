@@ -25,9 +25,11 @@ const CreateTestDrive = () => {
     console.error('Error parsing roles:', error);
   }
   
+  const dealerUUID = sessionStorage.getItem('dealerId') || sessionStorage.getItem('profileId') || '6c8c229d-c8f6-43d8-b2f6-01261b46baa3';
+
   const [formData, setFormData] = useState({
     customerId: '',
-    dealerId: 1,
+    dealerId: dealerUUID,
     modelId: '',
     variantId: '',
     staffId: '',
@@ -46,8 +48,6 @@ const CreateTestDrive = () => {
   const [vehicles, setVehicles] = useState([]);
   const [loadingVehicles, setLoadingVehicles] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const dealerUUID = sessionStorage.getItem('dealerId') || sessionStorage.getItem('profileId') || '6c8c229d-c8f6-43d8-b2f6-01261b46baa3';
 
   // Load vehicles
   useEffect(() => {
@@ -75,7 +75,9 @@ const CreateTestDrive = () => {
     setLoadingVehicles(true);
     try {
       const response = await getAllModels();
-      const modelsData = response.data || [];
+      // API trả về Page object { data: { content: [...] } } hoặc plain array
+      const raw = response.data;
+      const modelsData = Array.isArray(raw) ? raw : (raw?.content ?? []);
       setVehicles(modelsData);
     } catch (error) {
       console.error("Error fetching vehicles:", error);
@@ -255,7 +257,7 @@ const CreateTestDrive = () => {
                     }`}
                   >
                     <option value="">-- Chọn mẫu xe --</option>
-                    {vehicles.map(vehicle => (
+                    {(Array.isArray(vehicles) ? vehicles : []).map(vehicle => (
                       <option key={vehicle.modelId} value={vehicle.modelId}>
                         {vehicle.modelName}
                       </option>
