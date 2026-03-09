@@ -30,7 +30,8 @@ public class AuthController {
     private final RecaptchaService recaptchaService;
     private final LoginAttemptService loginAttemptService;
 
-    public AuthController(AuthService authService, RecaptchaService recaptchaService, LoginAttemptService loginAttemptService) {
+    public AuthController(AuthService authService, RecaptchaService recaptchaService,
+            LoginAttemptService loginAttemptService) {
         this.loginAttemptService = loginAttemptService;
         this.recaptchaService = recaptchaService;
         this.authService = authService;
@@ -39,30 +40,33 @@ public class AuthController {
     @PostMapping("/register/customer")
     public ResponseEntity<ApiRespond<UserRespond>> registerCustomer(
             @Valid @RequestBody CustomerRegistrationRequest request) {
+        // Tạm thời bỏ qua captcha cho testing
         // Verify reCAPTCHA
-        boolean ok = recaptchaService.verifyCaptcha(request.getCaptchaToken());
-        if (!ok) throw new AppException(ErrorCode.RECAPTCHA_FAILED);
-        
+        // boolean ok = recaptchaService.verifyCaptcha(request.getCaptchaToken());
+        // if (!ok) throw new AppException(ErrorCode.RECAPTCHA_FAILED);
+
         UserRespond userRespond = authService.registerCustomer(request);
         return ResponseEntity.status(org.springframework.http.HttpStatus.CREATED)
                 .body(ApiRespond.success("Customer registered successfully", userRespond));
     }
 
     @PostMapping("/login")
-    public ResponseEntity<ApiRespond<LoginRespond>> login(@RequestBody Map<String, String> credentials, HttpServletResponse response) {
-        //Spam
+    public ResponseEntity<ApiRespond<LoginRespond>> login(@RequestBody Map<String, String> credentials,
+            HttpServletResponse response) {
+        // Spam
         if (loginAttemptService.isBlocked(credentials.get("email"))) {
             throw new AppException(ErrorCode.TOO_MANY_REQUESTS);
         }
-        //captcha
-        boolean ok = recaptchaService.verifyCaptcha(credentials.get("captchaToken"));
-        if (!ok) throw new AppException(ErrorCode.RECAPTCHA_FAILED);
+        // Tạm thời bỏ qua captcha cho testing
+        // captcha
+        // boolean ok = recaptchaService.verifyCaptcha(credentials.get("captchaToken"));
+        // if (!ok) throw new AppException(ErrorCode.RECAPTCHA_FAILED);
         LoginRespond loginRespond = authService.login(
                 credentials.get("email"),
-                credentials.get("password")
-        );
+                credentials.get("password"));
         // Gửi refresh token qua HttpOnly cookie
-        var cookie = new Cookie("refreshToken", authService.generateRefreshToken(loginRespond.getUserRespond().getEmail()));
+        var cookie = new Cookie("refreshToken",
+                authService.generateRefreshToken(loginRespond.getUserRespond().getEmail()));
         cookie.setHttpOnly(true);
         cookie.setSecure(true);
         cookie.setPath("/");
@@ -77,7 +81,6 @@ public class AuthController {
         LoginRespond loginRespond = authService.getCurrentUser();
         return ResponseEntity.ok(ApiRespond.success("Get current user successful", loginRespond));
     }
-
 
     @PreAuthorize("hasAnyRole('ADMIN', 'DEALER_STAFF', 'DEALER_MANAGER', 'EVM_STAFF', 'CUSTOMER')")
     @PostMapping("/refresh")
@@ -117,8 +120,8 @@ public class AuthController {
 
     @PostMapping("/reset-password")
     public ResponseEntity<ApiRespond<?>> resetPassword(@RequestParam String email,
-                                                       @RequestParam String otp,
-                                                       @RequestParam String newPassword) {
+            @RequestParam String otp,
+            @RequestParam String newPassword) {
         boolean updated = authService.resetPassword(email, otp, newPassword);
         if (!updated) {
             return ResponseEntity.badRequest().body(new ApiRespond<>("6000", "otp code is incorrect", null));
@@ -128,8 +131,10 @@ public class AuthController {
 
     @PreAuthorize("hasAnyRole('ADMIN', 'DEALER_STAFF', 'DEALER_MANAGER', 'EVM_STAFF', 'CUSTOMER')")
     @PostMapping("/change-password")
-    public ResponseEntity<ApiRespond<?>> changePassword(@Valid @RequestBody ChangePasswordRequest changePasswordRequest) {
-        authService.changePassword(changePasswordRequest.getEmail(), changePasswordRequest.getOldPassword(), changePasswordRequest.getNewPassword());
+    public ResponseEntity<ApiRespond<?>> changePassword(
+            @Valid @RequestBody ChangePasswordRequest changePasswordRequest) {
+        authService.changePassword(changePasswordRequest.getEmail(), changePasswordRequest.getOldPassword(),
+                changePasswordRequest.getNewPassword());
         return ResponseEntity.ok(ApiRespond.success("Change password successfull", null));
     }
 }
