@@ -24,12 +24,12 @@
 
 ## � Project at a Glance
 
-| Metric | Value |
-| :--- | :--- |
-| **Microservices** | 10 high-cohesion services |
-| **REST Endpoints** | 45+ Production-ready APIs |
-| **DB Tables** | 30+ Normalized relational tables |
-| **Messaging** | 15+ Kafka Topics for Eventing |
+| Metric | Value                                  |
+| :--- |:---------------------------------------|
+| **Microservices** | 10 high-cohesion services              |
+| **REST Endpoints** | 45+ Production-ready APIs tRONG 12     |
+| **DB Tables** | 30+ Normalized relational tables       |
+| **Messaging** | 15+ Kafka Topics for Eventing          |
 | **Stack** | Java 21, Spring Boot 3.4, React 18, AI |
 
 ---
