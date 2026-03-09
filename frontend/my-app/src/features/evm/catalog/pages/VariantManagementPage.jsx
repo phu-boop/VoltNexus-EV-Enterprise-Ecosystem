@@ -1,12 +1,20 @@
 import React, { useState, useEffect, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
-  FiPlus,
-  FiEdit,
-  FiTrash2,
-  FiSettings,
-  FiEye,
-  FiSearch,
-} from "react-icons/fi";
+  Plus,
+  Edit,
+  Trash2,
+  Settings,
+  Eye,
+  Search,
+  Box,
+  Layers,
+  ChevronRight,
+  RefreshCw,
+  AlertCircle,
+  CheckCircle2,
+  Info,
+} from "lucide-react";
 import Swal from "sweetalert2";
 import {
   getModels,
@@ -19,15 +27,15 @@ import FeatureAssignmentModal from "../components/FeatureAssignmentModal";
 import VariantDetailsModal from "../../../../components/common/detail/VariantDetailsModal";
 
 const STATUS_OPTIONS = {
-  IN_PRODUCTION: "Đang sản xuất",
-  COMING_SOON: "Sắp ra mắt",
-  DISCONTINUED: "Ngừng sản xuất",
+  IN_PRODUCTION: { label: "Đang sản xuất", color: "bg-emerald-100 text-emerald-700 border-emerald-200" },
+  COMING_SOON: { label: "Sắp ra mắt", color: "bg-blue-100 text-blue-700 border-blue-200" },
+  DISCONTINUED: { label: "Ngừng sản xuất", color: "bg-neutral-100 text-neutral-600 border-neutral-200" },
 };
 
 const VariantManagementPage = () => {
-  const [models, setModels] = useState([]); // Danh sách các model cho dropdown
-  const [selectedModelId, setSelectedModelId] = useState(""); // Model ID đang được chọn
-  const [selectedModelDetails, setSelectedModelDetails] = useState(null); // Chi tiết của model được chọn
+  const [models, setModels] = useState([]);
+  const [selectedModelId, setSelectedModelId] = useState("");
+  const [selectedModelDetails, setSelectedModelDetails] = useState(null);
 
   const [isLoadingModels, setIsLoadingModels] = useState(true);
   const [isLoadingVariants, setIsLoadingVariants] = useState(false);
@@ -35,8 +43,8 @@ const VariantManagementPage = () => {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 
-  const [variantToEdit, setVariantToEdit] = useState(null); // Variant đang được sửa
-  const [variantToDeactivate, setVariantToDeactivate] = useState(null); // Variant sắp bị xóa
+  const [variantToEdit, setVariantToEdit] = useState(null);
+  const [variantToDeactivate, setVariantToDeactivate] = useState(null);
 
   const [isFeatureModalOpen, setIsFeatureModalOpen] = useState(false);
   const [variantForFeatures, setVariantForFeatures] = useState(null);
@@ -46,21 +54,20 @@ const VariantManagementPage = () => {
 
   const [variantSearchQuery, setVariantSearchQuery] = useState("");
 
-  // Tải danh sách các mẫu xe (chỉ 1 lần khi component mount)
   useEffect(() => {
     const fetchAllModels = async () => {
       try {
         setIsLoadingModels(true);
         const response = await getModels();
         const responseData = response.data?.data;
-        
+
         let modelsArray = [];
         if (Array.isArray(responseData)) {
           modelsArray = responseData;
         } else if (responseData?.content && Array.isArray(responseData.content)) {
           modelsArray = responseData.content;
         }
-        
+
         setModels(modelsArray);
       } catch (error) {
         console.error("Failed to fetch models", error);
@@ -72,7 +79,6 @@ const VariantManagementPage = () => {
     fetchAllModels();
   }, []);
 
-  // Hàm tải chi tiết các phiên bản, được gọi mỗi khi selectedModelId thay đổi
   const fetchVariantsForModel = useCallback(async () => {
     if (!selectedModelId) {
       setSelectedModelDetails(null);
@@ -94,9 +100,8 @@ const VariantManagementPage = () => {
     fetchVariantsForModel();
   }, [fetchVariantsForModel]);
 
-  // --- Các hàm xử lý modal ---
   const handleOpenAddForm = () => {
-    setVariantToEdit(null); // Đảm bảo không có dữ liệu cũ
+    setVariantToEdit(null);
     setIsFormOpen(true);
   };
 
@@ -131,15 +136,13 @@ const VariantManagementPage = () => {
     setIsDetailsOpen(true);
   };
 
-  // --- Hàm xử lý ngừng sản xuất ---
   const handleDeactivateConfirm = async () => {
     if (!variantToDeactivate) return;
     try {
       await deactivateVariant(variantToDeactivate.variantId);
-      fetchVariantsForModel(); // Tải lại danh sách sau khi xóa thành công
+      fetchVariantsForModel();
     } catch (error) {
       Swal.fire("Lỗi!", "Không thể ngừng sản xuất phiên bản này.", "error");
-      console.error(error);
     } finally {
       handleCloseModals();
     }
@@ -147,180 +150,248 @@ const VariantManagementPage = () => {
 
   const filteredVariants = selectedModelDetails
     ? selectedModelDetails.variants.filter((variant) => {
-        // Chuẩn hóa từ khóa tìm kiếm (xóa hết dấu cách)
-        const query = variantSearchQuery.toLowerCase().replace(/\s+/g, "");
-
-        // Chuẩn hóa dữ liệu (gộp các trường, xóa hết dấu cách)
-        const versionName = variant.versionName || "";
-        const color = variant.color || "";
-        const skuCode = variant.skuCode || "";
-
-        const combinedData = (versionName + color + skuCode)
-          .toLowerCase()
-          .replace(/\s+/g, "");
-
-        // So sánh các chuỗi đã được chuẩn hóa
-        return combinedData.includes(query);
-      })
+      const query = variantSearchQuery.toLowerCase().trim();
+      const versionName = (variant.versionName || "").toLowerCase();
+      const color = (variant.color || "").toLowerCase();
+      const skuCode = (variant.skuCode || "").toLowerCase();
+      return versionName.includes(query) || color.includes(query) || skuCode.includes(query);
+    })
     : [];
 
   return (
-    <div className="animate-in fade-in-0 duration-500">
-      <h1 className="text-4xl font-bold text-gray-800 mb-8">
-        Quản Lý Phiên Bản & Màu Sắc
-      </h1>
-
-      {/* Dropdown chọn mẫu xe */}
-      <div className="mb-6 max-w-md">
-        <label
-          htmlFor="model-select"
-          className="block text-lg font-medium text-gray-700 mb-2"
+    <div className="min-h-screen bg-neutral-50/30">
+      {/* Header Section */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
+        <motion.div
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
         >
-          Chọn Mẫu Xe
-        </label>
-        <select
-          id="model-select"
-          value={selectedModelId}
-          onChange={(e) => setSelectedModelId(e.target.value)}
-          disabled={isLoadingModels}
-          className="p-3 border rounded-lg w-full bg-white shadow-sm"
-        >
-          <option value="">
-            -- {isLoadingModels ? "Đang tải..." : "Vui lòng chọn một mẫu xe"} --
-          </option>
-          {models.map((model) => (
-            <option key={model.modelId} value={model.modelId}>
-              {model.brand} {model.modelName}
-            </option>
-          ))}
-        </select>
-      </div>
+          <div className="flex items-center gap-2 text-blue-600 font-semibold mb-2">
+            <Layers className="w-5 h-5" />
+            <span className="uppercase tracking-widest text-xs">Quản lý Danh mục</span>
+          </div>
+          <h1 className="text-4xl font-extrabold text-neutral-900 tracking-tight">
+            Biến thể & Phiên bản
+          </h1>
+          <p className="text-neutral-500 mt-2">Quản lý các phiên bản, màu sắc và giá bán cụ thể cho từng mẫu xe.</p>
+        </motion.div>
 
-      {/* Bảng hiển thị các phiên bản */}
-      <div className="bg-white rounded-2xl shadow-lg p-6">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-2xl font-bold text-gray-700">
-            {selectedModelDetails
-              ? `Các phiên bản của ${selectedModelDetails.brand} ${selectedModelDetails.modelName}`
-              : "Chưa chọn mẫu xe"}
-          </h2>
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="flex items-center gap-3"
+        >
+          <button
+            onClick={fetchVariantsForModel}
+            disabled={!selectedModelId || isLoadingVariants}
+            className="p-3 bg-white border border-neutral-200 rounded-2xl text-neutral-600 hover:bg-neutral-50 transition-all shadow-sm active:scale-95 disabled:opacity-50"
+          >
+            <RefreshCw className={`w-5 h-5 ${isLoadingVariants ? "animate-spin" : ""}`} />
+          </button>
           <button
             onClick={handleOpenAddForm}
             disabled={!selectedModelId}
-            className="flex items-center bg-blue-600 text-white px-4 py-2 rounded-lg shadow hover:bg-blue-700 transition disabled:bg-gray-400 disabled:cursor-not-allowed"
+            className="flex items-center gap-2 bg-blue-600 text-white px-6 py-3.5 rounded-2xl shadow-lg hover:bg-blue-700 transition-all font-bold active:scale-95 disabled:bg-neutral-300 disabled:shadow-none disabled:cursor-not-allowed"
           >
-            <FiPlus className="mr-2" /> Thêm Phiên Bản
+            <Plus className="w-5 h-5" /> Thêm phiên bản mới
           </button>
-        </div>
+        </motion.div>
+      </div>
 
-        {selectedModelId && !isLoadingVariants && (
-          <div className="mb-4">
-            <div className="relative max-w-lg">
-              <span className="absolute inset-y-0 left-0 pl-3 flex items-center">
-                <FiSearch className="h-5 w-5 text-gray-400" />
-              </span>
-              <input
-                type="text"
-                value={variantSearchQuery}
-                onChange={(e) => setVariantSearchQuery(e.target.value)}
-                placeholder="Tìm phiên bản theo tên, màu, hoặc SKU..."
-                className="w-full p-3 pl-10 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        {/* Model Selection Sidebar */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="lg:col-span-4 bg-white rounded-3xl p-6 shadow-sm border border-neutral-100"
+        >
+          <div className="flex items-center gap-2 mb-6 text-neutral-800">
+            <Box className="w-5 h-5 text-blue-500" />
+            <h3 className="font-bold text-lg">Chọn mẫu xe cơ sở</h3>
           </div>
-        )}
 
-        {isLoadingVariants ? (
-          <p className="text-gray-500 py-4 text-center">
-            Đang tải danh sách phiên bản...
-          </p>
-        ) : selectedModelDetails && selectedModelDetails.variants.length > 0 ? (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left">
-              <thead>
-                <tr className="border-b bg-gray-50 text-sm text-gray-600 uppercase">
-                  <th className="p-3">Tên Phiên Bản</th>
-                  <th className="p-3">Màu Sắc</th>
-                  <th className="p-3">Giá (VNĐ)</th>
-                  <th className="p-3">Mã SKU</th>
-                  <th className="p-3">Trạng Thái</th>
-                  <th className="p-3 text-right">Hành Động</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredVariants.map((variant) => (
-                  <tr
-                    key={variant.variantId}
-                    className="border-b hover:bg-gray-50"
-                  >
-                    <td className="p-3 font-medium text-gray-900">
-                      {variant.versionName}
-                    </td>
-                    <td className="p-3 text-gray-700">{variant.color}</td>
-                    <td className="p-3 text-gray-700">
-                      {Number(variant.price).toLocaleString("vi-VN")}
-                    </td>
-                    <td className="p-3 text-gray-700">{variant.skuCode}</td>
-                    <td className="p-3">
-                      <span
-                        className={`px-2.5 py-1 text-xs font-semibold rounded-full ${
-                          variant.status === "IN_PRODUCTION"
-                            ? "bg-green-100 text-green-800"
-                            : variant.status === "COMING_SOON"
-                            ? "bg-blue-100 text-blue-800"
-                            : "bg-gray-100 text-gray-800"
-                        }`}
-                      >
-                        {STATUS_OPTIONS[variant.status]}
-                      </span>
-                    </td>
-                    <td className="p-3 flex justify-end space-x-2">
-                      <button
-                        onClick={() => handleOpenDetailsModal(variant)}
-                        className="p-2 text-blue-600 hover:bg-blue-100 rounded-full"
-                        title="Xem chi tiết"
-                      >
-                        <FiEye />
-                      </button>
-                      <button
-                        onClick={() => handleOpenFeatureModal(variant)}
-                        className="p-2 text-gray-600 hover:bg-gray-200 rounded-full"
-                        title="Quản lý tính năng"
-                      >
-                        <FiSettings />
-                      </button>
-                      <button
-                        onClick={() => handleOpenEditForm(variant)}
-                        className="p-2 text-yellow-600 hover:bg-yellow-100 rounded-full"
-                        title="Chỉnh sửa"
-                      >
-                        <FiEdit />
-                      </button>
-                      <button
-                        onClick={() => handleOpenConfirmModal(variant)}
-                        className="p-2 text-red-600 hover:bg-red-100 rounded-full"
-                        title="Ngừng sản xuất"
-                      >
-                        <FiTrash2 />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            {filteredVariants.length === 0 && variantSearchQuery && (
-              <p className="text-gray-500 py-4 text-center">
-                Không tìm thấy phiên bản nào khớp với tìm kiếm của bạn.
-              </p>
+          <div className="space-y-2">
+            {isLoadingModels ? (
+              [...Array(5)].map((_, i) => (
+                <div key={i} className="h-14 bg-neutral-50 animate-pulse rounded-2xl w-full" />
+              ))
+            ) : (
+              models.map((model) => (
+                <button
+                  key={model.modelId}
+                  onClick={() => setSelectedModelId(model.modelId)}
+                  className={`w-full flex items-center justify-between p-4 rounded-2xl border transition-all cursor-pointer ${selectedModelId === model.modelId
+                    ? "bg-blue-50 border-blue-200 text-blue-700 font-bold shadow-sm"
+                    : "bg-white border-neutral-100 text-neutral-600 hover:bg-neutral-50"
+                    }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className={`w-2 h-2 rounded-full ${selectedModelId === model.modelId ? "bg-blue-500 animate-pulse" : "bg-neutral-200"}`} />
+                    <span>{model.brand} {model.modelName}</span>
+                  </div>
+                  <ChevronRight className={`w-4 h-4 transition-transform ${selectedModelId === model.modelId ? "translate-x-1" : ""}`} />
+                </button>
+              ))
             )}
           </div>
-        ) : (
-          <p className="text-gray-500 py-4 text-center">
-            {selectedModelId
-              ? "Mẫu xe này chưa có phiên bản nào."
-              : "Hãy chọn một mẫu xe để xem các phiên bản."}
-          </p>
-        )}
+        </motion.div>
+
+        {/* Variants Content */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="lg:col-span-8 bg-white rounded-3xl shadow-sm border border-neutral-100 overflow-hidden min-h-[500px]"
+        >
+          <div className="p-6 border-b border-neutral-100 bg-neutral-50/50 flex flex-wrap items-center justify-between gap-4">
+            <h2 className="text-xl font-bold text-neutral-800">
+              {selectedModelDetails
+                ? `Các phiên bản của ${selectedModelDetails.brand} ${selectedModelDetails.modelName}`
+                : "Chọn một mẫu xe để xem các phiên bản"}
+            </h2>
+
+            {selectedModelId && (
+              <div className="relative w-full md:w-64">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 w-4 h-4" />
+                <input
+                  type="text"
+                  value={variantSearchQuery}
+                  onChange={(e) => setVariantSearchQuery(e.target.value)}
+                  placeholder="Lọc phiên bản..."
+                  className="w-full pl-9 pr-4 py-2 bg-white border border-neutral-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 outline-none"
+                />
+              </div>
+            )}
+          </div>
+
+          <div className="p-0">
+            {isLoadingVariants ? (
+              <div className="p-12 text-center">
+                <div className="w-12 h-12 border-3 border-blue-100 border-t-blue-600 rounded-full animate-spin mx-auto mb-4" />
+                <p className="text-neutral-500 font-medium">Đang tải các phiên bản...</p>
+              </div>
+            ) : selectedModelDetails && selectedModelDetails.variants.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left">
+                  <thead>
+                    <tr className="bg-neutral-50/30 text-[10px] uppercase font-bold tracking-widest text-neutral-400">
+                      <th className="px-8 py-4">Phiên bản</th>
+                      <th className="px-6 py-4">Giá dự kiến</th>
+                      <th className="px-6 py-4">Mã SKU</th>
+                      <th className="px-6 py-4">Trạng thái</th>
+                      <th className="px-8 py-4 text-right">Hành động</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-neutral-100">
+                    <AnimatePresence mode="popLayout">
+                      {filteredVariants.map((variant) => (
+                        <motion.tr
+                          key={variant.variantId}
+                          layout
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          exit={{ opacity: 0 }}
+                          className="group hover:bg-neutral-50/50 transition-all"
+                        >
+                          <td className="px-8 py-5">
+                            <div className="flex flex-col">
+                              <span className="font-bold text-neutral-800">{variant.versionName}</span>
+                              <div className="flex items-center gap-1.5 mt-1">
+                                <span className="w-3 h-3 rounded-full border border-neutral-200" style={{ backgroundColor: variant.color === 'White' ? '#fff' : variant.color === 'Black' ? '#000' : variant.color }} />
+                                <span className="text-xs text-neutral-500">{variant.color}</span>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-5">
+                            <span className="font-mono font-medium text-neutral-700">
+                              {Number(variant.price).toLocaleString("vi-VN")} <span className="text-[10px] text-neutral-400">VND</span>
+                            </span>
+                          </td>
+                          <td className="px-6 py-5">
+                            <code className="bg-neutral-100 px-2 py-1 rounded text-xs text-neutral-600 font-mono">
+                              {variant.skuCode}
+                            </code>
+                          </td>
+                          <td className="px-6 py-5">
+                            <span
+                              className={`px-3 py-1 text-[10px] font-bold uppercase tracking-wider rounded-lg border shadow-sm ${STATUS_OPTIONS[variant.status]?.color || "bg-neutral-100 text-neutral-600"
+                                }`}
+                            >
+                              {STATUS_OPTIONS[variant.status]?.label || variant.status}
+                            </span>
+                          </td>
+                          <td className="px-8 py-5">
+                            <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <button
+                                onClick={() => handleOpenDetailsModal(variant)}
+                                className="p-2 text-neutral-500 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition-all cursor-pointer"
+                                title="Xem chi tiết"
+                              >
+                                <Eye className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => handleOpenFeatureModal(variant)}
+                                className="p-2 text-neutral-500 hover:bg-indigo-50 hover:text-indigo-600 rounded-xl transition-all cursor-pointer"
+                                title="Quản lý tính năng"
+                              >
+                                <Settings className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => handleOpenEditForm(variant)}
+                                className="p-2 text-neutral-500 hover:bg-amber-50 hover:text-amber-600 rounded-xl transition-all cursor-pointer"
+                                title="Chỉnh sửa phiên bản"
+                              >
+                                <Edit className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => handleOpenConfirmModal(variant)}
+                                className="p-2 text-neutral-500 hover:bg-red-50 hover:text-red-600 rounded-xl transition-all cursor-pointer"
+                                title="Ngừng sản xuất"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </td>
+                        </motion.tr>
+                      ))}
+                    </AnimatePresence>
+                  </tbody>
+                </table>
+
+                {filteredVariants.length === 0 && variantSearchQuery && (
+                  <div className="p-20 text-center">
+                    <div className="bg-neutral-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <Search className="w-8 h-8 text-neutral-300" />
+                    </div>
+                    <p className="text-neutral-500">Không tìm thấy phiên bản nào khớp với "{variantSearchQuery}"</p>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="p-24 text-center">
+                <div className="bg-neutral-50 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6">
+                  {selectedModelId ? <Info className="w-10 h-10 text-neutral-300" /> : <Layers className="w-10 h-10 text-neutral-300" />}
+                </div>
+                <h3 className="text-lg font-bold text-neutral-800 mb-2">
+                  {selectedModelId ? "Không tìm thấy phiên bản nào" : "Chưa chọn mẫu xe"}
+                </h3>
+                <p className="text-neutral-500 max-w-xs mx-auto">
+                  {selectedModelId
+                    ? "Mẫu xe này chưa có phiên bản nào. Hãy bắt đầu bằng cách thêm mới."
+                    : "Vui lòng chọn một mẫu xe từ thanh bên để xem và quản lý các phiên bản."}
+                </p>
+                {selectedModelId && (
+                  <button
+                    onClick={handleOpenAddForm}
+                    className="mt-6 text-blue-600 font-bold hover:underline"
+                  >
+                    Thêm phiên bản đầu tiên +
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+        </motion.div>
       </div>
 
       {/* Modals */}
@@ -341,8 +412,8 @@ const VariantManagementPage = () => {
           isOpen={isConfirmOpen}
           onClose={handleCloseModals}
           onConfirm={handleDeactivateConfirm}
-          title="Xác nhận Ngừng sản xuất"
-          message={`Bạn có chắc chắn muốn ngừng sản xuất phiên bản "${variantToDeactivate?.versionName} - ${variantToDeactivate?.color}" không?`}
+          title="Xác nhận ngừng sản xuất"
+          message={`Bạn có chắc chắn muốn ngừng sản xuất phiên bản "${variantToDeactivate?.versionName} - ${variantToDeactivate?.color}" không? Hành động này tuân theo các giao thức hủy kích hoạt tiêu chuẩn.`}
         />
       )}
       {isFeatureModalOpen && (
@@ -350,7 +421,7 @@ const VariantManagementPage = () => {
           isOpen={isFeatureModalOpen}
           onClose={handleCloseModals}
           variant={variantForFeatures}
-          onSuccess={fetchVariantsForModel} // Tải lại dữ liệu sau khi hoàn tất
+          onSuccess={fetchVariantsForModel}
         />
       )}
       {isDetailsOpen && (
