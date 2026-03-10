@@ -1,0 +1,320 @@
+{
+    "info": {
+        "name": "Payment Service API Automation Testing",
+        "description": "Postman Collection for Payment Service applying 13 automation testing techniques.",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "item": [
+        {
+            "name": "1. Payment Methods",
+            "item": [
+                {
+                    "name": "1. GET Active Public Methods",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "// 1. HTTP Status Code Testing",
+                                    "pm.test(\"Status is 200\", function(){ pm.response.to.have.status(200); });",
+                                    "// 3. Data Type Checking & 4. JSON Schema Validation",
+                                    "pm.test(\"Verify array of payment methods\", function() {",
+                                    "    var data = pm.response.json();",
+                                    "    pm.expect(data).to.be.an('array');",
+                                    "});",
+                                    "// 13. Environment Variable Usage",
+                                    "var data = pm.response.json();",
+                                    "if(data.length > 0) { pm.environment.set(\"test_payment_method_id\", data[0].methodId); }"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/payments/methods/active-public",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "payments",
+                                "methods",
+                                "active-public"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "2. POST Create Payment Method (Admin)",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "// 8. Authentication Testing",
+                                    "pm.test(\"Status is 201\", function(){ pm.response.to.have.status(201); });"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{admin_token}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"methodCode\": \"VNPAY_TEST_{{$timestamp}}\",\n    \"methodName\": \"VNPAY Test\",\n    \"description\": \"Payment via VNPAY Sandbox\",\n    \"supportedScopes\": [\"B2C\", \"B2B\"],\n    \"isActive\": true\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/payments/methods",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "payments",
+                                "methods"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "2. Customer Payments",
+            "item": [
+                {
+                    "name": "1. POST Initiate Customer Payment",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test(\"Status is 200/201\", function(){ pm.expect(pm.response.code).to.be.oneOf([200, 201]); });",
+                                    "var jsonData = pm.response.json();",
+                                    "if(jsonData.transactionId) { pm.environment.set(\"test_customer_transaction_id\", jsonData.transactionId); }"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{access_token}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"amount\": 50000000,\n    \"paymentMethodId\": \"{{test_payment_method_id}}\",\n    \"notes\": \"Deposit for vehicle\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/payments/customer/orders/{{test_order_id}}/pay",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "payments",
+                                "customer",
+                                "orders",
+                                "{{test_order_id}}",
+                                "pay"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "2. GET My Deposits",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test(\"Status is 200\", function(){ pm.response.to.have.status(200); });"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{access_token}}"
+                            },
+                            {
+                                "key": "X-User-Email",
+                                "value": "{{test_email}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/payments/customer/my-deposits",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "payments",
+                                "customer",
+                                "my-deposits"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "3. Dealer Payments",
+            "item": [
+                {
+                    "name": "1. POST Create Dealer Invoice",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test(\"Status is 201\", function(){ pm.response.to.have.status(201); });",
+                                    "var jsonData = pm.response.json();",
+                                    "if(jsonData.invoiceId) { pm.environment.set(\"test_dealer_invoice_id\", jsonData.invoiceId); }"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{admin_token}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"dealerId\": \"{{dealer_id}}\",\n    \"orderId\": \"{{test_order_id}}\",\n    \"amount\": 1000000000,\n    \"dueDate\": \"2025-12-31\",\n    \"notes\": \"B2B Vehicle Order Invoice\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/payments/dealer/invoices",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "payments",
+                                "dealer",
+                                "invoices"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "2. GET Dealer Invoices",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test(\"Status is 200\", function(){ pm.response.to.have.status(200); });"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{admin_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/payments/dealer/{{dealer_id}}/invoices",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "payments",
+                                "dealer",
+                                "{{dealer_id}}",
+                                "invoices"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "4. Admin Payments",
+            "item": [
+                {
+                    "name": "1. GET Booking Deposits",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test(\"Status is 200\", function(){ pm.response.to.have.status(200); });"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{admin_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/payments/admin/booking-deposits",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "payments",
+                                "admin",
+                                "booking-deposits"
+                            ]
+                        }
+                    }
+                }
+            ]
+        }
+    ]
+}

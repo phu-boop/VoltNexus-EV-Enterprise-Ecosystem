@@ -1,0 +1,97 @@
+name: CI/CD End-to-End Pipeline
+
+on:
+    push:
+        branches: ["main", "dev"]
+    pull_request:
+        branches: ["main"]
+
+jobs:
+    build-deploy-test:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout Code
+              uses: actions/checkout@v3
+
+            - name: Setup Java JDK
+              uses: actions/setup-java@v3
+              with:
+                  java-version: "17"
+                  distribution: "temurin"
+                  cache: maven
+
+            - name: Build Common-Lib
+              run: |
+                  if [ -d "common-lib" ]; then
+                    cd common-lib && mvn clean install -DskipTests && cd ..
+                  fi
+
+            - name: Setup Minikube
+              uses: medyagh/setup-minikube@latest
+
+            - name: Build Docker Images inside Minikube
+              run: |
+                  # Lệnh này giúp build image trực tiếp vào Docker daemon của Minikube
+                  # Không cần push lên Registry (tránh overhead thời gian/băng thông)
+                  eval $(minikube docker-env)
+
+                  docker build -t my-gateway:latest -f gateway/Dockerfile .
+                  docker build -t my-user-service:latest -f services/user-service/Dockerfile .
+                  docker build -t my-customer-service:latest -f services/customer-service/Dockerfile .
+                  docker build -t my-dealer-service:latest -f services/dealer-service/Dockerfile .
+                  docker build -t my-inventory-service:latest -f services/inventory-service/Dockerfile .
+                  docker build -t my-payment-service:latest -f services/payment-service/Dockerfile .
+                  docker build -t my-sales-service:latest -f services/sales-service/Dockerfile .
+                  docker build -t my-vehicle-service:latest -f services/vehicle-service/Dockerfile .
+                  docker build -t my-reporting-service:latest -f services/reporting-service/Dockerfile .
+                  docker build -t my-ai-service:latest -f services/ai-service/Dockerfile .
+
+            - name: Apply Kubernetes Manifests
+              run: |
+                  kubectl apply -f k8s/namespace.yaml
+                  kubectl apply -f k8s/configmap.yaml
+                  kubectl apply -f k8s/infrastructure/data-plane.yaml
+                  kubectl apply -f k8s/services/backend.yaml
+
+            - name: Wait for System to be Ready
+              run: |
+                  echo "Waiting for Gateway to be ready..."
+                  kubectl wait --for=condition=available --timeout=400s deployment/gateway -n voltnexus || true
+                  kubectl wait --for=condition=available --timeout=100s deployment/user-service -n voltnexus || true
+
+                  echo "Listing all pods for debugging:"
+                  kubectl get pods -n voltnexus
+
+            - name: Expose API Gateway
+              run: |
+                  # Port-forward để runner có thể gọi `localhost:8080` ở step sau
+                  kubectl port-forward svc/gateway 8080:8080 -n voltnexus &
+                  sleep 10 # Đợi port-forward khởi chạy
+
+            - name: Run Postman Tests (Newman)
+              id: run_tests
+              run: |
+                  chmod +x scripts/run-postman-tests.sh
+                  ./scripts/run-postman-tests.sh
+
+            - name: Upload Test Reports
+              if: always()
+              uses: actions/upload-artifact@v3
+              with:
+                  name: postman-automated-test-reports
+                  path: newman-reports/
+
+            - name: Create Jira Bug on Failure
+              if: failure() && steps.run_tests.outcome == 'failure'
+              uses: atlassian/gajira-create@v3
+              env:
+                  JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
+                  JIRA_USER_EMAIL: ${{ secrets.JIRA_USER_EMAIL }}
+                  JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+              with:
+                  project: ${{ secrets.JIRA_PROJECT_KEY }}
+                  issuetype: Bug
+                  summary: "Automated API Test Failure in CI/CD"
+                  description: |
+                      The Postman Automated Newman tests failed during the GitHub Actions CI/CD pipeline run.
+                      Please check the uploaded HTML report artifact in the GitHub Action run logs for detailed failed assertions.
