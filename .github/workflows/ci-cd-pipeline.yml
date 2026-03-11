@@ -50,16 +50,24 @@ jobs:
           # Tăng timeout vì Java khởi động rất chậm trong Minikube
           kubectl wait --for=condition=available --timeout=600s deployment/gateway -n voltnexus
 
-      - name: Run Newman Tests
-        id: run_tests
+      - name: Install Postman CLI
         run: |
-          # Chạy port-forward và Newman trong cùng 1 khối để không bị mất kết nối
+          curl -o- "https://dl-cli.pstmn.io/install/linux64.sh" | sh
+
+      - name: Login to Postman CLI & Run Tests
+        env:
+          POSTMAN_API_KEY: ${{ secrets.POSTMAN_API_KEY }}
+        run: |
+          # Chạy port-forward cho Gateway để Postman Test kết nối được
           kubectl port-forward svc/gateway 8080:8080 -n voltnexus & 
           PID=$!
           sleep 15 # Đợi port-forward ổn định
 
-          chmod +x scripts/run-postman-tests.sh
-          ./scripts/run-postman-tests.sh
+          echo "Logging into Postman CLI..."
+          postman login --with-api-key $POSTMAN_API_KEY
+
+          echo "Running API tests..."
+          postman collection run "39781229-f0d8b669-c581-47d9-a1a1-93e727adcceb" -e "39781229-7aeac6e0-37d5-4086-9958-1cb4bb544661"
 
           kill $PID # Tắt port-forward sau khi test xong
 
