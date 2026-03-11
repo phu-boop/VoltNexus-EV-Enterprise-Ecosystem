@@ -41,24 +41,99 @@ jobs:
           docker build -t my-user-service:latest -f services/user-service/Dockerfile .
           # Thêm các lệnh build khác ở đây...
 
-      - name: Apply K8s & Wait
+      - name: Apply K8s Base Infrastructure
         run: |
-          kubectl apply -f k8s/
+          kubectl apply -f k8s/namespace.yaml
+          kubectl apply -f k8s/configmap.yaml
+          kubectl apply -f k8s/infrastructure/
+
+      - name: Inject K8s Secrets from GitHub Secrets
+        env:
+          ENV_GATEWAY: ${{ secrets.ENV_GATEWAY }}
+          ENV_USER_SERVICE: ${{ secrets.ENV_USER_SERVICE }}
+          ENV_CUSTOMER_SERVICE: ${{ secrets.ENV_CUSTOMER_SERVICE }}
+          ENV_DEALER_SERVICE: ${{ secrets.ENV_DEALER_SERVICE }}
+          ENV_INVENTORY_SERVICE: ${{ secrets.ENV_INVENTORY_SERVICE }}
+          ENV_PAYMENT_SERVICE: ${{ secrets.ENV_PAYMENT_SERVICE }}
+          ENV_SALES_SERVICE: ${{ secrets.ENV_SALES_SERVICE }}
+          ENV_VEHICLE_SERVICE: ${{ secrets.ENV_VEHICLE_SERVICE }}
+          ENV_REPORTING_SERVICE: ${{ secrets.ENV_REPORTING_SERVICE }}
+          ENV_AI_SERVICE: ${{ secrets.ENV_AI_SERVICE }}
+        run: |
+          create_secret() {
+            local svc=$1
+            local content=$2
+            if [ -n "$content" ]; then
+              echo "$content" > temp.env
+              kubectl create secret generic ${svc}-secret --from-env-file=temp.env -n voltnexus
+              rm temp.env
+            else
+              echo "WARNING: Secret for $svc is missing in GitHub Secrets!"
+              kubectl create secret generic ${svc}-secret -n voltnexus || true
+            fi
+          }
+          create_secret "gateway" "$ENV_GATEWAY"
+          create_secret "user-service" "$ENV_USER_SERVICE"
+          create_secret "customer-service" "$ENV_CUSTOMER_SERVICE"
+          create_secret "dealer-service" "$ENV_DEALER_SERVICE"
+          create_secret "inventory-service" "$ENV_INVENTORY_SERVICE"
+          create_secret "payment-service" "$ENV_PAYMENT_SERVICE"
+          create_secret "sales-service" "$ENV_SALES_SERVICE"
+          create_secret "vehicle-service" "$ENV_VEHICLE_SERVICE"
+          create_secret "reporting-service" "$ENV_REPORTING_SERVICE"
+          create_secret "ai-service" "$ENV_AI_SERVICE"
+
+      - name: Deploy Backend & Wait
+        run: |
+          kubectl apply -f k8s/services/
           # Tăng timeout vì Java khởi động rất chậm trong Minikube
           kubectl wait --for=condition=available --timeout=600s deployment/gateway -n voltnexus
 
-      - name: Run Newman Tests
-        id: run_tests
+      - name: Install Postman CLI
         run: |
-          # Chạy port-forward và Newman trong cùng 1 khối để không bị mất kết nối
-          kubectl port-forward svc/gateway 8080:8080 -n voltnexus & 
+          curl -o- "https://dl-cli.pstmn.io/install/linux64.sh" | sh
+
+      - name: Login to Postman CLI & Run Tests
+        env:
+          POSTMAN_API_KEY: ${{ secrets.POSTMAN_API_KEY }}
+        run: |
+          # Chạy port-forward vào nền và ghi log
+          nohup kubectl port-forward svc/gateway 8080:8080 -n voltnexus > pf.log 2>&1 & 
           PID=$!
-          sleep 15 # Đợi port-forward ổn định
 
-          chmod +x scripts/run-postman-tests.sh
-          ./scripts/run-postman-tests.sh
+          echo "Waiting for Gateway Spring Boot to fully start (max 5 minutes)..."
+          for i in {1..30}; do
+            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/ || true)
+            if [ "$HTTP_CODE" != "000" ] && [ -n "$HTTP_CODE" ]; then
+              echo "Gateway is strictly UP and LISTENING (HTTP $HTTP_CODE)!"
+              break
+            fi
+            echo "Waiting... ($i/30)"
+            
+            if [ $i -eq 30 ]; then
+              echo "CRITICAL: Timeout waiting for gateway to start!"
+              echo "--- GATEWAY POD LOGS ---"
+              kubectl logs deployment/gateway -n voltnexus --tail 100 || true
+              echo "--- PORT-FORWARD LOGS ---"
+              cat pf.log || true
+              exit 1
+            fi
+            
+            sleep 10
+            # Restart if port-forward process died
+            if ! kill -0 $PID 2>/dev/null; then
+               nohup kubectl port-forward svc/gateway 8080:8080 -n voltnexus > pf.log 2>&1 &
+               PID=$!
+            fi
+          done
 
-          kill $PID # Tắt port-forward sau khi test xong
+          echo "Logging into Postman CLI..."
+          postman login --with-api-key $POSTMAN_API_KEY
+
+          echo "Running API tests..."
+          postman collection run "39781229-f0d8b669-c581-47d9-a1a1-93e727adcceb" -e "39781229-7aeac6e0-37d5-4086-9958-1cb4bb544661"
+
+          kill $PID || true
 
       - name: Jira Login
         if: failure()
