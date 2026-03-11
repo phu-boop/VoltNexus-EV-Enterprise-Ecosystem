@@ -41,11 +41,50 @@ jobs:
           docker build -t my-user-service:latest -f services/user-service/Dockerfile .
           # Thêm các lệnh build khác ở đây...
 
-      - name: Apply K8s & Wait
+      - name: Apply K8s Base Infrastructure
         run: |
           kubectl apply -f k8s/namespace.yaml
           kubectl apply -f k8s/configmap.yaml
           kubectl apply -f k8s/infrastructure/
+
+      - name: Inject K8s Secrets from GitHub Secrets
+        env:
+          ENV_GATEWAY: ${{ secrets.ENV_GATEWAY }}
+          ENV_USER_SERVICE: ${{ secrets.ENV_USER_SERVICE }}
+          ENV_CUSTOMER_SERVICE: ${{ secrets.ENV_CUSTOMER_SERVICE }}
+          ENV_DEALER_SERVICE: ${{ secrets.ENV_DEALER_SERVICE }}
+          ENV_INVENTORY_SERVICE: ${{ secrets.ENV_INVENTORY_SERVICE }}
+          ENV_PAYMENT_SERVICE: ${{ secrets.ENV_PAYMENT_SERVICE }}
+          ENV_SALES_SERVICE: ${{ secrets.ENV_SALES_SERVICE }}
+          ENV_VEHICLE_SERVICE: ${{ secrets.ENV_VEHICLE_SERVICE }}
+          ENV_REPORTING_SERVICE: ${{ secrets.ENV_REPORTING_SERVICE }}
+          ENV_AI_SERVICE: ${{ secrets.ENV_AI_SERVICE }}
+        run: |
+          create_secret() {
+            local svc=$1
+            local content=$2
+            if [ -n "$content" ]; then
+              echo "$content" > temp.env
+              kubectl create secret generic ${svc}-secret --from-env-file=temp.env -n voltnexus
+              rm temp.env
+            else
+              echo "WARNING: Secret for $svc is missing in GitHub Secrets!"
+              kubectl create secret generic ${svc}-secret -n voltnexus || true
+            fi
+          }
+          create_secret "gateway" "$ENV_GATEWAY"
+          create_secret "user-service" "$ENV_USER_SERVICE"
+          create_secret "customer-service" "$ENV_CUSTOMER_SERVICE"
+          create_secret "dealer-service" "$ENV_DEALER_SERVICE"
+          create_secret "inventory-service" "$ENV_INVENTORY_SERVICE"
+          create_secret "payment-service" "$ENV_PAYMENT_SERVICE"
+          create_secret "sales-service" "$ENV_SALES_SERVICE"
+          create_secret "vehicle-service" "$ENV_VEHICLE_SERVICE"
+          create_secret "reporting-service" "$ENV_REPORTING_SERVICE"
+          create_secret "ai-service" "$ENV_AI_SERVICE"
+
+      - name: Deploy Backend & Wait
+        run: |
           kubectl apply -f k8s/services/
           # Tăng timeout vì Java khởi động rất chậm trong Minikube
           kubectl wait --for=condition=available --timeout=600s deployment/gateway -n voltnexus
