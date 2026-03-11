@@ -2,77 +2,77 @@ name: CI/CD End-to-End Pipeline
 
 on:
   push:
-    branches: 
-      - main        # Chạy khi merge release/hotfix vào main (Deploy Production)
-      - develop     # Chạy khi merge feature vào develop (Deploy Staging/Dev)
+    branches:
+      - main # Chạy khi merge release/hotfix vào main (Deploy Production)
+      - develop # Chạy khi merge feature vào develop (Deploy Staging/Dev)
   pull_request:
-    branches: 
-      - develop     # Test code trước khi cho phép gộp vào develop
-      - main        # Kiểm tra kỹ lần cuối trước khi đưa lên bản chính thức
+    branches:
+      - develop # Test code trước khi cho phép gộp vào develop
+      - main # Kiểm tra kỹ lần cuối trước khi đưa lên bản chính thức
 
 jobs:
-    build-deploy-test:
-        runs-on: ubuntu-latest
-        steps:
-            - name: Checkout Code
-              uses: actions/checkout@v3
+  build-deploy-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
 
-            - name: Setup Java JDK
-              uses: actions/setup-java@v3
-              with:
-                  java-version: "17"
-                  distribution: "temurin"
-                  cache: maven
+      - name: Setup Java JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: "17"
+          distribution: "temurin"
+          cache: maven
 
-            - name: Build Common-Lib
-              run: |
-                  if [ -d "common-lib" ]; then
-                    cd common-lib && mvn clean install -DskipTests && cd ..
-                  fi
+      - name: Build Common-Lib
+        run: |
+          if [ -d "common-lib" ]; then
+            cd common-lib && mvn clean install -DskipTests && cd ..
+          fi
 
-            - name: Setup Minikube
-              uses: medyagh/setup-minikube@latest
+      - name: Setup Minikube
+        uses: medyagh/setup-minikube@latest
 
-            - name: Build Docker Images (Optimized)
-              run: |
-                eval $(minikube docker-env)
-                # Chỉ build ví dụ 2 cái để demo, nếu build 10 cái cần máy mạnh hơn
-                docker build -t my-gateway:latest -f gateway/Dockerfile .
-                docker build -t my-user-service:latest -f services/user-service/Dockerfile .
-                # Thêm các lệnh build khác ở đây...
+      - name: Build Docker Images (Optimized)
+        run: |
+          eval $(minikube docker-env)
+          # Chỉ build ví dụ 2 cái để demo, nếu build 10 cái cần máy mạnh hơn
+          docker build -t my-gateway:latest -f gateway/Dockerfile .
+          docker build -t my-user-service:latest -f services/user-service/Dockerfile .
+          # Thêm các lệnh build khác ở đây...
 
-            - name: Apply K8s & Wait
-              run: |
-                kubectl apply -f k8s/
-                # Tăng timeout vì Java khởi động rất chậm trong Minikube
-                kubectl wait --for=condition=available --timeout=600s deployment/gateway -n voltnexus
+      - name: Apply K8s & Wait
+        run: |
+          kubectl apply -f k8s/
+          # Tăng timeout vì Java khởi động rất chậm trong Minikube
+          kubectl wait --for=condition=available --timeout=600s deployment/gateway -n voltnexus
 
-            - name: Run Newman Tests
-              id: run_tests
-              run: |
-                # Chạy port-forward và Newman trong cùng 1 khối để không bị mất kết nối
-                kubectl port-forward svc/gateway 8080:8080 -n voltnexus & 
-                PID=$!
-                sleep 15 # Đợi port-forward ổn định
-                
-                chmod +x scripts/run-postman-tests.sh
-                ./scripts/run-postman-tests.sh
-                
-                kill $PID # Tắt port-forward sau khi test xong
+      - name: Run Newman Tests
+        id: run_tests
+        run: |
+          # Chạy port-forward và Newman trong cùng 1 khối để không bị mất kết nối
+          kubectl port-forward svc/gateway 8080:8080 -n voltnexus & 
+          PID=$!
+          sleep 15 # Đợi port-forward ổn định
 
-            - name: Jira Login
-              if: failure()
-              uses: atlassian/gajira-login@v3
-              env:
-                JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
-                JIRA_USER_EMAIL: ${{ secrets.JIRA_USER_EMAIL }}
-                JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+          chmod +x scripts/run-postman-tests.sh
+          ./scripts/run-postman-tests.sh
 
-            - name: Create Jira Bug on Failure
-              if: failure()
-              uses: atlassian/gajira-create@v3
-              with:
-                project: ${{ secrets.JIRA_PROJECT_KEY }}
-                issuetype: Bug
-                summary: "Automated API Test Failure"
-                description: "Check GitHub Artifacts for HTML Report."
+          kill $PID # Tắt port-forward sau khi test xong
+
+      - name: Jira Login
+        if: failure()
+        uses: atlassian/gajira-login@v3
+        env:
+          JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
+          JIRA_USER_EMAIL: ${{ secrets.JIRA_USER_EMAIL }}
+          JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+
+      - name: Create Jira Bug on Failure
+        if: failure()
+        uses: atlassian/gajira-create@v3
+        with:
+          project: ${{ secrets.JIRA_PROJECT_KEY }}
+          issuetype: Bug
+          summary: "Automated API Test Failure"
+          description: "Check GitHub Artifacts for HTML Report."
