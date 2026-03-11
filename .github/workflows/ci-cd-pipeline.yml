@@ -58,10 +58,26 @@ jobs:
         env:
           POSTMAN_API_KEY: ${{ secrets.POSTMAN_API_KEY }}
         run: |
-          # Chạy port-forward cho Gateway để Postman Test kết nối được
-          kubectl port-forward svc/gateway 8080:8080 -n voltnexus & 
+          # Chạy port-forward vào nền và ghi log
+          nohup kubectl port-forward svc/gateway 8080:8080 -n voltnexus > pf.log 2>&1 & 
           PID=$!
-          sleep 15 # Đợi port-forward ổn định
+
+          echo "Waiting for Gateway Spring Boot to fully start (max 5 minutes)..."
+          for i in {1..30}; do
+            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/ || true)
+            if [ "$HTTP_CODE" != "000" ] && [ -n "$HTTP_CODE" ]; then
+              echo "Gateway is strictly UP and LISTENING (HTTP $HTTP_CODE)!"
+              break
+            fi
+            echo "Waiting... ($i/30)"
+            sleep 10
+            
+            # Restart if port-forward process died
+            if ! kill -0 $PID 2>/dev/null; then
+               nohup kubectl port-forward svc/gateway 8080:8080 -n voltnexus > pf.log 2>&1 &
+               PID=$!
+            fi
+          done
 
           echo "Logging into Postman CLI..."
           postman login --with-api-key $POSTMAN_API_KEY
@@ -69,7 +85,7 @@ jobs:
           echo "Running API tests..."
           postman collection run "39781229-f0d8b669-c581-47d9-a1a1-93e727adcceb" -e "39781229-7aeac6e0-37d5-4086-9958-1cb4bb544661"
 
-          kill $PID # Tắt port-forward sau khi test xong
+          kill $PID || true
 
       - name: Jira Login
         if: failure()
