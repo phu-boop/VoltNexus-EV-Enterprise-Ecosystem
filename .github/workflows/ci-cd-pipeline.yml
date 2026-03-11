@@ -44,7 +44,9 @@ jobs:
       - name: Apply K8s & Wait
         run: |
           kubectl apply -f k8s/namespace.yaml
-          kubectl apply -f k8s/
+          kubectl apply -f k8s/configmap.yaml
+          kubectl apply -f k8s/infrastructure/
+          kubectl apply -f k8s/services/
           # Tăng timeout vì Java khởi động rất chậm trong Minikube
           kubectl wait --for=condition=available --timeout=600s deployment/gateway -n voltnexus
 
