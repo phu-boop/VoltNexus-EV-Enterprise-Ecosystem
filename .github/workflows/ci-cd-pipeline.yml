@@ -135,19 +135,22 @@ jobs:
 
           kill $PID || true
 
-      - name: Jira Login
-        if: failure()
-        uses: atlassian/gajira-login@v3
-        env:
-          JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
-          JIRA_USER_EMAIL: ${{ secrets.JIRA_USER_EMAIL }}
-          JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
 
-      - name: Create Jira Bug on Failure
-        if: failure()
-        uses: atlassian/gajira-create@v3
-        with:
-          project: ${{ secrets.JIRA_PROJECT_KEY }}
-          issuetype: Bug
-          summary: "Automated API Test Failure"
-          description: "Check GitHub Artifacts for HTML Report."
+      # config jira in workspace postman
+      # delete this step
+      # - name: Jira Login
+      #   if: failure()
+      #   uses: atlassian/gajira-login@v3
+      #   env:
+      #     JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
+      #     JIRA_USER_EMAIL: ${{ secrets.JIRA_USER_EMAIL }}
+      #     JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+
+      # - name: Create Jira Bug on Failure
+      #   if: failure()
+      #   uses: atlassian/gajira-create@v3
+      #   with:
+      #     project: ${{ secrets.JIRA_PROJECT_KEY }}
+      #     issuetype: Bug
+      #     summary: "Automated API Test Failure"
+      #     description: "Check GitHub Artifacts for HTML Report."
