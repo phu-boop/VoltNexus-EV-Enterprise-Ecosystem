@@ -33,13 +33,19 @@ jobs:
       - name: Setup Minikube
         uses: medyagh/setup-minikube@latest
 
-      - name: Build Docker Images (Optimized)
+      - name: Build Docker Images (All Services)
         run: |
           eval $(minikube docker-env)
-          # Chỉ build ví dụ 2 cái để demo, nếu build 10 cái cần máy mạnh hơn
           docker build -t my-gateway:latest -f gateway/Dockerfile .
           docker build -t my-user-service:latest -f services/user-service/Dockerfile .
-          # Thêm các lệnh build khác ở đây...
+          docker build -t my-customer-service:latest -f services/customer-service/Dockerfile .
+          docker build -t my-dealer-service:latest -f services/dealer-service/Dockerfile .
+          docker build -t my-inventory-service:latest -f services/inventory-service/Dockerfile .
+          docker build -t my-payment-service:latest -f services/payment-service/Dockerfile .
+          docker build -t my-sales-service:latest -f services/sales-service/Dockerfile .
+          docker build -t my-vehicle-service:latest -f services/vehicle-service/Dockerfile .
+          docker build -t my-reporting-service:latest -f services/reporting-service/Dockerfile .
+          docker build -t my-ai-service:latest -f services/ai-service/Dockerfile .
 
       - name: Apply K8s Base Infrastructure
         run: |
@@ -134,7 +140,6 @@ jobs:
           postman collection run "39781229-f0d8b669-c581-47d9-a1a1-93e727adcceb" -e "39781229-7aeac6e0-37d5-4086-9958-1cb4bb544661"
 
           kill $PID || true
-
 
       # config jira in workspace postman
       # delete this step
