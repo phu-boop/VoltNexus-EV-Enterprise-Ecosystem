@@ -95,6 +95,8 @@ jobs:
           kubectl wait --for=condition=available --timeout=600s deployment/gateway -n voltnexus || true
           echo "Waiting for user-service pods to be ready..."
           kubectl wait --for=condition=ready pod -l app=user-service -n voltnexus --timeout=300s || true
+          echo "Sleeping for 60 seconds to allow Eureka Service Discovery to resolve routes in Gateway..."
+          sleep 60
 
       - name: Install Postman CLI
         run: |
@@ -161,8 +163,12 @@ jobs:
           }
           EOF
 
-          HTTP_STATUS=$(curl -s -L -o response.json -w "%{http_code}" -X POST \
-            --url "${JIRA_BASE_URL}/rest/api/2/issue" \
+          # Strip any trailing slashes from JIRA_BASE_URL
+          CLEAN_JIRA_URL=$(echo "${JIRA_BASE_URL}" | sed 's:\/*$::')
+
+          # Removed -L to prevent CloudFront 403 on redirects dropping the POST method
+          HTTP_STATUS=$(curl -s -o response.json -w "%{http_code}" -X POST \
+            --url "${CLEAN_JIRA_URL}/rest/api/2/issue" \
             --user "${JIRA_USER_EMAIL}:${JIRA_API_TOKEN}" \
             --header "Accept: application/json" \
             --header "Content-Type: application/json" \
