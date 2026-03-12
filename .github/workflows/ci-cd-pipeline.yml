@@ -38,14 +38,7 @@ jobs:
           eval $(minikube docker-env)
           docker build -t my-gateway:latest -f gateway/Dockerfile .
           docker build -t my-user-service:latest -f services/user-service/Dockerfile .
-          docker build -t my-customer-service:latest -f services/customer-service/Dockerfile .
-          docker build -t my-dealer-service:latest -f services/dealer-service/Dockerfile .
-          docker build -t my-inventory-service:latest -f services/inventory-service/Dockerfile .
-          docker build -t my-payment-service:latest -f services/payment-service/Dockerfile .
-          docker build -t my-sales-service:latest -f services/sales-service/Dockerfile .
           docker build -t my-vehicle-service:latest -f services/vehicle-service/Dockerfile .
-          docker build -t my-reporting-service:latest -f services/reporting-service/Dockerfile .
-          docker build -t my-ai-service:latest -f services/ai-service/Dockerfile .
 
       - name: Apply K8s Base Infrastructure
         run: |
@@ -97,6 +90,11 @@ jobs:
           kubectl wait --for=condition=ready pod -l app=user-service -n voltnexus --timeout=300s || true
           echo "Sleeping for 60 seconds to allow Eureka Service Discovery to resolve routes in Gateway..."
           sleep 60
+
+      - name: Debug User Service Logs
+        run: |
+          echo "==== USER SERVICE LOGS ===="
+          kubectl logs -l app=user-service -n voltnexus --tail 200 || true
 
       - name: Install Postman CLI
         run: |
