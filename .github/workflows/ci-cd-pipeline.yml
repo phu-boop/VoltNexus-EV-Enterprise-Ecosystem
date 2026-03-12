@@ -93,6 +93,8 @@ jobs:
         run: |
           kubectl apply -f k8s/services/
           kubectl wait --for=condition=available --timeout=600s deployment/gateway -n voltnexus || true
+          echo "Waiting for user-service pods to be ready..."
+          kubectl wait --for=condition=ready pod -l app=user-service -n voltnexus --timeout=300s || true
 
       - name: Install Postman CLI
         run: |
@@ -107,8 +109,8 @@ jobs:
 
           echo "Waiting for Gateway Spring Boot to fully start (max 5 minutes)..."
           for i in {1..30}; do
-            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/ || true)
-            if [ "$HTTP_CODE" != "000" ] && [ -n "$HTTP_CODE" ]; then
+            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/actuator/health || true)
+            if [ "$HTTP_CODE" = "200" ]; then
               echo "Gateway is strictly UP and LISTENING (HTTP $HTTP_CODE)!"
               break
             fi
@@ -159,7 +161,7 @@ jobs:
           }
           EOF
 
-          HTTP_STATUS=$(curl -s -o response.json -w "%{http_code}" -X POST \
+          HTTP_STATUS=$(curl -s -L -o response.json -w "%{http_code}" -X POST \
             --url "${JIRA_BASE_URL}/rest/api/2/issue" \
             --user "${JIRA_USER_EMAIL}:${JIRA_API_TOKEN}" \
             --header "Accept: application/json" \
@@ -171,6 +173,7 @@ jobs:
 
           if [ "$HTTP_STATUS" != "201" ]; then
             echo "Failed to create Jira issue! See response above."
+            echo "🚨 TIP: Ensure your JIRA_BASE_URL secret is exactly 'https://yourcompany.atlassian.net' without '/jira' or trailing slashes."
             exit 1
           fi
 
