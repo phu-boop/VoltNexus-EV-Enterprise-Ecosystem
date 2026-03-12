@@ -91,10 +91,19 @@ jobs:
           echo "Sleeping for 60 seconds to allow Eureka Service Discovery to resolve routes in Gateway..."
           sleep 60
 
-      - name: Debug User Service Logs
+      - name: Debug User Service Logs (Enhanced)
         run: |
-          echo "==== USER SERVICE LOGS ===="
-          kubectl logs -l app=user-service -n voltnexus --tail 200 || true
+          echo "==== USER SERVICE POD STATUS ===="
+          kubectl get pods -n voltnexus -l app=user-service
+
+          echo "==== USER SERVICE FULL LOGS ===="
+          kubectl logs -l app=user-service -n voltnexus --tail 500 || true
+
+          echo "==== POD DESCRIBE ===="
+          kubectl describe pod -l app=user-service -n voltnexus || true
+
+          echo "==== ENVIRONMENT CHECK ===="
+          kubectl exec -n voltnexus -l app=user-service -- env | grep -i database || echo "No database env vars found"
 
       - name: Install Postman CLI
         run: |
