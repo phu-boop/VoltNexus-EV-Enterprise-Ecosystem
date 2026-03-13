@@ -142,15 +142,25 @@ jobs:
                nohup kubectl port-forward svc/gateway 8080:8080 -n voltnexus > pf.log 2>&1 &
                PID=$!
             fi
-          done
+          echo "Installing Newman and htmlextra reporter..."
+          npm install -g newman newman-reporter-htmlextra
 
-          echo "Logging into Postman CLI..."
-          postman login --with-api-key $POSTMAN_API_KEY
-
-          echo "Running API tests..."
-          postman collection run "39781229-f0d8b669-c581-47d9-a1a1-93e727adcceb" -e "39781229-7aeac6e0-37d5-4086-9958-1cb4bb544661"
+          echo "Running API tests with Newman..."
+          # We use the collection and environment IDs/links. Newman can also run via public link or downloaded file.
+          # For security and consistency, if it's already logged in, we keep using the IDs.
+          newman run "https://api.getpostman.com/collections/39781229-f0d8b669-c581-47d9-a1a1-93e727adcceb?apikey=$POSTMAN_API_KEY" \
+            -e "https://api.getpostman.com/environments/39781229-7aeac6e0-37d5-4086-9958-1cb4bb544661?apikey=$POSTMAN_API_KEY" \
+            --reporters cli,htmlextra \
+            --reporter-htmlextra-export newman/report.html
 
           kill $PID || true
+
+      - name: Upload Test Report Artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: postman-test-report
+          path: newman/report.html
 
       - name: Create Jira Bug via REST API
         if: failure()
