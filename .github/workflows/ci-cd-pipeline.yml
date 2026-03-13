@@ -142,6 +142,8 @@ jobs:
                nohup kubectl port-forward svc/gateway 8080:8080 -n voltnexus > pf.log 2>&1 &
                PID=$!
             fi
+          done
+
           echo "Installing Newman and htmlextra reporter..."
           npm install -g newman newman-reporter-htmlextra
 
