@@ -33,6 +33,13 @@ jobs:
       - name: Setup Minikube
         uses: medyagh/setup-minikube@latest
 
+      - name: Inject Firebase Config
+        env:
+          FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
+        run: |
+          mkdir -p services/user-service/src/main/resources
+          echo "$FIREBASE_SERVICE_ACCOUNT_JSON" > services/user-service/src/main/resources/firebase-service-account.json
+
       - name: Build Docker Images (All Services)
         run: |
           eval $(minikube docker-env)
