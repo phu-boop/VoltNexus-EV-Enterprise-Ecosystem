@@ -3,12 +3,12 @@ name: CI/CD End-to-End Pipeline
 on:
   push:
     branches:
-      - main # Chạy khi merge release/hotfix vào main (Deploy Production)
-      - develop # Chạy khi merge feature vào develop (Deploy Staging/Dev)
+      - main
+      - develop
   pull_request:
     branches:
-      - develop # Test code trước khi cho phép gộp vào develop
-      - main # Kiểm tra kỹ lần cuối trước khi đưa lên bản chính thức
+      - develop
+      - main
 
 jobs:
   build-deploy-test:
@@ -33,13 +33,19 @@ jobs:
       - name: Setup Minikube
         uses: medyagh/setup-minikube@latest
 
-      - name: Build Docker Images (Optimized)
+      - name: Inject Firebase Config
+        env:
+          FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
+        run: |
+          mkdir -p services/user-service/src/main/resources
+          echo "$FIREBASE_SERVICE_ACCOUNT_JSON" > services/user-service/src/main/resources/firebase-service-account.json
+
+      - name: Build Docker Images (All Services)
         run: |
           eval $(minikube docker-env)
-          # Chỉ build ví dụ 2 cái để demo, nếu build 10 cái cần máy mạnh hơn
           docker build -t my-gateway:latest -f gateway/Dockerfile .
           docker build -t my-user-service:latest -f services/user-service/Dockerfile .
-          # Thêm các lệnh build khác ở đây...
+          docker build -t my-vehicle-service:latest -f services/vehicle-service/Dockerfile .
 
       - name: Apply K8s Base Infrastructure
         run: |
@@ -62,7 +68,7 @@ jobs:
         run: |
           create_secret() {
             local svc=$1
-            local content=$2
+            local content="$2"
             if [ -n "$content" ]; then
               echo "$content" > temp.env
               kubectl create secret generic ${svc}-secret --from-env-file=temp.env -n voltnexus
@@ -86,8 +92,25 @@ jobs:
       - name: Deploy Backend & Wait
         run: |
           kubectl apply -f k8s/services/
-          # Tăng timeout vì Java khởi động rất chậm trong Minikube
-          kubectl wait --for=condition=available --timeout=600s deployment/gateway -n voltnexus
+          kubectl wait --for=condition=available --timeout=600s deployment/gateway -n voltnexus || true
+          echo "Waiting for user-service pods to be ready..."
+          kubectl wait --for=condition=ready pod -l app=user-service -n voltnexus --timeout=300s || true
+          echo "Sleeping for 60 seconds to allow Eureka Service Discovery to resolve routes in Gateway..."
+          sleep 60
+
+      - name: Debug User Service Logs (Enhanced)
+        run: |
+          echo "==== USER SERVICE POD STATUS ===="
+          kubectl get pods -n voltnexus -l app=user-service
+
+          echo "==== USER SERVICE FULL LOGS ===="
+          kubectl logs -l app=user-service -n voltnexus --tail 500 || true
+
+          echo "==== POD DESCRIBE ===="
+          kubectl describe pod -l app=user-service -n voltnexus || true
+
+          echo "==== ENVIRONMENT CHECK ===="
+          kubectl exec -n voltnexus -l app=user-service -- env | grep -i database || echo "No database env vars found"
 
       - name: Install Postman CLI
         run: |
@@ -97,14 +120,13 @@ jobs:
         env:
           POSTMAN_API_KEY: ${{ secrets.POSTMAN_API_KEY }}
         run: |
-          # Chạy port-forward vào nền và ghi log
-          nohup kubectl port-forward svc/gateway 8080:8080 -n voltnexus > pf.log 2>&1 & 
+          nohup kubectl port-forward svc/gateway 8080:8080 -n voltnexus > pf.log 2>&1 &
           PID=$!
 
           echo "Waiting for Gateway Spring Boot to fully start (max 5 minutes)..."
           for i in {1..30}; do
-            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/ || true)
-            if [ "$HTTP_CODE" != "000" ] && [ -n "$HTTP_CODE" ]; then
+            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/actuator/health || true)
+            if [ "$HTTP_CODE" = "200" ]; then
               echo "Gateway is strictly UP and LISTENING (HTTP $HTTP_CODE)!"
               break
             fi
@@ -112,42 +134,80 @@ jobs:
             
             if [ $i -eq 30 ]; then
               echo "CRITICAL: Timeout waiting for gateway to start!"
-              echo "--- GATEWAY POD LOGS ---"
               kubectl logs deployment/gateway -n voltnexus --tail 100 || true
-              echo "--- PORT-FORWARD LOGS ---"
-              cat pf.log || true
               exit 1
             fi
-            
             sleep 10
-            # Restart if port-forward process died
             if ! kill -0 $PID 2>/dev/null; then
                nohup kubectl port-forward svc/gateway 8080:8080 -n voltnexus > pf.log 2>&1 &
                PID=$!
             fi
           done
 
-          echo "Logging into Postman CLI..."
-          postman login --with-api-key $POSTMAN_API_KEY
+          echo "Installing Newman and htmlextra reporter..."
+          npm install -g newman newman-reporter-htmlextra
 
-          echo "Running API tests..."
-          postman collection run "39781229-f0d8b669-c581-47d9-a1a1-93e727adcceb" -e "39781229-7aeac6e0-37d5-4086-9958-1cb4bb544661"
+          echo "Running API tests with Newman..."
+          # We use the collection and environment IDs/links. Newman can also run via public link or downloaded file.
+          # For security and consistency, if it's already logged in, we keep using the IDs.
+          newman run "https://api.getpostman.com/collections/39781229-f0d8b669-c581-47d9-a1a1-93e727adcceb?apikey=$POSTMAN_API_KEY" \
+            -e "https://api.getpostman.com/environments/39781229-7aeac6e0-37d5-4086-9958-1cb4bb544661?apikey=$POSTMAN_API_KEY" \
+            --reporters cli,htmlextra \
+            --reporter-htmlextra-export newman/report.html
 
           kill $PID || true
 
-      - name: Jira Login
+      - name: Upload Test Report Artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: postman-test-report
+          path: newman/report.html
+
+      - name: Create Jira Bug via REST API
         if: failure()
-        uses: atlassian/gajira-login@v3
         env:
           JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
           JIRA_USER_EMAIL: ${{ secrets.JIRA_USER_EMAIL }}
           JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+          JIRA_PROJECT_KEY: ${{ secrets.JIRA_PROJECT_KEY }}
+        run: |
+          echo "Test failed! Creating a Jira bug directly via REST API..."
 
-      - name: Create Jira Bug on Failure
-        if: failure()
-        uses: atlassian/gajira-create@v3
-        with:
-          project: ${{ secrets.JIRA_PROJECT_KEY }}
-          issuetype: Bug
-          summary: "Automated API Test Failure"
-          description: "Check GitHub Artifacts for HTML Report."
+          cat <<EOF > jira-payload.json
+          {
+            "fields": {
+              "project": {
+                "key": "$JIRA_PROJECT_KEY"
+              },
+              "summary": "Automated API Test Failure in CI/CD Pipeline",
+              "description": "🚨 The Postman automated API tests have failed.\n\nPlease check the GitHub Actions run logs and the Postman Cloud Dashboard for details.",
+              "issuetype": {
+                "name": "Bug"
+              }
+            }
+          }
+          EOF
+
+          # Strip any trailing slashes from JIRA_BASE_URL
+          CLEAN_JIRA_URL=$(echo "${JIRA_BASE_URL}" | sed 's:\/*$::')
+
+          # Removed -L to prevent CloudFront 403 on redirects dropping the POST method
+          HTTP_STATUS=$(curl -s -o response.json -w "%{http_code}" -X POST \
+            --url "${CLEAN_JIRA_URL}/rest/api/2/issue" \
+            --user "${JIRA_USER_EMAIL}:${JIRA_API_TOKEN}" \
+            --header "Accept: application/json" \
+            --header "Content-Type: application/json" \
+            --data @jira-payload.json)
+            
+          echo "HTTP Status: $HTTP_STATUS"
+          cat response.json
+
+          if [ "$HTTP_STATUS" != "201" ]; then
+            echo "Failed to create Jira issue! See response above."
+            echo "🚨 TIP: Ensure your JIRA_BASE_URL secret is exactly 'https://yourcompany.atlassian.net' without '/jira' or trailing slashes."
+            exit 1
+          fi
+
+          ISSUE_KEY=$(grep -o '"key":"[^"]*"' response.json | head -1 | cut -d'"' -f4)
+          echo "Successfully created Jira Bug: $ISSUE_KEY"
