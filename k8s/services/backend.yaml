@@ -23,6 +23,8 @@ spec:
           envFrom:
             - configMapRef:
                 name: voltnexus-config
+            - secretRef:
+                name: gateway-secret
 ---
 apiVersion: v1
 kind: Service
@@ -30,14 +32,13 @@ metadata:
   name: gateway
   namespace: voltnexus
 spec:
-  type: NodePort
   selector:
     app: gateway
   ports:
     - protocol: TCP
       port: 8080
       targetPort: 8080
-      nodePort: 30080
+  type: LoadBalancer
 ---
 # User Service
 apiVersion: apps/v1
@@ -64,6 +65,8 @@ spec:
           envFrom:
             - configMapRef:
                 name: voltnexus-config
+            - secretRef:
+                name: user-service-secret
 ---
 apiVersion: v1
 kind: Service
@@ -77,6 +80,7 @@ spec:
     - protocol: TCP
       port: 8081
       targetPort: 8081
+  type: ClusterIP
 ---
 # Customer Service
 apiVersion: apps/v1
@@ -103,6 +107,8 @@ spec:
           envFrom:
             - configMapRef:
                 name: voltnexus-config
+            - secretRef:
+                name: customer-service-secret
 ---
 apiVersion: v1
 kind: Service
@@ -116,6 +122,7 @@ spec:
     - protocol: TCP
       port: 8082
       targetPort: 8082
+  type: ClusterIP
 ---
 # Dealer Service
 apiVersion: apps/v1
@@ -142,6 +149,8 @@ spec:
           envFrom:
             - configMapRef:
                 name: voltnexus-config
+            - secretRef:
+                name: dealer-service-secret
 ---
 apiVersion: v1
 kind: Service
@@ -155,6 +164,7 @@ spec:
     - protocol: TCP
       port: 8083
       targetPort: 8083
+  type: ClusterIP
 ---
 # Inventory Service
 apiVersion: apps/v1
@@ -181,6 +191,8 @@ spec:
           envFrom:
             - configMapRef:
                 name: voltnexus-config
+            - secretRef:
+                name: inventory-service-secret
 ---
 apiVersion: v1
 kind: Service
@@ -194,6 +206,7 @@ spec:
     - protocol: TCP
       port: 8084
       targetPort: 8084
+  type: ClusterIP
 ---
 # Payment Service
 apiVersion: apps/v1
@@ -220,6 +233,8 @@ spec:
           envFrom:
             - configMapRef:
                 name: voltnexus-config
+            - secretRef:
+                name: payment-service-secret
 ---
 apiVersion: v1
 kind: Service
@@ -233,6 +248,7 @@ spec:
     - protocol: TCP
       port: 8085
       targetPort: 8085
+  type: ClusterIP
 ---
 # Sales Service
 apiVersion: apps/v1
@@ -259,6 +275,8 @@ spec:
           envFrom:
             - configMapRef:
                 name: voltnexus-config
+            - secretRef:
+                name: sales-service-secret
 ---
 apiVersion: v1
 kind: Service
@@ -272,6 +290,7 @@ spec:
     - protocol: TCP
       port: 8086
       targetPort: 8086
+  type: ClusterIP
 ---
 # Vehicle Service
 apiVersion: apps/v1
@@ -298,6 +317,8 @@ spec:
           envFrom:
             - configMapRef:
                 name: voltnexus-config
+            - secretRef:
+                name: vehicle-service-secret
 ---
 apiVersion: v1
 kind: Service
@@ -311,6 +332,7 @@ spec:
     - protocol: TCP
       port: 8087
       targetPort: 8087
+  type: ClusterIP
 ---
 # Reporting Service
 apiVersion: apps/v1
@@ -337,6 +359,8 @@ spec:
           envFrom:
             - configMapRef:
                 name: voltnexus-config
+            - secretRef:
+                name: reporting-service-secret
 ---
 apiVersion: v1
 kind: Service
@@ -350,6 +374,7 @@ spec:
     - protocol: TCP
       port: 8088
       targetPort: 8088
+  type: ClusterIP
 ---
 # AI Service
 apiVersion: apps/v1
@@ -372,10 +397,12 @@ spec:
           image: my-ai-service:latest
           imagePullPolicy: IfNotPresent
           ports:
-            - containerPort: 8500
+            - containerPort: 8089
           envFrom:
             - configMapRef:
                 name: voltnexus-config
+            - secretRef:
+                name: ai-service-secret
 ---
 apiVersion: v1
 kind: Service
@@ -387,5 +414,6 @@ spec:
     app: ai-service
   ports:
     - protocol: TCP
-      port: 8500
-      targetPort: 8500
+      port: 8089
+      targetPort: 8089
+  type: ClusterIP

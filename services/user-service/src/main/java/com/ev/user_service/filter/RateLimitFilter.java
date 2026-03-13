@@ -25,16 +25,16 @@ public class RateLimitFilter extends OncePerRequestFilter {
 
     private Bucket resolveBucket(String apiKey) {
         return cache.computeIfAbsent(apiKey, k -> {
-            Refill refill = Refill.intervally(5, Duration.ofSeconds(10));
-            Bandwidth limit = Bandwidth.classic(5, refill);
+            Refill refill = Refill.intervally(50, Duration.ofSeconds(10));
+            Bandwidth limit = Bandwidth.classic(50, refill); // Tăng sức chứa tối đa của bucket lên 50
             return Bucket.builder().addLimit(limit).build();
         });
     }
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
-                                    HttpServletResponse response,
-                                    FilterChain filterChain)
+            HttpServletResponse response,
+            FilterChain filterChain)
             throws ServletException, IOException {
 
         String apiKey = request.getRemoteAddr();
