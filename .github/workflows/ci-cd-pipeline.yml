@@ -14,9 +14,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
-  pages: write
-  id-token: write
+  contents: write
 
 concurrency:
   group: "pages"
@@ -167,19 +165,25 @@ jobs:
           newman run "https://api.getpostman.com/collections/39781229-f0d8b669-c581-47d9-a1a1-93e727adcceb?apikey=$POSTMAN_API_KEY" \
             -e "https://api.getpostman.com/environments/39781229-7aeac6e0-37d5-4086-9958-1cb4bb544661?apikey=$POSTMAN_API_KEY" \
             --reporters cli,htmlextra \
-            --reporter-htmlextra-export newman/index.html
+            --reporter-htmlextra-export newman/report.html
 
           kill $PID || true
 
-      - name: Setup Pages
-        if: always()
-        uses: actions/configure-pages@v5
+      - name: Publish report.html to gh-pages
+        if: always() && github.ref == 'refs/heads/main'
+        run: |
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "github-actions[bot]"
+          git fetch
+          git checkout gh-pages || git checkout --orphan gh-pages
 
-      - name: Upload Pages Artifact
-        if: always()
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: newman/
+          # Clean up old files if they exist to keep the branch clean
+          find . -maxdepth 1 -not -name 'report.html' -not -name '.git' -not -name '.' -delete || true
+
+          cp newman/report.html ./
+          git add report.html
+          git commit -m "Update test report [skip ci]" || exit 0
+          git push origin gh-pages
 
       - name: Create Jira Bug via REST API
         if: always() && steps.postman_tests.outcome == 'failure'
@@ -201,8 +205,8 @@ jobs:
           COMMIT_SHA="${{ github.sha }}"
           TIMESTAMP=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
 
-          # GitHub Pages URL
-          GHP_URL="https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/"
+          # GitHub Pages URL (branch-based)
+          GHP_URL="https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/report.html"
 
           # Use a variable for description to avoid complex escaping in JSON heredoc if possible, 
           # but heredoc is generally safe if we are careful.
@@ -257,15 +261,3 @@ jobs:
 
           ISSUE_KEY=$(grep -o '"key":"[^"]*"' response.json | head -1 | cut -d'"' -f4)
           echo "Successfully created Jira Bug: $ISSUE_KEY"
-
-  deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
-    needs: build-deploy-test
-    if: always() && github.ref == 'refs/heads/main'
-    steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
