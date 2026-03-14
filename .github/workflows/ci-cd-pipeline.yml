@@ -10,6 +10,15 @@ on:
       - develop
       - main
 
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
 jobs:
   build-deploy-test:
     runs-on: ubuntu-latest
@@ -153,16 +162,19 @@ jobs:
           newman run "https://api.getpostman.com/collections/39781229-f0d8b669-c581-47d9-a1a1-93e727adcceb?apikey=$POSTMAN_API_KEY" \
             -e "https://api.getpostman.com/environments/39781229-7aeac6e0-37d5-4086-9958-1cb4bb544661?apikey=$POSTMAN_API_KEY" \
             --reporters cli,htmlextra \
-            --reporter-htmlextra-export newman/report.html
+            --reporter-htmlextra-export newman/index.html
 
           kill $PID || true
 
-      - name: Upload Test Report Artifact
+      - name: Setup Pages
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/configure-pages@v5
+
+      - name: Upload Pages Artifact
+        if: always()
+        uses: actions/upload-pages-artifact@v3
         with:
-          name: postman-test-report
-          path: newman/report.html
+          path: newman/
 
       - name: Create Jira Bug via REST API
         if: failure()
@@ -184,6 +196,9 @@ jobs:
           COMMIT_SHA="${{ github.sha }}"
           TIMESTAMP=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
 
+          # GitHub Pages URL
+          GHP_URL="https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/"
+
           # Use a variable for description to avoid complex escaping in JSON heredoc if possible, 
           # but heredoc is generally safe if we are careful.
           DESCRIPTION="🚨 *Automated API Test Failure detected in CI/CD Pipeline*\n\n"
@@ -195,7 +210,7 @@ jobs:
           DESCRIPTION="${DESCRIPTION}- *Commit:* $COMMIT_SHA\n"
           DESCRIPTION="${DESCRIPTION}- *Timestamp:* $TIMESTAMP\n\n"
           DESCRIPTION="${DESCRIPTION}*Action Required:*\n"
-          DESCRIPTION="${DESCRIPTION}Please check the [GitHub Actions Run Logs]($RUN_URL) and download the *postman-test-report* artifact for a detailed HTML report of the failures."
+          DESCRIPTION="${DESCRIPTION}Please check the [GitHub Actions Run Logs]($RUN_URL) and the [Live Test Report]($GHP_URL)."
 
           # Create the JSON payload
           # We use jq if available, but since we can't guarantee it, we'll use a safer heredoc approach or printf
@@ -237,3 +252,15 @@ jobs:
 
           ISSUE_KEY=$(grep -o '"key":"[^"]*"' response.json | head -1 | cut -d'"' -f4)
           echo "Successfully created Jira Bug: $ISSUE_KEY"
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build-deploy-test
+    if: always()
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
