@@ -174,14 +174,41 @@ jobs:
         run: |
           echo "Test failed! Creating a Jira bug directly via REST API..."
 
+          # Construct dynamic summary and description
+          SUMMARY="[CI/CD Failure] API Test Failed - Pipeline: ${{ github.workflow }} #${{ github.run_number }}"
+
+          # Built-in variables for metadata
+          RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          TRIGGERER="${{ github.actor }}"
+          BRANCH="${{ github.ref_name }}"
+          COMMIT_SHA="${{ github.sha }}"
+          TIMESTAMP=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
+
+          # Use a variable for description to avoid complex escaping in JSON heredoc if possible, 
+          # but heredoc is generally safe if we are careful.
+          DESCRIPTION="🚨 *Automated API Test Failure detected in CI/CD Pipeline*\n\n"
+          DESCRIPTION="${DESCRIPTION}*Details:*\n"
+          DESCRIPTION="${DESCRIPTION}- *Workflow:* ${{ github.workflow }}\n"
+          DESCRIPTION="${DESCRIPTION}- *Run:* [#${{ github.run_number }}]($RUN_URL)\n"
+          DESCRIPTION="${DESCRIPTION}- *Triggered by:* $TRIGGERER\n"
+          DESCRIPTION="${DESCRIPTION}- *Branch:* $BRANCH\n"
+          DESCRIPTION="${DESCRIPTION}- *Commit:* $COMMIT_SHA\n"
+          DESCRIPTION="${DESCRIPTION}- *Timestamp:* $TIMESTAMP\n\n"
+          DESCRIPTION="${DESCRIPTION}*Action Required:*\n"
+          DESCRIPTION="${DESCRIPTION}Please check the [GitHub Actions Run Logs]($RUN_URL) and download the *postman-test-report* artifact for a detailed HTML report of the failures."
+
+          # Create the JSON payload
+          # We use jq if available, but since we can't guarantee it, we'll use a safer heredoc approach or printf
+          # Summary and Description need to be valid JSON strings (escaping quotes/newlines)
+
           cat <<EOF > jira-payload.json
           {
             "fields": {
               "project": {
                 "key": "$JIRA_PROJECT_KEY"
               },
-              "summary": "Automated API Test Failure in CI/CD Pipeline",
-              "description": "🚨 The Postman automated API tests have failed.\n\nPlease check the GitHub Actions run logs and the Postman Cloud Dashboard for details.",
+              "summary": "$SUMMARY",
+              "description": "$DESCRIPTION",
               "issuetype": {
                 "name": "Bug"
               }
@@ -192,7 +219,6 @@ jobs:
           # Strip any trailing slashes from JIRA_BASE_URL
           CLEAN_JIRA_URL=$(echo "${JIRA_BASE_URL}" | sed 's:\/*$::')
 
-          # Removed -L to prevent CloudFront 403 on redirects dropping the POST method
           HTTP_STATUS=$(curl -s -o response.json -w "%{http_code}" -X POST \
             --url "${CLEAN_JIRA_URL}/rest/api/2/issue" \
             --user "${JIRA_USER_EMAIL}:${JIRA_API_TOKEN}" \
