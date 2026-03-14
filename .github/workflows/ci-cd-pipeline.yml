@@ -129,6 +129,8 @@ jobs:
           curl -o- "https://dl-cli.pstmn.io/install/linux64.sh" | sh
 
       - name: Login to Postman CLI & Run Tests
+        id: postman_tests
+        continue-on-error: true
         env:
           POSTMAN_API_KEY: ${{ secrets.POSTMAN_API_KEY }}
         run: |
@@ -180,7 +182,7 @@ jobs:
           path: newman/
 
       - name: Create Jira Bug via REST API
-        if: failure()
+        if: always() && steps.postman_tests.outcome == 'failure'
         env:
           JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
           JIRA_USER_EMAIL: ${{ secrets.JIRA_USER_EMAIL }}
