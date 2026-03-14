@@ -1,0 +1,434 @@
+{
+    "info": {
+        "name": "Customer Service API Automation Testing",
+        "description": "Postman Collection for Customer Service applying 13 automation testing techniques.",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "item": [
+        {
+            "name": "1. Customers Management",
+            "item": [
+                {
+                    "name": "1. GET Health",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test(\"Status code is 200\", function () { pm.response.to.have.status(200); });",
+                                    "pm.test(\"Verify health response text\", function () { pm.expect(pm.response.text()).to.include(\"Customer Service is running!\"); });"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/customers/health",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "customers",
+                                "health"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "2. POST Create Customer",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test(\"Status is 201\", function(){ pm.response.to.have.status(201); });",
+                                    "var jsonData = pm.response.json();",
+                                    "if(pm.response.code === 201 && jsonData.result) {",
+                                    "    pm.environment.set(\"test_customer_id\", jsonData.result.id);",
+                                    "    pm.environment.set(\"test_profile_id\", jsonData.result.profileId);",
+                                    "}"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"profileId\": \"f47ac10b-58cc-4372-a567-0e02b2c3d479\",\n    \"fullName\": \"Test Customer {{$timestamp}}\",\n    \"email\": \"customer_{{$timestamp}}@test.com\",\n    \"phone\": \"0988222333\",\n    \"customerType\": \"INDIVIDUAL\",\n    \"status\": \"ACTIVE\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/customers",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "customers"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "3. GET Customer Profile",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test(\"Status is 200\", function(){ pm.response.to.have.status(200); });",
+                                    "pm.test(\"Matches Profile ID\", function(){",
+                                    "    var data = pm.response.json();",
+                                    "    pm.expect(data.result.profileId).to.eql(pm.environment.get(\"test_profile_id\"));",
+                                    "});"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/customers/profile/{{test_profile_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "customers",
+                                "profile",
+                                "{{test_profile_id}}"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "2. Test Drives",
+            "item": [
+                {
+                    "name": "1. POST Book Public Test Drive",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test(\"Status is 201\", function(){ pm.response.to.have.status(201); });",
+                                    "var jsonData = pm.response.json();",
+                                    "if(jsonData.result) { pm.environment.set(\"test_drive_id\", jsonData.result.id); }"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"fullName\": \"Booker {{$timestamp}}\",\n    \"email\": \"booker@test.com\",\n    \"phone\": \"0988111222\",\n    \"dealerId\": \"{{dealer_id}}\",\n    \"modelId\": 1,\n    \"appointmentDate\": \"2026-12-01T10:00:00\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/customers/api/test-drives/public",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "customers",
+                                "api",
+                                "test-drives",
+                                "public"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "2. PUT Complete Test Drive",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test(\"Status is 200\", function(){ pm.response.to.have.status(200); });"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{admin_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/customers/api/test-drives/{{test_drive_id}}/complete",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "customers",
+                                "api",
+                                "test-drives",
+                                "{{test_drive_id}}",
+                                "complete"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "3. Cart Operations",
+            "item": [
+                {
+                    "name": "1. POST Add to Cart",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test(\"Status is 200\", function(){ pm.response.to.have.status(200); });",
+                                    "var jsonData = pm.response.json();",
+                                    "if(jsonData.result) { pm.environment.set(\"cart_item_id\", jsonData.result.id); }"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"variantId\": 1,\n    \"quantity\": 1\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/cart/{{test_customer_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "cart",
+                                "{{test_customer_id}}"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "2. GET Cart Summary",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test(\"Status is 200\", function(){ pm.response.to.have.status(200); });",
+                                    "pm.test(\"Summary has totalAmount\", function(){",
+                                    "    var data = pm.response.json();",
+                                    "    pm.expect(data.result).to.have.property('totalAmount');",
+                                    "});"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/cart/{{test_customer_id}}/summary",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "cart",
+                                "{{test_customer_id}}",
+                                "summary"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "3. DELETE Clear Cart",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test(\"Status is 200\", function(){ pm.response.to.have.status(200); });"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "DELETE",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/cart/{{test_customer_id}}/clear",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "cart",
+                                "{{test_customer_id}}",
+                                "clear"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "4. Charging Stations",
+            "item": [
+                {
+                    "name": "1. GET Nearby Stations",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test(\"Status is 200\", function(){ pm.response.to.have.status(200); });",
+                                    "pm.test(\"Result is array\", function(){ pm.expect(pm.response.json().result).to.be.an('array'); });"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/customers/api/charging-stations/nearby?latitude=21.0285&longitude=105.8542&radius=10",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "customers",
+                                "api",
+                                "charging-stations",
+                                "nearby"
+                            ],
+                            "query": [
+                                {
+                                    "key": "latitude",
+                                    "value": "21.0285"
+                                },
+                                {
+                                    "key": "longitude",
+                                    "value": "105.8542"
+                                },
+                                {
+                                    "key": "radius",
+                                    "value": "10"
+                                }
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "5. Complaints & Reviews",
+            "item": [
+                {
+                    "name": "1. POST Create Complaint",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test(\"Status is 201\", function(){ pm.response.to.have.status(201); });"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{admin_token}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"customerId\": {{test_customer_id}},\n    \"dealerId\": 1,\n    \"title\": \"Service delayed\",\n    \"description\": \"My requested service was delayed\",\n    \"type\": \"SERVICE_QUALITY\",\n    \"priority\": \"HIGH\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/customers/api/complaints",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "customers",
+                                "api",
+                                "complaints"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "2. GET Model Review Summary",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test(\"Status is 200\", function(){ pm.response.to.have.status(200); });"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/customers/api/reviews/model/1/summary",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "customers",
+                                "api",
+                                "reviews",
+                                "model",
+                                "1",
+                                "summary"
+                            ]
+                        }
+                    }
+                }
+            ]
+        }
+    ]
+}

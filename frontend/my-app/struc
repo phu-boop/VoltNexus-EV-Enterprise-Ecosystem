@@ -1,0 +1,170 @@
+er-platform/frontend/my-app/src
+├── assets/
+│   ├── images/
+│   ├── icons/
+│   └── styles/
+│
+├── components/
+│   ├── Footer.jsx
+│   ├── Header.jsx
+│   ├── home/
+│   │   ├── CustomerFeedback.jsx
+│   │   ├── FilterPanel.jsx
+│   │   ├── HeroBanner.jsx
+│   │   ├── PromotionSection.jsx
+│   │   ├── QuickQuoteForm.jsx
+│   │   ├── RecommendedSection.jsx
+│   │   ├── TestDriveSection.jsx
+│   │   ├── VehicleDetailModal.jsx
+│   │   └── VehicleGrid.jsx
+│   └── ui/
+│       ├── Alert.jsx
+│       ├── Button.jsx
+│       ├── Input.jsx
+│       ├── Loading.jsx
+│       └── LoginButton.tsx
+│
+├── features/================================================================== tap trung cac chuc nang chinh ow ddaay ==================================================================================
+│   ├── auth/
+│   │   ├── AuthProvider.jsx
+│   │   ├── pages/
+│   │   │   └── ResetPassword.jsx
+│   │   └── services/
+│   │       └── authService.js
+│   │
+│   ├── dashboard/
+│   │   ├── pages/
+│   │   │   ├── DashboardForDealer.jsx
+│   │   │   ├── DashboardForEvm.jsx
+│   │   │   ├── DashboardForAdmin.jsx
+│   │   │   └── Dashboard.jsx
+│   │   └── users/
+│   │       ├── components/
+│   │       │   ├── UserFilters.jsx
+│   │       │   ├── UserForm.jsx
+│   │       │   ├── UserPagination.jsx
+│   │       │   └── UserTable.jsx
+│   │       ├── pages/
+│   │       │   └── UserManagement.jsx
+│   │       └── services/
+│   │           └── mngUserService.js
+│   │
+│   ├── dealer/
+│   │   ├── vehicles/
+│   │   │   ├── pages/
+│   │   │   │   ├── VehicleList.jsx
+│   │   │   │   ├── VehicleCompare.jsx
+│   │   │   │   └── VehicleDetail.jsx
+│   │   │   └── services/
+│   │   │       └── vehicleService.js
+│   │   │
+│   │   ├── sales/
+│   │   │   ├── pages/
+│   │   │   │   ├── QuotationList.jsx
+│   │   │   │   ├── OrderForm.jsx
+│   │   │   │   ├── PromotionList.jsx
+│   │   │   │   ├── PaymentForm.jsx
+│   │   │   │   └── DeliveryTracking.jsx
+│   │   │   └── services/
+│   │   │       └── salesService.js
+│   │   │
+│   │   ├── customers/
+│   │   │   ├── pages/
+│   │   │   │   ├── CustomerList.jsx
+│   │   │   │   ├── TestDriveSchedule.jsx
+│   │   │   │   ├── FeedbackList.jsx
+│   │   │   │   └── ComplaintForm.jsx
+│   │   │   └── services/
+│   │   │       └── customerService.js
+│   │   │
+│   │   └── reports/
+│   │       ├── pages/
+│   │       │   ├── SalesReport.jsx
+│   │       │   ├── DebtReport.jsx
+│   │       │   └── PerformanceChart.jsx
+│   │       └── services/
+│   │           └── reportService.js
+│   │
+│   ├── evm/
+│   │   ├── catalog/
+│   │   │   ├── pages/
+│   │   │   │   ├── VehicleCatalogList.jsx
+│   │   │   │   ├── VehicleForm.jsx
+│   │   │   │   ├── VersionForm.jsx
+│   │   │   │   └── ColorForm.jsx
+│   │   │   └── services/
+│   │   │       └── catalogService.js
+│   │   │
+│   │   ├── inventory/
+│   │   │   ├── pages/
+│   │   │   │   ├── StockOverview.jsx
+│   │   │   │   ├── StockTransferForm.jsx
+│   │   │   │   └── DealerStockList.jsx
+│   │   │   └── services/
+│   │   │       └── inventoryService.js
+│   │   │
+│   │   ├── dealers/
+│   │   │   ├── pages/
+│   │   │   │   ├── DealerList.jsx
+│   │   │   │   ├── DealerForm.jsx
+│   │   │   │   ├── ContractList.jsx
+│   │   │   │   └── QuotaList.jsx
+│   │   │   └── services/
+│   │   │       └── dealerService.js
+│   │   │
+│   │   └── reports/
+│   │       ├── pages/
+│   │       │   ├── RegionalSalesReport.jsx
+│   │       │   ├── InventoryReport.jsx
+│   │       │   ├── ForecastReport.jsx
+│   │       │   └── DistributionDashboard.jsx
+│   │       └── services/
+│   │           └── reportService.js
+│   │
+│   └── admin/
+│       ├── pages/
+│       │   ├── RoleManager.jsx
+│       │   ├── PermissionList.jsx
+│       │   └── SystemLog.jsx
+│       └── services/
+│           └── adminService.js
+│
+├── hooks/
+│   ├── useAuth.js
+│   ├── useFetch.js
+│   ├── usePagination.js
+│   └── useForm.js
+│
+├── layouts/
+│   ├── DealerLayout.jsx
+│   ├── EvmLayout.jsx
+│   ├── AdminLayout.jsx
+│   └── UserLayout.jsx
+│
+├── pages/
+│   ├── Home.jsx
+│   ├── Login.jsx
+│   ├── NotFound.jsx
+│   ├── OAuthSuccess.jsx
+│   └── LandingPage.jsx
+│
+├── routes/
+│   ├── index.jsx
+│   ├── ProtectedRoute.jsx
+│   └── RoleRoutes.jsx
+│
+├── services/
+│   ├── apiConstUserService.js
+│   └── axiosConfig.js
+│
+├── ui/
+│   ├── Button.jsx
+│   ├── Input.jsx
+│   ├── Select.jsx
+│   └── Table.jsx
+│
+└── utils/
+    ├── formatDate.js
+    ├── formatCurrency.js
+    ├── constants.js
+    └── validations.js

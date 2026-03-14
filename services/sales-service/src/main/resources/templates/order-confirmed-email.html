@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8" />
+  <title>Xác Nhận Đơn Hàng</title>
+  <style>
+    body {
+      font-family: 'Inter', 'Segoe UI', Tahoma, sans-serif;
+      background: #f5f6fa;
+      margin: 0;
+      padding: 0;
+      color: #2d3748;
+    }
+
+    .container {
+      max-width: 680px;
+      margin: 32px auto;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 4px 5px 10px rgba(0, 0, 0, 0.4);
+      overflow: hidden;
+    }
+
+    .header {
+      background: linear-gradient(135deg, #5b67ec, #764ba2);
+      color: white;
+      text-align: center;
+      padding: 24px 16px;
+    }
+
+    .header h1 {
+      font-size: 22px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .body {
+      padding: 28px 24px;
+      line-height: 1.6;
+    }
+
+    .greeting {
+      font-size: 16px;
+      margin-bottom: 12px;
+    }
+
+    .order-info {
+      background: #f9fafb;
+      border-left: 4px solid #667eea;
+      border-radius: 8px;
+      padding: 16px 20px;
+      margin: 16px 0 24px;
+    }
+
+    .info-item {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+      font-size: 15px;
+    }
+
+    .info-label {
+      color: #4a5568;
+    }
+
+    .info-value {
+      font-weight: 600;
+    }
+
+    .note {
+      background: #fff8e1;
+      border: 1px solid #f6e05e;
+      border-radius: 8px;
+      padding: 12px 16px;
+      font-size: 13px;
+      color: #744210;
+      margin-bottom: 20px;
+    }
+
+    .button {
+      display: inline-block;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+      padding: 12px 28px;
+      border-radius: 8px;
+      text-decoration: none;
+      font-weight: 500;
+      font-size: 15px;
+      transition: all 0.2s ease;
+    }
+
+    .button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 12px rgba(102, 126, 234, 0.3);
+    }
+
+    .footer {
+      text-align: center;
+      padding: 20px 0;
+      background: #f9fafb;
+      color: #718096;
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
+    .footer strong {
+      color: #4a5568;
+    }
+
+    p.link {
+      font-size: 13px;
+      color: #667eea;
+      word-break: break-all;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Xác Nhận Đơn Hàng</h1>
+      <p>EV Automotive</p>
+    </div>
+
+    <div class="body">
+      <p class="greeting">
+        Kính gửi <strong th:text="${customer.fullName}">Quý khách</strong>,
+      </p>
+      <p>
+        Cảm ơn Quý khách đã lựa chọn EV Automotive. Đơn hàng của Quý khách hiện đang chờ xác nhận.
+      </p>
+
+      <div class="order-info">
+        <div class="info-item">
+          <span class="info-label">Mã đơn hàng:</span>
+          <span class="info-value" th:text="'#' + ${salesOrder.orderId}">#12345</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Ngày tạo:</span>
+          <span class="info-value" th:text="${orderDate}">01/01/2024 10:00</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Tổng tiền:</span>
+          <span class="info-value" th:text="${#numbers.formatDecimal(salesOrder.totalAmount, 0, 'COMMA', 0, 'POINT') + ' VND'}">0 VND</span>
+        </div>
+      </div>
+
+      <div class="note">
+        <strong>Lưu ý:</strong> Vui lòng xác nhận đơn hàng trong vòng 24 giờ để đảm bảo giao dịch được xử lý kịp thời.
+      </div>
+
+      <div style="text-align: center; margin: 24px 0;">
+        <a th:href="${confirmUrl}" class="button">Xác Nhận Đơn Hàng</a>
+      </div>
+
+      <p style="font-size: 13px;">Nếu nút trên không hoạt động, vui lòng mở liên kết sau:</p>
+      <p class="link" th:text="${confirmUrl}"></p>
+    </div>
+
+    <div class="footer">
+      <p>Trân trọng,<br /><strong>Đội ngũ EV Automotive</strong></p>
+      <p>Hotline: 1800 1234 | Email: support@ev-automotive.com</p>
+      <p>© 2024 EV Automotive. All rights reserved.</p>
+    </div>
+  </div>
+</body>
+</html>

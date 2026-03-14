@@ -1,0 +1,3 @@
+# ??ng ký ApplicationContextInitializer
+org.springframework.context.ApplicationContextInitializer=\
+com.ev.payment_service.config.DotenvApplicationInitializer
