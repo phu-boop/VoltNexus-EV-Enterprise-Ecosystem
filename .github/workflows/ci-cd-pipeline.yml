@@ -28,29 +28,46 @@ jobs:
       - name: "CI: Build (Common Library)"
         uses: actions/setup-java@v4
         with:
-          java-version: "17"
+          java-version: "21"
           distribution: "temurin"
           cache: maven
       - run: |
-          if [ -d "common-lib" ]; then
-            cd common-lib && mvn clean install -DskipTests
-          fi
+          # Build common-lib first as it's a dependency for others
+          mvn clean install -pl common-lib -DskipTests
 
       - name: "CI: Unit Test"
+        env:
+          SPRING_DATASOURCE_PASSWORD_CUSTOMER: ${{ secrets.DB_PASSWORD_CUSTOMER }}
+          DB_PASS_PAYMENT: ${{ secrets.DB_PASSWORD_PAYMENT }}
+          USER_DB_PASS: ${{ secrets.DB_PASSWORD_USER }}
+          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+          VNPAY_SECRET_PAYMENT: ${{ secrets.VNPAY_HASH_SECRET }}
+          FACEBOOK_SECRET: ${{ secrets.FACEBOOK_CLIENT_SECRET }}
+          GITHUB_SECRET: ${{ secrets.GITHUB_CLIENT_SECRET }}
+          RECAPT_SECRET: ${{ secrets.RECAPTCHA_SECRET }}
+          SPRING_MAIL_PASSWORD_USER: ${{ secrets.MAIL_PASSWORD }}
         run: |
-          # Running unit tests for all services
-          mvn test -DskipITs || true
+          # Running unit tests for all services and generating coverage reports
+          mvn test -DskipITs
 
-      - name: "CI: Frontend Test"
-        run: |
-          echo "Running Frontend Tests..."
-          # Placeholder for frontend tests if package scripts are missing
-          # cd frontend/customer-app && npm install && npm test -- --watchAll=false || true
+      # - name: "CI: Frontend Test"
+      #   run: |
+      #     echo "Running Frontend Tests..."
+      #     # Placeholder for frontend tests if package scripts are missing
+      #     # cd frontend/customer-app && npm install && npm test -- --watchAll=false || true
 
-      - name: "CI: Static Analysis"
+      - name: "CI: Static Analysis & Quality Gate"
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          echo "Running SonarCloud / Static Analysis..."
-          # mvn sonar:sonar -Dsonar.projectKey=... || true
+          echo "Running SonarCloud Analysis..."
+          mvn sonar:sonar \
+            -Dsonar.projectKey=phu-boop_VoltNexus-EV-Enterprise-Ecosystem \
+            -Dsonar.organization=phu-boop \
+            -Dsonar.host.url=https://sonarcloud.io \
+            -Dsonar.login=$SONAR_TOKEN \
+            -Dsonar.qualitygate.wait=true
 
       - name: "CI: Security Scan"
         uses: aquasecurity/trivy-action@master
