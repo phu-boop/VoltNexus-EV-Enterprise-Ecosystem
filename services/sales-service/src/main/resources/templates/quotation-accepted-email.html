@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Xác Nhận Chấp Nhận Báo Giá</title>
+    <style>
+        :root {
+            --primary: #3b82f6;
+            --secondary: #10b981;
+            --accent: #facc15;
+            --dark: #1e293b;
+            --gray: #6b7280;
+            --light-bg: #f9fafb;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, sans-serif;
+            background: #f1f5f9;
+            color: var(--dark);
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 700px;
+            margin: 30px auto;
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 4px 5px 10px rgba(0, 0, 0, 0.4);
+        }
+
+        .header {
+            background: linear-gradient(135deg, #93c5fd, #60a5fa);
+            color: white;
+            padding: 25px 20px;
+            text-align: center;
+        }
+
+        .brand {
+            font-size: 22px;
+            font-weight: 600;
+        }
+
+        .content {
+            padding: 30px 25px;
+            line-height: 1.6;
+            background: var(--light-bg);
+        }
+
+        .greeting {
+            font-size: 15px;
+            margin-bottom: 15px;
+        }
+
+        .confirmation-box {
+            background: #ecfdf5;
+            border: 1px solid #bbf7d0;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .success-icon {
+            font-size: 36px;
+            margin-bottom: 10px;
+        }
+
+        .quotation-id {
+            display: inline-block;
+            background: var(--secondary);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        .next-steps {
+            margin-top: 25px;
+            padding: 18px;
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-left: 4px solid var(--primary);
+            border-radius: 10px;
+            font-size: 14px;
+            color: var(--gray);
+        }
+
+        .footer {
+            text-align: center;
+            font-size: 13px;
+            color: var(--gray);
+            padding: 20px;
+            background: #f9fafb;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                margin: 10px;
+                border-radius: 10px;
+            }
+
+            .content {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <div class="brand">🚗 EV Automotive</div>
+        <div style="font-size: 18px; font-weight: 500; margin-top: 5px;">
+            Xác Nhận Chấp Nhận Báo Giá
+        </div>
+    </div>
+
+    <div class="content">
+        <p class="greeting">
+            Kính gửi Quý khách <strong th:text="${customer.fullName}"></strong>,
+        </p>
+
+        <div class="confirmation-box">
+            <div class="success-icon">✅</div>
+            <h3 style="margin: 0; font-size: 18px; color: var(--dark);">
+                Báo giá đã được chấp nhận
+            </h3>
+            <p style="margin: 10px 0; color: var(--gray); font-size: 14px;">
+                Chúng tôi xin xác nhận Quý khách đã chấp nhận báo giá sau:
+            </p>
+            <div class="quotation-id" th:text="${quotation.quotationId}"></div>
+        </div>
+
+        <div class="next-steps">
+            <strong>Bước tiếp theo:</strong><br>
+            Đội ngũ tư vấn của EV Automotive sẽ sớm liên hệ với Quý khách
+            để hướng dẫn các thủ tục tiếp theo và hoàn tất hợp đồng.
+        </div>
+
+        <p style="text-align: center; margin-top: 25px; font-size: 14px; color: var(--gray);">
+            Trân trọng cảm ơn sự tin tưởng của Quý khách!
+        </p>
+    </div>
+
+    <div class="footer">
+        <p><strong>Đội ngũ EV Automotive</strong></p>
+        <p>📧 support@ev-automotive.com | 📞 1800-1234 | 🌐 www.ev-automotive.com</p>
+    </div>
+</div>
+</body>
+</html>

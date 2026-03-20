@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title>Phản hồi thành công</title>
+  <style>
+    body { font-family: sans-serif; background-color: #f2fff5; text-align: center; padding-top: 100px; }
+    .box { display: inline-block; padding: 30px; border-radius: 10px; background: #d9fdd3; }
+    h2 { color: #2e7d32; }
+    p { font-size: 16px; color: #333; }
+  </style>
+</head>
+<body>
+  <div class="box">
+    <h2 th:text="${message}">Thao tác thành công!</h2>
+    <p th:if="${quotationId}">Mã báo giá: <b th:text="${quotationId}"></b></p>
+    <p th:if="${orderId}">Mã đơn hàng: <b th:text="${orderId}"></b></p>
+    <p>Trạng thái: <span th:text="${action}"></span></p>
+    <p>Cảm ơn Quý khách đã phản hồi!</p>
+  </div>
+</body>
+</html>

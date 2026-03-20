@@ -1,0 +1,274 @@
+{
+    "info": {
+        "name": "Reporting Service API Automation Testing",
+        "description": "Postman Collection for Reporting Service applying 13 automation testing techniques.",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "item": [
+        {
+            "name": "1. Admin Backfill",
+            "item": [
+                {
+                    "name": "1. POST Backfill Dealers",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "// 1. HTTP Status Code Testing",
+                                    "pm.test(\"Status is 200 or 400\", function(){ pm.expect(pm.response.code).to.be.oneOf([200, 400]); });"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{admin_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/admin/backfill/dealers",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "admin",
+                                "backfill",
+                                "dealers"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "2. POST Backfill Vehicles",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test(\"Status is 200 or 400\", function(){ pm.expect(pm.response.code).to.be.oneOf([200, 400]); });"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{admin_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/admin/backfill/vehicles",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "admin",
+                                "backfill",
+                                "vehicles"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "2. General Reports",
+            "item": [
+                {
+                    "name": "1. GET Inventory Report",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test(\"Status is 200\", function(){ pm.response.to.have.status(200); });",
+                                    "// 3. Data Type Checking",
+                                    "pm.test(\"Verify array\", function() { pm.expect(pm.response.json()).to.be.an('array'); });"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{admin_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/reports/inventory",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "reports",
+                                "inventory"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "2. GET Sales Report",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test(\"Status is 200\", function(){ pm.response.to.have.status(200); });"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{admin_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/reports/sales",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "reports",
+                                "sales"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "3. GET Central Inventory",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test(\"Status is 200\", function(){ pm.response.to.have.status(200); });"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{admin_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/reports/central-inventory",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "reports",
+                                "central-inventory"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "3. Reporting & Sync",
+            "item": [
+                {
+                    "name": "1. POST Record Sale",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test(\"Status Code is 200\", function () { pm.response.to.have.status(200); });"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{admin_token}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"orderId\": \"{{test_order_id}}\",\n    \"totalAmount\": 500000000,\n    \"dealerName\": \"Hanoi Auto\",\n    \"variantId\": \"1\",\n    \"modelName\": \"Model X\",\n    \"region\": \"North\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/reports/sales",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "reports",
+                                "sales"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "2. POST Sync Sales Data",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test(\"Status is 200\", function(){ pm.response.to.have.status(200); });"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{admin_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/sync/sales",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "sync",
+                                "sales"
+                            ]
+                        }
+                    }
+                }
+            ]
+        }
+    ]
+}

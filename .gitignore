@@ -1,0 +1,138 @@
+############################################
+### 🧩 JAVA / SPRING BOOT ###
+############################################
+
+# Build output
+target/
+build/
+
+# Compiled class files
+*.class
+
+# Log files
+*.log
+
+# JVM crash logs
+hs_err_pid*
+replay_pid*
+
+# Archive / Package files
+*.jar
+*.war
+*.nar
+*.ear
+*.zip
+*.tar.gz
+*.rar
+
+# Spring Boot temp files
+.mvn/
+.mtj.tmp/
+
+# Maven wrapper binaries
+.mvn/wrapper/maven-wrapper.jar
+
+# Ignore custom local/config/
+/config/
+application-local.properties
+application-docker.properties
+application-dev.properties
+
+# ⚠️ Cho phép commit template cấu hình
+!application.properties
+!application-example.properties
+
+############################################
+### 💻 IDEs ###
+############################################
+
+# IntelliJ IDEA
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# Eclipse / STS
+.project
+.classpath
+.settings/
+.apt_generated
+.springBeans
+.sts4-cache
+
+# NetBeans
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+
+# VS Code
+.vscode/
+
+############################################
+### ⚛️ NODE / REACT / VITE ###
+############################################
+
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+build/
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Debug logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Optional lock files (bỏ comment nếu muốn ignore)
+# package-lock.json
+# yarn.lock
+# pnpm-lock.yaml
+
+# Editor swap files
+*.swp
+*.swo
+
+############################################
+### 🐳 DOCKER ###
+############################################
+
+# Docker
+docker-compose.override.yml
+*.pid
+*.seed
+*.bak
+
+############################################
+### 🧱 OS GENERATED ###
+############################################
+
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Icon?
+
+services/user-service/src/main/resources/firebase-service-account.json
+
+############################################
+### 📝 DOCUMENTATION / NOTES ###
+############################################
+
+# Temporary documentation files
+
+
+# Other temp docs
+*_TEMP.md
+*_DRAFT.md
+
+# Configuration files

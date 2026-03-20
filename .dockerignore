@@ -1,0 +1,32 @@
+# Docker ignore file
+# Exclude folders that are not needed for building Java/Node apps
+.git
+.vscode
+.idea
+*.log
+*.tmp
+debug/
+struc
+
+# Exclude dependencies and build artifacts (globally)
+**/node_modules/
+**/target/
+**/build/
+**/dist/
+**/.env
+**/.env.*
+
+# Exclude images and documentation
+*.png
+*.jpg
+*.jpeg
+*.svg
+README.md
+VNPAY.md
+render.yaml
+seed_data_fixed.sql
+init.sql
+
+# DO NOT exclude services/ or frontend/ here, because we use the root as build context
+# to allow access to common-lib.
+# Specific Dockerfiles will copy what they need.

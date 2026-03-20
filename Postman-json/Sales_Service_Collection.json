@@ -1,0 +1,494 @@
+{
+    "info": {
+        "name": "Sales Service API Automation Testing",
+        "description": "Postman Collection for Sales Service (Orders, Quotations, Contracts, Promotions) applying 13 automation testing techniques.",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "item": [
+        {
+            "name": "1. Promotions Management",
+            "item": [
+                {
+                    "name": "1. GET Active Promotions",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "// 1. HTTP Status Code Testing",
+                                    "pm.test(\"Status code is 200\", function () { pm.response.to.have.status(200); });",
+                                    "",
+                                    "// 3. Data Type Checking",
+                                    "// 4. JSON Schema Validation",
+                                    "pm.test(\"Verify response is array\", function () { pm.expect(pm.response.json()).to.be.an('array'); });",
+                                    "",
+                                    "// 13. Environment Variable Usage",
+                                    "var jsonData = pm.response.json();",
+                                    "if(jsonData.length > 0) { pm.environment.set(\"test_promotion_id\", jsonData[0].id); }"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/promotions/active",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "promotions",
+                                "active"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "2. POST Create Promotion",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "// 9. CRUD API Testing (Create)",
+                                    "pm.test(\"Status is 200\", function(){ pm.response.to.have.status(200); });",
+                                    "var jsonData = pm.response.json();",
+                                    "if(jsonData.id) { pm.environment.set(\"new_promotion_id\", jsonData.id); }"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{admin_token}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"name\": \"Test Promotion {{$timestamp}}\",\n    \"description\": \"Discount for EV\",\n    \"discountValue\": 5000000,\n    \"discountType\": \"FIXED_AMOUNT\",\n    \"startDate\": \"2026-01-01\",\n    \"endDate\": \"2026-12-31\",\n    \"status\": \"DRAFT\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/promotions",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "promotions"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "2. Quotations (Báo giá)",
+            "item": [
+                {
+                    "name": "1. POST Create Draft Quotation",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test(\"Status is 200\", function(){ pm.response.to.have.status(200); });",
+                                    "var jsonData = pm.response.json();",
+                                    "if(jsonData.result) { pm.environment.set(\"test_quotation_id\", jsonData.result.id); }"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{admin_token}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"customerId\": {{test_customer_id}},\n    \"dealerId\": \"{{dealer_id}}\",\n    \"staffId\": \"{{user_id}}\",\n    \"variantId\": 1\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/quotations/draft",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "quotations",
+                                "draft"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "2. GET Quotations By Dealer",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "// 11. Query Parameter Testing",
+                                    "pm.test(\"Status is 200\", function(){ pm.response.to.have.status(200); });"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{admin_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/quotations/dealer/{{dealer_id}}?status=DRAFT",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "quotations",
+                                "dealer",
+                                "{{dealer_id}}"
+                            ],
+                            "query": [
+                                {
+                                    "key": "status",
+                                    "value": "DRAFT"
+                                }
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "3. Sales Orders B2C",
+            "item": [
+                {
+                    "name": "1. POST Convert Quotation to Order",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test(\"Status is 200\", function(){ pm.response.to.have.status(200); });",
+                                    "var jsonData = pm.response.json();",
+                                    "if(jsonData.result) { pm.environment.set(\"test_order_id\", jsonData.result.id); }"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{admin_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/sales-orders/b2c/from-quotation/{{test_quotation_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "sales-orders",
+                                "b2c",
+                                "from-quotation",
+                                "{{test_quotation_id}}"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "2. GET All B2C Orders",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test(\"Status is 200\", function(){ pm.response.to.have.status(200); });",
+                                    "// 6. Loop / Collection Testing Simulation",
+                                    "pm.test(\"Check pageable structure\", function() {",
+                                    "    var data = pm.response.json().result;",
+                                    "    pm.expect(data).to.have.property('content');",
+                                    "    pm.expect(data).to.have.property('totalPages');",
+                                    "});"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{admin_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/sales-orders/b2c?page=0&size=10",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "sales-orders",
+                                "b2c"
+                            ],
+                            "query": [
+                                {
+                                    "key": "page",
+                                    "value": "0"
+                                },
+                                {
+                                    "key": "size",
+                                    "value": "10"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "3. PUT Edit Order Items Bulk",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test(\"Status is 200\", function(){ pm.response.to.have.status(200); });"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{admin_token}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "[\n    {\n        \"orderId\": \"{{test_order_id}}\",\n        \"itemType\": \"VEHICLE_VARIANT\",\n        \"itemId\": \"1\",\n        \"quantity\": 1,\n        \"unitPrice\": 1000000000\n    }\n]"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/order-items/order/{{test_order_id}}/bulk",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "order-items",
+                                "order",
+                                "{{test_order_id}}",
+                                "bulk"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "4. Sales Contracts",
+            "item": [
+                {
+                    "name": "1. POST Convert Order to Contract",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test(\"Status is 200\", function(){ pm.response.to.have.status(200); });",
+                                    "var jsonData = pm.response.json();",
+                                    "if(jsonData.result) { pm.environment.set(\"test_sales_contract_id\", jsonData.result.id); }"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{admin_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/sales-orders/b2c/{{test_order_id}}/convert-to-contract",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "sales-orders",
+                                "b2c",
+                                "{{test_order_id}}",
+                                "convert-to-contract"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "2. GET Contract By ID",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "// 7. Expected Data Verification",
+                                    "pm.test(\"Status is 200\", function(){ pm.response.to.have.status(200); });",
+                                    "pm.test(\"Contract ID matches\", function(){",
+                                    "    var data = pm.response.json().result;",
+                                    "    pm.expect(data.id).to.eql(pm.environment.get(\"test_sales_contract_id\"));",
+                                    "});"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{admin_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/sales-contracts/{{test_sales_contract_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "sales-contracts",
+                                "{{test_sales_contract_id}}"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "5. Order Tracking & Analytics",
+            "item": [
+                {
+                    "name": "1. POST Create Tracking Record",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test(\"Status is 200\", function(){ pm.response.to.have.status(200); });"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{admin_token}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"orderId\": \"{{test_order_id}}\",\n    \"status\": \"PROCESSING\",\n    \"location\": \"Hanoi Factory\",\n    \"notes\": \"Preparing vehicle\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/order-tracking",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "order-tracking"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "2. GET Sales Analytics History",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test(\"Status is 200\", function(){ pm.response.to.have.status(200); });"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/sales/analytics/history?limit=10",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "sales",
+                                "analytics",
+                                "history"
+                            ],
+                            "query": [
+                                {
+                                    "key": "limit",
+                                    "value": "10"
+                                }
+                            ]
+                        }
+                    }
+                }
+            ]
+        }
+    ]
+}

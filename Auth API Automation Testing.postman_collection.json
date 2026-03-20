@@ -1,0 +1,1079 @@
+{
+    "info": {
+        "_postman_id": "f0d8b669-c581-47d9-a1a1-93e727adcceb",
+        "name": "Auth API Automation Testing",
+        "description": "Postman Collection for AuthController demonstrating 13 testing techniques.",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+        "_exporter_id": "39781229",
+        "_collection_link": "https://no5555-4159.postman.co/workspace/EV-TESTING~de2f4324-faf3-4b8d-83a2-7b11e0b1e363/collection/39781229-f0d8b669-c581-47d9-a1a1-93e727adcceb?action=share&source=collection_link&creator=39781229"
+    },
+    "item": [
+        {
+            "name": "1. CRUD - Create (Register Customer)",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "// 1. HTTP Status Code Testing",
+                            "pm.test(\"Status code is 201 Created\", function () {",
+                            "    pm.response.to.have.status(201);",
+                            "});",
+                            "",
+                            "// 2. Response Body Validation",
+                            "pm.test(\"Response contains success message\", function () {",
+                            "    pm.expect(pm.response.text()).to.include(\"Customer registered successfully\");",
+                            "});",
+                            "",
+                            "var jsonData = pm.response.json();",
+                            "",
+                            "// 4. JSON Schema Validation",
+                            "var schema = {",
+                            "    \"type\": \"object\",",
+                            "    \"properties\": {",
+                            "        \"code\": { \"type\": \"string\" },",
+                            "        \"message\": { \"type\": \"string\" },",
+                            "        \"data\": { \"type\": \"object\" }",
+                            "    },",
+                            "    \"required\": [\"code\", \"message\", \"data\"]",
+                            "};",
+                            "pm.test(\"Response matches JSON Schema\", function () {",
+                            "    pm.response.to.have.jsonSchema(schema);",
+                            "});",
+                            "",
+                            "// 3. Data Type Checking",
+                            "pm.test(\"Email is a string type\", function () {",
+                            "    if(jsonData.result && jsonData.result.email) {",
+                            "        pm.expect(jsonData.result.email).to.be.a('string');",
+                            "    }",
+                            "});",
+                            "",
+                            "// 13. Environment Variable Usage (Extracting for next requests)",
+                            "if (pm.response.code === 201) {",
+                            "    var reqBody = JSON.parse(pm.request.body.raw);",
+                            "    pm.environment.set(\"test_email\", reqBody.email);",
+                            "    pm.environment.set(\"test_password\", reqBody.password);",
+                            "}"
+                        ],
+                        "type": "text/javascript",
+                        "packages": {},
+                        "requests": {}
+                    }
+                }
+            ],
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n    \"email\": \"testuser_{{$timestamp}}@gmail.com\",\n    \"password\": \"Password123!@##\",\n    \"name\": \"Test User\",\n    \"fullName\": \"Test User Full\",\n    \"phone\": \"0{{$timestamp}}\",\n    \"address\": \"123 Test St\",\n    \"city\": \"Hanoi\",\n    \"country\": \"VN\",\n    \"birthday\": \"1990-01-01\",\n    \"gender\": \"MALE\",\n    \"captchaToken\": \"test-token\"\n}"
+                },
+                "url": {
+                    "raw": "{{base_url}}/auth/register/customer",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "auth",
+                        "register",
+                        "customer"
+                    ]
+                }
+            },
+            "response": []
+        },
+        {
+            "name": "2. Negative Testing - Invalid Register Customer",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "// 10. Negative Testing",
+                            "pm.test(\"Status code is 400 Bad Request for invalid email\", function () {",
+                            "    pm.response.to.have.status(400);",
+                            "});",
+                            "",
+                            "// 7. Expected Data Verification",
+                            "pm.test(\"Error message validation\", function () {",
+                            "    var jsonData = pm.response.json();",
+                            "    pm.expect(JSON.stringify(jsonData)).to.include(\"Xác thực dữ liệu thất bại\");",
+                            "});"
+                        ],
+                        "type": "text/javascript",
+                        "packages": {},
+                        "requests": {}
+                    }
+                }
+            ],
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n    \"email\": \"invalid-email\",\n    \"password\": \"123\",\n    \"name\": \"Test User\"\n}"
+                },
+                "url": {
+                    "raw": "{{base_url}}/auth/register/customer",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "auth",
+                        "register",
+                        "customer"
+                    ]
+                }
+            },
+            "response": []
+        },
+        {
+            "name": "3. Authentication Testing - Login",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "// 1. HTTP Status Code Testing",
+                            "pm.test(\"Status code is 200 OK\", function () {",
+                            "    pm.response.to.have.status(200);",
+                            "});",
+                            "",
+                            "var jsonData = pm.response.json();",
+                            "",
+                            "// 5. Nested Object Validation",
+                            "pm.test(\"Check nested user object exists\", function () {",
+                            "    pm.expect(jsonData.data).to.have.property('userRespond');",
+                            "});",
+                            "",
+                            "// 7. Expected Data Verification",
+                            "pm.test(\"Verify user email matches request\", function () {",
+                            "    if(jsonData.data && jsonData.data.userRespond) {",
+                            "        pm.expect(jsonData.data.userRespond.email).to.eql(pm.environment.get(\"test_email\"));",
+                            "    }",
+                            "});",
+                            "",
+                            "",
+                            "// 12. Token Extraction",
+                            "if (pm.response.code === 200) {",
+                            "    var jsonData = pm.response.json();",
+                            "",
+                            "    if (jsonData.data && jsonData.data.token) {",
+                            "        pm.environment.set(\"access_token\", jsonData.data.token);",
+                            "        console.log(\"Token saved:\", jsonData.data.token);",
+                            "    }",
+                            "}"
+                        ],
+                        "type": "text/javascript",
+                        "packages": {},
+                        "requests": {}
+                    }
+                }
+            ],
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n    \"email\": \"{{test_email}}\",\n    \"password\": \"{{test_password}}\"\n}"
+                },
+                "url": {
+                    "raw": "{{base_url}}/auth/login",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "auth",
+                        "login"
+                    ]
+                }
+            },
+            "response": []
+        },
+        {
+            "name": "4. Token Authentication - Get Current User",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "// 8. Authentication Testing",
+                            "pm.test(\"Status code is 200 OK\", function () {",
+                            "    pm.response.to.have.status(200);",
+                            "});",
+                            "",
+                            "var jsonData = pm.response.json();",
+                            "pm.test(\"Verify email\", function () {",
+                            "    pm.expect(jsonData.data.userRespond.email).to.eql(pm.environment.get(\"test_email\"));",
+                            "});"
+                        ],
+                        "type": "text/javascript",
+                        "packages": {},
+                        "requests": {}
+                    }
+                }
+            ],
+            "request": {
+                "method": "GET",
+                "header": [
+                    {
+                        "key": "Authorization",
+                        "value": "Bearer {{access_token}}"
+                    }
+                ],
+                "url": {
+                    "raw": "{{base_url}}/auth/me",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "auth",
+                        "me"
+                    ]
+                }
+            },
+            "response": []
+        },
+        {
+            "name": "5. Token Authentication - Negative Test (No Token)",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "type": "text/javascript",
+                        "exec": [
+                            "// 8. Authentication Testing (Negative)",
+                            "pm.test(\"Status code is 401 or 403 for missing token\", function () {",
+                            "    pm.expect(pm.response.code).to.be.oneOf([401, 403]);",
+                            "});"
+                        ]
+                    }
+                }
+            ],
+            "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                    "raw": "{{base_url}}/auth/me",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "auth",
+                        "me"
+                    ]
+                }
+            },
+            "response": []
+        },
+        {
+            "name": "6. Query Parameter Testing - Forgot Password",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "type": "text/javascript",
+                        "exec": [
+                            "// 11. Query Parameter Testing",
+                            "pm.test(\"Status code is 200 OK\", function () {",
+                            "    pm.response.to.have.status(200);",
+                            "});",
+                            "",
+                            "// 6. Loop / Collection Testing Simulation",
+                            "pm.test(\"Response headers check iterating\", function () {",
+                            "    // Loop through headers",
+                            "    var hasContentType = false;",
+                            "    pm.response.headers.each(function(header) {",
+                            "        if(header.key.toLowerCase() === 'content-type') {",
+                            "            hasContentType = true;",
+                            "        }",
+                            "    });",
+                            "    pm.expect(hasContentType).to.be.true;",
+                            "});"
+                        ]
+                    }
+                }
+            ],
+            "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                    "raw": "{{base_url}}/auth/forgot-password?email={{test_email}}",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "auth",
+                        "forgot-password"
+                    ],
+                    "query": [
+                        {
+                            "key": "email",
+                            "value": "{{test_email}}"
+                        }
+                    ]
+                }
+            },
+            "response": []
+        },
+        {
+            "name": "7. Query Parameter Testing - Reset Password",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "type": "text/javascript",
+                        "exec": [
+                            "// Check for response",
+                            "pm.test(\"Expected status depends on valid OTP\", function () {",
+                            "    pm.expect(pm.response.code).to.be.oneOf([200, 400]);",
+                            "});"
+                        ]
+                    }
+                }
+            ],
+            "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                    "raw": "{{base_url}}/auth/reset-password?email={{test_email}}&otp=123456&newPassword=NewPassword1!@",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "auth",
+                        "reset-password"
+                    ],
+                    "query": [
+                        {
+                            "key": "email",
+                            "value": "{{test_email}}"
+                        },
+                        {
+                            "key": "otp",
+                            "value": "123456"
+                        },
+                        {
+                            "key": "newPassword",
+                            "value": "NewPassword1!@"
+                        }
+                    ]
+                }
+            },
+            "response": []
+        },
+        {
+            "name": "8. Token Authentication - Change Password",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "type": "text/javascript",
+                        "exec": [
+                            "// CRUD API Testing (Update action)",
+                            "pm.test(\"Status code verify\", function () {",
+                            "    pm.response.to.have.status(200);",
+                            "});"
+                        ]
+                    }
+                }
+            ],
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Authorization",
+                        "value": "Bearer {{access_token}}"
+                    },
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n    \"email\": \"{{test_email}}\",\n    \"oldPassword\": \"{{test_password}}\",\n    \"newPassword\": \"NewPassword2!@#\"\n}"
+                },
+                "url": {
+                    "raw": "{{base_url}}/auth/change-password",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "auth",
+                        "change-password"
+                    ]
+                }
+            },
+            "response": []
+        },
+        {
+            "name": "9. Token & Cookie - Refresh Token",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "type": "text/javascript",
+                        "exec": [
+                            "pm.test(\"Status code is 200 OK\", function () {",
+                            "    pm.response.to.have.status(200);",
+                            "});",
+                            "",
+                            "pm.test(\"Refresh token cookie checks\", function () {",
+                            "    // This might fail if the server didn't set the cookie due to invalid session, but we log the check.",
+                            "    if(pm.response.code === 200) {",
+                            "        pm.expect(pm.cookies.has(\"refreshToken\")).to.be.true;",
+                            "    }",
+                            "});"
+                        ]
+                    }
+                }
+            ],
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Authorization",
+                        "value": "Bearer {{access_token}}"
+                    }
+                ],
+                "url": {
+                    "raw": "{{base_url}}/auth/refresh",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "auth",
+                        "refresh"
+                    ]
+                }
+            },
+            "response": []
+        },
+        {
+            "name": "10. Token Authentication - Logout",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "type": "text/javascript",
+                        "exec": [
+                            "pm.test(\"Status code is 200 OK\", function () {",
+                            "    pm.response.to.have.status(200);",
+                            "});",
+                            "",
+                            "// Clear environment variables after test suite completion",
+                            "pm.environment.unset(\"access_token\");",
+                            "pm.environment.unset(\"test_email\");",
+                            "pm.environment.unset(\"test_password\");"
+                        ]
+                    }
+                }
+            ],
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Authorization",
+                        "value": "Bearer {{access_token}}"
+                    }
+                ],
+                "url": {
+                    "raw": "{{base_url}}/auth/logout",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "auth",
+                        "logout"
+                    ]
+                }
+            },
+            "response": []
+        },
+        {
+            "name": "11. Security Testing - SQL Injection",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "pm.test('Should block SQLi (400, 401, or 404)', function() { pm.expect(pm.response.code).to.be.oneOf([400, 401, 404]); });"
+                        ],
+                        "type": "text/javascript"
+                    }
+                }
+            ],
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\"email\":\"' OR 1=1 --\",\"password\":\"pass\"}"
+                },
+                "url": {
+                    "raw": "{{base_url}}/auth/login",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "auth",
+                        "login"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "12. Security Testing - XSS",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "pm.test('Should sanitize XSS', function() { pm.expect(pm.response.text()).to.not.include('<script>'); });"
+                        ],
+                        "type": "text/javascript"
+                    }
+                }
+            ],
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\"email\":\"testxss_{{$timestamp}}@a.com\",\"password\":\"Aa1!@#\",\"name\":\"<script>alert(1)</script>\"}"
+                },
+                "url": {
+                    "raw": "{{base_url}}/auth/register/customer",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "auth",
+                        "register",
+                        "customer"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "13. Rate Limit Testing",
+            "event": [
+                {
+                    "listen": "prerequest",
+                    "script": {
+                        "exec": [
+                            "const req = { url: pm.variables.get('base_url') + '/auth/login', method: 'POST', header: {'Content-Type': 'application/json'}, body: { mode: 'raw', raw: JSON.stringify({email:'a', password:'b'}) } };",
+                            "for(let i=0; i<55; i++) pm.sendRequest(req, function(e,r){});"
+                        ],
+                        "type": "text/javascript"
+                    }
+                },
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "pm.test('Status code 429 or Custom 2011', function() { var res = pm.response.json(); pm.expect(res.code).to.eql('2011'); });"
+                        ],
+                        "type": "text/javascript"
+                    }
+                }
+            ],
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\"email\":\"a\",\"password\":\"b\"}"
+                },
+                "url": {
+                    "raw": "{{base_url}}/auth/login",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "auth",
+                        "login"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "14. Edge Case - Missing Email",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "pm.test('Status code is 400', function() { pm.response.to.have.status(400); });"
+                        ],
+                        "type": "text/javascript"
+                    }
+                }
+            ],
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\"password\":\"pass\"}"
+                },
+                "url": {
+                    "raw": "{{base_url}}/auth/register/customer",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "auth",
+                        "register",
+                        "customer"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "15. Performance Testing",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "pm.test('Response time < 800ms', function() { pm.expect(pm.response.responseTime).to.be.below(800); });"
+                        ],
+                        "type": "text/javascript"
+                    }
+                }
+            ],
+            "request": {
+                "method": "GET",
+                "header": [
+                    {
+                        "key": "Authorization",
+                        "value": "Bearer {{access_token}}"
+                    }
+                ],
+                "url": {
+                    "raw": "{{base_url}}/auth/me",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "auth",
+                        "me"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "16. Token Attack - Invalid Signature",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "pm.test('Status is 401 Unauthorized', function() { pm.response.to.have.status(401); });"
+                        ],
+                        "type": "text/javascript"
+                    }
+                }
+            ],
+            "request": {
+                "method": "GET",
+                "header": [
+                    {
+                        "key": "Authorization",
+                        "value": "Bearer {{access_token}}tampered"
+                    }
+                ],
+                "url": {
+                    "raw": "{{base_url}}/auth/me",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "auth",
+                        "me"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "17. OTP Security - Invalid OTP",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "pm.test('OTP Error 6000', function() { var res = pm.response.json(); pm.expect(res.code).to.eql('6000'); });"
+                        ],
+                        "type": "text/javascript"
+                    }
+                }
+            ],
+            "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                    "raw": "{{base_url}}/auth/reset-password?email={{test_email}}&otp=000000&newPassword=P@ss12",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "auth",
+                        "reset-password"
+                    ],
+                    "query": [
+                        {
+                            "key": "email",
+                            "value": "{{test_email}}"
+                        },
+                        {
+                            "key": "otp",
+                            "value": "000000"
+                        },
+                        {
+                            "key": "newPassword",
+                            "value": "P@ss12"
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "name": "11. Security Testing - SQL Injection",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "pm.test('Should block SQLi (400, 401, or 404)', function() { pm.expect(pm.response.code).to.be.oneOf([400, 401, 404]); });"
+                        ],
+                        "type": "text/javascript"
+                    }
+                }
+            ],
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\"email\":\"' OR 1=1 --\",\"password\":\"pass\"}"
+                },
+                "url": {
+                    "raw": "{{base_url}}/auth/login",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "auth",
+                        "login"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "12. Security Testing - XSS",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "pm.test('Should sanitize XSS', function() { pm.expect(pm.response.text()).to.not.include('<script>'); });"
+                        ],
+                        "type": "text/javascript"
+                    }
+                }
+            ],
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\"email\":\"testxss_{{$timestamp}}@a.com\",\"password\":\"Aa1!@#\",\"name\":\"<script>alert(1)</script>\"}"
+                },
+                "url": {
+                    "raw": "{{base_url}}/auth/register/customer",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "auth",
+                        "register",
+                        "customer"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "13. Rate Limit Testing",
+            "event": [
+                {
+                    "listen": "prerequest",
+                    "script": {
+                        "exec": [
+                            "const req = { url: pm.variables.get('base_url') + '/auth/login', method: 'POST', header: {'Content-Type': 'application/json'}, body: { mode: 'raw', raw: JSON.stringify({email:'a', password:'b'}) } };",
+                            "for(let i=0; i<55; i++) pm.sendRequest(req, function(e,r){});"
+                        ],
+                        "type": "text/javascript"
+                    }
+                },
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "pm.test('Status code 429 or Custom 2011', function() { var res = pm.response.json(); pm.expect(res.code).to.eql('2011'); });"
+                        ],
+                        "type": "text/javascript"
+                    }
+                }
+            ],
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\"email\":\"a\",\"password\":\"b\"}"
+                },
+                "url": {
+                    "raw": "{{base_url}}/auth/login",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "auth",
+                        "login"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "14. Edge Case - Missing Email",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "pm.test('Status code is 400', function() { pm.response.to.have.status(400); });"
+                        ],
+                        "type": "text/javascript"
+                    }
+                }
+            ],
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\"password\":\"pass\"}"
+                },
+                "url": {
+                    "raw": "{{base_url}}/auth/register/customer",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "auth",
+                        "register",
+                        "customer"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "15. Performance Testing",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "pm.test('Response time < 800ms', function() { pm.expect(pm.response.responseTime).to.be.below(800); });"
+                        ],
+                        "type": "text/javascript"
+                    }
+                }
+            ],
+            "request": {
+                "method": "GET",
+                "header": [
+                    {
+                        "key": "Authorization",
+                        "value": "Bearer {{access_token}}"
+                    }
+                ],
+                "url": {
+                    "raw": "{{base_url}}/auth/me",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "auth",
+                        "me"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "16. Token Attack - Invalid Signature",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "pm.test('Status is 401 Unauthorized', function() { pm.response.to.have.status(401); });"
+                        ],
+                        "type": "text/javascript"
+                    }
+                }
+            ],
+            "request": {
+                "method": "GET",
+                "header": [
+                    {
+                        "key": "Authorization",
+                        "value": "Bearer {{access_token}}tampered"
+                    }
+                ],
+                "url": {
+                    "raw": "{{base_url}}/auth/me",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "auth",
+                        "me"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "17. OTP Security - Invalid OTP",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "pm.test('OTP Error 6000', function() { var res = pm.response.json(); pm.expect(res.code).to.eql('6000'); });"
+                        ],
+                        "type": "text/javascript"
+                    }
+                }
+            ],
+            "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                    "raw": "{{base_url}}/auth/reset-password?email={{test_email}}&otp=000000&newPassword=P@ss12",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "auth",
+                        "reset-password"
+                    ],
+                    "query": [
+                        {
+                            "key": "email",
+                            "value": "{{test_email}}"
+                        },
+                        {
+                            "key": "otp",
+                            "value": "000000"
+                        },
+                        {
+                            "key": "newPassword",
+                            "value": "P@ss12"
+                        }
+                    ]
+                }
+            }
+        }
+    ],
+    "auth": {
+        "type": "bearer"
+    },
+    "event": [
+        {
+            "listen": "prerequest",
+            "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                    ""
+                ]
+            }
+        },
+        {
+            "listen": "test",
+            "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {},
+                "exec": [
+                    ""
+                ]
+            }
+        }
+    ],
+    "variable": [
+        {
+            "key": "base_url",
+            "value": "http://localhost:8080"
+        }
+    ]
+}

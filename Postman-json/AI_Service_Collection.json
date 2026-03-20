@@ -1,0 +1,278 @@
+{
+    "info": {
+        "name": "AI Service API Automation Testing",
+        "description": "Postman Collection for AI Service applying 13 automation testing techniques.",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "item": [
+        {
+            "name": "1. Analytics",
+            "item": [
+                {
+                    "name": "1. GET Dashboard Analytics",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "// 1. HTTP Status Code Testing",
+                                    "pm.test(\"Status is 200\", function(){ pm.response.to.have.status(200); });",
+                                    "// 5. Nested Object Validation",
+                                    "pm.test(\"Verify dashboard result structure\", function() {",
+                                    "    var data = pm.response.json().result;",
+                                    "    pm.expect(data).to.have.property('totalRevenue');",
+                                    "    pm.expect(data).to.have.property('totalOrders');",
+                                    "});"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{admin_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/ai/analytics/dashboard?daysBack=30",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "ai",
+                                "analytics",
+                                "dashboard"
+                            ],
+                            "query": [
+                                {
+                                    "key": "daysBack",
+                                    "value": "30"
+                                }
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "2. Chat (RAG)",
+            "item": [
+                {
+                    "name": "1. POST Ask AI",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test(\"Status is 200\", function(){ pm.response.to.have.status(200); });"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{access_token}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"question\": \"Tell me about the X7 model features\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/ai/chat/ask",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "ai",
+                                "chat",
+                                "ask"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "3. Forecast",
+            "item": [
+                {
+                    "name": "1. GET Sales Forecast by Variant",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "// 10. Negative Testing",
+                                    "pm.test(\"Status is 200\", function(){ pm.response.to.have.status(200); });"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{admin_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/ai/forecast/1",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "ai",
+                                "forecast",
+                                "1"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "4. Production Plan",
+            "item": [
+                {
+                    "name": "1. POST Generate Production Plan",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test(\"Status is 200\", function(){ pm.response.to.have.status(200); });",
+                                    "// 6. Loop / Collection Testing Simulation",
+                                    "var data = pm.response.json().result;",
+                                    "if(data && data.length > 0) { pm.environment.set(\"test_production_plan_id\", data[0].id); }"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{admin_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/ai/production-plan/generate?planMonth=2026-06-01",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "ai",
+                                "production-plan",
+                                "generate"
+                            ],
+                            "query": [
+                                {
+                                    "key": "planMonth",
+                                    "value": "2026-06-01"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "2. GET Production Plans by Month",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test(\"Status is 200\", function(){ pm.response.to.have.status(200); });"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{admin_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/ai/production-plan?month=2026-06-01",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "ai",
+                                "production-plan"
+                            ],
+                            "query": [
+                                {
+                                    "key": "month",
+                                    "value": "2026-06-01"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "3. PUT Approve Production Plan",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test(\"Status code verification\", function() {",
+                                    "    pm.expect(pm.response.code).to.be.oneOf([200, 400]);",
+                                    "});"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{admin_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/ai/production-plan/{{test_production_plan_id}}/approve",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "ai",
+                                "production-plan",
+                                "{{test_production_plan_id}}",
+                                "approve"
+                            ]
+                        }
+                    }
+                }
+            ]
+        }
+    ]
+}

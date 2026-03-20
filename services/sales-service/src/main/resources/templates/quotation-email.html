@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title>Báo Giá Xe - EV Automotive</title>
+  <style>
+    body {
+      font-family: 'Inter', 'Segoe UI', sans-serif;
+      margin: 0;
+      padding: 16px;
+      background: #f5f6fa;
+      color: #1e293b;
+      line-height: 1.5;
+    }
+
+    .container {
+      max-width: 680px;
+      margin: 24px auto;
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 4px 5px 10px rgba(0, 0, 0, 0.4);
+      overflow: hidden;
+    }
+
+    .header {
+      background: #3b82f6;
+      color: white;
+      text-align: center;
+      padding: 20px;
+    }
+
+    .header h1 {
+      font-size: 20px;
+      margin: 0;
+      font-weight: 600;
+    }
+
+    .header p {
+      font-size: 13px;
+      opacity: 0.9;
+      margin-top: 4px;
+    }
+
+    .body {
+      padding: 24px 20px;
+    }
+
+    .greeting {
+      margin-bottom: 16px;
+      font-size: 15px;
+    }
+
+    .info-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin: 20px 0;
+    }
+
+    .info-card {
+      background: #f9fafb;
+      padding: 14px 12px;
+      border-radius: 6px;
+      border-left: 3px solid #3b82f6;
+    }
+
+    .info-label {
+      font-size: 12px;
+      color: #64748b;
+      margin-bottom: 4px;
+    }
+
+    .info-value {
+      font-weight: 600;
+      font-size: 14px;
+      color: #1e293b;
+    }
+
+    .price-card {
+      text-align: center;
+      padding: 16px;
+      border-radius: 8px;
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      margin: 20px 0;
+    }
+
+    .final-price {
+      font-size: 22px;
+      font-weight: 700;
+      color: #10b981;
+    }
+
+    .terms-section {
+      background: #fefce8;
+      border: 1px solid #fef08a;
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 20px;
+      font-size: 13px;
+      color: #1e293b;
+    }
+
+    .action-section {
+      text-align: center;
+      margin-top: 16px;
+    }
+
+    .btn {
+      display: inline-block;
+      padding: 10px 24px;
+      margin: 6px;
+      border-radius: 8px;
+      font-weight: 500;
+      text-decoration: none;
+      font-size: 14px;
+      transition: all 0.2s;
+      color: white;
+    }
+
+    .btn-accept {
+      background: #10b981;
+    }
+
+    .btn-accept:hover {
+      background: #059669;
+    }
+
+    .btn-reject {
+      background: #ef4444;
+    }
+
+    .btn-reject:hover {
+      background: #dc2626;
+    }
+
+    .footer {
+      text-align: center;
+      font-size: 12px;
+      color: #64748b;
+      padding: 16px 12px;
+      border-top: 1px solid #e2e8f0;
+    }
+
+    @media (max-width: 640px) {
+      .info-grid { grid-template-columns: 1fr; }
+      .body { padding: 16px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Báo Giá Xe - EV Automotive</h1>
+      <p>Đồng hành cùng Quý khách</p>
+    </div>
+
+    <div class="body">
+      <p class="greeting">Kính gửi Quý khách <strong th:text="${customer.fullName}"></strong>,</p>
+
+      <p>Cảm ơn Quý khách đã quan tâm đến sản phẩm của EV Automotive. Dưới đây là báo giá dành riêng cho Quý khách:</p>
+
+      <div class="info-grid">
+        <div class="info-card">
+          <div class="info-label">Mã báo giá</div>
+          <div class="info-value" th:text="${quotation.quotationId}"></div>
+        </div>
+        <div class="info-card">
+          <div class="info-label">Ngày báo giá</div>
+          <div class="info-value" th:text="${quotationDate}"></div>
+        </div>
+        <div class="info-card">
+          <div class="info-label">Hiệu lực đến</div>
+          <div class="info-value" th:text="${validUntil}"></div>
+        </div>
+        <div class="info-card">
+          <div class="info-label">Thời hạn hiệu lực</div>
+          <div class="info-value">7 Ngày</div>
+        </div>
+      </div>
+
+      <div class="price-card">
+        <div>Giá cuối cùng</div>
+        <div class="final-price" th:text="${#numbers.formatDecimal(quotation.finalPrice, 0, 'COMMA', 0, 'POINT') + ' VND'}"></div>
+        <div style="font-size:12px;color:#64748b;">Đã bao gồm VAT & phí trước bạ</div>
+      </div>
+
+      <div class="terms-section" th:text="${quotation.termsConditions}">
+      </div>
+
+      <div class="action-section">
+        <a th:href="${acceptUrl}" class="btn btn-accept">Chấp Nhận</a>
+        <a th:href="${rejectUrl}" class="btn btn-reject">Từ Chối</a>
+        <p style="margin-top:8px;font-size:12px;color:#64748b;">Báo giá có hiệu lực 7 ngày kể từ ngày gửi.</p>
+      </div>
+    </div>
+
+    <div class="footer">
+      <strong>EV Automotive</strong> • sales@ev-automotive.com • 1800-1234
+    </div>
+  </div>
+</body>
+</html>
