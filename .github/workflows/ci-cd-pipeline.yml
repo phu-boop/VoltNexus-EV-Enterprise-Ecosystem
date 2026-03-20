@@ -92,10 +92,10 @@ jobs:
           JIRA_USER_EMAIL: ${{ secrets.JIRA_USER_EMAIL }}
           JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
           JIRA_PROJECT_KEY: ${{ secrets.JIRA_PROJECT_KEY }}
-          ISSUE_COUNT: ${{ steps.sonar_check.outputs.issue_count }}
         run: |
-          SUMMARY="[SonarCloud] ${{ github.repository }} - $ISSUE_COUNT Critical Issues Found (#${{ github.run_number }})"
-          DESCRIPTION="🚨 *SonarCloud Quality Gate Failure*\n\n*Repository:* ${{ github.repository }}\n*Branch:* ${{ github.ref_name }}\n*Workflow:* ${{ github.workflow }}\n*Run ID:* [${{ github.run_id }}](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})\n\nFound *$ISSUE_COUNT* issues with severity *BLOCKER* or *CRITICAL*.\n\n*SonarCloud Project:* [View Issues](https://sonarcloud.io/project/issues?id=phu-boop_VoltNexus-EV-Enterprise-Ecosystem&resolved=false&severities=BLOCKER%2CCRITICAL)"
+          # Dùng ${{ env.xxx }} và ${{ github.xxx }} để đảm bảo biến được điền giá trị trước khi chạy shell
+          SUMMARY="[SonarCloud] ${{ github.repository }} - ${{ steps.sonar_check.outputs.issue_count }} Critical Issues Found (#${{ github.run_number }})"
+          DESCRIPTION="🚨 *SonarCloud Quality Gate Failure*\n\n*Repository:* ${{ github.repository }}\n*Branch:* ${{ github.ref_name }}\n*Workflow:* ${{ github.workflow }}\n*Run ID:* [${{ github.run_id }}](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})\n\nFound *${{ steps.sonar_check.outputs.issue_count }}* issues with severity *BLOCKER* or *CRITICAL*.\n\n*SonarCloud Project:* [View Issues](https://sonarcloud.io/project/issues?id=phu-boop_VoltNexus-EV-Enterprise-Ecosystem&resolved=false&severities=BLOCKER%2CCRITICAL)"
 
           cat <<EOF > jira-sonar-payload.json
           {
@@ -112,7 +112,7 @@ jobs:
           curl -s -X POST --url "${CLEAN_URL}/rest/api/2/issue" \
             --user "${JIRA_USER_EMAIL}:${JIRA_API_TOKEN}" \
             --header "Content-Type: application/json" \
-            --data @jira-sonar-payload.json || true
+            --data @jira-sonar-payload.json
 
       - name: "CI: Security Scan"
         uses: aquasecurity/trivy-action@master
@@ -300,7 +300,7 @@ jobs:
           curl -s -X POST --url "${CLEAN_URL}/rest/api/2/issue" \
             --user "${JIRA_USER_EMAIL}:${JIRA_API_TOKEN}" \
             --header "Content-Type: application/json" \
-            --data @jira-payload.json || true
+            --data @jira-payload.json
 
   #############################################################################
   ## STAGE 2: PRODUCTION DEPLOYMENT
