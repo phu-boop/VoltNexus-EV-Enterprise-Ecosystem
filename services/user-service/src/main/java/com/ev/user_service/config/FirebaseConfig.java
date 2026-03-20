@@ -19,7 +19,9 @@ public class FirebaseConfig {
                     .getResourceAsStream("firebase-service-account.json");
 
             if (serviceAccount == null) {
-                throw new IOException("❌ firebase-service-account.json not found in resources folder!");
+                System.err.println(
+                        "⚠️ firebase-service-account.json not found in resources folder. Skipping Firebase initialization. This is expected in CI/CD environments.");
+                return;
             }
 
             FirebaseOptions options = FirebaseOptions.builder()
