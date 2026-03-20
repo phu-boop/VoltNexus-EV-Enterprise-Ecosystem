@@ -94,15 +94,17 @@ jobs:
           JIRA_PROJECT_KEY: ${{ secrets.JIRA_PROJECT_KEY }}
           ISSUE_COUNT: ${{ steps.sonar_check.outputs.issue_count }}
         run: |
-          SUMMARY="[SonarCloud Quality Gate] Found $ISSUE_COUNT Blocker/Critical Issues"
-          DESCRIPTION="🚨 *SonarCloud Quality Gate Failure*\n\nFound *$ISSUE_COUNT* issues with severity BLOCKER or CRITICAL.\n\n*Check details on SonarCloud:* https://sonarcloud.io/project/issues?id=phu-boop_VoltNexus-EV-Enterprise-Ecosystem&resolved=false&severities=BLOCKER%2CCRITICAL"
+          SUMMARY="[SonarCloud] ${{ github.repository }} - $ISSUE_COUNT Critical Issues Found (#${{ github.run_number }})"
+          DESCRIPTION="🚨 *SonarCloud Quality Gate Failure*\n\n*Repository:* ${{ github.repository }}\n*Branch:* ${{ github.ref_name }}\n*Workflow:* ${{ github.workflow }}\n*Run ID:* [${{ github.run_id }}](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})\n\nFound *$ISSUE_COUNT* issues with severity *BLOCKER* or *CRITICAL*.\n\n*SonarCloud Project:* [View Issues](https://sonarcloud.io/project/issues?id=phu-boop_VoltNexus-EV-Enterprise-Ecosystem&resolved=false&severities=BLOCKER%2CCRITICAL)"
+
           cat <<EOF > jira-sonar-payload.json
           {
             "fields": {
               "project": { "key": "$JIRA_PROJECT_KEY" },
               "summary": "$SUMMARY",
               "description": "$DESCRIPTION",
-              "issuetype": { "name": "Bug" }
+              "issuetype": { "name": "Bug" },
+              "priority": { "name": "High" }
             }
           }
           EOF
@@ -280,15 +282,17 @@ jobs:
           JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
           JIRA_PROJECT_KEY: ${{ secrets.JIRA_PROJECT_KEY }}
         run: |
-          SUMMARY="[CI/CD Failure] API Test Failed - ${{ github.workflow }} #${{ github.run_number }}"
-          DESCRIPTION="🚨 *Automated API Test Failure*\n*Live Report:* https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/report.html"
+          SUMMARY="[API Test Failure] ${{ github.repository }} - System Integration Error (#${{ github.run_number }})"
+          DESCRIPTION="🚨 *Automated API/End-to-End Test Failure*\n\n*Repository:* ${{ github.repository }}\n*Branch:* ${{ github.ref_name }}\n*Commit:* ${{ github.sha }}\n*Workflow:* ${{ github.workflow }}\n\n❌ The Postman/Newman API collection failed during integration testing on Staging environment.\n\n*Live Test Report:* https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/report.html\n*GitHub Actions Run:* https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+
           cat <<EOF > jira-payload.json
           {
             "fields": {
               "project": { "key": "$JIRA_PROJECT_KEY" },
               "summary": "$SUMMARY",
               "description": "$DESCRIPTION",
-              "issuetype": { "name": "Bug" }
+              "issuetype": { "name": "Bug" },
+              "priority": { "name": "Highest" }
             }
           }
           EOF
