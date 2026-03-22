@@ -100,11 +100,11 @@ public interface ComplaintRepository extends JpaRepository<Complaint, Long>,
 
     // Average resolution time (in hours)
     @Query("SELECT AVG(TIMESTAMPDIFF(HOUR, c.createdAt, c.resolvedDate)) FROM Complaint c WHERE c.dealerId = :dealerId AND c.status = :status")
-    Double getAverageResolutionTime(@Param("dealerId") Long dealerId, @Param("status") ComplaintStatus status);
+    Double getAverageResolutionTime(@Param("dealerId") String dealerId, @Param("status") ComplaintStatus status);
 
     // Average first response time
     @Query("SELECT AVG(TIMESTAMPDIFF(HOUR, c.createdAt, c.firstResponseAt)) FROM Complaint c WHERE c.dealerId = :dealerId AND c.firstResponseAt IS NOT NULL")
-    Double getAverageFirstResponseTime(@Param("dealerId") Long dealerId);
+    Double getAverageFirstResponseTime(@Param("dealerId") String dealerId);
 
     // Average times with date range
     @Query("SELECT AVG(TIMESTAMPDIFF(HOUR, c.createdAt, c.resolvedDate)) FROM Complaint c " +
@@ -112,7 +112,7 @@ public interface ComplaintRepository extends JpaRepository<Complaint, Long>,
            "AND c.status = :status " +
            "AND c.createdAt BETWEEN :startDate AND :endDate")
     Double getAverageResolutionTimeWithDateRange(
-        @Param("dealerId") Long dealerId,
+        @Param("dealerId") String dealerId,
         @Param("status") ComplaintStatus status,
         @Param("startDate") LocalDateTime startDate,
         @Param("endDate") LocalDateTime endDate
@@ -123,7 +123,7 @@ public interface ComplaintRepository extends JpaRepository<Complaint, Long>,
            "AND c.firstResponseAt IS NOT NULL " +
            "AND c.createdAt BETWEEN :startDate AND :endDate")
     Double getAverageFirstResponseTimeWithDateRange(
-        @Param("dealerId") Long dealerId,
+        @Param("dealerId") String dealerId,
         @Param("startDate") LocalDateTime startDate,
         @Param("endDate") LocalDateTime endDate
     );
@@ -134,7 +134,7 @@ public interface ComplaintRepository extends JpaRepository<Complaint, Long>,
            "AND c.status IN ('NEW', 'IN_PROGRESS') " +
            "AND c.createdAt < :overdueTime")
     Long countOverdueComplaints(
-        @Param("dealerId") Long dealerId,
+        @Param("dealerId") String dealerId,
         @Param("severity") ComplaintSeverity severity,
         @Param("overdueTime") LocalDateTime overdueTime
     );
@@ -145,7 +145,7 @@ public interface ComplaintRepository extends JpaRepository<Complaint, Long>,
            "AND c.createdAt < :overdueTime " +
            "AND c.createdAt BETWEEN :startDate AND :endDate")
     Long countOverdueComplaintsWithDateRange(
-        @Param("dealerId") Long dealerId,
+        @Param("dealerId") String dealerId,
         @Param("severity") ComplaintSeverity severity,
         @Param("overdueTime") LocalDateTime overdueTime,
         @Param("startDate") LocalDateTime startDate,
@@ -157,7 +157,7 @@ public interface ComplaintRepository extends JpaRepository<Complaint, Long>,
            "AND c.createdAt BETWEEN :startDate AND :endDate " +
            "ORDER BY c.createdAt DESC")
     List<Complaint> findByDealerIdAndDateRange(
-        @Param("dealerId") Long dealerId,
+        @Param("dealerId") String dealerId,
         @Param("startDate") LocalDateTime startDate,
         @Param("endDate") LocalDateTime endDate
     );
