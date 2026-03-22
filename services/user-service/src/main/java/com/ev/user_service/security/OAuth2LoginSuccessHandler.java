@@ -24,10 +24,13 @@ import com.ev.user_service.repository.UserRepository;
 import com.ev.user_service.repository.CustomerProfileRepository;
 import com.ev.user_service.service.CustomerProfileService;
 
+import lombok.extern.slf4j.Slf4j;
+
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 
+@Slf4j
 @Component
 public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
 
@@ -113,7 +116,7 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
                 }
             }
         } catch (Exception e) {
-            System.err.println("[OAuth2LoginSuccessHandler] ❌ Error fetching customer profile: " + e.getMessage());
+            log.error("Error fetching customer profile for user {}: {}", user.getEmail(), e.getMessage());
         }
 
         LoginRespond loginRespond = new LoginRespond(userRespond, accessToken);
@@ -126,9 +129,7 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
 
         // Security fix: Validate redirectUri against Whitelist (allowedOrigins)
         if (redirectUri == null || redirectUri.isEmpty() || !isAllowedRedirectUri(redirectUri)) {
-            System.err
-                    .println("[OAuth2LoginSuccessHandler] ⚠️ Invalid or missing redirect_uri. Falling back to default: "
-                            + urlFrontend);
+            log.warn("Invalid or missing redirect_uri [{}]. Falling back to default: {}", redirectUri, urlFrontend);
             redirectUri = urlFrontend;
         }
 
@@ -153,7 +154,7 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
 
             return null;
         } catch (Exception e) {
-            System.err.println("[OAuth2LoginSuccessHandler] Error extracting redirect_uri: " + e.getMessage());
+            log.error("Error extracting redirect_uri from request state: {}", e.getMessage());
             return null;
         }
     }
