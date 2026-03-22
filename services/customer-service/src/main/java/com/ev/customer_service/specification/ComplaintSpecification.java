@@ -15,7 +15,7 @@ import java.time.LocalDateTime;
  */
 public class ComplaintSpecification {
 
-    public static Specification<Complaint> hasDealerId(Long dealerId) {
+    public static Specification<Complaint> hasDealerId(String dealerId) {
         return (root, query, cb) -> cb.equal(root.get("dealerId"), dealerId);
     }
 

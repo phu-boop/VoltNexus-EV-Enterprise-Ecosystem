@@ -20,13 +20,13 @@ public interface ComplaintRepository extends JpaRepository<Complaint, Long>,
 
     List<Complaint> findByCustomerCustomerId(Long customerId);
 
-    List<Complaint> findByDealerId(Long dealerId);
+    List<Complaint> findByDealerId(String dealerId);
 
     List<Complaint> findByStatus(ComplaintStatus status);
 
     List<Complaint> findBySeverity(ComplaintSeverity severity);
 
-    List<Complaint> findByDealerIdAndStatus(Long dealerId, ComplaintStatus status);
+    List<Complaint> findByDealerIdAndStatus(String dealerId, ComplaintStatus status);
 
     List<Complaint> findByAssignedStaffId(String assignedStaffId);
 
@@ -34,25 +34,25 @@ public interface ComplaintRepository extends JpaRepository<Complaint, Long>,
 
     // Statistics queries
     @Query("SELECT COUNT(c) FROM Complaint c WHERE c.dealerId = :dealerId")
-    Long countByDealerId(@Param("dealerId") Long dealerId);
+    Long countByDealerId(@Param("dealerId") String dealerId);
 
     @Query("SELECT COUNT(c) FROM Complaint c WHERE c.dealerId = :dealerId AND c.status = :status")
-    Long countByDealerIdAndStatus(@Param("dealerId") Long dealerId, @Param("status") ComplaintStatus status);
+    Long countByDealerIdAndStatus(@Param("dealerId") String dealerId, @Param("status") ComplaintStatus status);
 
     @Query("SELECT COUNT(c) FROM Complaint c WHERE c.dealerId = :dealerId AND c.severity = :severity")
-    Long countByDealerIdAndSeverity(@Param("dealerId") Long dealerId, @Param("severity") ComplaintSeverity severity);
+    Long countByDealerIdAndSeverity(@Param("dealerId") String dealerId, @Param("severity") ComplaintSeverity severity);
 
     @Query("SELECT c.complaintType, COUNT(c) FROM Complaint c WHERE c.dealerId = :dealerId GROUP BY c.complaintType")
-    List<Object[]> countByComplaintType(@Param("dealerId") Long dealerId);
+    List<Object[]> countByComplaintType(@Param("dealerId") String dealerId);
 
     @Query("SELECT c.assignedStaffName, COUNT(c) FROM Complaint c WHERE c.dealerId = :dealerId AND c.assignedStaffName IS NOT NULL GROUP BY c.assignedStaffName")
-    List<Object[]> countByAssignedStaff(@Param("dealerId") Long dealerId);
+    List<Object[]> countByAssignedStaff(@Param("dealerId") String dealerId);
 
     // Statistics queries with date range
     @Query("SELECT COUNT(c) FROM Complaint c WHERE c.dealerId = :dealerId " +
            "AND c.createdAt BETWEEN :startDate AND :endDate")
     Long countByDealerIdAndDateRange(
-        @Param("dealerId") Long dealerId,
+        @Param("dealerId") String dealerId,
         @Param("startDate") LocalDateTime startDate,
         @Param("endDate") LocalDateTime endDate
     );
@@ -61,7 +61,7 @@ public interface ComplaintRepository extends JpaRepository<Complaint, Long>,
            "AND c.status = :status " +
            "AND c.createdAt BETWEEN :startDate AND :endDate")
     Long countByDealerIdAndStatusAndDateRange(
-        @Param("dealerId") Long dealerId,
+        @Param("dealerId") String dealerId,
         @Param("status") ComplaintStatus status,
         @Param("startDate") LocalDateTime startDate,
         @Param("endDate") LocalDateTime endDate
@@ -71,7 +71,7 @@ public interface ComplaintRepository extends JpaRepository<Complaint, Long>,
            "AND c.severity = :severity " +
            "AND c.createdAt BETWEEN :startDate AND :endDate")
     Long countByDealerIdAndSeverityAndDateRange(
-        @Param("dealerId") Long dealerId,
+        @Param("dealerId") String dealerId,
         @Param("severity") ComplaintSeverity severity,
         @Param("startDate") LocalDateTime startDate,
         @Param("endDate") LocalDateTime endDate
@@ -82,7 +82,7 @@ public interface ComplaintRepository extends JpaRepository<Complaint, Long>,
            "AND c.createdAt BETWEEN :startDate AND :endDate " +
            "GROUP BY c.complaintType")
     List<Object[]> countByComplaintTypeAndDateRange(
-        @Param("dealerId") Long dealerId,
+        @Param("dealerId") String dealerId,
         @Param("startDate") LocalDateTime startDate,
         @Param("endDate") LocalDateTime endDate
     );
@@ -93,7 +93,7 @@ public interface ComplaintRepository extends JpaRepository<Complaint, Long>,
            "AND c.createdAt BETWEEN :startDate AND :endDate " +
            "GROUP BY c.assignedStaffName")
     List<Object[]> countByAssignedStaffAndDateRange(
-        @Param("dealerId") Long dealerId,
+        @Param("dealerId") String dealerId,
         @Param("startDate") LocalDateTime startDate,
         @Param("endDate") LocalDateTime endDate
     );

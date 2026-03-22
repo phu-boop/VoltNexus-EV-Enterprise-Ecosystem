@@ -207,7 +207,7 @@ public class ComplaintService {
     /**
      * Lấy danh sách phản hồi theo dealer
      */
-    public List<ComplaintResponse> getComplaintsByDealer(Long dealerId) {
+    public List<ComplaintResponse> getComplaintsByDealer(String dealerId) {
         List<Complaint> complaints = complaintRepository.findByDealerId(dealerId);
         return complaints.stream()
                 .map(this::mapToResponse)
@@ -264,7 +264,7 @@ public class ComplaintService {
      * Lấy thống kê phản hồi
      * Dealer Manager xem overview
      */
-    public ComplaintStatisticsResponse getStatistics(Long dealerId, LocalDateTime startDate, LocalDateTime endDate) {
+    public ComplaintStatisticsResponse getStatistics(String dealerId, LocalDateTime startDate, LocalDateTime endDate) {
         log.info("Getting complaint statistics for dealer {} from {} to {}", dealerId, startDate, endDate);
 
         // Count total with date range
