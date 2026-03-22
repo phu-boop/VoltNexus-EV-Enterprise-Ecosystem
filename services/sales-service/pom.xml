@@ -189,7 +189,15 @@
             <scope>provided</scope>
         </dependency>
 
+        <!-- H2 Database for Unit Testing -->
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>test</scope>
+        </dependency>
+
     </dependencies>
+
 
     <build>
         <plugins>
