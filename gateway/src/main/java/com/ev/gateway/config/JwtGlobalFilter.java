@@ -1,5 +1,6 @@
 package com.ev.gateway.config;
 
+import com.ev.common_lib.constant.HeaderConstants;
 import com.ev.common_lib.exception.ErrorCode;
 import com.ev.gateway.util.JwtUtil;
 import com.ev.gateway.service.RedisService;
@@ -158,12 +159,12 @@ public class JwtGlobalFilter implements GlobalFilter, Ordered {
             Long userId, String profileId, String dealerId, String path) {
         return exchange.mutate()
                 .request(r -> r.headers(headers -> {
-                    headers.add("X-User-Email", email);
-                    headers.add("X-User-Role", role);
-                    headers.add("X-User-Id", String.valueOf(userId));
-                    headers.add("X-User-ProfileId", profileId);
+                    headers.add(HeaderConstants.X_USER_EMAIL, email);
+                    headers.add(HeaderConstants.X_USER_ROLE, role);
+                    headers.add(HeaderConstants.X_USER_ID, String.valueOf(userId));
+                    headers.add(HeaderConstants.X_USER_PROFILE_ID, profileId);
                     if (dealerId != null) {
-                        headers.add("X-User-DealerId", dealerId);
+                        headers.add(HeaderConstants.X_USER_DEALER_ID, dealerId);
                     }
                     if (exchange.getRequest().getRemoteAddress() != null) {
                         headers.add("X-Forwarded-For",

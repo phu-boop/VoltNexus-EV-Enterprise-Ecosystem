@@ -13,13 +13,13 @@ import com.ev.customer_service.repository.CustomerRepository;
 import com.ev.customer_service.service.CartService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -29,6 +29,9 @@ public class CartServiceImpl implements CartService {
 
     private final CartItemRepository cartItemRepository;
     private final CustomerRepository customerRepository;
+
+    @Lazy
+    private final CartService self;
 
     @Override
     public CartItemResponse addToCart(Long customerId, AddToCartRequest request) {
@@ -86,7 +89,7 @@ public class CartServiceImpl implements CartService {
         List<CartItem> cartItems = cartItemRepository.findByCustomerCustomerIdOrderByCreatedAtDesc(customerId);
         return cartItems.stream()
                 .map(this::mapToResponse)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
@@ -98,7 +101,7 @@ public class CartServiceImpl implements CartService {
 
         List<CartItemResponse> itemResponses = cartItems.stream()
                 .map(this::mapToResponse)
-                .collect(Collectors.toList());
+                .toList();
 
         BigDecimal totalAmount = cartItems.stream()
                 .map(CartItem::getTotalPrice)
@@ -213,6 +216,6 @@ public class CartServiceImpl implements CartService {
             return 0L;
         }
 
-        return getCartItemCount(customerOpt.get().getCustomerId());
+        return self.getCartItemCount(customerOpt.get().getCustomerId());
     }
 }

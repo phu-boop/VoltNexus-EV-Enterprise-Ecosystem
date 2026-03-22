@@ -17,6 +17,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 @Profile("docker")
 public class ProductionSecurityConfig {
 
+    private static final String ROLE_EVM_STAFF = "ROLE_EVM_STAFF";
+    private static final String ROLE_ADMIN = "ROLE_ADMIN";
+    private static final String ROLE_DEALER_MANAGER = "ROLE_DEALER_MANAGER";
+    private static final String ROLE_DEALER_STAFF = "ROLE_DEALER_STAFF";
+
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
     @Autowired
@@ -34,21 +39,21 @@ public class ProductionSecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/inventory/**")
                         .hasAnyRole("DEALER_STAFF", "DEALER_MANAGER", "EVM_STAFF", "ADMIN")
                         .requestMatchers(HttpMethod.GET, "/inventory/transactions")
-                        .hasAnyAuthority("ROLE_EVM_STAFF", "ROLE_ADMIN")
+                        .hasAnyAuthority(ROLE_EVM_STAFF, ROLE_ADMIN)
                         .requestMatchers(HttpMethod.POST, "/inventory/transactions")
-                        .hasAnyAuthority("ROLE_EVM_STAFF", "ROLE_ADMIN")
+                        .hasAnyAuthority(ROLE_EVM_STAFF, ROLE_ADMIN)
                         .requestMatchers(HttpMethod.PUT, "/inventory/central-stock/**")
-                        .hasAnyAuthority("ROLE_EVM_STAFF", "ROLE_ADMIN")
+                        .hasAnyAuthority(ROLE_EVM_STAFF, ROLE_ADMIN)
                         .requestMatchers(HttpMethod.POST, "/inventory/allocate")
-                        .hasAnyAuthority("ROLE_EVM_STAFF", "ROLE_ADMIN")
+                        .hasAnyAuthority(ROLE_EVM_STAFF, ROLE_ADMIN)
                         .requestMatchers(HttpMethod.POST, "/inventory/ship-b2b")
-                        .hasAnyAuthority("ROLE_EVM_STAFF", "ROLE_ADMIN")
+                        .hasAnyAuthority(ROLE_EVM_STAFF, ROLE_ADMIN)
 
                         // dealer
                         .requestMatchers(HttpMethod.GET, "/inventory/my-stock")
-                        .hasAnyAuthority("ROLE_DEALER_MANAGER", "ROLE_DEALER_STAFF")
+                        .hasAnyAuthority(ROLE_DEALER_MANAGER, ROLE_DEALER_STAFF)
                         .requestMatchers(HttpMethod.PUT, "/inventory/dealer-stock/**")
-                        .hasAnyAuthority("ROLE_DEALER_MANAGER")
+                        .hasAnyAuthority(ROLE_DEALER_MANAGER)
 
                         .anyRequest().authenticated())
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

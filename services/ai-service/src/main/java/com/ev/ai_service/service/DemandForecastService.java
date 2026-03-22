@@ -6,8 +6,8 @@ import com.ev.ai_service.client.InventoryServiceClient;
 import com.ev.ai_service.dto.*;
 import com.ev.ai_service.entity.*;
 import com.ev.ai_service.repository.*;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,7 +20,6 @@ import java.util.stream.Collectors;
  * Service chính cho Demand Forecasting
  */
 @Service
-@RequiredArgsConstructor
 @Slf4j
 public class DemandForecastService {
 
@@ -33,6 +32,30 @@ public class DemandForecastService {
         private final GeminiAIService geminiAIService;
         private final SalesServiceClient salesServiceClient;
         private final InventoryServiceClient inventoryServiceClient;
+        private final DemandForecastService self;
+
+        public DemandForecastService(
+                        ForecastAlgorithmService algorithmService,
+                        SalesHistoryRepository salesHistoryRepository,
+                        InventorySnapshotRepository inventorySnapshotRepository,
+                        DemandForecastRepository forecastRepository,
+                        ProductionPlanRepository productionPlanRepository,
+                        VehicleServiceClient vehicleServiceClient,
+                        GeminiAIService geminiAIService,
+                        SalesServiceClient salesServiceClient,
+                        InventoryServiceClient inventoryServiceClient,
+                        @Lazy DemandForecastService self) {
+                this.algorithmService = algorithmService;
+                this.salesHistoryRepository = salesHistoryRepository;
+                this.inventorySnapshotRepository = inventorySnapshotRepository;
+                this.forecastRepository = forecastRepository;
+                this.productionPlanRepository = productionPlanRepository;
+                this.vehicleServiceClient = vehicleServiceClient;
+                this.geminiAIService = geminiAIService;
+                this.salesServiceClient = salesServiceClient;
+                this.inventoryServiceClient = inventoryServiceClient;
+                this.self = self;
+        }
 
         /**
          * Tạo dự báo nhu cầu dựa trên request
@@ -176,7 +199,7 @@ public class DemandForecastService {
                                 : null;
 
                 try {
-                        enrichHistoricalDataFromRestApis(variantId, dealerIdUUID, historyDays);
+                        self.enrichHistoricalDataFromRestApis(variantId, dealerIdUUID, historyDays);
                 } catch (Exception e) {
                         log.error("❌ Failed to enrich data: {}", e.getMessage());
                 }
@@ -274,34 +297,47 @@ public class DemandForecastService {
          * Fix: Validate variant IDs, loại bỏ ID không hợp lệ
          */
         private List<Long> determineVariantIds(ForecastRequest request) {
-                List<Long> variantIds = new ArrayList<>();
-
                 // Case 1: Có danh sách variant IDs
-                if (request.getVariantIds() != null && !request.getVariantIds().isEmpty()) {
-                        variantIds = request.getVariantIds().stream()
-                                        .filter(id -> id != null && id > 0) // ✅ Filter invalid IDs
-                                        .collect(Collectors.toList());
-
-                        if (!variantIds.isEmpty()) {
-                                log.info("Forecasting for {} specified variants", variantIds.size());
-                                return variantIds;
-                        }
+                List<Long> idsFromRequest = getVariantIdsFromRequest(request);
+                if (!idsFromRequest.isEmpty()) {
+                        log.info("Forecasting for {} specified variants", idsFromRequest.size());
+                        return idsFromRequest;
                 }
 
                 // Case 2: Có single variant ID
-                if (request.getVariantId() != null && request.getVariantId() > 0) {
-                        log.info("Forecasting for single variant: {}", request.getVariantId());
-                        return List.of(request.getVariantId());
+                Long singleId = getSingleVariantIdFromRequest(request);
+                if (singleId != null) {
+                        log.info("Forecasting for single variant: {}", singleId);
+                        return List.of(singleId);
                 }
 
                 // Case 3: Không có variant ID nào → Lấy top variants có sales history
+                return getTopSellingVariantIds();
+        }
+
+        private List<Long> getVariantIdsFromRequest(ForecastRequest request) {
+                if (request.getVariantIds() == null || request.getVariantIds().isEmpty()) {
+                        return Collections.emptyList();
+                }
+                return request.getVariantIds().stream()
+                                .filter(id -> id != null && id > 0)
+                                .collect(Collectors.toList());
+        }
+
+        private Long getSingleVariantIdFromRequest(ForecastRequest request) {
+                if (request.getVariantId() != null && request.getVariantId() > 0) {
+                        return request.getVariantId();
+                }
+                return null;
+        }
+
+        private List<Long> getTopSellingVariantIds() {
                 log.info("No variant IDs specified, fetching top selling variants...");
 
                 LocalDateTime endDate = LocalDateTime.now();
                 LocalDateTime startDate = endDate.minusDays(30);
 
-                List<Object[]> topVariants = salesHistoryRepository
-                                .getTopSellingVariants(startDate, endDate);
+                List<Object[]> topVariants = salesHistoryRepository.getTopSellingVariants(startDate, endDate);
 
                 if (topVariants.isEmpty()) {
                         log.warn("⚠️ No sales history found. Cannot generate forecast without historical data.");
@@ -309,10 +345,10 @@ public class DemandForecastService {
                         return Collections.emptyList();
                 }
 
-                variantIds = topVariants.stream()
-                                .limit(10) // Lấy top 10
+                List<Long> variantIds = topVariants.stream()
+                                .limit(10)
                                 .map(row -> (Long) row[0])
-                                .filter(id -> id != null && id > 0) // ✅ Double check
+                                .filter(id -> id != null && id > 0)
                                 .collect(Collectors.toList());
 
                 log.info("Found {} variants with sales history", variantIds.size());
@@ -342,103 +378,112 @@ public class DemandForecastService {
                 LocalDate startDate = endDate.minusDays(daysBack);
 
                 try {
-                        // 1️⃣ Fetch Sales History from Sales Service
-                        log.info("📊 Fetching sales history from Sales Service...");
-                        List<SalesServiceClient.SalesHistoryDto> salesData = salesServiceClient.getSalesHistory(
-                                        variantId, dealerId, startDate, endDate, 1000);
+                        // 1️⃣ Fetch & Save Sales History
+                        fetchAndSaveSalesHistory(variantId, dealerId, startDate, endDate);
 
-                        if (!salesData.isEmpty()) {
-                                log.info("✅ Fetched {} sales records. Saving to AI Service database...",
-                                                salesData.size());
-
-                                int savedCount = 0;
-                                for (SalesServiceClient.SalesHistoryDto dto : salesData) {
-                                        try {
-                                                SalesHistory history = SalesHistory.builder()
-                                                                .orderId(dto.getOrderId())
-                                                                .variantId(dto.getVariantId())
-                                                                .dealerId(dto.getDealerId())
-                                                                .region(dto.getRegion())
-                                                                .quantity(dto.getQuantity())
-                                                                .totalAmount(dto.getTotalAmount() != null
-                                                                                ? java.math.BigDecimal.valueOf(
-                                                                                                dto.getTotalAmount())
-                                                                                : null)
-                                                                .saleDate(dto.getOrderDate().atStartOfDay())
-                                                                .recordedAt(LocalDateTime.now())
-                                                                .orderStatus(dto.getOrderStatus())
-                                                                .modelName(dto.getModelName())
-                                                                .variantName(dto.getVariantName())
-                                                                .build();
-
-                                                salesHistoryRepository.save(history);
-                                                savedCount++;
-                                        } catch (Exception e) {
-                                                log.warn("Failed to save sales record for order {}: {}",
-                                                                dto.getOrderId(), e.getMessage());
-                                        }
-                                }
-
-                                log.info("✅ Saved {} sales records to AI Service database", savedCount);
-                        } else {
-                                log.warn("⚠️ No sales data returned from Sales Service");
-                        }
-
-                        // 2️⃣ Fetch Inventory Snapshots from Inventory Service
-                        log.info("📦 Fetching inventory snapshots from Inventory Service...");
-                        List<InventoryServiceClient.InventorySnapshotDto> inventoryData = inventoryServiceClient
-                                        .getInventorySnapshots(variantId, dealerId, 1000);
-
-                        if (!inventoryData.isEmpty()) {
-                                log.info("✅ Fetched {} inventory snapshots. Saving to AI Service database...",
-                                                inventoryData.size());
-
-                                int savedCount = 0;
-                                for (InventoryServiceClient.InventorySnapshotDto dto : inventoryData) {
-                                        try {
-                                                // Create snapshot record
-                                                // Note: InventorySnapshot entity uses reservedQuantity, not
-                                                // allocatedQuantity
-                                                InventorySnapshot snapshot = InventorySnapshot.builder()
-                                                                .variantId(dto.getVariantId())
-                                                                .dealerId(dealerId != null ? dealerId
-                                                                                : UUID.randomUUID()) // Use provided or
-                                                                                                     // generate
-                                                                .region("Unknown") // Not provided by Inventory Service
-                                                                .availableQuantity(dto.getAvailableQuantity())
-                                                                .reservedQuantity(dto.getAllocatedQuantity() != null
-                                                                                ? dto.getAllocatedQuantity()
-                                                                                : 0)
-                                                                .totalQuantity((dto.getAvailableQuantity() != null
-                                                                                ? dto.getAvailableQuantity()
-                                                                                : 0) +
-                                                                                (dto.getAllocatedQuantity() != null
-                                                                                                ? dto.getAllocatedQuantity()
-                                                                                                : 0))
-                                                                .snapshotDate(LocalDateTime.now())
-                                                                .recordedAt(LocalDateTime.now())
-                                                                .modelName(dto.getModelName())
-                                                                .variantName(dto.getVersionName())
-                                                                .build();
-
-                                                inventorySnapshotRepository.save(snapshot);
-                                                savedCount++;
-                                        } catch (Exception e) {
-                                                log.warn("Failed to save inventory snapshot for variant {}: {}",
-                                                                dto.getVariantId(), e.getMessage());
-                                        }
-                                }
-
-                                log.info("✅ Saved {} inventory snapshots to AI Service database", savedCount);
-                        } else {
-                                log.warn("⚠️ No inventory data returned from Inventory Service");
-                        }
+                        // 2️⃣ Fetch & Save Inventory Snapshots
+                        fetchAndSaveInventorySnapshots(variantId, dealerId);
 
                         log.info("🎉 Historical data enrichment completed successfully!");
 
                 } catch (Exception e) {
                         log.error("❌ Error enriching historical data from REST APIs: {}", e.getMessage(), e);
                         throw new RuntimeException("Failed to enrich historical data", e);
+                }
+        }
+
+        private void fetchAndSaveSalesHistory(Long variantId, UUID dealerId, LocalDate startDate, LocalDate endDate) {
+                log.info("📊 Fetching sales history from Sales Service...");
+                List<SalesServiceClient.SalesHistoryDto> salesData = salesServiceClient.getSalesHistory(
+                                variantId, dealerId, startDate, endDate, 1000);
+
+                if (salesData.isEmpty()) {
+                        log.warn("⚠️ No sales data returned from Sales Service");
+                        return;
+                }
+
+                log.info("✅ Fetched {} sales records. Saving to AI Service database...", salesData.size());
+                int savedCount = 0;
+                for (SalesServiceClient.SalesHistoryDto dto : salesData) {
+                        if (saveSalesHistoryRecord(dto)) {
+                                savedCount++;
+                        }
+                }
+                log.info("✅ Saved {} sales records to AI Service database", savedCount);
+        }
+
+        private boolean saveSalesHistoryRecord(SalesServiceClient.SalesHistoryDto dto) {
+                try {
+                        SalesHistory history = SalesHistory.builder()
+                                        .orderId(dto.getOrderId())
+                                        .variantId(dto.getVariantId())
+                                        .dealerId(dto.getDealerId())
+                                        .region(dto.getRegion())
+                                        .quantity(dto.getQuantity())
+                                        .totalAmount(dto.getTotalAmount() != null
+                                                        ? java.math.BigDecimal.valueOf(dto.getTotalAmount())
+                                                        : null)
+                                        .saleDate(dto.getOrderDate().atStartOfDay())
+                                        .recordedAt(LocalDateTime.now())
+                                        .orderStatus(dto.getOrderStatus())
+                                        .modelName(dto.getModelName())
+                                        .variantName(dto.getVariantName())
+                                        .build();
+
+                        salesHistoryRepository.save(history);
+                        return true;
+                } catch (Exception e) {
+                        log.warn("Failed to save sales record for order {}: {}", dto.getOrderId(), e.getMessage());
+                        return false;
+                }
+        }
+
+        private void fetchAndSaveInventorySnapshots(Long variantId, UUID dealerId) {
+                log.info("📦 Fetching inventory snapshots from Inventory Service...");
+                List<InventoryServiceClient.InventorySnapshotDto> inventoryData = inventoryServiceClient
+                                .getInventorySnapshots(variantId, dealerId, 1000);
+
+                if (inventoryData.isEmpty()) {
+                        log.warn("⚠️ No inventory data returned from Inventory Service");
+                        return;
+                }
+
+                log.info("✅ Fetched {} inventory snapshots. Saving to AI Service database...", inventoryData.size());
+                int savedCount = 0;
+                for (InventoryServiceClient.InventorySnapshotDto dto : inventoryData) {
+                        if (saveInventorySnapshotRecord(dto, dealerId)) {
+                                savedCount++;
+                        }
+                }
+                log.info("✅ Saved {} inventory snapshots to AI Service database", savedCount);
+        }
+
+        private boolean saveInventorySnapshotRecord(InventoryServiceClient.InventorySnapshotDto dto, UUID dealerId) {
+                try {
+                        InventorySnapshot snapshot = InventorySnapshot.builder()
+                                        .variantId(dto.getVariantId())
+                                        .dealerId(dealerId != null ? dealerId : UUID.randomUUID())
+                                        .region("Unknown")
+                                        .availableQuantity(dto.getAvailableQuantity())
+                                        .reservedQuantity(
+                                                        dto.getAllocatedQuantity() != null ? dto.getAllocatedQuantity()
+                                                                        : 0)
+                                        .totalQuantity((dto.getAvailableQuantity() != null ? dto.getAvailableQuantity()
+                                                        : 0) +
+                                                        (dto.getAllocatedQuantity() != null ? dto.getAllocatedQuantity()
+                                                                        : 0))
+                                        .snapshotDate(LocalDateTime.now())
+                                        .recordedAt(LocalDateTime.now())
+                                        .modelName(dto.getModelName())
+                                        .variantName(dto.getVersionName())
+                                        .build();
+
+                        inventorySnapshotRepository.save(snapshot);
+                        return true;
+                } catch (Exception e) {
+                        log.warn("Failed to save inventory snapshot for variant {}: {}", dto.getVariantId(),
+                                        e.getMessage());
+                        return false;
                 }
         }
 
