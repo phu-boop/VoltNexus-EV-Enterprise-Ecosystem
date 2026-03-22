@@ -36,39 +36,42 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
     private final RoleRepository roleRepository;
     private final UserMapper userMapper;
     private final String urlFrontend;
+    private final String allowedOrigins;
     private final CustomerProfileService customerProfileService;
     private final CustomerProfileRepository customerProfileRepository;
 
-
-    OAuth2LoginSuccessHandler(JwtUtil jwtUtil, UserRepository userRepository, RoleRepository roleRepository, UserMapper userMapper, @Value("${frontend.url}") String urlFrontend, CustomerProfileService customerProfileService, CustomerProfileRepository customerProfileRepository) {
+    OAuth2LoginSuccessHandler(JwtUtil jwtUtil, UserRepository userRepository, RoleRepository roleRepository,
+            UserMapper userMapper, @Value("${frontend.url}") String urlFrontend,
+            @Value("${oauth2.allowed.origins}") String allowedOrigins, CustomerProfileService customerProfileService,
+            CustomerProfileRepository customerProfileRepository) {
         this.jwtUtil = jwtUtil;
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
         this.userMapper = userMapper;
         this.urlFrontend = urlFrontend;
+        this.allowedOrigins = allowedOrigins;
         this.customerProfileService = customerProfileService;
         this.customerProfileRepository = customerProfileRepository;
     }
 
-
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request,
-                                        HttpServletResponse response,
-                                        Authentication authentication) throws IOException, ServletException {
+            HttpServletResponse response,
+            Authentication authentication) throws IOException, ServletException {
         // Lấy thông tin user từ Google
         var oauthUser = (DefaultOAuth2User) authentication.getPrincipal();
 
         String email = oauthUser.getAttribute("email");
         String name = oauthUser.getAttribute("name");
         String givenName = oauthUser.getAttribute("given_name");
-        //String picture = oauthUser.getAttribute("picture");
+        // String picture = oauthUser.getAttribute("picture");
 
         Set<Role> roles = new HashSet<>();
         User user = userRepository.findByEmail(email).orElseGet(() -> {
             // Assign CUSTOMER role for customer-app OAuth users
             roles.add(roleRepository.findByName(RoleName.CUSTOMER.getRoleName())
                     .orElseThrow(() -> new AppException(ErrorCode.DATABASE_ERROR)));
-            
+
             User newUser = User.builder()
                     .email(email)
                     .name(givenName)
@@ -76,18 +79,17 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
                     .roles(roles)
                     .status(UserStatus.ACTIVE)
                     .build();
-            
+
             User savedUser = userRepository.save(newUser);
-            
+
             // Create customer profile with Bronze tier
             customerProfileService.saveCustomerProfile(savedUser, null);
-            
+
             return savedUser;
         });
 
         String accessToken = jwtUtil.generateAccessToken(user.getEmail(), user.getRoleToString(), null, null);
         String refreshToken = jwtUtil.generateRefreshToken(user.getEmail(), user.getRoleToString(), null, null);
-
 
         // Set refresh token trong cookie HttpOnly
         Cookie cookie = new Cookie("refreshToken", refreshToken);
@@ -99,7 +101,7 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
 
         // Map user to UserRespond
         UserRespond userRespond = userMapper.usertoUserRespond(user);
-        
+
         // Fetch customer profile and set memberId if user is a CUSTOMER
         try {
             if (user.getRoleToString().contains("CUSTOMER")) {
@@ -113,44 +115,68 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
         } catch (Exception e) {
             System.err.println("[OAuth2LoginSuccessHandler] ❌ Error fetching customer profile: " + e.getMessage());
         }
-        
+
         LoginRespond loginRespond = new LoginRespond(userRespond, accessToken);
 
         ApiRespond<Object> apiResponse = ApiRespond.success("Login with Google success", loginRespond);
 
-        // Lấy redirect_uri từ state parameter (format: originalState|base64(redirect_uri))
+        // Lấy redirect_uri từ state parameter (format:
+        // originalState|base64(redirect_uri))
         String redirectUri = extractRedirectUriFromRequest(request);
-        
-        
-        if (redirectUri == null || redirectUri.isEmpty()) {
+
+        // Security fix: Validate redirectUri against Whitelist (allowedOrigins)
+        if (redirectUri == null || redirectUri.isEmpty() || !isAllowedRedirectUri(redirectUri)) {
+            System.err
+                    .println("[OAuth2LoginSuccessHandler] ⚠️ Invalid or missing redirect_uri. Falling back to default: "
+                            + urlFrontend);
             redirectUri = urlFrontend;
-        } else {
         }
-        
+
         response.sendRedirect(redirectUri + "/oauth-success?accessToken=" + accessToken);
 
     }
-    
+
     private String extractRedirectUriFromRequest(HttpServletRequest request) {
         try {
             // Get state parameter from request (sent back by Google OAuth)
             String state = request.getParameter("state");
-            
+
             if (state != null && state.contains("|")) {
                 // Format: originalState|base64(redirect_uri)
                 String[] parts = state.split("\\|", 2);
                 if (parts.length == 2) {
                     String encodedRedirectUri = parts[1];
                     byte[] decodedBytes = java.util.Base64.getUrlDecoder().decode(encodedRedirectUri);
-                    String redirectUri = new String(decodedBytes);
-                    return redirectUri;
+                    return new String(decodedBytes);
                 }
             }
-            
+
             return null;
         } catch (Exception e) {
             System.err.println("[OAuth2LoginSuccessHandler] Error extracting redirect_uri: " + e.getMessage());
             return null;
         }
+    }
+
+    /**
+     * Security check: Validates if the redirect_uri is within the allowed
+     * domains/origins.
+     * Prevents Open Redirect (S5146).
+     */
+    private boolean isAllowedRedirectUri(String redirectUri) {
+        if (allowedOrigins == null || allowedOrigins.isEmpty()) {
+            return false;
+        }
+
+        // Split by comma in case multiple origins are defined
+        String[] origins = allowedOrigins.split(",");
+        for (String origin : origins) {
+            String trimmedOrigin = origin.trim();
+            // Match origin (exact or prefix) to handle sub-paths
+            if (redirectUri.startsWith(trimmedOrigin)) {
+                return true;
+            }
+        }
+        return false;
     }
 }
