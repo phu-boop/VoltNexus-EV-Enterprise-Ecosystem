@@ -7,12 +7,6 @@ import org.springframework.kafka.core.KafkaTemplate;
 
 // Cấu hình để sử dụng H2 In-Memory Database thay vì MariaDB/MySQL thực tế.
 // Điều này giúp môi trường Test (Test Context) khởi tạo mà không cần driver thực.
-(properties = {
-        "spring.datasource.url=jdbc:h2:mem:testdb", // Dùng H2 DB ảo
-        "spring.datasource.driver-class-name=org.h2.Driver", // Dùng H2 driver
-        "spring.jpa.database-platform=org.hibernate.dialect.H2Dialect", // H2 dialect
-        "spring.jpa.hibernate.ddl-auto=create-drop"
-})
 @ActiveProfiles("test")
 class ReportingServiceApplicationTests {
 
