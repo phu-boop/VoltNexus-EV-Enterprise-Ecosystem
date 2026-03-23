@@ -13,7 +13,7 @@ import com.ev.customer_service.repository.CustomerRepository;
 import com.ev.customer_service.service.CartService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.annotation.Lazy;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,9 +29,6 @@ public class CartServiceImpl implements CartService {
 
     private final CartItemRepository cartItemRepository;
     private final CustomerRepository customerRepository;
-
-    @Lazy
-    private final CartService self;
 
     @Override
     public CartItemResponse addToCart(Long customerId, AddToCartRequest request) {
@@ -216,6 +213,6 @@ public class CartServiceImpl implements CartService {
             return 0L;
         }
 
-        return self.getCartItemCount(customerOpt.get().getCustomerId());
+        return cartItemRepository.countByCustomerId(customerOpt.get().getCustomerId());
     }
 }
