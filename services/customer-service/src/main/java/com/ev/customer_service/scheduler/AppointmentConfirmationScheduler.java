@@ -28,6 +28,12 @@ public class AppointmentConfirmationScheduler {
     private final TestDriveAppointmentRepository appointmentRepository;
     private final EmailConfirmationService emailService;
 
+    private static final String STATUS_SCHEDULED = "SCHEDULED";
+    private static final String STATUS_EXPIRED = "EXPIRED";
+    private static final String CANCELLED_BY_SYSTEM = "SYSTEM";
+    private static final String REASON_EXPIRED_3DAYS = "Hết hạn xác nhận - không xác nhận trong 3 ngày";
+    private static final String REASON_EXPIRED_NEAR = "Hết hạn xác nhận - lịch hẹn đã gần mà chưa xác nhận";
+
     /**
      * Chạy mỗi giờ để kiểm tra và xử lý
      * Cron: 0 0 * * * * = chạy mỗi giờ
@@ -36,20 +42,20 @@ public class AppointmentConfirmationScheduler {
     @Transactional
     public void processConfirmations() {
         log.info("🔄 Starting appointment confirmation scheduler...");
-        
+
         try {
             // 1. Gửi reminder lần 1 (sau 1 ngày)
             sendFirstReminders();
-            
+
             // 2. Gửi reminder lần 2 (sau 2 ngày)
             sendSecondReminders();
-            
+
             // 3. Tự động hủy lịch hết hạn (sau 3 ngày)
             expireUnconfirmedAppointments();
-            
+
             // 4. Tự động hủy lịch gần ngày hẹn mà chưa xác nhận
             expireNearAppointments();
-            
+
             log.info("✅ Completed appointment confirmation scheduler");
         } catch (Exception e) {
             log.error("❌ Error in confirmation scheduler", e);
@@ -62,19 +68,19 @@ public class AppointmentConfirmationScheduler {
     private void sendFirstReminders() {
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime oneDayAgo = now.minusDays(1);
-        
+
         // Tìm các lịch:
         // - Đã gửi email xác nhận cách đây 1 ngày
         // - Chưa xác nhận (isConfirmed = false)
         // - Chưa gửi reminder lần 1
         // - Chưa hủy, chưa hoàn thành
         List<TestDriveAppointment> appointments = appointmentRepository.findAll().stream()
-            .filter(apt -> apt.getConfirmationSentAt() != null)
-            .filter(apt -> apt.getConfirmationSentAt().isBefore(oneDayAgo))
-            .filter(apt -> !Boolean.TRUE.equals(apt.getIsConfirmed()))
-            .filter(apt -> apt.getFirstReminderSentAt() == null)
-            .filter(apt -> "SCHEDULED".equals(apt.getStatus()))
-            .toList();
+                .filter(apt -> apt.getConfirmationSentAt() != null)
+                .filter(apt -> apt.getConfirmationSentAt().isBefore(oneDayAgo))
+                .filter(apt -> !Boolean.TRUE.equals(apt.getIsConfirmed()))
+                .filter(apt -> apt.getFirstReminderSentAt() == null)
+                .filter(apt -> STATUS_SCHEDULED.equals(apt.getStatus()))
+                .toList();
 
         log.info("📧 Found {} appointments needing first reminder", appointments.size());
 
@@ -82,21 +88,21 @@ public class AppointmentConfirmationScheduler {
             try {
                 Customer customer = appointment.getCustomer();
                 String customerName = customer.getFirstName() + " " + customer.getLastName();
-                
+
                 // Lấy thông tin vehicle từ DB (đã lưu khi tạo appointment)
                 String vehicleModel = appointment.getVehicleModelName();
                 String vehicleVariant = appointment.getVehicleVariantName();
-                
+
                 emailService.sendFirstReminderEmail(appointment, customer.getEmail(), customerName,
-                                                   vehicleModel, vehicleVariant);
-                
+                        vehicleModel, vehicleVariant);
+
                 appointment.setFirstReminderSentAt(now);
                 appointmentRepository.save(appointment);
-                
+
                 log.info("✅ Sent first reminder for appointment ID: {}", appointment.getAppointmentId());
             } catch (Exception e) {
-                log.error("❌ Failed to send first reminder for appointment ID: {}", 
-                         appointment.getAppointmentId(), e);
+                log.error("❌ Failed to send first reminder for appointment ID: {}",
+                        appointment.getAppointmentId(), e);
             }
         }
     }
@@ -107,20 +113,20 @@ public class AppointmentConfirmationScheduler {
     private void sendSecondReminders() {
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime twoDaysAgo = now.minusDays(2);
-        
+
         // Tìm các lịch:
         // - Đã gửi email xác nhận cách đây 2 ngày
         // - Chưa xác nhận
         // - Đã gửi reminder lần 1
         // - Chưa gửi reminder lần 2
         List<TestDriveAppointment> appointments = appointmentRepository.findAll().stream()
-            .filter(apt -> apt.getConfirmationSentAt() != null)
-            .filter(apt -> apt.getConfirmationSentAt().isBefore(twoDaysAgo))
-            .filter(apt -> !Boolean.TRUE.equals(apt.getIsConfirmed()))
-            .filter(apt -> apt.getFirstReminderSentAt() != null)
-            .filter(apt -> apt.getSecondReminderSentAt() == null)
-            .filter(apt -> "SCHEDULED".equals(apt.getStatus()))
-            .toList();
+                .filter(apt -> apt.getConfirmationSentAt() != null)
+                .filter(apt -> apt.getConfirmationSentAt().isBefore(twoDaysAgo))
+                .filter(apt -> !Boolean.TRUE.equals(apt.getIsConfirmed()))
+                .filter(apt -> apt.getFirstReminderSentAt() != null)
+                .filter(apt -> apt.getSecondReminderSentAt() == null)
+                .filter(apt -> STATUS_SCHEDULED.equals(apt.getStatus()))
+                .toList();
 
         log.info("📧 Found {} appointments needing second reminder", appointments.size());
 
@@ -128,21 +134,21 @@ public class AppointmentConfirmationScheduler {
             try {
                 Customer customer = appointment.getCustomer();
                 String customerName = customer.getFirstName() + " " + customer.getLastName();
-                
+
                 // Lấy thông tin vehicle từ DB (đã lưu khi tạo appointment)
                 String vehicleModel = appointment.getVehicleModelName();
                 String vehicleVariant = appointment.getVehicleVariantName();
-                
+
                 emailService.sendSecondReminderEmail(appointment, customer.getEmail(), customerName,
-                                                    vehicleModel, vehicleVariant);
-                
+                        vehicleModel, vehicleVariant);
+
                 appointment.setSecondReminderSentAt(now);
                 appointmentRepository.save(appointment);
-                
+
                 log.info("✅ Sent second reminder for appointment ID: {}", appointment.getAppointmentId());
             } catch (Exception e) {
-                log.error("❌ Failed to send second reminder for appointment ID: {}", 
-                         appointment.getAppointmentId(), e);
+                log.error("❌ Failed to send second reminder for appointment ID: {}",
+                        appointment.getAppointmentId(), e);
             }
         }
     }
@@ -152,17 +158,17 @@ public class AppointmentConfirmationScheduler {
      */
     private void expireUnconfirmedAppointments() {
         LocalDateTime now = LocalDateTime.now();
-        
+
         // Tìm các lịch:
         // - Hết hạn xác nhận (confirmationExpiresAt < now)
         // - Chưa xác nhận
         // - Chưa hủy, chưa hoàn thành
         List<TestDriveAppointment> appointments = appointmentRepository.findAll().stream()
-            .filter(apt -> apt.getConfirmationExpiresAt() != null)
-            .filter(apt -> apt.getConfirmationExpiresAt().isBefore(now))
-            .filter(apt -> !Boolean.TRUE.equals(apt.getIsConfirmed()))
-            .filter(apt -> "SCHEDULED".equals(apt.getStatus()))
-            .toList();
+                .filter(apt -> apt.getConfirmationExpiresAt() != null)
+                .filter(apt -> apt.getConfirmationExpiresAt().isBefore(now))
+                .filter(apt -> !Boolean.TRUE.equals(apt.getIsConfirmed()))
+                .filter(apt -> STATUS_SCHEDULED.equals(apt.getStatus()))
+                .toList();
 
         log.info("⏰ Found {} appointments to expire (3 days without confirmation)", appointments.size());
 
@@ -170,27 +176,27 @@ public class AppointmentConfirmationScheduler {
             try {
                 Customer customer = appointment.getCustomer();
                 String customerName = customer.getFirstName() + " " + customer.getLastName();
-                
+
                 // Đổi status sang EXPIRED
-                appointment.setStatus("EXPIRED");
-                appointment.setCancellationReason("Hết hạn xác nhận - không xác nhận trong 3 ngày");
-                appointment.setCancelledBy("SYSTEM");
+                appointment.setStatus(STATUS_EXPIRED);
+                appointment.setCancellationReason(REASON_EXPIRED_3DAYS);
+                appointment.setCancelledBy(CANCELLED_BY_SYSTEM);
                 appointment.setCancelledAt(now);
                 appointmentRepository.save(appointment);
-                
+
                 // Lấy thông tin vehicle từ DB (đã lưu khi tạo appointment)
                 String vehicleModel = appointment.getVehicleModelName();
                 String vehicleVariant = appointment.getVehicleVariantName();
-                
+
                 // Gửi email thông báo
                 emailService.sendExpirationEmail(appointment, customer.getEmail(), customerName,
-                                               vehicleModel, vehicleVariant);
-                
-                log.info("✅ Expired appointment ID: {} (3 days without confirmation)", 
+                        vehicleModel, vehicleVariant);
+
+                log.info("✅ Expired appointment ID: {} (3 days without confirmation)",
                         appointment.getAppointmentId());
             } catch (Exception e) {
-                log.error("❌ Failed to expire appointment ID: {}", 
-                         appointment.getAppointmentId(), e);
+                log.error("❌ Failed to expire appointment ID: {}",
+                        appointment.getAppointmentId(), e);
             }
         }
     }
@@ -201,47 +207,47 @@ public class AppointmentConfirmationScheduler {
     private void expireNearAppointments() {
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime threeDaysLater = now.plusDays(3);
-        
+
         // Tìm các lịch:
         // - Ngày hẹn trong vòng 3 ngày tới (appointmentDate < now + 3 days)
         // - Chưa xác nhận
         // - Chưa hủy, chưa hoàn thành
         List<TestDriveAppointment> appointments = appointmentRepository.findAll().stream()
-            .filter(apt -> apt.getAppointmentDate() != null)
-            .filter(apt -> apt.getAppointmentDate().isBefore(threeDaysLater))
-            .filter(apt -> apt.getAppointmentDate().isAfter(now)) // Chưa qua ngày hẹn
-            .filter(apt -> !Boolean.TRUE.equals(apt.getIsConfirmed()))
-            .filter(apt -> "SCHEDULED".equals(apt.getStatus()))
-            .toList();
+                .filter(apt -> apt.getAppointmentDate() != null)
+                .filter(apt -> apt.getAppointmentDate().isBefore(threeDaysLater))
+                .filter(apt -> apt.getAppointmentDate().isAfter(now)) // Chưa qua ngày hẹn
+                .filter(apt -> !Boolean.TRUE.equals(apt.getIsConfirmed()))
+                .filter(apt -> STATUS_SCHEDULED.equals(apt.getStatus()))
+                .toList();
 
-        log.info("⏰ Found {} appointments to expire (within 3 days without confirmation)", 
+        log.info("⏰ Found {} appointments to expire (within 3 days without confirmation)",
                 appointments.size());
 
         for (TestDriveAppointment appointment : appointments) {
             try {
                 Customer customer = appointment.getCustomer();
                 String customerName = customer.getFirstName() + " " + customer.getLastName();
-                
+
                 // Đổi status sang EXPIRED
-                appointment.setStatus("EXPIRED");
-                appointment.setCancellationReason("Hết hạn xác nhận - lịch hẹn đã gần mà chưa xác nhận");
-                appointment.setCancelledBy("SYSTEM");
+                appointment.setStatus(STATUS_EXPIRED);
+                appointment.setCancellationReason(REASON_EXPIRED_NEAR);
+                appointment.setCancelledBy(CANCELLED_BY_SYSTEM);
                 appointment.setCancelledAt(now);
                 appointmentRepository.save(appointment);
-                
+
                 // Lấy thông tin vehicle từ DB (đã lưu khi tạo appointment)
                 String vehicleModel = appointment.getVehicleModelName();
                 String vehicleVariant = appointment.getVehicleVariantName();
-                
+
                 // Gửi email thông báo
                 emailService.sendExpirationEmail(appointment, customer.getEmail(), customerName,
-                                               vehicleModel, vehicleVariant);
-                
-                log.info("✅ Expired appointment ID: {} (near appointment date without confirmation)", 
+                        vehicleModel, vehicleVariant);
+
+                log.info("✅ Expired appointment ID: {} (near appointment date without confirmation)",
                         appointment.getAppointmentId());
             } catch (Exception e) {
-                log.error("❌ Failed to expire near appointment ID: {}", 
-                         appointment.getAppointmentId(), e);
+                log.error("❌ Failed to expire near appointment ID: {}",
+                        appointment.getAppointmentId(), e);
             }
         }
     }

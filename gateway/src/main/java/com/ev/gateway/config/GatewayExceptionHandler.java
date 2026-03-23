@@ -59,21 +59,14 @@ public class GatewayExceptionHandler implements ErrorWebExceptionHandler {
         HttpStatus status = errorCode.getHttpStatus();
         response.setStatusCode(status);
 
-        // Log chi tiết status trả về
         log.info("[GatewayExceptionHandler] Returning error code={} message={} httpStatus={}",
                 errorCode.getCode(), errorCode.getMessage(), status);
-
-        ApiRespond<Object> apiRespond = new ApiRespond<>();
-        apiRespond.setCode(errorCode.getCode());
-        apiRespond.setMessage(errorCode.getMessage());
-        apiRespond.setData(null);
 
         String json = String.format(
                 "{\"timestamp\":\"%s\",\"code\":\"%s\",\"message\":\"%s\",\"data\":null}",
                 Instant.now(),
-                apiRespond.getCode(),
-                apiRespond.getMessage()
-        );
+                errorCode.getCode(),
+                errorCode.getMessage());
 
         DataBufferFactory bufferFactory = response.bufferFactory();
         return response.writeWith(Mono.just(bufferFactory.wrap(json.getBytes(StandardCharsets.UTF_8))));

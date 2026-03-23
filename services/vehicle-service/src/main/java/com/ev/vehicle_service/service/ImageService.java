@@ -1,12 +1,13 @@
 package com.ev.vehicle_service.service;
 
+import com.ev.common_lib.exception.AppException;
+import com.ev.common_lib.exception.ErrorCode;
 import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
-
 import java.io.IOException;
 import java.util.Map;
 
@@ -42,7 +43,7 @@ public class ImageService {
             return imageUrl;
         } catch (IOException e) {
             log.error("Error uploading image to Cloudinary", e);
-            throw new RuntimeException("Failed to upload image: " + e.getMessage());
+            throw new AppException(ErrorCode.INTERNAL_ERROR);
         }
     }
 
