@@ -121,7 +121,7 @@ public class ComplaintController {
     @GetMapping("/dealer/{dealerId}")
     @PreAuthorize("hasAnyRole('DEALER_STAFF', 'DEALER_MANAGER')")
     public ResponseEntity<ApiResponse<List<ComplaintResponse>>> getComplaintsByDealer(
-            @PathVariable Long dealerId) {
+            @PathVariable String dealerId) {
         List<ComplaintResponse> complaints = complaintService.getComplaintsByDealer(dealerId);
         return ResponseEntity.ok(ApiResponse.success(complaints));
     }
@@ -146,7 +146,7 @@ public class ComplaintController {
     @GetMapping("/statistics")
     @PreAuthorize("hasRole('DEALER_MANAGER')")
     public ResponseEntity<ApiResponse<ComplaintStatisticsResponse>> getStatistics(
-            @RequestParam Long dealerId,
+            @RequestParam String dealerId,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate) {
         

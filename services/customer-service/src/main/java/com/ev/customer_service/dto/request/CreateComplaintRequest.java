@@ -21,8 +21,8 @@ public class CreateComplaintRequest {
     @NotNull(message = "Customer ID is required")
     private Long customerId;
 
-    @NotNull(message = "Dealer ID is required")
-    private Long dealerId;
+    @NotBlank(message = "Dealer ID is required")
+    private String dealerId;
 
     private Long orderId; // Optional: Liên kết với đơn hàng nếu có
 
