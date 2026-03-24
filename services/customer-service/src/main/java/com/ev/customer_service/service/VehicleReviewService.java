@@ -19,12 +19,17 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class VehicleReviewService {
+
+    private static final String STATUS_PENDING = "PENDING";
+    private static final String STATUS_APPROVED = "APPROVED";
+    private static final String STATUS_REJECTED = "REJECTED";
+    private static final String STATUS_HIDDEN = "HIDDEN";
+    private static final String REVIEW_NOT_FOUND = "Review not found";
 
     private final VehicleReviewRepository reviewRepository;
     private final CustomerRepository customerRepository;
@@ -55,7 +60,7 @@ public class VehicleReviewService {
         review.setComfortRating(request.getComfortRating());
         review.setDesignRating(request.getDesignRating());
         review.setValueRating(request.getValueRating());
-        review.setStatus("PENDING"); // Pending admin approval
+        review.setStatus(STATUS_PENDING); // Pending admin approval
         review.setIsApproved(false);
         review.setIsVerifiedPurchase(false); // TODO: Check if customer purchased this vehicle
         review.setHelpfulCount(0);
@@ -69,10 +74,10 @@ public class VehicleReviewService {
 
     @Transactional(readOnly = true)
     public List<VehicleReviewResponse> getApprovedReviewsByModel(Long modelId) {
-        return reviewRepository.findByModelIdAndStatusOrderByCreatedAtDesc(modelId, "APPROVED")
+        return reviewRepository.findByModelIdAndStatusOrderByCreatedAtDesc(modelId, STATUS_APPROVED)
                 .stream()
                 .map(this::mapToResponse)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Transactional(readOnly = true)
@@ -80,7 +85,7 @@ public class VehicleReviewService {
         return reviewRepository.findByCustomerCustomerIdOrderByCreatedAtDesc(customerId)
                 .stream()
                 .map(this::mapToResponse)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Transactional(readOnly = true)
@@ -103,7 +108,7 @@ public class VehicleReviewService {
             Integer rating = (Integer) row[0];
             Long count = (Long) row[1];
             ratingDistribution.put(rating, count);
-            
+
             if (totalReviews > 0) {
                 ratingPercentages.put(rating, (count * 100.0) / totalReviews);
             }
@@ -121,9 +126,9 @@ public class VehicleReviewService {
     @Transactional
     public VehicleReviewResponse approveReview(Long reviewId, String approvedBy) {
         VehicleReview review = reviewRepository.findById(reviewId)
-                .orElseThrow(() -> new ResourceNotFoundException("Review not found"));
+                .orElseThrow(() -> new ResourceNotFoundException(REVIEW_NOT_FOUND));
 
-        review.setStatus("APPROVED");
+        review.setStatus(STATUS_APPROVED);
         review.setIsApproved(true);
         review.setApprovedAt(LocalDateTime.now());
         review.setApprovedBy(approvedBy);
@@ -135,7 +140,7 @@ public class VehicleReviewService {
     @Transactional
     public void markHelpful(Long reviewId) {
         VehicleReview review = reviewRepository.findById(reviewId)
-                .orElseThrow(() -> new ResourceNotFoundException("Review not found"));
+                .orElseThrow(() -> new ResourceNotFoundException(REVIEW_NOT_FOUND));
 
         review.setHelpfulCount(review.getHelpfulCount() + 1);
         reviewRepository.save(review);
@@ -145,22 +150,22 @@ public class VehicleReviewService {
     public List<VehicleReviewResponse> getAllReviews() {
         return reviewRepository.findAll().stream()
                 .map(this::mapToResponse)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Transactional(readOnly = true)
     public List<VehicleReviewResponse> getReviewsByStatus(String status) {
         return reviewRepository.findByStatusOrderByCreatedAtAsc(status).stream()
                 .map(this::mapToResponse)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Transactional
     public VehicleReviewResponse rejectReview(Long reviewId, String rejectedBy) {
         VehicleReview review = reviewRepository.findById(reviewId)
-                .orElseThrow(() -> new ResourceNotFoundException("Review not found"));
+                .orElseThrow(() -> new ResourceNotFoundException(REVIEW_NOT_FOUND));
 
-        review.setStatus("REJECTED");
+        review.setStatus(STATUS_REJECTED);
         review.setIsApproved(false);
         review.setApprovedBy(rejectedBy);
         review.setApprovedAt(LocalDateTime.now());
@@ -172,9 +177,9 @@ public class VehicleReviewService {
     @Transactional
     public VehicleReviewResponse hideReview(Long reviewId, String hiddenBy) {
         VehicleReview review = reviewRepository.findById(reviewId)
-                .orElseThrow(() -> new ResourceNotFoundException("Review not found"));
+                .orElseThrow(() -> new ResourceNotFoundException(REVIEW_NOT_FOUND));
 
-        review.setStatus("HIDDEN");
+        review.setStatus(STATUS_HIDDEN);
         review.setApprovedBy(hiddenBy);
         review.setApprovedAt(LocalDateTime.now());
 

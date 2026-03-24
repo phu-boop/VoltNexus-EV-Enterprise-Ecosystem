@@ -26,12 +26,12 @@ public class JwtGlobalFilter implements GlobalFilter, Ordered {
     private final JwtUtil jwtUtil;
     private final RedisService redisService;
 
-    //  Danh sách path được bỏ qua xác thực (không yêu cầu token)
-        private static final List<String> EXCLUDED_PATHS = List.of(
+    // Danh sách path được bỏ qua xác thực (không yêu cầu token)
+    private static final List<String> EXCLUDED_PATHS = List.of(
             "/auth",
-            "/users",           
-            "/oauth2",  // OAuth2 authentication flow
-            "/login",   // OAuth2 login callback
+            "/users",
+            "/oauth2", // OAuth2 authentication flow
+            "/login", // OAuth2 login callback
             "/sendmail",
             "/ws",
             "/payments/payment/return",
@@ -61,8 +61,7 @@ public class JwtGlobalFilter implements GlobalFilter, Ordered {
             "/customers/api/test-drives/public",
             "/test-drives/public",
             // AI Chatbot endpoint (Gateway handles rate limiting)
-            "/ai/chat/ask"
-        );
+            "/ai/chat/ask");
 
     public JwtGlobalFilter(JwtUtil jwtUtil, RedisService redisService) {
         this.jwtUtil = jwtUtil;
@@ -72,109 +71,116 @@ public class JwtGlobalFilter implements GlobalFilter, Ordered {
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
         String path = exchange.getRequest().getURI().getPath();
-        
         log.info("[JwtGlobalFilter] Incoming request: {} {}", exchange.getRequest().getMethod(), path);
 
         // 1. Luôn cho phép các request OPTIONS (dùng cho CORS) đi qua
-        if (exchange.getRequest().getMethod() == HttpMethod.OPTIONS) {
+        if (isPreflightRequest(exchange)) {
             log.info("[JwtGlobalFilter] OPTIONS request allowed: {}", path);
             return chain.filter(exchange);
         }
 
-
-         // Path được bỏ qua xác thực
-        boolean isExcluded = EXCLUDED_PATHS.stream().anyMatch(excludedPath -> path.startsWith(excludedPath));
-        if (isExcluded) {
+        // 2. Path được bỏ qua xác thực
+        if (isPathExcluded(path)) {
             log.info("[JwtGlobalFilter] Path excluded from authentication: {}", path);
             return chain.filter(exchange);
         }
-        
+
         log.debug("[JwtGlobalFilter] Path requires authentication: {}", path);
 
-        // Tất cả các path khác đều yêu cầu token (Gateway xác thực)
+        // 3. Kiểm tra Authorization header
         String authHeader = exchange.getRequest().getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             log.warn("[JwtGlobalFilter] Missing or invalid Authorization header for path: {}", path);
-            return this.onError(exchange, ErrorCode.UNAUTHORIZED.getCode(), ErrorCode.UNAUTHORIZED.getMessage(), HttpStatus.UNAUTHORIZED);
+            return this.onError(exchange, ErrorCode.UNAUTHORIZED);
         }
 
         String token = authHeader.substring(7);
-
         try {
-            if (redisService.contains(token)) {
-                log.warn("[JwtGlobalFilter] Token found in blacklist (logged out) for path: {}", path);
-                return this.onError(exchange, ErrorCode.TOKEN_LOGGED_OUT.getCode(), ErrorCode.TOKEN_LOGGED_OUT.getMessage(), ErrorCode.TOKEN_LOGGED_OUT.getHttpStatus());
-            }
-
-            String email = jwtUtil.extractEmail(token);
-            String role = jwtUtil.extractRole(token);
-            Long userId = jwtUtil.extractUserId(token);
-            String profileId = jwtUtil.extractProfileId(token);
-            String dealerId = jwtUtil.extractDealerId(token);
-
-
-            // Log debug cho payment service
-            if (path.startsWith("/payments")) {
-                log.debug("[JwtGlobalFilter] [PAYMENT_SERVICE] Authentication successful - Path: {} | Email: {} | Role: {} | UserId: {} | ProfileId: {}",
-                        path, email, role, userId, profileId);
-            }
-
-            log.info("[JwtGlobalFilter] Extracted from JWT - Path: {} | Email: {} | Role: {} | UserId: {} | ProfileId: {}",
-                    path, email, role, userId, profileId);
-
-            if (!jwtUtil.isTokenValid(token, email)) {
-                log.warn("[JwtGlobalFilter] Token invalid for email: {} | Path: {}", email, path);
-                return this.onError(exchange, ErrorCode.TOKEN_INVALID.getCode(), ErrorCode.TOKEN_INVALID.getMessage(), ErrorCode.TOKEN_INVALID.getHttpStatus());
-            }
-
-            ServerWebExchange mutatedExchange = exchange.mutate()
-                    .request(r -> r.headers(headers -> {
-                        headers.add("X-User-Email", email);
-                        headers.add("X-User-Role", role);
-                        headers.add("X-User-Id", String.valueOf(userId));
-                        headers.add("X-User-ProfileId", profileId);
-                        if (dealerId != null) {
-                            headers.add("X-User-DealerId", dealerId);
-                        }
-                        headers.add("X-Forwarded-For", exchange.getRequest().getRemoteAddress().getAddress().getHostAddress());
-
-
-                        // Log debug cho payment service
-                        if (path.startsWith("/payments")) {
-                            log.debug("[JwtGlobalFilter] [PAYMENT_SERVICE] Added headers to request - X-User-Email: {}, X-User-Role: {}, X-User-Id: {}, X-User-ProfileId: {}, X-User-DealerId: {}",
-                                    email, role, userId, profileId, dealerId);
-                        } else {
-                            log.debug("[JwtGlobalFilter] Added headers - X-User-Email: {}, X-User-Role: {}, X-User-ProfileId: {}",
-                                    email, role, profileId);
-                        }
-                    }))
-                    .build();
-
-            return chain.filter(mutatedExchange);
-
+            return processTokenAndChain(exchange, chain, token, path);
         } catch (ExpiredJwtException e) {
             log.warn("[JwtGlobalFilter] Token expired for path: {} | Error: {}", path, e.getMessage());
-            return this.onError(exchange, ErrorCode.TOKEN_EXPIRED.getCode(), ErrorCode.TOKEN_EXPIRED.getMessage(), ErrorCode.TOKEN_EXPIRED.getHttpStatus());
+            return this.onError(exchange, ErrorCode.TOKEN_EXPIRED);
         } catch (JwtException e) {
             log.error("[JwtGlobalFilter] JWT exception for path: {} | Error: {}", path, e.getMessage(), e);
-            return this.onError(exchange, ErrorCode.TOKEN_INVALID.getCode(), ErrorCode.TOKEN_INVALID.getMessage(), ErrorCode.TOKEN_INVALID.getHttpStatus());
+            return this.onError(exchange, ErrorCode.TOKEN_INVALID);
         }
     }
 
+    private boolean isPreflightRequest(ServerWebExchange exchange) {
+        return exchange.getRequest().getMethod() == HttpMethod.OPTIONS;
+    }
+
+    private boolean isPathExcluded(String path) {
+        return EXCLUDED_PATHS.stream().anyMatch(path::startsWith);
+    }
+
+    private Mono<Void> processTokenAndChain(ServerWebExchange exchange, GatewayFilterChain chain, String token,
+            String path) {
+        // Kiểm tra blacklist (đã đăng xuất)
+        if (redisService.contains(token)) {
+            log.warn("[JwtGlobalFilter] Token found in blacklist (logged out) for path: {}", path);
+            return this.onError(exchange, ErrorCode.TOKEN_LOGGED_OUT);
+        }
+
+        String email = jwtUtil.extractEmail(token);
+
+        // Kiểm tra tính hợp lệ của token
+        if (!jwtUtil.isTokenValid(token, email)) {
+            log.warn("[JwtGlobalFilter] Token invalid for email: {} | Path: {}", email, path);
+            return this.onError(exchange, ErrorCode.TOKEN_INVALID);
+        }
+
+        // Trích xuất các claims từ JWT
+        String role = jwtUtil.extractRole(token);
+        String userId = jwtUtil.extractUserId(token);
+        String profileId = jwtUtil.extractProfileId(token);
+        String dealerId = jwtUtil.extractDealerId(token);
+
+        // 6. Ghi log thành công
+        logAuthenticationSuccess(email, role, userId, profileId, dealerId);
+
+        // 7. Mutate Request với các headers thông tin User
+        ServerWebExchange mutatedExchange = mutateExchangeWithUserHeaders(exchange, email, role, userId, profileId,
+                dealerId, token);
+        return chain.filter(mutatedExchange);
+    }
+
+    private void logAuthenticationSuccess(String email, String role, String userId, String profileId, String dealerId) {
+        log.info("JWT Validation Success - User: {}, Role: {}, ID: {}, Profile: {}, Dealer: {}",
+                email, role, userId, profileId, dealerId);
+    }
+
+    private ServerWebExchange mutateExchangeWithUserHeaders(ServerWebExchange exchange, String email, String role,
+            String userId, String profileId, String dealerId, String token) {
+        return exchange.mutate()
+                .request(r -> r
+                        .header("X-User-Email", email)
+                        .header("X-User-Role", role)
+                        .header("X-User-Id", userId != null ? userId : "")
+                        .header("X-User-ProfileId", profileId != null ? profileId : "")
+                        .header("X-User-DealerId", dealerId != null ? dealerId : "")
+                        .header("Authorization", "Bearer " + token))
+                .build();
+    }
 
     @Override
     public int getOrder() {
         return -1; // chạy sớm nhất
     }
+
+    private Mono<Void> onError(ServerWebExchange exchange, ErrorCode errorCode) {
+        return onError(exchange, errorCode.getCode(), errorCode.getMessage(), errorCode.getHttpStatus());
+    }
+
     private Mono<Void> onError(ServerWebExchange exchange, String code, String message, HttpStatus httpStatus) {
         var response = exchange.getResponse();
         response.setStatusCode(httpStatus);
         response.getHeaders().add("Content-Type", "application/json; charset=UTF-8");
 
-        String body = String.format("{\"code\":\"%s\",\"message\":\"%s\",\"data\":null}", code, message);
+        String body = String.format("{\"timestamp\":\"%s\",\"code\":\"%s\",\"message\":\"%s\",\"data\":null}",
+                java.time.Instant.now(), code, message);
         byte[] bytes = body.getBytes(java.nio.charset.StandardCharsets.UTF_8);
 
         return response.writeWith(Mono.just(response.bufferFactory().wrap(bytes)));
     }
-
 }

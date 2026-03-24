@@ -1,6 +1,5 @@
 package com.ev.gateway.config;
 
-import com.ev.common_lib.dto.respond.ApiRespond;
 import com.ev.common_lib.exception.ErrorCode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,56 +25,64 @@ public class GatewayExceptionHandler implements ErrorWebExceptionHandler {
     public Mono<Void> handle(ServerWebExchange exchange, Throwable ex) {
         var response = exchange.getResponse();
 
-        // Nếu response đã commit thì không thể gửi lỗi
         if (response.isCommitted()) {
             log.error("[GatewayExceptionHandler] Response already committed. Path: {}, Method: {}",
                     exchange.getRequest().getURI(), exchange.getRequest().getMethod(), ex);
             return Mono.error(ex);
         }
 
-        // Log toàn bộ thông tin request và exception
-        log.error("[GatewayExceptionHandler] Handling exception for request");
-        log.error("  Path: {}", exchange.getRequest().getURI().getPath());
-        log.error("  Method: {}", exchange.getRequest().getMethod());
-        log.error("  Headers: {}", exchange.getRequest().getHeaders());
-        log.error("  Query params: {}", exchange.getRequest().getQueryParams());
-        log.error("  Remote address: {}", exchange.getRequest().getRemoteAddress());
-        log.error("  Exception type: {}", ex.getClass().getName());
-        log.error("  Exception message: {}", ex.getMessage(), ex);
+        // Log detailed error information
+        log.error("[GatewayExceptionHandler] Error on path: {} | Method: {} | Exception: {} | Message: {}",
+                exchange.getRequest().getURI().getPath(),
+                exchange.getRequest().getMethod(),
+                ex.getClass().getSimpleName(),
+                ex.getMessage());
 
         response.getHeaders().setContentType(MediaType.APPLICATION_JSON);
 
-        // Mặc định là lỗi downstream
-        ErrorCode errorCode = ErrorCode.DOWNSTREAM_SERVICE_UNAVAILABLE;
-        String message = ex.getMessage();
-
-        // Phân loại lỗi cụ thể
-        if (message != null && message.contains("Connection refused")) {
-            errorCode = ErrorCode.SERVICE_UNAVAILABLE;
-        } else if (message != null && message.contains("timeout")) {
-            errorCode = ErrorCode.TIMEOUT;
-        }
+        // Map exception to ErrorCode
+        ErrorCode errorCode = mapExceptionToErrorCode(ex);
+        String message = (ex.getMessage() != null) ? ex.getMessage() : errorCode.getMessage();
 
         HttpStatus status = errorCode.getHttpStatus();
         response.setStatusCode(status);
 
-        // Log chi tiết status trả về
         log.info("[GatewayExceptionHandler] Returning error code={} message={} httpStatus={}",
-                errorCode.getCode(), errorCode.getMessage(), status);
+                errorCode.getCode(), message, status);
 
-        ApiRespond<Object> apiRespond = new ApiRespond<>();
-        apiRespond.setCode(errorCode.getCode());
-        apiRespond.setMessage(errorCode.getMessage());
-        apiRespond.setData(null);
-
+        // Standardized ApiRespond format
         String json = String.format(
                 "{\"timestamp\":\"%s\",\"code\":\"%s\",\"message\":\"%s\",\"data\":null}",
                 Instant.now(),
-                apiRespond.getCode(),
-                apiRespond.getMessage()
-        );
+                errorCode.getCode(),
+                message.replace("\"", "\\\"")); // Basic escaping for safety
 
         DataBufferFactory bufferFactory = response.bufferFactory();
         return response.writeWith(Mono.just(bufferFactory.wrap(json.getBytes(StandardCharsets.UTF_8))));
+    }
+
+    private ErrorCode mapExceptionToErrorCode(Throwable ex) {
+        String message = ex.getMessage() != null ? ex.getMessage().toLowerCase() : "";
+
+        if (ex instanceof org.springframework.web.server.ResponseStatusException rse) {
+            if (rse.getStatusCode() == HttpStatus.NOT_FOUND)
+                return ErrorCode.DATA_NOT_FOUND;
+            if (rse.getStatusCode() == HttpStatus.BAD_REQUEST)
+                return ErrorCode.BAD_REQUEST;
+            if (rse.getStatusCode() == HttpStatus.UNAUTHORIZED)
+                return ErrorCode.UNAUTHORIZED;
+            if (rse.getStatusCode() == HttpStatus.FORBIDDEN)
+                return ErrorCode.FORBIDDEN;
+        }
+
+        if (ex instanceof java.net.ConnectException || message.contains("connection refused")) {
+            return ErrorCode.SERVICE_UNAVAILABLE;
+        }
+
+        if (ex instanceof java.util.concurrent.TimeoutException || message.contains("timeout")) {
+            return ErrorCode.TIMEOUT;
+        }
+
+        return ErrorCode.DOWNSTREAM_SERVICE_UNAVAILABLE;
     }
 }

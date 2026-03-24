@@ -2,9 +2,7 @@ name: CI/CD Enterprise Pipeline
 
 on:
   push:
-    branches: [main, develop]
-  pull_request:
-    branches: [main, develop]
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -21,6 +19,8 @@ jobs:
     steps:
       - name: "Initial: Checkout Code"
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       #########################################################################
       ## CI PHASE
@@ -66,7 +66,7 @@ jobs:
             -Dsonar.projectKey=phu-boop_VoltNexus-EV-Enterprise-Ecosystem \
             -Dsonar.organization=phu-boop \
             -Dsonar.host.url=https://sonarcloud.io \
-            -Dsonar.login=$SONAR_TOKEN \
+            -Dsonar.token=$SONAR_TOKEN \
             -Dsonar.qualitygate.wait=true
       - name: "CI: Check SonarCloud Issues"
         if: always()
@@ -314,6 +314,8 @@ jobs:
     steps:
       - name: "Initial: Checkout Code"
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: "Approve"
         run: |

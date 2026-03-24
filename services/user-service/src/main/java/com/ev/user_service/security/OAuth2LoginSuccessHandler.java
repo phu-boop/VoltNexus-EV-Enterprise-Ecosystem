@@ -24,10 +24,13 @@ import com.ev.user_service.repository.UserRepository;
 import com.ev.user_service.repository.CustomerProfileRepository;
 import com.ev.user_service.service.CustomerProfileService;
 
+import lombok.extern.slf4j.Slf4j;
+
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 
+@Slf4j
 @Component
 public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
 
@@ -88,8 +91,36 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
             return savedUser;
         });
 
-        String accessToken = jwtUtil.generateAccessToken(user.getEmail(), user.getRoleToString(), null, null);
-        String refreshToken = jwtUtil.generateRefreshToken(user.getEmail(), user.getRoleToString(), null, null);
+        // Map user to UserRespond
+        UserRespond userRespond = userMapper.usertoUserRespond(user);
+        String profileIdStr = null;
+
+        // Fetch customer profile and set memberId if user is a CUSTOMER
+        try {
+            if (user.getRoleToString().contains("CUSTOMER")) {
+                // Explicitly fetch customer profile from repository (avoid lazy loading issue)
+                var customerProfile = customerProfileRepository.findByUserId(user.getId());
+                if (customerProfile.isPresent()) {
+                    profileIdStr = customerProfile.get().getCustomerId().toString();
+                    userRespond.setMemberId(customerProfile.get().getCustomerId());
+                }
+            } else {
+                // For non-customers, use the profileId from User entity if present
+                if (user.getProfileId() != null) {
+                    profileIdStr = user.getProfileId().toString();
+                }
+            }
+        } catch (Exception e) {
+            log.error("Error fetching customer profile for user {}: {}", user.getEmail(), e.getMessage());
+        }
+
+        // Generate tokens with complete claims
+        String accessToken = jwtUtil.generateAccessToken(user.getEmail(), user.getRoleToString(),
+                user.getId().toString(),
+                profileIdStr, null);
+        String refreshToken = jwtUtil.generateRefreshToken(user.getEmail(), user.getRoleToString(),
+                user.getId().toString(),
+                profileIdStr, null);
 
         // Set refresh token trong cookie HttpOnly
         Cookie cookie = new Cookie("refreshToken", refreshToken);
@@ -99,25 +130,7 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
         cookie.setMaxAge(30 * 24 * 60 * 60);
         response.addCookie(cookie);
 
-        // Map user to UserRespond
-        UserRespond userRespond = userMapper.usertoUserRespond(user);
-
-        // Fetch customer profile and set memberId if user is a CUSTOMER
-        try {
-            if (user.getRoleToString().contains("CUSTOMER")) {
-                // Explicitly fetch customer profile from repository (avoid lazy loading issue)
-                var customerProfile = customerProfileRepository.findByUserId(user.getId());
-                if (customerProfile.isPresent()) {
-                    userRespond.setMemberId(customerProfile.get().getCustomerId());
-                } else {
-                }
-            }
-        } catch (Exception e) {
-            System.err.println("[OAuth2LoginSuccessHandler] ❌ Error fetching customer profile: " + e.getMessage());
-        }
-
         LoginRespond loginRespond = new LoginRespond(userRespond, accessToken);
-
         ApiRespond<Object> apiResponse = ApiRespond.success("Login with Google success", loginRespond);
 
         // Lấy redirect_uri từ state parameter (format:
@@ -126,14 +139,11 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
 
         // Security fix: Validate redirectUri against Whitelist (allowedOrigins)
         if (redirectUri == null || redirectUri.isEmpty() || !isAllowedRedirectUri(redirectUri)) {
-            System.err
-                    .println("[OAuth2LoginSuccessHandler] ⚠️ Invalid or missing redirect_uri. Falling back to default: "
-                            + urlFrontend);
+            log.warn("Invalid or missing redirect_uri [{}]. Falling back to default: {}", redirectUri, urlFrontend);
             redirectUri = urlFrontend;
         }
 
         response.sendRedirect(redirectUri + "/oauth-success?accessToken=" + accessToken);
-
     }
 
     private String extractRedirectUriFromRequest(HttpServletRequest request) {
@@ -153,7 +163,7 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
 
             return null;
         } catch (Exception e) {
-            System.err.println("[OAuth2LoginSuccessHandler] Error extracting redirect_uri: " + e.getMessage());
+            log.error("Error extracting redirect_uri from request state: {}", e.getMessage());
             return null;
         }
     }

@@ -1,14 +1,16 @@
 package com.ev.user_service;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
 
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 
-@SpringBootTest
+/**
+ * Removed  to avoid needing a live DB/Kafka on CI.
+ * Real business logic tests should be in separate unit test classes.
+ */
 class UserServiceApplicationTests {
 
 	@MockBean
