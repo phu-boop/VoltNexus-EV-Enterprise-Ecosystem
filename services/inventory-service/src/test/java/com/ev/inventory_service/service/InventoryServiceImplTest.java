@@ -24,17 +24,17 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
+import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.web.client.RestTemplate;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
-import org.springframework.kafka.core.KafkaTemplate;
-import org.springframework.test.util.ReflectionTestUtils;
-import org.springframework.web.client.RestTemplate;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.ResponseEntity;
-import org.springframework.core.ParameterizedTypeReference;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -42,7 +42,7 @@ import java.util.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -75,6 +75,30 @@ class InventoryServiceImplTest {
     void setUp() {
         ReflectionTestUtils.setField(inventoryService, "vehicleCatalogUrl", "http://vehicle-service");
         lenient().when(transactionRepo.save(any(InventoryTransaction.class))).thenAnswer(i -> i.getArgument(0));
+        lenient().when(centralRepo.save(any(CentralInventory.class))).thenAnswer(i -> i.getArgument(0));
+        lenient().when(dealerRepo.save(any(DealerAllocation.class))).thenAnswer(i -> i.getArgument(0));
+
+        lenient().when(stockAlertRepo.save(any(StockAlert.class))).thenAnswer(i -> {
+            StockAlert s = i.getArgument(0);
+            s.setAlertId(100L);
+            return s;
+        });
+
+        // Mock Catalog Service response for checkStockThresholdAndNotify enrichment
+        var variantDetail = new VariantDetailDto();
+        variantDetail.setVariantId(1L);
+        variantDetail.setVersionName("Test Variant");
+        variantDetail.setModelId(1L);
+        variantDetail.setModelName("Test Model");
+
+        ApiRespond<VariantDetailDto> apiRespond = ApiRespond.success("Success", variantDetail);
+
+        lenient().when(restTemplate.exchange(
+                anyString(),
+                eq(HttpMethod.GET),
+                isNull(),
+                (ParameterizedTypeReference<Object>) any()))
+                .thenReturn(ResponseEntity.ok(apiRespond));
     }
 
     @Nested
@@ -96,6 +120,7 @@ class InventoryServiceImplTest {
             inventory.setVariantId(variantId);
             inventory.setTotalQuantity(10);
             inventory.setAvailableQuantity(10);
+            inventory.setAllocatedQuantity(0);
 
             when(centralRepo.findByVariantId(variantId)).thenReturn(Optional.of(inventory));
             when(physicalVehicleRepo.existsById(anyString())).thenReturn(false);
@@ -123,6 +148,7 @@ class InventoryServiceImplTest {
             inventory.setVariantId(variantId);
             inventory.setTotalQuantity(10);
             inventory.setAvailableQuantity(10);
+            inventory.setAllocatedQuantity(0);
 
             when(centralRepo.findByVariantId(variantId)).thenReturn(Optional.of(inventory));
             when(physicalVehicleRepo.existsById("VIN3")).thenReturn(false);
@@ -148,6 +174,7 @@ class InventoryServiceImplTest {
             inventory.setVariantId(variantId);
             inventory.setTotalQuantity(0);
             inventory.setAvailableQuantity(0);
+            inventory.setAllocatedQuantity(0);
 
             PhysicalVehicle vehicle = new PhysicalVehicle();
             vehicle.setVin("VIN1");
@@ -176,6 +203,7 @@ class InventoryServiceImplTest {
             inventory.setVariantId(variantId);
             inventory.setTotalQuantity(10);
             inventory.setAvailableQuantity(10);
+            inventory.setAllocatedQuantity(0);
 
             PhysicalVehicle vehicle = new PhysicalVehicle();
             vehicle.setVin("VIN2");
@@ -221,6 +249,18 @@ class InventoryServiceImplTest {
 
             assertThatThrownBy(() -> inventoryService.executeTransaction(request, "s@e.com", "ADMIN", "p1"))
                     .isInstanceOf(AppException.class);
+        }
+
+        @Test
+        @DisplayName("executeTransaction(DEFAULT) - Should throw BAD_REQUEST")
+        void executeTransaction_Default_ThrowsBadRequest() {
+            TransactionRequestDto request = new TransactionRequestDto();
+            request.setTransactionType(TransactionType.SALE); // Not handled in switch but exists in enum
+
+            assertThatThrownBy(() -> inventoryService.executeTransaction(request, "s@e.com", "ADMIN", "p1"))
+                    .isInstanceOf(AppException.class)
+                    .extracting("errorCode")
+                    .isEqualTo(ErrorCode.BAD_REQUEST);
         }
     }
 
@@ -278,6 +318,7 @@ class InventoryServiceImplTest {
 
             CentralInventory central = new CentralInventory();
             central.setAvailableQuantity(10);
+            central.setAllocatedQuantity(0);
 
             when(centralRepo.findByVariantId(1L)).thenReturn(Optional.of(central));
 
@@ -285,6 +326,25 @@ class InventoryServiceImplTest {
                     .isInstanceOf(AppException.class)
                     .extracting("errorCode")
                     .isEqualTo(ErrorCode.INSUFFICIENT_STOCK);
+        }
+
+        @Test
+        @DisplayName("allocateStockForOrder - Should throw if quantity is negative or zero (edge case if logic allows)")
+        void allocateStockForOrder_NegativeQuantity() {
+            AllocationRequestDto request = new AllocationRequestDto();
+            request.setOrderId(UUID.randomUUID());
+            AllocationRequestDto.AllocationItem item = new AllocationRequestDto.AllocationItem();
+            item.setVariantId(1L);
+            item.setQuantity(0);
+            request.setItems(List.of(item));
+
+            CentralInventory central = new CentralInventory();
+            central.setAvailableQuantity(10);
+            central.setAllocatedQuantity(0);
+            when(centralRepo.findByVariantId(1L)).thenReturn(Optional.of(central));
+
+            inventoryService.allocateStockForOrder(request, "s@e.com");
+            verify(centralRepo).save(central);
         }
     }
 
@@ -311,11 +371,13 @@ class InventoryServiceImplTest {
             central.setVariantId(variantId);
             central.setAllocatedQuantity(1);
             central.setTotalQuantity(10);
+            central.setAvailableQuantity(9);
 
             DealerAllocation allocation = new DealerAllocation();
             allocation.setDealerId(dealerId);
             allocation.setVariantId(variantId);
             allocation.setAvailableQuantity(0);
+            allocation.setAllocatedQuantity(0);
 
             PhysicalVehicle vehicle = new PhysicalVehicle();
             vehicle.setVin(vin);
@@ -345,6 +407,8 @@ class InventoryServiceImplTest {
 
             CentralInventory central = new CentralInventory();
             central.setAllocatedQuantity(1); // Only 1 allocated
+            central.setAvailableQuantity(0);
+            central.setTotalQuantity(1);
 
             when(centralRepo.findByVariantId(1L)).thenReturn(Optional.of(central));
 
@@ -352,6 +416,39 @@ class InventoryServiceImplTest {
                     .isInstanceOf(AppException.class)
                     .extracting("errorCode")
                     .isEqualTo(ErrorCode.INSUFFICIENT_STOCK);
+        }
+
+        @Test
+        @DisplayName("shipAllocatedStock - Should throw if VIN status not IN_CENTRAL_WAREHOUSE")
+        void shipAllocatedStock_WrongVinStatus() {
+            ShipmentRequestDto request = new ShipmentRequestDto();
+            ShipmentRequestDto.ShipmentItem item = new ShipmentRequestDto.ShipmentItem();
+            item.setVariantId(1L);
+            item.setVins(List.of("VIN_BAD"));
+            request.setItems(List.of(item));
+
+            CentralInventory central = new CentralInventory();
+            central.setAllocatedQuantity(1);
+            central.setTotalQuantity(10);
+            central.setAvailableQuantity(9);
+
+            PhysicalVehicle v1 = new PhysicalVehicle();
+            v1.setVin("VIN_BAD");
+            v1.setStatus(VehiclePhysicalStatus.SOLD);
+
+            when(centralRepo.findByVariantId(1L)).thenReturn(Optional.of(central));
+            when(physicalVehicleRepo.findAllById(any())).thenReturn(List.of(v1));
+
+            DealerAllocation da = new DealerAllocation();
+            da.setAvailableQuantity(0);
+            da.setAllocatedQuantity(0);
+            when(dealerRepo.findByVariantIdAndDealerId(any(), any()))
+                    .thenReturn(Optional.of(da));
+
+            assertThatThrownBy(() -> inventoryService.shipAllocatedStock(request, "s@e.com"))
+                    .isInstanceOf(AppException.class)
+                    .extracting("errorCode")
+                    .isEqualTo(ErrorCode.BAD_REQUEST);
         }
     }
 
@@ -371,6 +468,7 @@ class InventoryServiceImplTest {
             central.setVariantId(1L);
             central.setTotalQuantity(10);
             central.setAvailableQuantity(10);
+            central.setAllocatedQuantity(0);
 
             when(physicalVehicleRepo.findAllByOrderId(orderId)).thenReturn(List.of(vehicle));
             when(centralRepo.findByVariantId(1L)).thenReturn(Optional.of(central));
@@ -394,6 +492,9 @@ class InventoryServiceImplTest {
         CentralInventory inventory = new CentralInventory();
         inventory.setVariantId(1L);
         inventory.setReorderLevel(10);
+        inventory.setAvailableQuantity(10);
+        inventory.setTotalQuantity(10);
+        inventory.setAllocatedQuantity(0);
 
         when(centralRepo.findByVariantId(1L)).thenReturn(Optional.of(inventory));
 
@@ -414,19 +515,21 @@ class InventoryServiceImplTest {
 
         when(centralRepo.findByVariantId(variantId)).thenReturn(Optional.of(inventory));
         when(stockAlertRepo.findFirstByVariantIdAndStatus(variantId, "NEW")).thenReturn(Optional.empty());
-        when(stockAlertRepo.save(any(StockAlert.class))).thenAnswer(i -> {
-            StockAlert s = i.getArgument(0);
-            s.setAlertId(100L);
-            return s;
-        });
+        // save
+        // for
+        // simplicity
+        // or
+        // test
+        // the
+        // branch
 
         VariantDetailDto details = new VariantDetailDto();
         details.setVersionName("V1");
         details.setSkuCode("SKU1");
         ApiRespond<VariantDetailDto> apiResponse = ApiRespond.success("Success", details);
-        when(restTemplate.exchange(anyString(), eq(org.springframework.http.HttpMethod.GET), any(),
-                any(org.springframework.core.ParameterizedTypeReference.class)))
-                .thenReturn(org.springframework.http.ResponseEntity.ok(apiResponse));
+        when(restTemplate.exchange(anyString(), any(HttpMethod.class), isNull(),
+                (ParameterizedTypeReference<Object>) any()))
+                .thenReturn(ResponseEntity.ok(apiResponse));
 
         ReflectionTestUtils.invokeMethod(inventoryService, "checkStockThresholdAndNotify", variantId);
 
@@ -459,7 +562,8 @@ class InventoryServiceImplTest {
         void getAllInventory_SearchEmpty() {
             Pageable pageable = PageRequest.of(0, 10);
             ApiRespond<List<Long>> apiResponse = ApiRespond.success("Success", Collections.emptyList());
-            when(restTemplate.exchange(anyString(), eq(HttpMethod.GET), any(), any(ParameterizedTypeReference.class)))
+            when(restTemplate.exchange(anyString(), eq(HttpMethod.GET), isNull(),
+                    (ParameterizedTypeReference<Object>) any()))
                     .thenReturn(ResponseEntity.ok(apiResponse));
 
             var result = inventoryService.getAllInventory("NoSuchCar", null, null, pageable);
@@ -485,6 +589,18 @@ class InventoryServiceImplTest {
             verify(dealerRepo).findByDealerId(dealerId);
             verify(centralRepo).findAll((Specification<CentralInventory>) any(), any(Pageable.class));
         }
+
+        @Test
+        @DisplayName("getAllInventory - Search throws exception")
+        void getAllInventory_SearchError() {
+            Pageable pageable = PageRequest.of(0, 10);
+            when(restTemplate.exchange(anyString(), eq(HttpMethod.GET), isNull(),
+                    (ParameterizedTypeReference<Object>) any()))
+                    .thenThrow(new RuntimeException("API Down"));
+
+            var result = inventoryService.getAllInventory("Crash", null, null, pageable);
+            assertThat(result.getContent()).isEmpty();
+        }
     }
 
     @Nested
@@ -501,6 +617,9 @@ class InventoryServiceImplTest {
 
             CentralInventory central = new CentralInventory();
             central.setAvailableQuantity(10);
+            central.setTotalQuantity(10);
+            central.setAllocatedQuantity(0);
+
             when(centralRepo.findByVariantId(1L)).thenReturn(Optional.of(central));
             when(transferRepo.save(any(TransferRequest.class))).thenAnswer(i -> i.getArgument(0));
 
@@ -550,7 +669,8 @@ class InventoryServiceImplTest {
             t1.setTransactionDate(LocalDateTime.now());
             t1.setStaffId("admin@ev.com");
 
-            when(transactionRepo.findAllByTransactionDateBetween(any(), any())).thenReturn(List.of(t1));
+            when(transactionRepo.findAllByTransactionDateBetween(any(), any()))
+                    .thenReturn(List.of(t1));
 
             inventoryService.generateInventoryReport(out, startDate, endDate);
 
@@ -572,7 +692,8 @@ class InventoryServiceImplTest {
             t1.setTransactionDate(LocalDateTime.now());
             t1.setStaffId("admin@ev.com");
 
-            when(transactionRepo.findAllByTransactionDateBetween(any(), any())).thenReturn(List.of(t1));
+            when(transactionRepo.findAllByTransactionDateBetween(any(), any()))
+                    .thenReturn(List.of(t1));
 
             inventoryService.generatePdfReport(out, startDate, endDate);
 
@@ -596,8 +717,9 @@ class InventoryServiceImplTest {
             detail.setVersionName("V1");
 
             when(dealerRepo.findAll(any(Pageable.class)))
-                    .thenReturn(new org.springframework.data.domain.PageImpl<>(List.of(allocation)));
-            when(restTemplate.exchange(anyString(), eq(HttpMethod.POST), any(), any(ParameterizedTypeReference.class)))
+                    .thenReturn(new PageImpl<>(List.of(allocation)));
+            when(restTemplate.exchange(anyString(), eq(HttpMethod.POST), any(),
+                    (ParameterizedTypeReference<Object>) any()))
                     .thenReturn(ResponseEntity.ok(ApiRespond.success("Success", List.of(detail))));
 
             var result = inventoryService.getInventorySnapshotsForAnalytics(null, null, 10);
@@ -612,9 +734,12 @@ class InventoryServiceImplTest {
             CentralInventory inventory = new CentralInventory();
             inventory.setVariantId(1L);
             inventory.setAvailableQuantity(0);
+            inventory.setTotalQuantity(0);
+            inventory.setAllocatedQuantity(0);
 
             when(centralRepo.findAll()).thenReturn(List.of(inventory));
-            when(restTemplate.exchange(anyString(), eq(HttpMethod.GET), any(), any(ParameterizedTypeReference.class)))
+            when(restTemplate.exchange(anyString(), eq(HttpMethod.GET), isNull(),
+                    (ParameterizedTypeReference<Object>) any()))
                     .thenReturn(ResponseEntity.ok(ApiRespond.success("Success", List.of(1L))));
 
             var result = inventoryService.getVariantIdsByStatus("OUT_OF_STOCK");
@@ -629,9 +754,12 @@ class InventoryServiceImplTest {
             inventory.setVariantId(1L);
             inventory.setAvailableQuantity(10);
             inventory.setReorderLevel(5);
+            inventory.setTotalQuantity(10);
+            inventory.setAllocatedQuantity(0);
 
             when(centralRepo.findAll()).thenReturn(List.of(inventory));
-            when(restTemplate.exchange(anyString(), eq(HttpMethod.GET), any(), any(ParameterizedTypeReference.class)))
+            when(restTemplate.exchange(anyString(), eq(HttpMethod.GET), isNull(),
+                    (ParameterizedTypeReference<Object>) any()))
                     .thenReturn(ResponseEntity.ok(ApiRespond.success("Success", List.of(1L))));
 
             var result = inventoryService.getVariantIdsByStatus("IN_STOCK");
@@ -645,9 +773,12 @@ class InventoryServiceImplTest {
             inventory.setVariantId(1L);
             inventory.setAvailableQuantity(3);
             inventory.setReorderLevel(5);
+            inventory.setTotalQuantity(3);
+            inventory.setAllocatedQuantity(0);
 
             when(centralRepo.findAll()).thenReturn(List.of(inventory));
-            when(restTemplate.exchange(anyString(), eq(HttpMethod.GET), any(), any(ParameterizedTypeReference.class)))
+            when(restTemplate.exchange(anyString(), eq(HttpMethod.GET), isNull(),
+                    (ParameterizedTypeReference<Object>) any()))
                     .thenReturn(ResponseEntity.ok(ApiRespond.success("Success", List.of(1L))));
 
             var result = inventoryService.getVariantIdsByStatus("LOW_STOCK");
@@ -665,7 +796,8 @@ class InventoryServiceImplTest {
             LocalDate start = LocalDate.now();
             LocalDate end = LocalDate.now();
 
-            when(transactionRepo.findAllByTransactionDateBetween(any(), any(), any())).thenReturn(Page.empty());
+            when(transactionRepo.findAllByTransactionDateBetween(any(), any(),
+                    any())).thenReturn(Page.empty());
 
             inventoryService.getTransactionHistory(start, end, pageable);
 
@@ -727,6 +859,8 @@ class InventoryServiceImplTest {
             CentralInventory inventory = new CentralInventory();
             inventory.setVariantId(1L);
             inventory.setAvailableQuantity(5);
+            inventory.setTotalQuantity(5);
+            inventory.setAllocatedQuantity(0);
 
             when(centralRepo.findByVariantIdIn(ids)).thenReturn(List.of(inventory));
 
@@ -764,7 +898,8 @@ class InventoryServiceImplTest {
             detail.setVersionName("V1");
 
             when(dealerRepo.findByDealerId(dealerId)).thenReturn(List.of(allocation));
-            when(restTemplate.exchange(anyString(), any(), any(), any(ParameterizedTypeReference.class)))
+            when(restTemplate.exchange(anyString(), any(HttpMethod.class), any(),
+                    (ParameterizedTypeReference<Object>) any()))
                     .thenReturn(ResponseEntity.ok(ApiRespond.success("Success", List.of(detail))));
 
             var result = inventoryService.getDealerInventory(dealerId, null,
@@ -782,10 +917,13 @@ class InventoryServiceImplTest {
             CentralInventory central = new CentralInventory();
             central.setVariantId(1L);
             central.setAvailableQuantity(10);
+            central.setTotalQuantity(10);
+            central.setAllocatedQuantity(0);
 
             DealerAllocation dealer = new DealerAllocation();
             dealer.setVariantId(1L);
             dealer.setAvailableQuantity(2);
+            dealer.setAllocatedQuantity(0);
 
             when(centralRepo.findByVariantIdIn(ids)).thenReturn(List.of(central));
             when(dealerRepo.findByVariantIdInAndDealerId(ids, dealerId)).thenReturn(List.of(dealer));

@@ -13,7 +13,7 @@ import org.springframework.security.web.access.AccessDeniedHandler;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.*;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -36,10 +36,41 @@ class ProductionSecurityConfigTest {
     private ProductionSecurityConfig productionSecurityConfig;
 
     @Test
+    @SuppressWarnings("unchecked")
     void testSecurityFilterChain() throws Exception {
-        when(httpSecurity.csrf(any())).thenReturn(httpSecurity);
+        // We need to ensure the lambdas passed to httpSecurity are actually executed
+        doAnswer(invocation -> {
+            org.springframework.security.config.Customizer<org.springframework.security.config.annotation.web.configurers.CsrfConfigurer<HttpSecurity>> customizer = invocation
+                    .getArgument(0);
+            customizer.customize(
+                    mock(org.springframework.security.config.annotation.web.configurers.CsrfConfigurer.class));
+            return httpSecurity;
+        }).when(httpSecurity).csrf(any());
+
+        doAnswer(invocation -> {
+            org.springframework.security.config.Customizer<org.springframework.security.config.annotation.web.configurers.AuthorizeHttpRequestsConfigurer<HttpSecurity>.AuthorizationManagerRequestMatcherRegistry> customizer = invocation
+                    .getArgument(0);
+            customizer.customize(mock(
+                    org.springframework.security.config.annotation.web.configurers.AuthorizeHttpRequestsConfigurer.AuthorizationManagerRequestMatcherRegistry.class,
+                    Answers.RETURNS_DEEP_STUBS));
+            return httpSecurity;
+        }).when(httpSecurity).authorizeHttpRequests(any());
+
+        doAnswer(invocation -> {
+            org.springframework.security.config.Customizer<org.springframework.security.config.annotation.web.configurers.ExceptionHandlingConfigurer<HttpSecurity>> customizer = invocation
+                    .getArgument(0);
+            customizer.customize(mock(
+                    org.springframework.security.config.annotation.web.configurers.ExceptionHandlingConfigurer.class,
+                    Answers.RETURNS_DEEP_STUBS));
+            return httpSecurity;
+        }).when(httpSecurity).exceptionHandling(any());
+
+        when(httpSecurity.addFilterBefore(any(), any())).thenReturn(httpSecurity);
+        when(httpSecurity.build()).thenReturn(mock(DefaultSecurityFilterChain.class));
 
         SecurityFilterChain result = productionSecurityConfig.securityFilterChain(httpSecurity);
+        assertNotNull(result);
+        verify(httpSecurity).build();
     }
 
     @Test
