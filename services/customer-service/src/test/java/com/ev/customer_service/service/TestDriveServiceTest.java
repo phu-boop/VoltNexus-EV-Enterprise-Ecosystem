@@ -28,11 +28,11 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-class TestDriveServiceTest {
+public class TestDriveServiceTest {
 
     @Mock
     private TestDriveAppointmentRepository appointmentRepository;
@@ -82,7 +82,7 @@ class TestDriveServiceTest {
 
     @Nested
     @DisplayName("createAppointment()")
-    class CreateAppointment {
+    public class CreateAppointment {
 
         @Test
         @DisplayName("Tạo lịch hẹn thành công")
@@ -107,26 +107,41 @@ class TestDriveServiceTest {
         }
 
         @Test
-        @DisplayName("Trùng lịch nhân viên → ném IllegalStateException")
-        void createAppointment_conflictStaff() {
-            testDriveRequest.setStaffId("STAFF1");
+        @DisplayName("Trùng lịch xe → ném IllegalStateException")
+        void createAppointment_conflictVehicle() {
+            testDriveRequest.setModelId(101L);
+            testDriveRequest.setVariantId(202L);
             when(customerRepository.findById(1L)).thenReturn(Optional.of(customer));
 
             TestDriveAppointment conflict = new TestDriveAppointment();
             conflict.setAppointmentDate(LocalDateTime.now());
 
-            when(appointmentRepository.findConflictingAppointmentsByStaff(anyString(), any(), any()))
+            when(appointmentRepository.findConflictingAppointmentsByVehicle(eq(101L), eq(202L), any(), any()))
                     .thenReturn(List.of(conflict));
 
             assertThatThrownBy(() -> testDriveService.createAppointment(testDriveRequest))
                     .isInstanceOf(IllegalStateException.class)
-                    .hasMessageContaining("Nhân viên đã có lịch hẹn");
+                    .hasMessageContaining("Xe đã có lịch lái thử");
+        }
+
+        @Test
+        @DisplayName("Lỗi gửi email → không throw exception")
+        void createAppointment_emailError() {
+            when(customerRepository.findById(1L)).thenReturn(Optional.of(customer));
+            when(appointmentRepository.save(any(TestDriveAppointment.class))).thenReturn(appointment);
+            doThrow(new RuntimeException("Mail server down")).when(emailConfirmationService)
+                    .sendConfirmationEmail(any(), any(), any(), any(), any(), any());
+
+            TestDriveResponse result = testDriveService.createAppointment(testDriveRequest);
+
+            assertThat(result).isNotNull();
+            verify(appointmentRepository, times(1)).save(any(TestDriveAppointment.class));
         }
     }
 
     @Nested
     @DisplayName("getAppointmentsByProfileId()")
-    class GetAppointmentsByProfileId {
+    public class GetAppointmentsByProfileId {
 
         @Test
         @DisplayName("Lấy danh sách thành công khi customer tồn tại")
@@ -156,7 +171,7 @@ class TestDriveServiceTest {
 
     @Nested
     @DisplayName("createPublicAppointment()")
-    class CreatePublicAppointment {
+    public class CreatePublicAppointment {
 
         @Test
         @DisplayName("Tạo lịch hẹn public thành công - customer mới")
@@ -180,11 +195,39 @@ class TestDriveServiceTest {
             verify(customerRepository).save(any(Customer.class));
             verify(appointmentRepository, times(2)).save(any(TestDriveAppointment.class));
         }
+
+        @Test
+        @DisplayName("Tạo lịch hẹn public thành công - customer đã tồn tại và update info")
+        void createPublic_success_existingCustomerUpdate() {
+            PublicTestDriveRequest request = new PublicTestDriveRequest();
+            request.setCustomerName("Public User");
+            request.setCustomerEmail("new_email@ev.com");
+            request.setCustomerPhone("0987654321");
+            request.setProfileId("new-profile");
+            request.setModelId(101L);
+            request.setAppointmentDate(LocalDateTime.now().plusDays(1));
+
+            Customer existing = new Customer();
+            existing.setCustomerId(99L);
+            existing.setPhone("0987654321"); // Match by phone
+            existing.setEmail("old_email@ev.com");
+
+            when(customerRepository.findByProfileId(any())).thenReturn(Optional.empty());
+            when(customerRepository.findByPhone("0987654321")).thenReturn(Optional.of(existing));
+            when(customerRepository.existsByEmail("new_email@ev.com")).thenReturn(false);
+            when(appointmentRepository.save(any(TestDriveAppointment.class))).thenReturn(appointment);
+
+            testDriveService.createPublicAppointment(request);
+
+            assertThat(existing.getEmail()).isEqualTo("new_email@ev.com");
+            assertThat(existing.getProfileId()).isEqualTo("new-profile");
+            verify(customerRepository).save(existing);
+        }
     }
 
     @Nested
     @DisplayName("confirmAppointmentByToken()")
-    class ConfirmAppointmentByToken {
+    public class ConfirmAppointmentByToken {
 
         @Test
         @DisplayName("Xác nhận qua token thành công")
@@ -225,7 +268,7 @@ class TestDriveServiceTest {
 
     @Nested
     @DisplayName("updateAppointment()")
-    class UpdateAppointment {
+    public class UpdateAppointment {
 
         @Test
         @DisplayName("Cập nhật thành công và gửi thông báo")
@@ -256,7 +299,7 @@ class TestDriveServiceTest {
 
     @Nested
     @DisplayName("getStatistics()")
-    class GetStatistics {
+    public class GetStatistics {
 
         @Test
         @DisplayName("Tính toán thống kê đúng tỉ lệ")
@@ -281,6 +324,19 @@ class TestDriveServiceTest {
         }
 
         @Test
+        @DisplayName("Thống kê khi không có dữ liệu → tỉ lệ bằng 0")
+        void getStatistics_emptyData() {
+            when(appointmentRepository.findByDealerIdAndDateRange(anyString(), any(), any()))
+                    .thenReturn(List.of());
+
+            var stats = testDriveService.getStatistics("DEALER1", LocalDateTime.now().minusDays(1),
+                    LocalDateTime.now());
+
+            assertThat(stats.getTotalAppointments()).isEqualTo(0);
+            assertThat(stats.getCompletionRate()).isEqualTo(0.0);
+        }
+
+        @Test
         @DisplayName("Tính toán thống kê cho admin (dealerId null)")
         void getStatistics_adminBranch() {
             when(appointmentRepository.findByDateRange(any(), any()))
@@ -295,7 +351,7 @@ class TestDriveServiceTest {
 
     @Nested
     @DisplayName("getCalendarView()")
-    class GetCalendarView {
+    public class GetCalendarView {
         @Test
         @DisplayName("Lấy calendar cho dealer")
         void getCalendar_dealer_success() {
@@ -324,7 +380,7 @@ class TestDriveServiceTest {
 
     @Nested
     @DisplayName("cancelAppointment()")
-    class CancelAppointment {
+    public class CancelAppointment {
         @Test
         @DisplayName("Hủy lịch hẹn thành công")
         void cancelAppointment_success() {
@@ -356,7 +412,7 @@ class TestDriveServiceTest {
 
     @Nested
     @DisplayName("confirmAppointment()")
-    class ConfirmAppointment {
+    public class ConfirmAppointment {
         @Test
         @DisplayName("Xác nhận lịch hẹn thành công")
         void confirmAppointment_success() {
@@ -372,7 +428,7 @@ class TestDriveServiceTest {
 
     @Nested
     @DisplayName("cancelAppointmentByToken()")
-    class CancelAppointmentByToken {
+    public class CancelAppointmentByToken {
         @Test
         @DisplayName("Hủy qua token thành công")
         void cancelByToken_success() {
@@ -388,7 +444,7 @@ class TestDriveServiceTest {
 
     @Nested
     @DisplayName("submitFeedback()")
-    class SubmitFeedback {
+    public class SubmitFeedback {
         @Test
         @DisplayName("Gửi feedback thành công cho appointment COMPLETED")
         void submitFeedback_success() {
@@ -408,6 +464,24 @@ class TestDriveServiceTest {
         }
 
         @Test
+        @DisplayName("Gửi feedback kèm staff notes → append vào notes cũ")
+        void submitFeedback_withStaffNotes() {
+            appointment.setStatus("COMPLETED");
+            appointment.setStaffNotes("Old notes");
+            TestDriveFeedbackRequest feedbackReq = new TestDriveFeedbackRequest();
+            feedbackReq.setFeedbackRating(4);
+            feedbackReq.setStaffNotes("New customer feedback");
+
+            when(appointmentRepository.findById(1L)).thenReturn(Optional.of(appointment));
+            when(appointmentRepository.save(any(TestDriveAppointment.class))).thenReturn(appointment);
+
+            testDriveService.submitFeedback(1L, feedbackReq);
+
+            assertThat(appointment.getStaffNotes()).contains("Old notes");
+            assertThat(appointment.getStaffNotes()).contains("New customer feedback");
+        }
+
+        @Test
         @DisplayName("Gửi feedback cho appointment chưa COMPLETED -> ném IllegalStateException")
         void submitFeedback_notCompleted_throwsException() {
             appointment.setStatus("SCHEDULED");
@@ -421,7 +495,7 @@ class TestDriveServiceTest {
 
     @Nested
     @DisplayName("completeAppointment()")
-    class CompleteAppointment {
+    public class CompleteAppointment {
         @Test
         @DisplayName("Hoàn thành lịch hẹn thành công")
         void completeAppointment_success() {
@@ -437,7 +511,7 @@ class TestDriveServiceTest {
 
     @Nested
     @DisplayName("getAppointmentsWithFeedback()")
-    class GetAppointmentsWithFeedback {
+    public class GetAppointmentsWithFeedback {
         @Test
         @DisplayName("Lấy danh sách có feedback thành công")
         void getWithFeedback_success() {
@@ -452,7 +526,7 @@ class TestDriveServiceTest {
 
     @Nested
     @DisplayName("cancelAppointmentByToken() - Error cases")
-    class CancelAppointmentByTokenErrors {
+    public class CancelAppointmentByTokenErrors {
         @Test
         @DisplayName("Token không khớp -> ném IllegalArgumentException")
         void cancelByToken_invalidToken_throwsException() {
@@ -477,7 +551,7 @@ class TestDriveServiceTest {
 
     @Nested
     @DisplayName("filterAppointments()")
-    class FilterAppointments {
+    public class FilterAppointments {
         @Test
         @DisplayName("Lọc thành công với Specification")
         void filterAppointments_success() {

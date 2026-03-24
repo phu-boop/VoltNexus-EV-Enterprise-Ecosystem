@@ -251,4 +251,81 @@ class AuthServiceTest {
         assertNotNull(respond);
         verify(customerProfileService, times(1)).saveCustomerProfile(any(User.class), eq(null));
     }
+
+    @Test
+    void testLogin_ProfileIdNull() {
+        User user = setupUser("CUSTOMER");
+        user.setCustomerProfile(null);
+        when(userRepository.findByEmail(anyString())).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches(anyString(), anyString())).thenReturn(true);
+
+        AppException ex = assertThrows(AppException.class, () -> authService.login("test", "pass"));
+        assertEquals(ErrorCode.DATA_NOT_FOUND, ex.getErrorCode());
+    }
+
+    @Test
+    void testLogin_Success_DealerStaff() {
+        User user = setupUser("DEALER_STAFF");
+        // setupUser already sets a staff profile, ensuring getProfileId() is not null
+        when(userRepository.findByEmail(anyString())).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches(anyString(), anyString())).thenReturn(true);
+
+        DealerStaffProfile profile = new DealerStaffProfile();
+        UUID dealerId = UUID.randomUUID();
+        profile.setDealerId(dealerId);
+        when(staffProfileRepository.findByUserId(user.getId())).thenReturn(Optional.of(profile));
+
+        when(jwtUtil.generateAccessToken(anyString(), anyString(), anyString(), anyString(), anyString()))
+                .thenReturn("accessToken");
+        when(userMapper.usertoUserRespond(user)).thenReturn(new UserRespond());
+
+        LoginRespond respond = authService.login("test@example.com", "password");
+
+        assertNotNull(respond);
+        assertEquals(dealerId, respond.getUserRespond().getDealerId());
+    }
+
+    @Test
+    void testGetCurrentUser_CustomerProfileException() {
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken("test@example.com", null, null));
+
+        User user = setupUser("CUSTOMER");
+        when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(user));
+        when(userMapper.usertoUserRespond(user)).thenReturn(new UserRespond());
+        when(customerProfileRepository.findByUserId(any())).thenThrow(new RuntimeException("DB Error"));
+
+        // Should catch and return normally
+        LoginRespond respond = authService.getCurrentUser();
+        assertNotNull(respond);
+    }
+
+    @Test
+    void testNewRefreshTokenAndAccessToken_LoggedOut() {
+        HttpServletRequest request = mock(HttpServletRequest.class);
+        Cookie cookie = new Cookie("refreshToken", "oldToken");
+        when(request.getCookies()).thenReturn(new Cookie[] { cookie });
+        when(jwtUtil.validateToken("oldToken")).thenReturn(true);
+        when(redisService.contains("oldToken")).thenReturn(true);
+
+        AppException ex = assertThrows(AppException.class, () -> authService.newRefreshTokenAndAccessToken(request));
+        assertEquals(ErrorCode.TOKEN_LOGGED_OUT, ex.getErrorCode());
+    }
+
+    @Test
+    void testAddTokenBlacklist_NullTokens() {
+        HttpServletRequest request = mock(HttpServletRequest.class);
+        when(request.getHeader("Authorization")).thenReturn(null);
+        assertThrows(AppException.class, () -> authService.addTokenBlacklist(request));
+    }
+
+    @Test
+    void testAddTokenBlacklist_Expired() {
+        HttpServletRequest request = mock(HttpServletRequest.class);
+        when(request.getHeader("Authorization")).thenReturn("Bearer access123");
+        when(request.getCookies()).thenReturn(new Cookie[] { new Cookie("refreshToken", "refresh123") });
+
+        when(jwtUtil.validateToken("access123")).thenReturn(false);
+        assertThrows(AppException.class, () -> authService.addTokenBlacklist(request));
+    }
 }
