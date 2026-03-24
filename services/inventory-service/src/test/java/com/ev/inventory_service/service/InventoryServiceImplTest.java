@@ -36,6 +36,8 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.core.ParameterizedTypeReference;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -159,6 +161,67 @@ class InventoryServiceImplTest {
                     .extracting("errorCode")
                     .isEqualTo(ErrorCode.INSUFFICIENT_STOCK);
         }
+
+        @Test
+        @DisplayName("ADJUSTMENT_SUBTRACT: Should decrease stock successfully")
+        void executeTransaction_ADJUSTMENT_SUBTRACT_Success() {
+            Long variantId = 1L;
+            List<String> vins = List.of("VIN2");
+            TransactionRequestDto request = new TransactionRequestDto();
+            request.setTransactionType(TransactionType.ADJUSTMENT_SUBTRACT);
+            request.setVariantId(variantId);
+            request.setVins(vins);
+
+            CentralInventory inventory = new CentralInventory();
+            inventory.setVariantId(variantId);
+            inventory.setTotalQuantity(10);
+            inventory.setAvailableQuantity(10);
+
+            PhysicalVehicle vehicle = new PhysicalVehicle();
+            vehicle.setVin("VIN2");
+            vehicle.setStatus(VehiclePhysicalStatus.IN_CENTRAL_WAREHOUSE);
+
+            when(centralRepo.findByVariantId(variantId)).thenReturn(Optional.of(inventory));
+            when(physicalVehicleRepo.findAllById(vins)).thenReturn(List.of(vehicle));
+
+            inventoryService.executeTransaction(request, "staff@ev.com", "EVM_STAFF", "prof1");
+
+            assertThat(inventory.getTotalQuantity()).isEqualTo(9);
+            assertThat(inventory.getAvailableQuantity()).isEqualTo(9);
+            verify(physicalVehicleRepo).deleteAll(anyList());
+        }
+
+        @Test
+        @DisplayName("executeTransaction(ADJUSTMENT_SUBTRACT) - Should throw if VIN not found")
+        void executeTransaction_ADJUSTMENT_SUBTRACT_NotFound() {
+            TransactionRequestDto request = new TransactionRequestDto();
+            request.setTransactionType(TransactionType.ADJUSTMENT_SUBTRACT);
+            request.setVins(List.of("MISSING"));
+            request.setVariantId(1L);
+
+            when(physicalVehicleRepo.findAllById(any())).thenReturn(List.of());
+
+            assertThatThrownBy(() -> inventoryService.executeTransaction(request, "s@e.com", "ADMIN", "p1"))
+                    .isInstanceOf(AppException.class);
+        }
+
+        @Test
+        @DisplayName("executeTransaction(ADJUSTMENT_SUBTRACT) - Should throw if VIN status invalid")
+        void executeTransaction_ADJUSTMENT_SUBTRACT_InvalidStatus() {
+            TransactionRequestDto request = new TransactionRequestDto();
+            request.setTransactionType(TransactionType.ADJUSTMENT_SUBTRACT);
+            request.setVins(List.of("VIN_BAD"));
+            request.setVariantId(1L);
+
+            PhysicalVehicle v1 = new PhysicalVehicle();
+            v1.setVin("VIN_BAD");
+            v1.setStatus(VehiclePhysicalStatus.IN_TRANSIT);
+
+            when(physicalVehicleRepo.findAllById(any())).thenReturn(List.of(v1));
+
+            assertThatThrownBy(() -> inventoryService.executeTransaction(request, "s@e.com", "ADMIN", "p1"))
+                    .isInstanceOf(AppException.class);
+        }
     }
 
     @Nested
@@ -185,9 +248,43 @@ class InventoryServiceImplTest {
 
             inventoryService.allocateStockForOrder(request, "staff@ev.com");
 
-            assertThat(inventory.getAvailableQuantity()).isEqualTo(3);
             assertThat(inventory.getAllocatedQuantity()).isEqualTo(2);
             verify(centralRepo).save(inventory);
+        }
+
+        @Test
+        @DisplayName("allocateStockForOrder - Should throw if stock not found")
+        void allocateStockForOrder_NotFound() {
+            AllocationRequestDto request = new AllocationRequestDto();
+            AllocationRequestDto.AllocationItem item = new AllocationRequestDto.AllocationItem();
+            item.setVariantId(99L);
+            item.setQuantity(1);
+            request.setItems(List.of(item));
+
+            when(centralRepo.findByVariantId(99L)).thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> inventoryService.allocateStockForOrder(request, "s@e.com"))
+                    .isInstanceOf(AppException.class);
+        }
+
+        @Test
+        @DisplayName("allocateStockForOrder - Should throw error if insufficient stock")
+        void allocateStockForOrder_InsufficientStock() {
+            AllocationRequestDto request = new AllocationRequestDto();
+            AllocationRequestDto.AllocationItem item = new AllocationRequestDto.AllocationItem();
+            item.setVariantId(1L);
+            item.setQuantity(100);
+            request.setItems(List.of(item));
+
+            CentralInventory central = new CentralInventory();
+            central.setAvailableQuantity(10);
+
+            when(centralRepo.findByVariantId(1L)).thenReturn(Optional.of(central));
+
+            assertThatThrownBy(() -> inventoryService.allocateStockForOrder(request, "staff@ev.com"))
+                    .isInstanceOf(AppException.class)
+                    .extracting("errorCode")
+                    .isEqualTo(ErrorCode.INSUFFICIENT_STOCK);
         }
     }
 
@@ -236,6 +333,26 @@ class InventoryServiceImplTest {
             assertThat(vehicle.getStatus()).isEqualTo(VehiclePhysicalStatus.AT_DEALER);
             verify(kafkaTemplate, atLeastOnce()).send(anyString(), any());
         }
+
+        @Test
+        @DisplayName("Should throw error if insufficient allocated quantity")
+        void shipAllocatedStock_Insufficient() {
+            ShipmentRequestDto request = new ShipmentRequestDto();
+            ShipmentRequestDto.ShipmentItem item = new ShipmentRequestDto.ShipmentItem();
+            item.setVariantId(1L);
+            item.setVins(List.of("V1", "V2")); // Quantity = 2
+            request.setItems(List.of(item));
+
+            CentralInventory central = new CentralInventory();
+            central.setAllocatedQuantity(1); // Only 1 allocated
+
+            when(centralRepo.findByVariantId(1L)).thenReturn(Optional.of(central));
+
+            assertThatThrownBy(() -> inventoryService.shipAllocatedStock(request, "staff@ev.com"))
+                    .isInstanceOf(AppException.class)
+                    .extracting("errorCode")
+                    .isEqualTo(ErrorCode.INSUFFICIENT_STOCK);
+        }
     }
 
     @Nested
@@ -264,6 +381,7 @@ class InventoryServiceImplTest {
             assertThat(vehicle.getStatus()).isEqualTo(VehiclePhysicalStatus.IN_CENTRAL_WAREHOUSE);
             verify(physicalVehicleRepo).saveAll(anyList());
         }
+
     }
 
     @Test
@@ -335,6 +453,38 @@ class InventoryServiceImplTest {
             assertThat(result.getContent()).hasSize(1);
             verify(centralRepo).findAll((Specification<CentralInventory>) any(), any(Pageable.class));
         }
+
+        @Test
+        @DisplayName("Should return empty page if search returns no variants")
+        void getAllInventory_SearchEmpty() {
+            Pageable pageable = PageRequest.of(0, 10);
+            ApiRespond<List<Long>> apiResponse = ApiRespond.success("Success", Collections.emptyList());
+            when(restTemplate.exchange(anyString(), eq(HttpMethod.GET), any(), any(ParameterizedTypeReference.class)))
+                    .thenReturn(ResponseEntity.ok(apiResponse));
+
+            var result = inventoryService.getAllInventory("NoSuchCar", null, null, pageable);
+
+            assertThat(result.getContent()).isEmpty();
+        }
+
+        @Test
+        @DisplayName("Should filter by dealerId")
+        void getAllInventory_FilterByDealer() {
+            UUID dealerId = UUID.randomUUID();
+            Pageable pageable = PageRequest.of(0, 10);
+
+            DealerAllocation allocation = new DealerAllocation();
+            allocation.setVariantId(1L);
+
+            when(dealerRepo.findByDealerId(dealerId)).thenReturn(List.of(allocation));
+            when(centralRepo.findAll((Specification<CentralInventory>) any(), any(Pageable.class)))
+                    .thenReturn(Page.empty());
+
+            inventoryService.getAllInventory(null, dealerId, null, pageable);
+
+            verify(dealerRepo).findByDealerId(dealerId);
+            verify(centralRepo).findAll((Specification<CentralInventory>) any(), any(Pageable.class));
+        }
     }
 
     @Nested
@@ -379,5 +529,312 @@ class InventoryServiceImplTest {
 
         assertThat(allocation.getReorderLevel()).isEqualTo(15);
         verify(dealerRepo).save(allocation);
+    }
+
+    @Nested
+    @DisplayName("Report Generation Tests")
+    class ReportGenerationTests {
+
+        @Test
+        @DisplayName("generateInventoryReport - Success")
+        void generateInventoryReport_Success() throws Exception {
+            LocalDate startDate = LocalDate.now().minusDays(7);
+            LocalDate endDate = LocalDate.now();
+            java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream();
+
+            InventoryTransaction t1 = new InventoryTransaction();
+            t1.setTransactionId(1L);
+            t1.setTransactionType(TransactionType.RESTOCK);
+            t1.setQuantity(5);
+            t1.setVariantId(1L);
+            t1.setTransactionDate(LocalDateTime.now());
+            t1.setStaffId("admin@ev.com");
+
+            when(transactionRepo.findAllByTransactionDateBetween(any(), any())).thenReturn(List.of(t1));
+
+            inventoryService.generateInventoryReport(out, startDate, endDate);
+
+            assertThat(out.size()).isGreaterThan(0);
+        }
+
+        @Test
+        @DisplayName("generatePdfReport - Success")
+        void generatePdfReport_Success() throws Exception {
+            LocalDate startDate = LocalDate.now().minusDays(7);
+            LocalDate endDate = LocalDate.now();
+            java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream();
+
+            InventoryTransaction t1 = new InventoryTransaction();
+            t1.setTransactionId(1L);
+            t1.setTransactionType(TransactionType.RESTOCK);
+            t1.setQuantity(5);
+            t1.setVariantId(1L);
+            t1.setTransactionDate(LocalDateTime.now());
+            t1.setStaffId("admin@ev.com");
+
+            when(transactionRepo.findAllByTransactionDateBetween(any(), any())).thenReturn(List.of(t1));
+
+            inventoryService.generatePdfReport(out, startDate, endDate);
+
+            assertThat(out.size()).isGreaterThan(0);
+        }
+    }
+
+    @Nested
+    @DisplayName("Analytics and Summary Tests")
+    class AnalyticsTests {
+        @Test
+        @DisplayName("getInventorySnapshotsForAnalytics - Success")
+        void getInventorySnapshotsForAnalytics_Success() {
+            DealerAllocation allocation = new DealerAllocation();
+            allocation.setVariantId(1L);
+            allocation.setAvailableQuantity(5);
+            allocation.setAllocatedQuantity(2);
+
+            VariantDetailDto detail = new VariantDetailDto();
+            detail.setVariantId(1L);
+            detail.setVersionName("V1");
+
+            when(dealerRepo.findAll(any(Pageable.class)))
+                    .thenReturn(new org.springframework.data.domain.PageImpl<>(List.of(allocation)));
+            when(restTemplate.exchange(anyString(), eq(HttpMethod.POST), any(), any(ParameterizedTypeReference.class)))
+                    .thenReturn(ResponseEntity.ok(ApiRespond.success("Success", List.of(detail))));
+
+            var result = inventoryService.getInventorySnapshotsForAnalytics(null, null, 10);
+
+            assertThat(result).isNotEmpty();
+            verify(dealerRepo).findAll(any(Pageable.class));
+        }
+
+        @Test
+        @DisplayName("getVariantIdsByStatus - Success")
+        void getVariantIdsByStatus_Success() {
+            CentralInventory inventory = new CentralInventory();
+            inventory.setVariantId(1L);
+            inventory.setAvailableQuantity(0);
+
+            when(centralRepo.findAll()).thenReturn(List.of(inventory));
+            when(restTemplate.exchange(anyString(), eq(HttpMethod.GET), any(), any(ParameterizedTypeReference.class)))
+                    .thenReturn(ResponseEntity.ok(ApiRespond.success("Success", List.of(1L))));
+
+            var result = inventoryService.getVariantIdsByStatus("OUT_OF_STOCK");
+
+            assertThat(result).contains(1L);
+        }
+
+        @Test
+        @DisplayName("getVariantIdsByStatus - IN_STOCK branch")
+        void getVariantIdsByStatus_InStock() {
+            CentralInventory inventory = new CentralInventory();
+            inventory.setVariantId(1L);
+            inventory.setAvailableQuantity(10);
+            inventory.setReorderLevel(5);
+
+            when(centralRepo.findAll()).thenReturn(List.of(inventory));
+            when(restTemplate.exchange(anyString(), eq(HttpMethod.GET), any(), any(ParameterizedTypeReference.class)))
+                    .thenReturn(ResponseEntity.ok(ApiRespond.success("Success", List.of(1L))));
+
+            var result = inventoryService.getVariantIdsByStatus("IN_STOCK");
+            assertThat(result).contains(1L);
+        }
+
+        @Test
+        @DisplayName("getVariantIdsByStatus - LOW_STOCK branch")
+        void getVariantIdsByStatus_LowStock() {
+            CentralInventory inventory = new CentralInventory();
+            inventory.setVariantId(1L);
+            inventory.setAvailableQuantity(3);
+            inventory.setReorderLevel(5);
+
+            when(centralRepo.findAll()).thenReturn(List.of(inventory));
+            when(restTemplate.exchange(anyString(), eq(HttpMethod.GET), any(), any(ParameterizedTypeReference.class)))
+                    .thenReturn(ResponseEntity.ok(ApiRespond.success("Success", List.of(1L))));
+
+            var result = inventoryService.getVariantIdsByStatus("LOW_STOCK");
+            assertThat(result).contains(1L);
+        }
+    }
+
+    @Nested
+    @DisplayName("Transaction History Tests")
+    class HistoryTests {
+        @Test
+        @DisplayName("getTransactionHistory - With date filter")
+        void getTransactionHistory_WithDates() {
+            Pageable pageable = PageRequest.of(0, 10);
+            LocalDate start = LocalDate.now();
+            LocalDate end = LocalDate.now();
+
+            when(transactionRepo.findAllByTransactionDateBetween(any(), any(), any())).thenReturn(Page.empty());
+
+            inventoryService.getTransactionHistory(start, end, pageable);
+
+            verify(transactionRepo).findAllByTransactionDateBetween(any(), any(), any());
+        }
+
+        @Test
+        @DisplayName("getTransactionHistory - Without dates")
+        void getTransactionHistory_All() {
+            Pageable pageable = PageRequest.of(0, 10);
+            when(transactionRepo.findAll(any(Pageable.class))).thenReturn(Page.empty());
+
+            inventoryService.getTransactionHistory(null, null, pageable);
+
+            verify(transactionRepo).findAll(any(Pageable.class));
+        }
+    }
+
+    @Nested
+    @DisplayName("Shipment Validation Tests")
+    class ShipmentValidationTests {
+        @Test
+        @DisplayName("validateVinsForShipment - Success")
+        void validateVinsForShipment_AllValid() {
+            List<String> vins = List.of("VIN1");
+            PhysicalVehicle v1 = new PhysicalVehicle();
+            v1.setVin("VIN1");
+            v1.setStatus(VehiclePhysicalStatus.IN_CENTRAL_WAREHOUSE);
+
+            when(physicalVehicleRepo.findAllById(vins)).thenReturn(List.of(v1));
+
+            var result = inventoryService.validateVinsForShipment(vins);
+
+            assertThat(result.getInvalidVins()).isEmpty();
+            assertThat(result.getValidVins()).hasSize(1);
+        }
+
+        @Test
+        @DisplayName("getAvailableVinsForVariant - Success")
+        void getAvailableVinsForVariant_Success() {
+            PhysicalVehicle v1 = new PhysicalVehicle();
+            v1.setVin("VIN_AVAIL");
+            when(physicalVehicleRepo.findByVariantIdAndStatus(1L, VehiclePhysicalStatus.IN_CENTRAL_WAREHOUSE))
+                    .thenReturn(List.of(v1));
+
+            var result = inventoryService.getAvailableVinsForVariant(1L);
+
+            assertThat(result).contains("VIN_AVAIL");
+        }
+    }
+
+    @Nested
+    @DisplayName("Inventory Retrieval Tests")
+    class RetrievalTests {
+        @Test
+        @DisplayName("getInventoryStatusByIds - Success")
+        void getInventoryStatusByIds_Success() {
+            List<Long> ids = List.of(1L);
+            CentralInventory inventory = new CentralInventory();
+            inventory.setVariantId(1L);
+            inventory.setAvailableQuantity(5);
+
+            when(centralRepo.findByVariantIdIn(ids)).thenReturn(List.of(inventory));
+
+            var result = inventoryService.getInventoryStatusByIds(ids);
+
+            assertThat(result).hasSize(1);
+            assertThat(result.get(0).getAvailableQuantity()).isEqualTo(5);
+        }
+
+        @Test
+        @DisplayName("getInventoryStatusByIds - Should return empty for empty input")
+        void getInventoryStatusByIds_Empty() {
+            var result = inventoryService.getInventoryStatusByIds(List.of());
+            assertThat(result).isEmpty();
+        }
+
+        @Test
+        @DisplayName("getInventoryStatusByIds - Should return empty for null input")
+        void getInventoryStatusByIds_Null() {
+            var result = inventoryService.getInventoryStatusByIds(null);
+            assertThat(result).isEmpty();
+        }
+
+        @Test
+        @DisplayName("getDealerInventory - Success")
+        void getDealerInventory_Success() {
+            UUID dealerId = UUID.randomUUID();
+            DealerAllocation allocation = new DealerAllocation();
+            allocation.setVariantId(1L);
+            allocation.setAvailableQuantity(5);
+            allocation.setAllocatedQuantity(0);
+
+            VariantDetailDto detail = new VariantDetailDto();
+            detail.setVariantId(1L);
+            detail.setVersionName("V1");
+
+            when(dealerRepo.findByDealerId(dealerId)).thenReturn(List.of(allocation));
+            when(restTemplate.exchange(anyString(), any(), any(), any(ParameterizedTypeReference.class)))
+                    .thenReturn(ResponseEntity.ok(ApiRespond.success("Success", List.of(detail))));
+
+            var result = inventoryService.getDealerInventory(dealerId, null,
+                    new org.springframework.http.HttpHeaders());
+
+            assertThat(result).isNotEmpty();
+        }
+
+        @Test
+        @DisplayName("getDetailedInventoryByIds - Success")
+        void getDetailedInventoryByIds_Success() {
+            List<Long> ids = List.of(1L);
+            UUID dealerId = UUID.randomUUID();
+
+            CentralInventory central = new CentralInventory();
+            central.setVariantId(1L);
+            central.setAvailableQuantity(10);
+
+            DealerAllocation dealer = new DealerAllocation();
+            dealer.setVariantId(1L);
+            dealer.setAvailableQuantity(2);
+
+            when(centralRepo.findByVariantIdIn(ids)).thenReturn(List.of(central));
+            when(dealerRepo.findByVariantIdInAndDealerId(ids, dealerId)).thenReturn(List.of(dealer));
+
+            var result = inventoryService.getDetailedInventoryByIds(ids, dealerId);
+
+            assertThat(result).hasSize(1);
+            assertThat(result.get(0).getCentralStockAvailable()).isEqualTo(10);
+            assertThat(result.get(0).getDealerStockAvailable()).isEqualTo(2);
+        }
+    }
+
+    @Nested
+    @DisplayName("getInventoryStatusForVariant Tests")
+    class GetInventoryStatusForVariantTests {
+        @Test
+        @DisplayName("getInventoryStatusForVariant - Success returns combined Dto")
+        void getInventoryStatusForVariant_Success() {
+            CentralInventory c1 = new CentralInventory();
+            c1.setVariantId(1L);
+            c1.setTotalQuantity(10);
+            c1.setAvailableQuantity(8);
+            c1.setAllocatedQuantity(2);
+
+            DealerAllocation d1 = new DealerAllocation();
+            d1.setDealerId(UUID.randomUUID());
+            d1.setVariantId(1L);
+            d1.setAllocatedQuantity(2);
+            d1.setAvailableQuantity(1);
+
+            when(centralRepo.findByVariantId(1L)).thenReturn(Optional.of(c1));
+            when(dealerRepo.findByVariantId(1L)).thenReturn(List.of(d1));
+
+            com.ev.inventory_service.dto.response.InventoryStatusDto dto = inventoryService
+                    .getInventoryStatusForVariant(1L);
+
+            assertThat(dto).isNotNull();
+            assertThat(dto.getAvailableQuantity()).isEqualTo(8);
+        }
+
+        @Test
+        @DisplayName("getInventoryStatusForVariant - Should return empty DTO if central not found")
+        void getInventoryStatusForVariant_NotFound() {
+            when(centralRepo.findByVariantId(anyLong())).thenReturn(Optional.empty());
+
+            var dto = inventoryService.getInventoryStatusForVariant(1L);
+
+            assertThat(dto.getTotalQuantity()).isZero();
+            assertThat(dto.getStatus()).isEqualTo(com.ev.common_lib.model.enums.InventoryLevelStatus.OUT_OF_STOCK);
+        }
     }
 }

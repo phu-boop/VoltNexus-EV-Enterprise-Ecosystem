@@ -88,4 +88,50 @@ class GatewayExceptionHandlerTest {
 
         assertEquals(HttpStatus.SERVICE_UNAVAILABLE, exchange.getResponse().getStatusCode());
     }
+
+    @Test
+    void handle_ResponseAlreadyCommitted() {
+        ServerWebExchange committedExchange = mock(ServerWebExchange.class);
+        org.springframework.http.server.reactive.ServerHttpResponse response = mock(
+                org.springframework.http.server.reactive.ServerHttpResponse.class);
+        org.springframework.http.server.reactive.ServerHttpRequest request = mock(
+                org.springframework.http.server.reactive.ServerHttpRequest.class);
+
+        when(committedExchange.getResponse()).thenReturn(response);
+        when(committedExchange.getRequest()).thenReturn(request);
+        when(response.isCommitted()).thenReturn(true);
+        when(request.getURI()).thenReturn(java.net.URI.create("/test"));
+        when(request.getMethod()).thenReturn(org.springframework.http.HttpMethod.GET);
+
+        RuntimeException ex = new RuntimeException("Error");
+        Mono<Void> result = exceptionHandler.handle(committedExchange, ex);
+
+        StepVerifier.create(result)
+                .expectError(RuntimeException.class)
+                .verify();
+    }
+
+    @Test
+    void handle_ResponseStatusException_BadRequest() {
+        ResponseStatusException ex = new ResponseStatusException(HttpStatus.BAD_REQUEST, "Bad Request");
+        Mono<Void> result = exceptionHandler.handle(exchange, ex);
+        StepVerifier.create(result).verifyComplete();
+        assertEquals(HttpStatus.BAD_REQUEST, exchange.getResponse().getStatusCode());
+    }
+
+    @Test
+    void handle_ResponseStatusException_Unauthorized() {
+        ResponseStatusException ex = new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Unauthorized");
+        Mono<Void> result = exceptionHandler.handle(exchange, ex);
+        StepVerifier.create(result).verifyComplete();
+        assertEquals(HttpStatus.UNAUTHORIZED, exchange.getResponse().getStatusCode());
+    }
+
+    @Test
+    void handle_ResponseStatusException_Forbidden() {
+        ResponseStatusException ex = new ResponseStatusException(HttpStatus.FORBIDDEN, "Forbidden");
+        Mono<Void> result = exceptionHandler.handle(exchange, ex);
+        StepVerifier.create(result).verifyComplete();
+        assertEquals(HttpStatus.FORBIDDEN, exchange.getResponse().getStatusCode());
+    }
 }
