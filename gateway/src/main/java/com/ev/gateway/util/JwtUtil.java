@@ -21,8 +21,7 @@ public class JwtUtil {
     public JwtUtil(
             @Value("${jwt.secret-key}") String secretKey,
             @Value("${jwt.access-expiration-ms}") long accessExpirationMs,
-            @Value("${jwt.refresh-expiration-ms}") long refreshExpirationMs
-    ) {
+            @Value("${jwt.refresh-expiration-ms}") long refreshExpirationMs) {
         this.SECRET_KEY = secretKey;
         this.ACCESS_EXPIRATION_MS = accessExpirationMs;
         this.REFRESH_EXPIRATION_MS = refreshExpirationMs;
@@ -47,12 +46,8 @@ public class JwtUtil {
         return extractClaims(token).get("role", String.class);
     }
 
-    public Long extractUserId(String token) {
-        Object userIdObj = extractClaims(token).get("userId");
-        if (userIdObj instanceof Integer) {
-            return ((Integer) userIdObj).longValue();
-        }
-        return userIdObj != null ? Long.parseLong(userIdObj.toString()) : null;
+    public String extractUserId(String token) {
+        return extractClaims(token).get("userId", String.class);
     }
 
     public String extractProfileId(String token) {
