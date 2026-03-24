@@ -1,5 +1,6 @@
 package com.ev.gateway.config;
 
+import com.ev.gateway.service.RedisService;
 import com.ev.gateway.util.JwtUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -17,7 +18,7 @@ import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
-import java.util.Collections;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
@@ -28,6 +29,9 @@ class JwtGlobalFilterTest {
 
     @Mock
     private JwtUtil jwtUtil;
+
+    @Mock
+    private RedisService redisService;
 
     @Mock
     private GatewayFilterChain chain;
@@ -71,6 +75,7 @@ class JwtGlobalFilterTest {
         exchange = MockServerWebExchange.from(MockServerHttpRequest.get("/api/inventory")
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + token).build());
 
+        when(redisService.contains(token)).thenReturn(false);
         when(jwtUtil.extractEmail(token)).thenThrow(new RuntimeException("Invalid token"));
 
         Mono<Void> result = jwtGlobalFilter.filter(exchange, chain);
@@ -89,6 +94,7 @@ class JwtGlobalFilterTest {
         exchange = MockServerWebExchange.from(MockServerHttpRequest.get("/api/inventory")
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + token).build());
 
+        when(redisService.contains(token)).thenReturn(false);
         when(jwtUtil.extractEmail(token)).thenReturn(email);
         when(jwtUtil.isTokenValid(token, email)).thenReturn(true);
         when(jwtUtil.extractRole(token)).thenReturn(role);
@@ -108,5 +114,21 @@ class JwtGlobalFilterTest {
         assertEquals(email, capturedExchange.getRequest().getHeaders().getFirst("X-User-Email"));
         assertEquals(role, capturedExchange.getRequest().getHeaders().getFirst("X-User-Role"));
         assertEquals(userId, capturedExchange.getRequest().getHeaders().getFirst("X-User-Id"));
+    }
+
+    @Test
+    void filter_BlacklistedToken_ShouldReturnUnauthorized() {
+        String token = "blacklisted-token";
+        exchange = MockServerWebExchange.from(MockServerHttpRequest.get("/api/inventory")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + token).build());
+
+        when(redisService.contains(token)).thenReturn(true);
+
+        Mono<Void> result = jwtGlobalFilter.filter(exchange, chain);
+
+        StepVerifier.create(result).verifyComplete();
+        assertEquals(HttpStatus.UNAUTHORIZED, exchange.getResponse().getStatusCode());
+        verifyNoInteractions(jwtUtil);
+        verifyNoInteractions(chain);
     }
 }
