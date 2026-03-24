@@ -122,27 +122,36 @@ public class JwtGlobalFilter implements GlobalFilter, Ordered {
             return this.onError(exchange, ErrorCode.TOKEN_LOGGED_OUT);
         }
 
-        String email = jwtUtil.extractEmail(token);
+        try {
+            String email = jwtUtil.extractEmail(token);
 
-        // Kiểm tra tính hợp lệ của token
-        if (!jwtUtil.isTokenValid(token, email)) {
-            log.warn("[JwtGlobalFilter] Token invalid for email: {} | Path: {}", email, path);
+            // Kiểm tra tính hợp lệ của token
+            if (!jwtUtil.isTokenValid(token, email)) {
+                log.warn("[JwtGlobalFilter] Token invalid for email: {} | Path: {}", email, path);
+                return this.onError(exchange, ErrorCode.TOKEN_INVALID);
+            }
+
+            // Trích xuất các claims từ JWT
+            String role = jwtUtil.extractRole(token);
+            String userId = jwtUtil.extractUserId(token);
+            String profileId = jwtUtil.extractProfileId(token);
+            String dealerId = jwtUtil.extractDealerId(token);
+
+            // Ghi log thành công
+            logAuthenticationSuccess(email, role, userId, profileId, dealerId);
+
+            // Mutate Request với các headers thông tin User
+            ServerWebExchange mutatedExchange = mutateExchangeWithUserHeaders(exchange, email, role, userId, profileId,
+                    dealerId, token);
+            return chain.filter(mutatedExchange);
+
+        } catch (ExpiredJwtException e) {
+            log.warn("[JwtGlobalFilter] Token expired for path: {} | Error: {}", path, e.getMessage());
+            return this.onError(exchange, ErrorCode.TOKEN_EXPIRED);
+        } catch (RuntimeException e) {
+            log.warn("[JwtGlobalFilter] Token invalid for path: {} | Error: {}", path, e.getMessage());
             return this.onError(exchange, ErrorCode.TOKEN_INVALID);
         }
-
-        // Trích xuất các claims từ JWT
-        String role = jwtUtil.extractRole(token);
-        String userId = jwtUtil.extractUserId(token);
-        String profileId = jwtUtil.extractProfileId(token);
-        String dealerId = jwtUtil.extractDealerId(token);
-
-        // 6. Ghi log thành công
-        logAuthenticationSuccess(email, role, userId, profileId, dealerId);
-
-        // 7. Mutate Request với các headers thông tin User
-        ServerWebExchange mutatedExchange = mutateExchangeWithUserHeaders(exchange, email, role, userId, profileId,
-                dealerId, token);
-        return chain.filter(mutatedExchange);
     }
 
     private void logAuthenticationSuccess(String email, String role, String userId, String profileId, String dealerId) {
