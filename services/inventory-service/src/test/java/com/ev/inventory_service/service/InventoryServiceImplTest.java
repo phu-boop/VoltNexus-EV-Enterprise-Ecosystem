@@ -1,0 +1,383 @@
+package com.ev.inventory_service.service;
+
+import com.ev.common_lib.dto.inventory.AllocationRequestDto;
+import com.ev.common_lib.dto.inventory.ShipmentRequestDto;
+import com.ev.common_lib.dto.respond.ApiRespond;
+import com.ev.common_lib.dto.vehicle.VariantDetailDto;
+import com.ev.common_lib.exception.AppException;
+import com.ev.common_lib.exception.ErrorCode;
+import com.ev.common_lib.model.enums.TransactionType;
+import com.ev.inventory_service.dto.request.TransactionRequestDto;
+import com.ev.inventory_service.dto.request.CreateTransferRequestDto;
+import com.ev.inventory_service.dto.request.UpdateReorderLevelRequest;
+import com.ev.inventory_service.model.*;
+import com.ev.inventory_service.model.Enum.VehiclePhysicalStatus;
+import com.ev.inventory_service.repository.*;
+import com.ev.inventory_service.services.Implementation.InventoryServiceImpl;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
+import org.springframework.core.ParameterizedTypeReference;
+
+import java.util.*;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
+
+@ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
+@DisplayName("InventoryServiceImpl Unit Tests")
+@SuppressWarnings("unchecked")
+class InventoryServiceImplTest {
+
+    @Mock
+    private CentralInventoryRepository centralRepo;
+    @Mock
+    private DealerAllocationRepository dealerRepo;
+    @Mock
+    private InventoryTransactionRepository transactionRepo;
+    @Mock
+    private StockAlertRepository stockAlertRepo;
+    @Mock
+    private PhysicalVehicleRepository physicalVehicleRepo;
+    @Mock
+    private TransferRequestRepository transferRepo;
+    @Mock
+    private RestTemplate restTemplate;
+    @Mock
+    private KafkaTemplate<String, Object> kafkaTemplate;
+
+    @InjectMocks
+    private InventoryServiceImpl inventoryService;
+
+    @BeforeEach
+    void setUp() {
+        ReflectionTestUtils.setField(inventoryService, "vehicleCatalogUrl", "http://vehicle-service");
+        lenient().when(transactionRepo.save(any(InventoryTransaction.class))).thenAnswer(i -> i.getArgument(0));
+    }
+
+    @Nested
+    @DisplayName("executeTransaction Tests")
+    class ExecuteTransactionTests {
+
+        @Test
+        @DisplayName("RESTOCK: Should increase stock and create vehicles")
+        void executeTransaction_RESTOCK_Success() {
+            Long variantId = 1L;
+            List<String> vins = List.of("VIN1", "VIN2");
+            TransactionRequestDto request = new TransactionRequestDto();
+            request.setTransactionType(TransactionType.RESTOCK);
+            request.setVariantId(variantId);
+            request.setVins(vins);
+            request.setQuantity(2);
+
+            CentralInventory inventory = new CentralInventory();
+            inventory.setVariantId(variantId);
+            inventory.setTotalQuantity(10);
+            inventory.setAvailableQuantity(10);
+
+            when(centralRepo.findByVariantId(variantId)).thenReturn(Optional.of(inventory));
+            when(physicalVehicleRepo.existsById(anyString())).thenReturn(false);
+            when(physicalVehicleRepo.saveAll(anyList())).thenAnswer(i -> i.getArgument(0));
+
+            inventoryService.executeTransaction(request, "staff@ev.com", "EVM_STAFF", "prof1");
+
+            assertThat(inventory.getTotalQuantity()).isEqualTo(12);
+            assertThat(inventory.getAvailableQuantity()).isEqualTo(12);
+            verify(physicalVehicleRepo).saveAll(anyList());
+            verify(kafkaTemplate, atLeastOnce()).send(anyString(), any());
+        }
+
+        @Test
+        @DisplayName("ADJUSTMENT_ADD: Should increase stock")
+        void executeTransaction_ADJUSTMENT_ADD_Success() {
+            Long variantId = 1L;
+            List<String> vins = List.of("VIN3");
+            TransactionRequestDto request = new TransactionRequestDto();
+            request.setTransactionType(TransactionType.ADJUSTMENT_ADD);
+            request.setVariantId(variantId);
+            request.setVins(vins);
+
+            CentralInventory inventory = new CentralInventory();
+            inventory.setVariantId(variantId);
+            inventory.setTotalQuantity(10);
+            inventory.setAvailableQuantity(10);
+
+            when(centralRepo.findByVariantId(variantId)).thenReturn(Optional.of(inventory));
+            when(physicalVehicleRepo.existsById("VIN3")).thenReturn(false);
+            when(physicalVehicleRepo.saveAll(anyList())).thenAnswer(i -> i.getArgument(0));
+
+            inventoryService.executeTransaction(request, "staff@ev.com", "EVM_STAFF", "prof1");
+
+            assertThat(inventory.getTotalQuantity()).isEqualTo(11);
+            verify(physicalVehicleRepo).saveAll(anyList());
+        }
+
+        @Test
+        @DisplayName("ADJUSTMENT_SUBTRACT: Should decrease stock and throw if insufficient")
+        void executeTransaction_ADJUSTMENT_SUBTRACT_Insufficient() {
+            Long variantId = 1L;
+            List<String> vins = List.of("VIN1");
+            TransactionRequestDto request = new TransactionRequestDto();
+            request.setTransactionType(TransactionType.ADJUSTMENT_SUBTRACT);
+            request.setVariantId(variantId);
+            request.setVins(vins);
+
+            CentralInventory inventory = new CentralInventory();
+            inventory.setVariantId(variantId);
+            inventory.setTotalQuantity(0);
+            inventory.setAvailableQuantity(0);
+
+            PhysicalVehicle vehicle = new PhysicalVehicle();
+            vehicle.setVin("VIN1");
+            vehicle.setStatus(VehiclePhysicalStatus.IN_CENTRAL_WAREHOUSE);
+
+            when(centralRepo.findByVariantId(variantId)).thenReturn(Optional.of(inventory));
+            when(physicalVehicleRepo.findAllById(vins)).thenReturn(List.of(vehicle));
+
+            assertThatThrownBy(() -> inventoryService.executeTransaction(request, "staff@ev.com", "EVM_STAFF", "prof1"))
+                    .isInstanceOf(AppException.class)
+                    .extracting("errorCode")
+                    .isEqualTo(ErrorCode.INSUFFICIENT_STOCK);
+        }
+    }
+
+    @Nested
+    @DisplayName("allocateStockForOrder Tests")
+    class AllocateStockTests {
+        @Test
+        @DisplayName("Should allocate stock successfully")
+        void allocateStockForOrder_Success() {
+            UUID orderId = UUID.randomUUID();
+            Long variantId = 1L;
+            AllocationRequestDto request = new AllocationRequestDto();
+            request.setOrderId(orderId);
+            AllocationRequestDto.AllocationItem item = new AllocationRequestDto.AllocationItem();
+            item.setVariantId(variantId);
+            item.setQuantity(2);
+            request.setItems(List.of(item));
+
+            CentralInventory inventory = new CentralInventory();
+            inventory.setVariantId(variantId);
+            inventory.setAvailableQuantity(5);
+            inventory.setAllocatedQuantity(0);
+
+            when(centralRepo.findByVariantId(variantId)).thenReturn(Optional.of(inventory));
+
+            inventoryService.allocateStockForOrder(request, "staff@ev.com");
+
+            assertThat(inventory.getAvailableQuantity()).isEqualTo(3);
+            assertThat(inventory.getAllocatedQuantity()).isEqualTo(2);
+            verify(centralRepo).save(inventory);
+        }
+    }
+
+    @Nested
+    @DisplayName("shipAllocatedStock Tests")
+    class ShipAllocatedStockTests {
+        @Test
+        @DisplayName("Should ship allocated stock successfully")
+        void shipAllocatedStock_Success() {
+            UUID orderId = UUID.randomUUID();
+            UUID dealerId = UUID.randomUUID();
+            Long variantId = 1L;
+            String vin = "VIN123";
+
+            ShipmentRequestDto request = new ShipmentRequestDto();
+            request.setOrderId(orderId);
+            request.setDealerId(dealerId);
+            ShipmentRequestDto.ShipmentItem item = new ShipmentRequestDto.ShipmentItem();
+            item.setVariantId(variantId);
+            item.setVins(List.of(vin));
+            request.setItems(List.of(item));
+
+            CentralInventory central = new CentralInventory();
+            central.setVariantId(variantId);
+            central.setAllocatedQuantity(1);
+            central.setTotalQuantity(10);
+
+            DealerAllocation allocation = new DealerAllocation();
+            allocation.setDealerId(dealerId);
+            allocation.setVariantId(variantId);
+            allocation.setAvailableQuantity(0);
+
+            PhysicalVehicle vehicle = new PhysicalVehicle();
+            vehicle.setVin(vin);
+            vehicle.setStatus(VehiclePhysicalStatus.IN_CENTRAL_WAREHOUSE);
+
+            when(centralRepo.findByVariantId(variantId)).thenReturn(Optional.of(central));
+            when(dealerRepo.findByVariantIdAndDealerId(variantId, dealerId)).thenReturn(Optional.of(allocation));
+            when(physicalVehicleRepo.findAllById(anyList())).thenReturn(List.of(vehicle));
+            when(physicalVehicleRepo.saveAll(anyList())).thenAnswer(i -> i.getArgument(0));
+
+            inventoryService.shipAllocatedStock(request, "staff@ev.com");
+
+            assertThat(central.getAllocatedQuantity()).isZero();
+            assertThat(allocation.getAvailableQuantity()).isEqualTo(1);
+            assertThat(vehicle.getStatus()).isEqualTo(VehiclePhysicalStatus.AT_DEALER);
+            verify(kafkaTemplate, atLeastOnce()).send(anyString(), any());
+        }
+    }
+
+    @Nested
+    @DisplayName("returnStockForOrder Tests")
+    class ReturnStockTests {
+        @Test
+        @DisplayName("Should return stock correctly")
+        void returnStockForOrder_Success() {
+            UUID orderId = UUID.randomUUID();
+            PhysicalVehicle vehicle = new PhysicalVehicle();
+            vehicle.setVin("VIN_RET");
+            vehicle.setVariantId(1L);
+            vehicle.setStatus(VehiclePhysicalStatus.AT_DEALER);
+
+            CentralInventory central = new CentralInventory();
+            central.setVariantId(1L);
+            central.setTotalQuantity(10);
+            central.setAvailableQuantity(10);
+
+            when(physicalVehicleRepo.findAllByOrderId(orderId)).thenReturn(List.of(vehicle));
+            when(centralRepo.findByVariantId(1L)).thenReturn(Optional.of(central));
+
+            inventoryService.returnStockForOrder(orderId, "staff@ev.com");
+
+            assertThat(central.getTotalQuantity()).isEqualTo(11);
+            assertThat(vehicle.getStatus()).isEqualTo(VehiclePhysicalStatus.IN_CENTRAL_WAREHOUSE);
+            verify(physicalVehicleRepo).saveAll(anyList());
+        }
+    }
+
+    @Test
+    @DisplayName("updateCentralReorderLevel: Should update level successfully")
+    void updateCentralReorderLevel_Success() {
+        var request = new com.ev.inventory_service.dto.request.UpdateReorderLevelRequest();
+        request.setVariantId(1L);
+        request.setReorderLevel(20);
+
+        CentralInventory inventory = new CentralInventory();
+        inventory.setVariantId(1L);
+        inventory.setReorderLevel(10);
+
+        when(centralRepo.findByVariantId(1L)).thenReturn(Optional.of(inventory));
+
+        inventoryService.updateCentralReorderLevel(request, "staff@ev.com");
+
+        assertThat(inventory.getReorderLevel()).isEqualTo(20);
+        verify(centralRepo).save(inventory);
+    }
+
+    @Test
+    @DisplayName("checkStockThresholdAndNotify Tests")
+    void checkStockThresholdAndNotify_CreateAlert() {
+        Long variantId = 1L;
+        CentralInventory inventory = new CentralInventory();
+        inventory.setVariantId(variantId);
+        inventory.setAvailableQuantity(5);
+        inventory.setReorderLevel(10);
+
+        when(centralRepo.findByVariantId(variantId)).thenReturn(Optional.of(inventory));
+        when(stockAlertRepo.findFirstByVariantIdAndStatus(variantId, "NEW")).thenReturn(Optional.empty());
+        when(stockAlertRepo.save(any(StockAlert.class))).thenAnswer(i -> {
+            StockAlert s = i.getArgument(0);
+            s.setAlertId(100L);
+            return s;
+        });
+
+        VariantDetailDto details = new VariantDetailDto();
+        details.setVersionName("V1");
+        details.setSkuCode("SKU1");
+        ApiRespond<VariantDetailDto> apiResponse = ApiRespond.success("Success", details);
+        when(restTemplate.exchange(anyString(), eq(org.springframework.http.HttpMethod.GET), any(),
+                any(org.springframework.core.ParameterizedTypeReference.class)))
+                .thenReturn(org.springframework.http.ResponseEntity.ok(apiResponse));
+
+        ReflectionTestUtils.invokeMethod(inventoryService, "checkStockThresholdAndNotify", variantId);
+
+        verify(stockAlertRepo).save(any(StockAlert.class));
+        verify(kafkaTemplate).send(anyString(), any());
+    }
+
+    @Nested
+    @DisplayName("getAllInventory Tests")
+    class GetAllInventoryTests {
+        @Test
+        @DisplayName("Should returning paged inventory")
+        void getAllInventory_Success() {
+            Pageable pageable = PageRequest.of(0, 10);
+            CentralInventory item = new CentralInventory();
+            item.setVariantId(1L);
+            Page<CentralInventory> page = new PageImpl<>(List.of(item));
+
+            when(centralRepo.findAll((Specification<CentralInventory>) any(), any(Pageable.class))).thenReturn(page);
+
+            var result = inventoryService.getAllInventory(null, null, null, pageable);
+
+            assertThat(result).isNotNull();
+            assertThat(result.getContent()).hasSize(1);
+            verify(centralRepo).findAll((Specification<CentralInventory>) any(), any(Pageable.class));
+        }
+    }
+
+    @Nested
+    @DisplayName("createTransferRequest Tests")
+    class TransferRequestTests {
+        @Test
+        @DisplayName("Should create transfer request successfully")
+        void createTransferRequest_Success() {
+            CreateTransferRequestDto request = new CreateTransferRequestDto();
+            request.setVariantId(1L);
+            request.setQuantity(5);
+            request.setToDealerId(UUID.randomUUID());
+            request.setRequesterEmail("requester@ev.com");
+
+            CentralInventory central = new CentralInventory();
+            central.setAvailableQuantity(10);
+            when(centralRepo.findByVariantId(1L)).thenReturn(Optional.of(central));
+            when(transferRepo.save(any(TransferRequest.class))).thenAnswer(i -> i.getArgument(0));
+
+            inventoryService.createTransferRequest(request);
+
+            verify(transferRepo).save(any(TransferRequest.class));
+        }
+    }
+
+    @Test
+    @DisplayName("updateDealerReorderLevel: Should update successfully")
+    void updateDealerReorderLevel_Success() {
+        UUID dealerId = UUID.randomUUID();
+        UpdateReorderLevelRequest request = new UpdateReorderLevelRequest();
+        request.setVariantId(1L);
+        request.setReorderLevel(15);
+
+        DealerAllocation allocation = new DealerAllocation();
+        allocation.setDealerId(dealerId);
+        allocation.setVariantId(1L);
+        allocation.setReorderLevel(5);
+
+        when(dealerRepo.findByVariantIdAndDealerId(1L, dealerId)).thenReturn(Optional.of(allocation));
+
+        inventoryService.updateDealerReorderLevel(dealerId, request);
+
+        assertThat(allocation.getReorderLevel()).isEqualTo(15);
+        verify(dealerRepo).save(allocation);
+    }
+}
