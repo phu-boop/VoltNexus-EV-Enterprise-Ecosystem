@@ -28,6 +28,16 @@ public class UserServiceClient {
     @Value("${user.service.url}")
     private String userServiceUrl;
 
+    private static final String KEY_DATA = "data";
+    private static final String KEY_ID = "id";
+    private static final String KEY_EMAIL = "email";
+    private static final String KEY_NAME = "name";
+    private static final String KEY_FULL_NAME = "fullName";
+    private static final String KEY_PHONE = "phone";
+    private static final String KEY_ADDRESS = "address";
+    private static final String KEY_STATUS = "status";
+    private static final String DEFAULT_STATUS = "INACTIVE";
+
     /**
      * Lấy thông tin nhân viên theo UUID
      * Endpoint: GET /users/{uuid}
@@ -38,31 +48,21 @@ public class UserServiceClient {
             String url = userServiceUrl + "/" + staffId;
             log.info("Calling User Service to get staff info: {}", url);
 
-            // User Service trả về ApiRespond<UserRespond>
-            ResponseEntity<Map> response = restTemplate.exchange(
+            ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
                     url,
                     HttpMethod.GET,
                     null,
-                    Map.class);
+                    new ParameterizedTypeReference<Map<String, Object>>() {
+                    });
 
             Map<String, Object> body = response.getBody();
-            if (body == null || !body.containsKey("data")) {
+            if (body == null || !body.containsKey(KEY_DATA)) {
                 log.error("Invalid response from User Service: {}", body);
                 return null;
             }
 
-            // Extract data từ ApiRespond wrapper
-            Map<String, Object> userData = (Map<String, Object>) body.get("data");
-
-            // Map UserRespond to StaffDTO
-            StaffDTO staff = new StaffDTO();
-            staff.setId(userData.get("id") != null ? userData.get("id").toString() : null);
-            staff.setEmail(userData.get("email") != null ? userData.get("email").toString() : null);
-            staff.setName(userData.get("name") != null ? userData.get("name").toString() : null);
-            staff.setFullName(userData.get("fullName") != null ? userData.get("fullName").toString() : null);
-            staff.setPhone(userData.get("phone") != null ? userData.get("phone").toString() : null);
-            staff.setAddress(userData.get("address") != null ? userData.get("address").toString() : null);
-            staff.setStatus(userData.get("status") != null ? userData.get("status").toString() : "INACTIVE");
+            Map<String, Object> userData = (Map<String, Object>) body.get(KEY_DATA);
+            StaffDTO staff = mapToStaffDTO(userData);
 
             log.info("Successfully fetched staff: {}", staff.getFullName());
             return staff;
@@ -82,37 +82,43 @@ public class UserServiceClient {
             String url = userServiceUrl;
             log.info("Calling User Service to get all staff: {}", url);
 
-            ResponseEntity<Map> response = restTemplate.exchange(
+            ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
                     url,
                     HttpMethod.GET,
                     null,
-                    Map.class);
+                    new ParameterizedTypeReference<Map<String, Object>>() {
+                    });
 
             Map<String, Object> body = response.getBody();
-            if (body == null || !body.containsKey("data")) {
+            if (body == null || !body.containsKey(KEY_DATA)) {
                 return new ArrayList<>();
             }
 
-            List<Map<String, Object>> userList = (List<Map<String, Object>>) body.get("data");
-            List<StaffDTO> staffList = new ArrayList<>();
+            List<Map<String, Object>> userList = (List<Map<String, Object>>) body.get(KEY_DATA);
 
-            for (Map<String, Object> userData : userList) {
-                StaffDTO staff = new StaffDTO();
-                staff.setId(userData.get("id") != null ? userData.get("id").toString() : null);
-                staff.setEmail(userData.get("email") != null ? userData.get("email").toString() : null);
-                staff.setName(userData.get("name") != null ? userData.get("name").toString() : null);
-                staff.setFullName(userData.get("fullName") != null ? userData.get("fullName").toString() : null);
-                staff.setPhone(userData.get("phone") != null ? userData.get("phone").toString() : null);
-                staff.setAddress(userData.get("address") != null ? userData.get("address").toString() : null);
-                staff.setStatus(userData.get("status") != null ? userData.get("status").toString() : "INACTIVE");
-                staffList.add(staff);
-            }
-
-            return staffList;
+            return userList.stream()
+                    .map(this::mapToStaffDTO)
+                    .toList();
         } catch (Exception e) {
             log.error("Error calling User Service to get all staff: {}", e.getMessage());
             throw new RuntimeException("Unable to fetch staff list from User Service", e);
         }
+    }
+
+    private StaffDTO mapToStaffDTO(Map<String, Object> userData) {
+        StaffDTO staff = new StaffDTO();
+        staff.setId(getStringValue(userData, KEY_ID));
+        staff.setEmail(getStringValue(userData, KEY_EMAIL));
+        staff.setName(getStringValue(userData, KEY_NAME));
+        staff.setFullName(getStringValue(userData, KEY_FULL_NAME));
+        staff.setPhone(getStringValue(userData, KEY_PHONE));
+        staff.setAddress(getStringValue(userData, KEY_ADDRESS));
+        staff.setStatus(userData.get(KEY_STATUS) != null ? userData.get(KEY_STATUS).toString() : DEFAULT_STATUS);
+        return staff;
+    }
+
+    private String getStringValue(Map<String, Object> data, String key) {
+        return data.get(key) != null ? data.get(key).toString() : null;
     }
 
     /**

@@ -7,7 +7,6 @@ import com.ev.ai_service.entity.ProductionPlan;
 import com.ev.ai_service.repository.DemandForecastRepository;
 import com.ev.ai_service.repository.InventorySnapshotRepository;
 import com.ev.ai_service.repository.ProductionPlanRepository;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,14 +20,27 @@ import java.util.stream.Collectors;
  * Service cho Production Planning
  */
 @Service
-@RequiredArgsConstructor
 @Slf4j
 public class ProductionPlanService {
 
     private final DemandForecastRepository forecastRepository;
     private final InventorySnapshotRepository inventoryRepository;
     private final ProductionPlanRepository productionPlanRepository;
-    private final GeminiAIService geminiAIService;
+
+    public ProductionPlanService(
+            DemandForecastRepository forecastRepository,
+            InventorySnapshotRepository inventoryRepository,
+            ProductionPlanRepository productionPlanRepository) {
+        this.forecastRepository = forecastRepository;
+        this.inventoryRepository = inventoryRepository;
+        this.productionPlanRepository = productionPlanRepository;
+    }
+
+    private static final String PRIORITY_HIGH = "HIGH";
+    private static final String PRIORITY_MEDIUM = "MEDIUM";
+    private static final String PRIORITY_LOW = "LOW";
+    private static final String STATUS_DRAFT = "DRAFT";
+    private static final String STATUS_APPROVED = "APPROVED";
 
     /**
      * Tạo kế hoạch sản xuất cho tháng cụ thể
@@ -148,7 +160,7 @@ public class ProductionPlanService {
                     .productionGap(productionGap)
                     .priority(priority)
                     .recommendations(recommendations)
-                    .status("DRAFT")
+                    .status(STATUS_DRAFT)
                     .createdAt(LocalDateTime.now())
                     .build();
         }
@@ -165,11 +177,11 @@ public class ProductionPlanService {
         double stockRatio = inventory / (double) Math.max(1, demand);
 
         if (stockRatio < 0.3 || gap > demand * 0.8) {
-            return "HIGH"; // Tồn kho thấp hoặc gap lớn
+            return PRIORITY_HIGH; // Tồn kho thấp hoặc gap lớn
         } else if (stockRatio < 0.6 || gap > demand * 0.5) {
-            return "MEDIUM";
+            return PRIORITY_MEDIUM;
         } else {
-            return "LOW";
+            return PRIORITY_LOW;
         }
     }
 
@@ -181,31 +193,43 @@ public class ProductionPlanService {
             Integer inventory,
             Integer gap,
             String priority) {
-        // Tạo recommendations cơ bản
         StringBuilder sb = new StringBuilder();
 
-        if (priority.equals("HIGH")) {
-            sb.append("⚠️ ƯU TIÊN CAO: ");
-            if (inventory == 0) {
-                sb.append("Tồn kho đã hết. ");
-            } else {
-                sb.append("Tồn kho thấp. ");
-            }
-            sb.append(String.format("Cần sản xuất ngay %d đơn vị. ", gap));
-        } else if (priority.equals("MEDIUM")) {
-            sb.append("⚡ Ưu tiên trung bình: ");
-            sb.append(String.format("Cần sản xuất %d đơn vị trong tháng. ", gap));
-        } else {
-            sb.append("✓ Tồn kho ổn định. ");
-            if (gap > 0) {
-                sb.append(String.format("Có thể cân nhắc sản xuất thêm %d đơn vị. ", gap));
-            }
+        switch (priority) {
+            case PRIORITY_HIGH -> appendHighPriorityRecommendation(sb, inventory, gap);
+            case PRIORITY_MEDIUM -> appendMediumPriorityRecommendation(sb, gap);
+            default -> appendLowPriorityRecommendation(sb, gap);
         }
 
+        appendStockRatio(sb, demand, inventory);
+        return sb.toString();
+    }
+
+    private void appendHighPriorityRecommendation(StringBuilder sb, Integer inventory, Integer gap) {
+        sb.append("⚠️ ƯU TIÊN CAO: ");
+        if (inventory == 0) {
+            sb.append("Tồn kho đã hết. ");
+        } else {
+            sb.append("Tồn kho thấp. ");
+        }
+        sb.append(String.format("Cần sản xuất ngay %d đơn vị. ", gap));
+    }
+
+    private void appendMediumPriorityRecommendation(StringBuilder sb, Integer gap) {
+        sb.append("⚡ Ưu tiên trung bình: ");
+        sb.append(String.format("Cần sản xuất %d đơn vị trong tháng. ", gap));
+    }
+
+    private void appendLowPriorityRecommendation(StringBuilder sb, Integer gap) {
+        sb.append("✓ Tồn kho ổn định. ");
+        if (gap > 0) {
+            sb.append(String.format("Có thể cân nhắc sản xuất thêm %d đơn vị. ", gap));
+        }
+    }
+
+    private void appendStockRatio(StringBuilder sb, Integer demand, Integer inventory) {
         double stockRatio = inventory / (double) Math.max(1, demand);
         sb.append(String.format("Tỷ lệ tồn kho/nhu cầu: %.1f%%. ", stockRatio * 100));
-
-        return sb.toString();
     }
 
     /**
@@ -213,9 +237,9 @@ public class ProductionPlanService {
      */
     private int comparePriority(String p1, String p2) {
         Map<String, Integer> priorityOrder = Map.of(
-                "HIGH", 1,
-                "MEDIUM", 2,
-                "LOW", 3);
+                PRIORITY_HIGH, 1,
+                PRIORITY_MEDIUM, 2,
+                PRIORITY_LOW, 3);
 
         return priorityOrder.getOrDefault(p1, 99)
                 .compareTo(priorityOrder.getOrDefault(p2, 99));
@@ -230,7 +254,7 @@ public class ProductionPlanService {
 
         return plans.stream()
                 .map(this::mapToDto)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     /**
@@ -241,7 +265,7 @@ public class ProductionPlanService {
         ProductionPlan plan = productionPlanRepository.findById(planId)
                 .orElseThrow(() -> new RuntimeException("Production plan not found"));
 
-        plan.setStatus("APPROVED");
+        plan.setStatus(STATUS_APPROVED);
         plan.setApprovedAt(LocalDateTime.now());
 
         ProductionPlan saved = productionPlanRepository.save(plan);

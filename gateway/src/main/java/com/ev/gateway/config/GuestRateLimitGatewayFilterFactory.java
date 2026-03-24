@@ -19,7 +19,8 @@ import java.util.Objects;
 public class GuestRateLimitGatewayFilterFactory extends AbstractGatewayFilterFactory<GuestRateLimitGatewayFilterFactory.Config> {
 
     private final ReactiveStringRedisTemplate redisTemplate;
-    private static final int MAX_REQUESTS = 5;
+    // for testing collection
+    private static final int MAX_REQUESTS = 50;
     private static final long WINDOW_TIME_MINUTES = 5;
 
     public GuestRateLimitGatewayFilterFactory(ReactiveStringRedisTemplate redisTemplate) {

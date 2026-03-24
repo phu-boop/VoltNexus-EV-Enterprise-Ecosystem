@@ -26,80 +26,92 @@ import java.util.stream.Collectors;
 @Component
 public class GatewayHeaderFilter extends OncePerRequestFilter {
 
-    private static final Logger log = LoggerFactory.getLogger(GatewayHeaderFilter.class); // Thêm logger
+    private static final Logger log = LoggerFactory.getLogger(GatewayHeaderFilter.class);
+
+    private static final String HEADER_EMAIL = "X-User-Email";
+    private static final String HEADER_ROLE = "X-User-Role";
+    private static final String HEADER_USER_ID = "X-User-Id";
+    private static final String HEADER_PROFILE_ID = "X-User-ProfileId";
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
-                                    HttpServletResponse response,
-                                    FilterChain filterChain)
+            HttpServletResponse response,
+            FilterChain filterChain)
             throws ServletException, IOException {
 
-        // Log các header nhận được để kiểm tra
+        logHeaders(request);
+
+        String email = request.getHeader(HEADER_EMAIL);
+        if (email == null || email.isEmpty()) {
+            log.warn("{} header missing or empty for request to {}", HEADER_EMAIL, request.getRequestURI());
+            filterChain.doFilter(request, response);
+            return;
+        }
+
+        if (isAlreadyAuthenticated()) {
+            log.debug("SecurityContext already contains non-anonymous Authentication");
+            filterChain.doFilter(request, response);
+            return;
+        }
+
+        processAuthentication(request, email);
+        filterChain.doFilter(request, response);
+    }
+
+    private void logHeaders(HttpServletRequest request) {
         log.debug("--- GatewayHeaderFilter: Received Headers for {} ---", request.getRequestURI());
         Collections.list(request.getHeaderNames())
                 .forEach(headerName -> log.debug("{}: {}", headerName, request.getHeader(headerName)));
         log.debug("-------------------------------------------");
+    }
 
-        String email = request.getHeader("X-User-Email");
-        // Đọc header role vào biến riêng
-        String roleHeader = request.getHeader("X-User-Role");
-        String userId = request.getHeader("X-User-Id");
-        String profileId = request.getHeader("X-User-ProfileId");
+    private boolean isAlreadyAuthenticated() {
+        var currentAuth = SecurityContextHolder.getContext().getAuthentication();
+        return currentAuth != null
+                && !(currentAuth instanceof org.springframework.security.authentication.AnonymousAuthenticationToken);
+    }
 
-        // Chỉ xử lý nếu có email. Cho phép ghi đè AnonymousAuthenticationToken
-        if (email != null && !email.isEmpty()) {
-            var currentAuth = SecurityContextHolder.getContext().getAuthentication();
-            if (currentAuth != null && !(currentAuth instanceof org.springframework.security.authentication.AnonymousAuthenticationToken)) {
-                log.debug("SecurityContext already contains non-anonymous Authentication");
-                filterChain.doFilter(request, response);
-                return;
-            }
-            log.debug("Setting SecurityContext for user: {}", email);
+    private void processAuthentication(HttpServletRequest request, String email) {
+        log.debug("Setting SecurityContext for user: {}", email);
 
-            List<GrantedAuthority> authorities;
+        String roleHeader = request.getHeader(HEADER_ROLE);
+        List<GrantedAuthority> authorities = extractAuthorities(email, roleHeader);
 
-            
-            if (roleHeader != null && !roleHeader.trim().isEmpty()) {
-                try {
-                    
-                    authorities = Arrays.stream(roleHeader.split(","))
-                            .map(String::trim)
-                            .filter(r -> !r.isEmpty())
-                            .map(r -> new SimpleGrantedAuthority("ROLE_" + r.toUpperCase()))
-                            .collect(Collectors.toList());
-                    log.debug("Extracted authorities: {}", authorities);
-                } catch (Exception e) {
-                     log.error("Error parsing roles from header '{}': {}", roleHeader, e.getMessage());
-                     authorities = Collections.emptyList(); // Gán rỗng nếu lỗi parse
-                }
-            } else {
-                // Xử lý khi header role bị thiếu/rỗng
-                log.warn("X-User-Role header is missing or empty for user: {}. Setting empty authorities.", email);
-                authorities = Collections.emptyList(); // Gán danh sách quyền rỗng
-            }
-            // --- Kết thúc sửa lỗi ---
+        UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(email, null,
+                authorities);
+        authToken.setDetails(buildAuthDetails(request));
 
-            UsernamePasswordAuthenticationToken authToken =
-                    new UsernamePasswordAuthenticationToken(email, null, authorities);
+        SecurityContextHolder.getContext().setAuthentication(authToken);
+        log.info("Successfully authenticated user {} with roles {}", email, authorities);
+    }
 
-            // Lưu userId và profileId vào details (nên kiểm tra null)
-            Map<String, String> details = new HashMap<>();
-            if (userId != null) details.put("userId", userId);
-            if (profileId != null) details.put("profileId", profileId);
-            authToken.setDetails(details);
-            log.debug("Authentication details set: {}", details);
-
-
-            SecurityContextHolder.getContext().setAuthentication(authToken);
-            log.info("Successfully authenticated user {} with roles {}", email, authorities);
-
-        } else if (email == null || email.isEmpty()){
-             log.warn("X-User-Email header missing or empty for request to {}", request.getRequestURI());
-        } else {
-             log.debug("SecurityContext already contains Authentication");
+    private List<GrantedAuthority> extractAuthorities(String email, String roleHeader) {
+        if (roleHeader == null || roleHeader.trim().isEmpty()) {
+            log.warn("{} header is missing or empty for user: {}. Setting empty authorities.", HEADER_ROLE, email);
+            return Collections.emptyList();
         }
 
+        try {
+            return Arrays.stream(roleHeader.split(","))
+                    .map(String::trim)
+                    .filter(r -> !r.isEmpty())
+                    .map(r -> (GrantedAuthority) new SimpleGrantedAuthority("ROLE_" + r.toUpperCase()))
+                    .toList();
+        } catch (Exception e) {
+            log.error("Error parsing roles from header '{}': {}", roleHeader, e.getMessage());
+            return Collections.emptyList();
+        }
+    }
 
-        filterChain.doFilter(request, response);
+    private Map<String, String> buildAuthDetails(HttpServletRequest request) {
+        String userId = request.getHeader(HEADER_USER_ID);
+        String profileId = request.getHeader(HEADER_PROFILE_ID);
+
+        Map<String, String> details = new HashMap<>();
+        if (userId != null)
+            details.put("userId", userId);
+        if (profileId != null)
+            details.put("profileId", profileId);
+        return details;
     }
 }

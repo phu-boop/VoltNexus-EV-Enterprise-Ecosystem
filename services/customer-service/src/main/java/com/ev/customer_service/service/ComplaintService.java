@@ -27,6 +27,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.security.SecureRandom;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -42,8 +43,12 @@ public class ComplaintService {
     private final CustomerRepository customerRepository;
     private final ObjectMapper objectMapper;
     private final org.springframework.mail.javamail.JavaMailSender mailSender;
-    // TODO: Add KafkaTemplate when Kafka is configured
-    // private final KafkaTemplate<String, Object> kafkaTemplate;
+
+    private static final Random RANDOM = new SecureRandom();
+    private static final String CHARSET_UTF8 = "UTF-8";
+    private static final String SUPPORT_EMAIL = "support@evdealer.com";
+    private static final String SUPPORT_HOTLINE = "1900-xxxx";
+    private static final String COMPLAINT_NOT_FOUND = "Complaint not found with id: ";
 
     /**
      * Tạo mới phản hồi/khiếu nại
@@ -55,7 +60,8 @@ public class ComplaintService {
 
         // Validate customer exists
         Customer customer = customerRepository.findById(request.getCustomerId())
-                .orElseThrow(() -> new ResourceNotFoundException("Customer not found with id: " + request.getCustomerId()));
+                .orElseThrow(
+                        () -> new ResourceNotFoundException("Customer not found with id: " + request.getCustomerId()));
 
         // Create complaint entity
         Complaint complaint = new Complaint();
@@ -87,7 +93,7 @@ public class ComplaintService {
         log.info("Assigning complaint {} to staff {}", complaintId, request.getAssignedStaffId());
 
         Complaint complaint = complaintRepository.findById(complaintId)
-                .orElseThrow(() -> new ResourceNotFoundException("Complaint not found with id: " + complaintId));
+                .orElseThrow(() -> new ResourceNotFoundException(COMPLAINT_NOT_FOUND + complaintId));
 
         complaint.setAssignedStaffId(request.getAssignedStaffId());
         complaint.setAssignedStaffName(request.getAssignedStaffName());
@@ -121,7 +127,7 @@ public class ComplaintService {
         log.info("Adding progress update to complaint {}", complaintId);
 
         Complaint complaint = complaintRepository.findById(complaintId)
-                .orElseThrow(() -> new ResourceNotFoundException("Complaint not found with id: " + complaintId));
+                .orElseThrow(() -> new ResourceNotFoundException(COMPLAINT_NOT_FOUND + complaintId));
 
         // Parse existing progress updates
         List<ComplaintResponse.ProgressUpdateInfo> progressList = parseProgressUpdates(complaint.getProgressUpdates());
@@ -151,17 +157,17 @@ public class ComplaintService {
         log.info("Resolving complaint {}", complaintId);
 
         Complaint complaint = complaintRepository.findById(complaintId)
-                .orElseThrow(() -> new ResourceNotFoundException("Complaint not found with id: " + complaintId));
+                .orElseThrow(() -> new ResourceNotFoundException(COMPLAINT_NOT_FOUND + complaintId));
 
         complaint.setStatus(ComplaintStatus.RESOLVED);
-        
+
         // Set new fields
         complaint.setInternalResolution(request.getInternalResolution());
         complaint.setCustomerMessage(request.getCustomerMessage());
-        
+
         // Set deprecated field for backward compatibility
         complaint.setResolution(request.getCustomerMessage());
-        
+
         complaint.setResolvedDate(LocalDateTime.now());
 
         Complaint saved = complaintRepository.save(complaint);
@@ -183,7 +189,7 @@ public class ComplaintService {
         log.info("Closing complaint {}", complaintId);
 
         Complaint complaint = complaintRepository.findById(complaintId)
-                .orElseThrow(() -> new ResourceNotFoundException("Complaint not found with id: " + complaintId));
+                .orElseThrow(() -> new ResourceNotFoundException(COMPLAINT_NOT_FOUND + complaintId));
 
         if (!complaint.getStatus().equals(ComplaintStatus.RESOLVED)) {
             throw new IllegalStateException("Can only close resolved complaints");
@@ -200,7 +206,7 @@ public class ComplaintService {
      */
     public ComplaintResponse getComplaintById(Long complaintId) {
         Complaint complaint = complaintRepository.findById(complaintId)
-                .orElseThrow(() -> new ResourceNotFoundException("Complaint not found with id: " + complaintId));
+                .orElseThrow(() -> new ResourceNotFoundException(COMPLAINT_NOT_FOUND + complaintId));
         return mapToResponse(complaint);
     }
 
@@ -211,7 +217,7 @@ public class ComplaintService {
         List<Complaint> complaints = complaintRepository.findByDealerId(dealerId);
         return complaints.stream()
                 .map(this::mapToResponse)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     /**
@@ -248,9 +254,8 @@ public class ComplaintService {
 
         // Sorting
         Sort sort = Sort.by(
-            filter.getSortDirection().equalsIgnoreCase("ASC") ? Sort.Direction.ASC : Sort.Direction.DESC,
-            filter.getSortBy()
-        );
+                filter.getSortDirection().equalsIgnoreCase("ASC") ? Sort.Direction.ASC : Sort.Direction.DESC,
+                filter.getSortBy());
 
         // Pagination
         Pageable pageable = PageRequest.of(filter.getPage(), filter.getSize(), sort);
@@ -271,55 +276,65 @@ public class ComplaintService {
         Long total = complaintRepository.countByDealerIdAndDateRange(dealerId, startDate, endDate);
 
         // Count by status with date range
-        Long newCount = complaintRepository.countByDealerIdAndStatusAndDateRange(dealerId, ComplaintStatus.NEW, startDate, endDate);
-        Long inProgressCount = complaintRepository.countByDealerIdAndStatusAndDateRange(dealerId, ComplaintStatus.IN_PROGRESS, startDate, endDate);
-        Long resolvedCount = complaintRepository.countByDealerIdAndStatusAndDateRange(dealerId, ComplaintStatus.RESOLVED, startDate, endDate);
-        Long closedCount = complaintRepository.countByDealerIdAndStatusAndDateRange(dealerId, ComplaintStatus.CLOSED, startDate, endDate);
+        Long newCount = complaintRepository.countByDealerIdAndStatusAndDateRange(dealerId, ComplaintStatus.NEW,
+                startDate, endDate);
+        Long inProgressCount = complaintRepository.countByDealerIdAndStatusAndDateRange(dealerId,
+                ComplaintStatus.IN_PROGRESS, startDate, endDate);
+        Long resolvedCount = complaintRepository.countByDealerIdAndStatusAndDateRange(dealerId,
+                ComplaintStatus.RESOLVED, startDate, endDate);
+        Long closedCount = complaintRepository.countByDealerIdAndStatusAndDateRange(dealerId, ComplaintStatus.CLOSED,
+                startDate, endDate);
 
         // Count by severity with date range
-        Long criticalCount = complaintRepository.countByDealerIdAndSeverityAndDateRange(dealerId, ComplaintSeverity.CRITICAL, startDate, endDate);
-        Long highCount = complaintRepository.countByDealerIdAndSeverityAndDateRange(dealerId, ComplaintSeverity.HIGH, startDate, endDate);
-        Long mediumCount = complaintRepository.countByDealerIdAndSeverityAndDateRange(dealerId, ComplaintSeverity.MEDIUM, startDate, endDate);
-        Long lowCount = complaintRepository.countByDealerIdAndSeverityAndDateRange(dealerId, ComplaintSeverity.LOW, startDate, endDate);
+        Long criticalCount = complaintRepository.countByDealerIdAndSeverityAndDateRange(dealerId,
+                ComplaintSeverity.CRITICAL, startDate, endDate);
+        Long highCount = complaintRepository.countByDealerIdAndSeverityAndDateRange(dealerId, ComplaintSeverity.HIGH,
+                startDate, endDate);
+        Long mediumCount = complaintRepository.countByDealerIdAndSeverityAndDateRange(dealerId,
+                ComplaintSeverity.MEDIUM, startDate, endDate);
+        Long lowCount = complaintRepository.countByDealerIdAndSeverityAndDateRange(dealerId, ComplaintSeverity.LOW,
+                startDate, endDate);
 
         // Count by type with date range
-        Map<String, Long> byType = complaintRepository.countByComplaintTypeAndDateRange(dealerId, startDate, endDate).stream()
+        Map<String, Long> byType = complaintRepository.countByComplaintTypeAndDateRange(dealerId, startDate, endDate)
+                .stream()
                 .collect(Collectors.toMap(
-                    obj -> obj[0].toString(),
-                    obj -> ((Number) obj[1]).longValue()
-                ));
+                        obj -> obj[0].toString(),
+                        obj -> ((Number) obj[1]).longValue()));
 
         // Count by staff with date range
-        Map<String, Long> byStaff = complaintRepository.countByAssignedStaffAndDateRange(dealerId, startDate, endDate).stream()
+        Map<String, Long> byStaff = complaintRepository.countByAssignedStaffAndDateRange(dealerId, startDate, endDate)
+                .stream()
                 .collect(Collectors.toMap(
-                    obj -> obj[0].toString(),
-                    obj -> ((Number) obj[1]).longValue()
-                ));
+                        obj -> obj[0].toString(),
+                        obj -> ((Number) obj[1]).longValue()));
 
         // Average times with date range
-        Double avgResolutionTime = complaintRepository.getAverageResolutionTimeWithDateRange(dealerId, ComplaintStatus.RESOLVED, startDate, endDate);
-        Double avgFirstResponseTime = complaintRepository.getAverageFirstResponseTimeWithDateRange(dealerId, startDate, endDate);
+        Double avgResolutionTime = complaintRepository.getAverageResolutionTimeWithDateRange(dealerId,
+                ComplaintStatus.RESOLVED, startDate, endDate);
+        Double avgFirstResponseTime = complaintRepository.getAverageFirstResponseTimeWithDateRange(dealerId, startDate,
+                endDate);
 
         // Overdue complaints (SLA) with date range
         LocalDateTime criticalOverdueTime = LocalDateTime.now().minusHours(24);
-        Long overdueCritical = complaintRepository.countOverdueComplaintsWithDateRange(dealerId, ComplaintSeverity.CRITICAL, criticalOverdueTime, startDate, endDate);
-        Long overdueHigh = complaintRepository.countOverdueComplaintsWithDateRange(dealerId, ComplaintSeverity.HIGH, criticalOverdueTime, startDate, endDate);
+        Long overdueCritical = complaintRepository.countOverdueComplaintsWithDateRange(dealerId,
+                ComplaintSeverity.CRITICAL, criticalOverdueTime, startDate, endDate);
+        Long overdueHigh = complaintRepository.countOverdueComplaintsWithDateRange(dealerId, ComplaintSeverity.HIGH,
+                criticalOverdueTime, startDate, endDate);
 
         // Build byStatus map
         Map<String, Long> byStatus = Map.of(
-            "NEW", newCount,
-            "IN_PROGRESS", inProgressCount,
-            "RESOLVED", resolvedCount,
-            "CLOSED", closedCount
-        );
+                "NEW", newCount,
+                "IN_PROGRESS", inProgressCount,
+                "RESOLVED", resolvedCount,
+                "CLOSED", closedCount);
 
         // Build bySeverity map
         Map<String, Long> bySeverity = Map.of(
-            "CRITICAL", criticalCount,
-            "HIGH", highCount,
-            "MEDIUM", mediumCount,
-            "LOW", lowCount
-        );
+                "CRITICAL", criticalCount,
+                "HIGH", highCount,
+                "MEDIUM", mediumCount,
+                "LOW", lowCount);
 
         return ComplaintStatisticsResponse.builder()
                 .totalComplaints(total)
@@ -347,7 +362,7 @@ public class ComplaintService {
 
     private String generateComplaintCode() {
         String date = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
-        String random = String.format("%04d", new Random().nextInt(10000));
+        String random = String.format("%04d", RANDOM.nextInt(10000));
         return "FB-" + date + "-" + random;
     }
 
@@ -356,7 +371,8 @@ public class ComplaintService {
             return new ArrayList<>();
         }
         try {
-            return objectMapper.readValue(json, new TypeReference<List<ComplaintResponse.ProgressUpdateInfo>>() {});
+            return objectMapper.readValue(json, new TypeReference<List<ComplaintResponse.ProgressUpdateInfo>>() {
+            });
         } catch (JsonProcessingException e) {
             log.error("Error parsing progress updates", e);
             return new ArrayList<>();
@@ -411,7 +427,7 @@ public class ComplaintService {
 
     private void sendNotificationToStaff(Complaint complaint, String message) {
         try {
-            NotificationRequest notification = NotificationRequest.builder()
+            NotificationRequest.builder()
                     .recipientName(complaint.getAssignedStaffName())
                     .subject("Phân công xử lý phản hồi")
                     .message(message)
@@ -432,13 +448,15 @@ public class ComplaintService {
      */
     public ComplaintResponse sendNotificationToCustomer(Long complaintId) {
         Complaint complaint = complaintRepository.findById(complaintId)
-                .orElseThrow(() -> new RuntimeException("Complaint not found"));
+                .orElseThrow(() -> new ResourceNotFoundException(COMPLAINT_NOT_FOUND + complaintId));
 
-        // Kiểm tra complaint đã có customer message chưa (check both new and old field for backward compatibility)
+        // Kiểm tra complaint đã có customer message chưa (check both new and old field
+        // for backward compatibility)
         boolean hasMessage = (complaint.getCustomerMessage() != null && !complaint.getCustomerMessage().isEmpty()) ||
-                            (complaint.getResolution() != null && !complaint.getResolution().isEmpty());
+                (complaint.getResolution() != null && !complaint.getResolution().isEmpty());
         if (!hasMessage) {
-            throw new RuntimeException("Chưa có kết quả xử lý. Vui lòng cập nhật kết quả trước khi gửi thông báo.");
+            throw new IllegalStateException(
+                    "Chưa có kết quả xử lý. Vui lòng cập nhật kết quả trước khi gửi thông báo.");
         }
 
         // Gửi notification
@@ -455,14 +473,13 @@ public class ComplaintService {
 
             // Send email using JavaMailSender
             jakarta.mail.internet.MimeMessage message = mailSender.createMimeMessage();
-            org.springframework.mail.javamail.MimeMessageHelper helper = 
-                new org.springframework.mail.javamail.MimeMessageHelper(message, true, "UTF-8");
+            org.springframework.mail.javamail.MimeMessageHelper helper = new org.springframework.mail.javamail.MimeMessageHelper(
+                    message, true, CHARSET_UTF8);
 
             helper.setTo(complaint.getCustomerEmail());
             helper.setSubject("Kết quả xử lý phản hồi - " + complaint.getComplaintCode());
             helper.setText(htmlContent, true); // true = HTML
-            
-            // Optionally set from address (if configured in application.properties)
+
             // helper.setFrom("noreply@evdealer.com");
 
             mailSender.send(message);
@@ -472,12 +489,12 @@ public class ComplaintService {
             complaint.setNotificationSentAt(LocalDateTime.now());
             complaintRepository.save(complaint);
 
-            log.info("✅ Email notification sent to customer {} for complaint {}", 
-                     complaint.getCustomerEmail(), complaint.getComplaintCode());
+            log.info("✅ Email notification sent to customer {} for complaint {}",
+                    complaint.getCustomerEmail(), complaint.getComplaintCode());
 
-            // TODO: Send SMS if phone number is available
+            // TODO: Send SMS if phone number is available using a configured SMS service
             if (complaint.getCustomerPhone() != null && !complaint.getCustomerPhone().isEmpty()) {
-                log.info("TODO: Send SMS to {} (SMS service not yet configured)", complaint.getCustomerPhone());
+                log.debug("SMS notification would be sent to {}", complaint.getCustomerPhone());
             }
 
         } catch (Exception e) {
@@ -492,226 +509,241 @@ public class ComplaintService {
     private String buildResolutionEmailHtml(Complaint complaint) {
         String customerName = complaint.getCustomerName();
         String complaintCode = complaint.getComplaintCode();
-        
-        // Use customerMessage for email (customer-facing), fallback to resolution for backward compatibility
-        String customerMessage = complaint.getCustomerMessage() != null && !complaint.getCustomerMessage().isEmpty()
-            ? complaint.getCustomerMessage()
-            : (complaint.getResolution() != null ? complaint.getResolution() : "Đã xử lý xong");
-        
-        String description = complaint.getDescription() != null && !complaint.getDescription().isEmpty()
-            ? complaint.getDescription()
-            : "Không có mô tả";
-        String staffName = complaint.getAssignedStaffName() != null 
-            ? complaint.getAssignedStaffName() 
-            : "Nhân viên hỗ trợ";
-        
+
+        String customerMessage = getCustomerMessage(complaint);
+
+        String description = getComplaintDescription(complaint);
+        String staffName = complaint.getAssignedStaffName() != null
+                ? complaint.getAssignedStaffName()
+                : "Nhân viên hỗ trợ";
+
         // Format dates
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
         String createdDate = complaint.getCreatedAt().format(formatter);
-        String resolvedDate = complaint.getResolvedDate() != null 
-            ? complaint.getResolvedDate().format(formatter) 
-            : LocalDateTime.now().format(formatter);
+        String resolvedDate = complaint.getResolvedDate() != null
+                ? complaint.getResolvedDate().format(formatter)
+                : LocalDateTime.now().format(formatter);
 
         // Get type and severity display names
-        String typeDisplay = complaint.getComplaintType() != null 
-            ? complaint.getComplaintType().getDisplayName() 
-            : "Phản hồi";
-        String severityDisplay = complaint.getSeverity() != null 
-            ? complaint.getSeverity().getDisplayName() 
-            : "";
+        String typeDisplay = complaint.getComplaintType() != null
+                ? complaint.getComplaintType().getDisplayName()
+                : "Phản hồi";
+        String severityDisplay = "";
+        if (complaint.getSeverity() != null) {
+            severityDisplay = complaint.getSeverity().getDisplayName();
+        }
 
-        return String.format("""
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <meta charset="UTF-8">
-                <style>
-                    body {
-                        font-family: Arial, sans-serif;
-                        line-height: 1.6;
-                        color: #333;
-                        max-width: 600px;
-                        margin: 0 auto;
-                        padding: 20px;
-                        background-color: #f5f5f5;
-                    }
-                    .container {
-                        background: white;
-                        border-radius: 10px;
-                        overflow: hidden;
-                        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-                    }
-                    .header {
-                        background: linear-gradient(135deg, #10b981 0%%, #059669 100%%);
-                        color: white;
-                        padding: 30px;
-                        text-align: center;
-                    }
-                    .header h1 {
-                        margin: 0;
-                        font-size: 24px;
-                    }
-                    .content {
-                        padding: 30px;
-                    }
-                    .success-badge {
-                        background: #d1fae5;
-                        color: #065f46;
-                        padding: 15px 20px;
-                        border-radius: 8px;
-                        border-left: 4px solid #10b981;
-                        margin: 20px 0;
-                        font-weight: 500;
-                    }
-                    .info-box {
-                        background: #f9fafb;
-                        padding: 20px;
-                        border-radius: 8px;
-                        margin: 20px 0;
-                        border: 1px solid #e5e7eb;
-                    }
-                    .info-row {
-                        padding: 10px 0;
-                        border-bottom: 1px solid #e5e7eb;
-                    }
-                    .info-row:last-child {
-                        border-bottom: none;
-                    }
-                    .label {
-                        font-weight: 600;
-                        color: #6b7280;
-                        display: inline-block;
-                        width: 130px;
-                    }
-                    .value {
-                        color: #111827;
-                    }
-                    .resolution-box {
-                        background: #ecfdf5;
-                        border: 2px solid #10b981;
-                        padding: 20px;
-                        border-radius: 8px;
-                        margin: 25px 0;
-                    }
-                    .resolution-box h3 {
-                        color: #065f46;
-                        margin: 0 0 15px 0;
-                        font-size: 18px;
-                    }
-                    .resolution-text {
-                        color: #064e3b;
-                        line-height: 1.8;
-                        white-space: pre-wrap;
-                    }
-                    .footer {
-                        background: #f9fafb;
-                        padding: 20px 30px;
-                        text-align: center;
-                        font-size: 13px;
-                        color: #6b7280;
-                        border-top: 1px solid #e5e7eb;
-                    }
-                    .footer-contact {
-                        margin: 10px 0;
-                        color: #374151;
-                    }
-                    .divider {
-                        height: 1px;
-                        background: #e5e7eb;
-                        margin: 25px 0;
-                    }
-                </style>
-            </head>
-            <body>
-                <div class="container">
-                    <div class="header">
-                        <h1> Phản Hồi Đã Được Xử Lý</h1>
-                    </div>
-                    
-                    <div class="content">
-                        <p style="font-size: 16px; margin-bottom: 10px;">Kính gửi <strong>%s</strong>,</p>
-                        
-                        <div class="success-badge">
-                            🎉 Phản hồi của bạn đã được xử lý thành công!
-                        </div>
-                        
-                        <p>Chúng tôi xin thông báo rằng phản hồi của bạn đã được nhân viên của chúng tôi xem xét và giải quyết.</p>
-                        
-                        <div class="info-box">
-                            <h3 style="margin-top: 0; color: #111827; font-size: 16px;">📋 Thông tin phản hồi</h3>
-                            <div class="info-row">
-                                <span class="label">Mã phản hồi:</span>
-                                <span class="value"><strong>%s</strong></span>
+        return String.format(
+                """
+                        <!DOCTYPE html>
+                        <html>
+                        <head>
+                            <meta charset="UTF-8">
+                            <style>
+                                body {
+                                    font-family: Arial, sans-serif;
+                                    line-height: 1.6;
+                                    color: #333;
+                                    max-width: 600px;
+                                    margin: 0 auto;
+                                    padding: 20px;
+                                    background-color: #f5f5f5;
+                                }
+                                .container {
+                                    background: white;
+                                    border-radius: 10px;
+                                    overflow: hidden;
+                                    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+                                }
+                                .header {
+                                    background: linear-gradient(135deg, #10b981 0%%, #059669 100%%);
+                                    color: white;
+                                    padding: 30px;
+                                    text-align: center;
+                                }
+                                .header h1 {
+                                    margin: 0;
+                                    font-size: 24px;
+                                }
+                                .content {
+                                    padding: 30px;
+                                }
+                                .success-badge {
+                                    background: #d1fae5;
+                                    color: #065f46;
+                                    padding: 15px 20px;
+                                    border-radius: 8px;
+                                    border-left: 4px solid #10b981;
+                                    margin: 20px 0;
+                                    font-weight: 500;
+                                }
+                                .info-box {
+                                    background: #f9fafb;
+                                    padding: 20px;
+                                    border-radius: 8px;
+                                    margin: 20px 0;
+                                    border: 1px solid #e5e7eb;
+                                }
+                                .info-row {
+                                    padding: 10px 0;
+                                    border-bottom: 1px solid #e5e7eb;
+                                }
+                                .info-row:last-child {
+                                    border-bottom: none;
+                                }
+                                .label {
+                                    font-weight: 600;
+                                    color: #6b7280;
+                                    display: inline-block;
+                                    width: 130px;
+                                }
+                                .value {
+                                    color: #111827;
+                                }
+                                .resolution-box {
+                                    background: #ecfdf5;
+                                    border: 2px solid #10b981;
+                                    padding: 20px;
+                                    border-radius: 8px;
+                                    margin: 25px 0;
+                                }
+                                .resolution-box h3 {
+                                    color: #065f46;
+                                    margin: 0 0 15px 0;
+                                    font-size: 18px;
+                                }
+                                .resolution-text {
+                                    color: #064e3b;
+                                    line-height: 1.8;
+                                    white-space: pre-wrap;
+                                }
+                                .footer {
+                                    background: #f9fafb;
+                                    padding: 20px 30px;
+                                    text-align: center;
+                                    font-size: 13px;
+                                    color: #6b7280;
+                                    border-top: 1px solid #e5e7eb;
+                                }
+                                .footer-contact {
+                                    margin: 10px 0;
+                                    color: #374151;
+                                }
+                                .divider {
+                                    height: 1px;
+                                    background: #e5e7eb;
+                                    margin: 25px 0;
+                                }
+                            </style>
+                        </head>
+                        <body>
+                            <div class="container">
+                                <div class="header">
+                                    <h1> Phản Hồi Đã Được Xử Lý</h1>
+                                </div>
+
+                                <div class="content">
+                                    <p style="font-size: 16px; margin-bottom: 10px;">Kính gửi <strong>%s</strong>,</p>
+
+                                    <div class="success-badge">
+                                        🎉 Phản hồi của bạn đã được xử lý thành công!
+                                    </div>
+
+                                    <p>Chúng tôi xin thông báo rằng phản hồi của bạn đã được nhân viên của chúng tôi xem xét và giải quyết.</p>
+
+                                    <div class="info-box">
+                                        <h3 style="margin-top: 0; color: #111827; font-size: 16px;">📋 Thông tin phản hồi</h3>
+                                        <div class="info-row">
+                                            <span class="label">Mã phản hồi:</span>
+                                            <span class="value"><strong>%s</strong></span>
+                                        </div>
+                                        <div class="info-row">
+                                            <span class="label">Loại:</span>
+                                            <span class="value">%s</span>
+                                        </div>
+                                        <div class="info-row">
+                                            <span class="label" style="vertical-align: top;">Nội dung:</span>
+                                            <span class="value" style="display: inline-block; margin-top: 0; color: #374151; max-width: 400px; white-space: pre-wrap; word-wrap: break-word;">%s</span>
+                                        </div>
+                                        <div class="info-row">
+                                            <span class="label">Mức độ:</span>
+                                            <span class="value">%s</span>
+                                        </div>
+                                        <div class="info-row">
+                                            <span class="label">Ngày tạo:</span>
+                                            <span class="value">%s</span>
+                                        </div>
+                                        <div class="info-row">
+                                            <span class="label">Ngày giải quyết:</span>
+                                            <span class="value">%s</span>
+                                        </div>
+                                        <div class="info-row">
+                                            <span class="label">Người xử lý:</span>
+                                            <span class="value">%s</span>
+                                        </div>
+                                    </div>
+
+                                    <div style="margin: 25px 0; padding: 20px; background: #f9fafb; border-radius: 8px;">
+                                        <p style="color: #111827; line-height: 1.8; white-space: pre-wrap; margin: 0;">%s</p>
+                                    </div>
+
+                                    <div class="divider"></div>
+
+                                    <p style="font-size: 14px; color: #6b7280; margin: 20px 0;">
+                                        <strong>Lưu ý:</strong> Nếu bạn có bất kỳ thắc mắc nào hoặc cần hỗ trợ thêm,
+                                        vui lòng liên hệ với chúng tôi qua các kênh bên dưới.
+                                    </p>
+
+                                    <p style="margin-top: 25px; color: #111827;">
+                                        Trân trọng,<br>
+                                        <strong>%s</strong><br>
+                                        <span style="color: #6b7280;">EV Dealer Platform</span>
+                                    </p>
+                                </div>
+
+                                <div class="footer">
+                                    <div class="footer-contact">
+                                        <strong>EV Dealer Management Platform</strong>
+                                    </div>
+                                    <div style="margin: 8px 0;">
+                                        📞 Hotline: %s | 📧 Email: %s
+                                    </div>
+                                    <div style="color: #9ca3af; font-size: 12px; margin-top: 10px;">
+                                        Email này được gửi tự động từ hệ thống. Vui lòng không trả lời email này.
+                                    </div>
+                                </div>
                             </div>
-                            <div class="info-row">
-                                <span class="label">Loại:</span>
-                                <span class="value">%s</span>
-                            </div>
-                            <div class="info-row">
-                                <span class="label" style="vertical-align: top;">Nội dung:</span>
-                                <span class="value" style="display: inline-block; margin-top: 0; color: #374151; max-width: 400px; white-space: pre-wrap; word-wrap: break-word;">%s</span>
-                            </div>
-                            <div class="info-row">
-                                <span class="label">Mức độ:</span>
-                                <span class="value">%s</span>
-                            </div>
-                            <div class="info-row">
-                                <span class="label">Ngày tạo:</span>
-                                <span class="value">%s</span>
-                            </div>
-                            <div class="info-row">
-                                <span class="label">Ngày giải quyết:</span>
-                                <span class="value">%s</span>
-                            </div>
-                            <div class="info-row">
-                                <span class="label">Người xử lý:</span>
-                                <span class="value">%s</span>
-                            </div>
-                        </div>
-                        
-                        <div style="margin: 25px 0; padding: 20px; background: #f9fafb; border-radius: 8px;">
-                            <p style="color: #111827; line-height: 1.8; white-space: pre-wrap; margin: 0;">%s</p>
-                        </div>
-                        
-                        <div class="divider"></div>
-                        
-                        <p style="font-size: 14px; color: #6b7280; margin: 20px 0;">
-                            <strong>Lưu ý:</strong> Nếu bạn có bất kỳ thắc mắc nào hoặc cần hỗ trợ thêm, 
-                            vui lòng liên hệ với chúng tôi qua các kênh bên dưới.
-                        </p>
-                        
-                        <p style="margin-top: 25px; color: #111827;">
-                            Trân trọng,<br>
-                            <strong>%s</strong><br>
-                            <span style="color: #6b7280;">EV Dealer Platform</span>
-                        </p>
-                    </div>
-                    
-                    <div class="footer">
-                        <div class="footer-contact">
-                            <strong>EV Dealer Management Platform</strong>
-                        </div>
-                        <div style="margin: 8px 0;">
-                            📞 Hotline: 1900-xxxx | 📧 Email: support@evdealer.com
-                        </div>
-                        <div style="color: #9ca3af; font-size: 12px; margin-top: 10px;">
-                            Email này được gửi tự động từ hệ thống. Vui lòng không trả lời email này.
-                        </div>
-                    </div>
-                </div>
-            </body>
-            </html>
-            """,
-            customerName,
-            complaintCode,
-            typeDisplay,
-            description,
-            severityDisplay,
-            createdDate,
-            resolvedDate,
-            staffName,
-            customerMessage,
-            staffName
-        );
+                        </body>
+                        </html>
+                        """,
+                customerName,
+                complaintCode,
+                typeDisplay,
+                description,
+                severityDisplay,
+                createdDate,
+                resolvedDate,
+                staffName,
+                customerMessage,
+                staffName,
+                SUPPORT_HOTLINE,
+                SUPPORT_EMAIL);
+    }
+
+    private String getCustomerMessage(Complaint complaint) {
+        if (complaint.getCustomerMessage() != null && !complaint.getCustomerMessage().isEmpty()) {
+            return complaint.getCustomerMessage();
+        }
+        if (complaint.getResolution() != null && !complaint.getResolution().isEmpty()) {
+            return complaint.getResolution();
+        }
+        return "Đã xử lý xong";
+    }
+
+    private String getComplaintDescription(Complaint complaint) {
+        if (complaint.getDescription() != null && !complaint.getDescription().isEmpty()) {
+            return complaint.getDescription();
+        }
+        return "Không có mô tả";
     }
 }

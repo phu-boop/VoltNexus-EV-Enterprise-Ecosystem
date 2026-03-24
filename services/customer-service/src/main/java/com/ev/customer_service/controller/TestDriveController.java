@@ -39,6 +39,16 @@ public class TestDriveController {
 
     private final TestDriveService testDriveService;
 
+    private static final String CONTENT_TYPE_HEADER = "Content-Type";
+    private static final String HTML_CONTENT_TYPE = "text/html; charset=UTF-8";
+    private static final String SUCCESS_CREATED = "Test drive appointment created successfully";
+    private static final String SUCCESS_UPDATED = "Test drive appointment updated successfully";
+    private static final String SUCCESS_CANCELLED = "Test drive appointment cancelled successfully";
+    private static final String SUCCESS_CONFIRMED = "Test drive appointment confirmed successfully";
+    private static final String SUCCESS_COMPLETED = "Test drive appointment completed successfully";
+    private static final String HOTLINE = "1900-xxxx";
+    private static final String SUPPORT_EMAIL = "support@evdealer.com";
+
     /**
      * Lấy danh sách lịch hẹn theo dealer
      */
@@ -90,7 +100,7 @@ public class TestDriveController {
         TestDriveResponse appointment = testDriveService.createAppointment(request);
         return ResponseEntity
                 .status(HttpStatus.CREATED)
-                .body(ApiResponse.success("Test drive appointment created successfully", appointment));
+                .body(ApiResponse.success(SUCCESS_CREATED, appointment));
     }
 
     /**
@@ -103,7 +113,7 @@ public class TestDriveController {
             @PathVariable Long id,
             @Valid @RequestBody UpdateTestDriveRequest request) {
         TestDriveResponse appointment = testDriveService.updateAppointment(id, request);
-        return ResponseEntity.ok(ApiResponse.success("Test drive appointment updated successfully", appointment));
+        return ResponseEntity.ok(ApiResponse.success(SUCCESS_UPDATED, appointment));
     }
 
     /**
@@ -116,7 +126,7 @@ public class TestDriveController {
             @PathVariable Long id,
             @Valid @RequestBody CancelTestDriveRequest request) {
         testDriveService.cancelAppointment(id, request);
-        return ResponseEntity.ok(ApiResponse.success("Test drive appointment cancelled successfully", null));
+        return ResponseEntity.ok(ApiResponse.success(SUCCESS_CANCELLED, null));
     }
 
     /**
@@ -128,8 +138,7 @@ public class TestDriveController {
     public ResponseEntity<ApiResponse<Void>> cancelTestDriveByCustomer(
             @PathVariable Long id,
             @Valid @RequestBody CancelTestDriveRequest request) {
-        testDriveService.cancelAppointment(id, request);
-        return ResponseEntity.ok(ApiResponse.success("Test drive appointment cancelled successfully", null));
+        return cancelTestDrive(id, request);
     }
 
     /**
@@ -139,7 +148,7 @@ public class TestDriveController {
     @PreAuthorize("hasAnyRole('DEALER_STAFF', 'ADMIN')")
     public ResponseEntity<ApiResponse<Void>> confirmTestDrive(@PathVariable Long id) {
         testDriveService.confirmAppointment(id);
-        return ResponseEntity.ok(ApiResponse.success("Test drive appointment confirmed successfully", null));
+        return ResponseEntity.ok(ApiResponse.success(SUCCESS_CONFIRMED, null));
     }
 
     /**
@@ -223,7 +232,7 @@ public class TestDriveController {
                     """;
 
             return ResponseEntity.ok()
-                    .header("Content-Type", "text/html; charset=UTF-8")
+                    .header(CONTENT_TYPE_HEADER, HTML_CONTENT_TYPE)
                     .body(html);
 
         } catch (Exception e) {
@@ -276,16 +285,16 @@ public class TestDriveController {
                             <p>
                                 Không thể xác nhận lịch hẹn. Có thể link đã hết hạn hoặc không hợp lệ.<br><br>
                                 Vui lòng liên hệ với chúng tôi để được hỗ trợ:<br>
-                                📞 Hotline: 1900-xxxx<br>
-                                📧 Email: support@evdealer.com
+                                📞 Hotline: %s<br>
+                                📧 Email: %s
                             </p>
                         </div>
                     </body>
                     </html>
-                    """;
+                    """.formatted(HOTLINE, SUPPORT_EMAIL);
 
             return ResponseEntity.badRequest()
-                    .header("Content-Type", "text/html; charset=UTF-8")
+                    .header(CONTENT_TYPE_HEADER, HTML_CONTENT_TYPE)
                     .body(errorHtml);
         }
     }
@@ -368,7 +377,7 @@ public class TestDriveController {
                     """;
 
             return ResponseEntity.ok()
-                    .header("Content-Type", "text/html; charset=UTF-8")
+                    .header(CONTENT_TYPE_HEADER, HTML_CONTENT_TYPE)
                     .body(html);
 
         } catch (Exception e) {
@@ -429,7 +438,7 @@ public class TestDriveController {
                     """;
 
             return ResponseEntity.badRequest()
-                    .header("Content-Type", "text/html; charset=UTF-8")
+                    .header(CONTENT_TYPE_HEADER, HTML_CONTENT_TYPE)
                     .body(errorHtml);
         }
     }
@@ -441,7 +450,7 @@ public class TestDriveController {
     @PreAuthorize("hasAnyRole('DEALER_STAFF', 'ADMIN')")
     public ResponseEntity<ApiResponse<Void>> completeTestDrive(@PathVariable Long id) {
         testDriveService.completeAppointment(id);
-        return ResponseEntity.ok(ApiResponse.success("Test drive appointment completed successfully", null));
+        return ResponseEntity.ok(ApiResponse.success(SUCCESS_COMPLETED, null));
     }
 
     /**
@@ -466,7 +475,7 @@ public class TestDriveController {
             @RequestParam(required = false) String dealerId, // Optional for ADMIN
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate) {
-        
+
         // Nếu không truyền startDate/endDate, mặc định lấy 30 ngày từ hôm nay
         if (startDate == null) {
             startDate = LocalDateTime.now().minusDays(30);
@@ -474,7 +483,7 @@ public class TestDriveController {
         if (endDate == null) {
             endDate = LocalDateTime.now().plusDays(30);
         }
-        
+
         List<TestDriveCalendarResponse> calendar = testDriveService.getCalendarView(dealerId, startDate, endDate);
         return ResponseEntity.ok(ApiResponse.success(calendar));
     }
@@ -489,7 +498,7 @@ public class TestDriveController {
             @RequestParam(required = false) String dealerId, // Optional for ADMIN
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate) {
-        
+
         // Nếu không truyền startDate/endDate, mặc định lấy 30 ngày qua
         if (startDate == null) {
             startDate = LocalDateTime.now().minusDays(30);
@@ -497,7 +506,7 @@ public class TestDriveController {
         if (endDate == null) {
             endDate = LocalDateTime.now();
         }
-        
+
         TestDriveStatisticsResponse statistics = testDriveService.getStatistics(dealerId, startDate, endDate);
         return ResponseEntity.ok(ApiResponse.success(statistics));
     }
@@ -536,6 +545,6 @@ public class TestDriveController {
         TestDriveResponse appointment = testDriveService.createPublicAppointment(request);
         return ResponseEntity
                 .status(HttpStatus.CREATED)
-                .body(ApiResponse.success("Test drive appointment created successfully", appointment));
+                .body(ApiResponse.success(SUCCESS_CREATED, appointment));
     }
 }
