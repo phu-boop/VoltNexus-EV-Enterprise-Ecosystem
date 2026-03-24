@@ -131,4 +131,59 @@ class JwtGlobalFilterTest {
         verifyNoInteractions(jwtUtil);
         verifyNoInteractions(chain);
     }
+
+    @Test
+    void filter_OptionsRequest_ShouldProceed() {
+        exchange = MockServerWebExchange.from(MockServerHttpRequest.options("/api/inventory").build());
+        when(chain.filter(any(ServerWebExchange.class))).thenReturn(Mono.empty());
+
+        Mono<Void> result = jwtGlobalFilter.filter(exchange, chain);
+
+        StepVerifier.create(result).verifyComplete();
+        verify(chain).filter(exchange);
+        verifyNoInteractions(jwtUtil);
+    }
+
+    @Test
+    void filter_MutateRequestWithNullIds() {
+        String token = "valid-token";
+        String email = "test@example.com";
+        exchange = MockServerWebExchange.from(MockServerHttpRequest.get("/api/inventory")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + token).build());
+
+        when(redisService.contains(token)).thenReturn(false);
+        when(jwtUtil.extractEmail(token)).thenReturn(email);
+        when(jwtUtil.isTokenValid(token, email)).thenReturn(true);
+        when(jwtUtil.extractRole(token)).thenReturn("USER");
+        when(jwtUtil.extractUserId(token)).thenReturn(null);
+        when(jwtUtil.extractProfileId(token)).thenReturn(null);
+        when(jwtUtil.extractDealerId(token)).thenReturn(null);
+        when(chain.filter(any(ServerWebExchange.class))).thenReturn(Mono.empty());
+
+        Mono<Void> result = jwtGlobalFilter.filter(exchange, chain);
+
+        StepVerifier.create(result).verifyComplete();
+
+        ArgumentCaptor<ServerWebExchange> exchangeCaptor = ArgumentCaptor.forClass(ServerWebExchange.class);
+        verify(chain).filter(exchangeCaptor.capture());
+        ServerWebExchange capturedExchange = exchangeCaptor.getValue();
+        assertEquals("", capturedExchange.getRequest().getHeaders().getFirst("X-User-Id"));
+        assertEquals("", capturedExchange.getRequest().getHeaders().getFirst("X-User-ProfileId"));
+        assertEquals("", capturedExchange.getRequest().getHeaders().getFirst("X-User-DealerId"));
+    }
+
+    @Test
+    void filter_ExpiredTokenInProcess_ShouldReturnUnauthorized() {
+        String token = "expired-token";
+        exchange = MockServerWebExchange.from(MockServerHttpRequest.get("/api/inventory")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + token).build());
+
+        when(redisService.contains(token)).thenReturn(false);
+        when(jwtUtil.extractEmail(token)).thenThrow(new io.jsonwebtoken.ExpiredJwtException(null, null, "Expired"));
+
+        Mono<Void> result = jwtGlobalFilter.filter(exchange, chain);
+
+        StepVerifier.create(result).verifyComplete();
+        assertEquals(HttpStatus.UNAUTHORIZED, exchange.getResponse().getStatusCode());
+    }
 }

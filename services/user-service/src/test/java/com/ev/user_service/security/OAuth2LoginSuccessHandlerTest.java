@@ -20,9 +20,14 @@ import org.springframework.security.oauth2.core.user.DefaultOAuth2User;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import com.ev.user_service.dto.respond.UserRespond;
+import com.ev.user_service.entity.Role;
+import com.ev.user_service.enums.RoleName;
+
 import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -69,6 +74,7 @@ class OAuth2LoginSuccessHandlerTest {
                 Map<String, Object> attributes = Map.of(
                                 "email", "test@example.com",
                                 "name", "Test User",
+                                "given_name", "Test",
                                 "picture", "http://example.com/pic.jpg");
                 OAuth2User oAuth2User = new DefaultOAuth2User(Collections.emptyList(), attributes, "email");
                 authentication = new OAuth2AuthenticationToken(oAuth2User, Collections.emptyList(), "google");
@@ -82,15 +88,117 @@ class OAuth2LoginSuccessHandlerTest {
                 user.setRoles(Collections.emptySet());
 
                 when(userRepository.findByEmail(anyString())).thenReturn(Optional.of(user));
+                when(userMapper.usertoUserRespond(any())).thenReturn(new UserRespond());
                 when(jwtUtil.generateAccessToken(anyString(), anyString(), anyString(), any(), any()))
                                 .thenReturn("access-token");
                 when(jwtUtil.generateRefreshToken(anyString(), anyString(), anyString(), any(), any()))
                                 .thenReturn("refresh-token");
-                when(request.getParameter("state")).thenReturn("state|YmFzZTY0cmVkaXJlY3Q="); // base64 for "redirect"
+                when(request.getParameter("state")).thenReturn(null);
 
                 successHandler.onAuthenticationSuccess(request, response, authentication);
 
                 verify(response).sendRedirect(contains("accessToken=access-token"));
                 verify(response).addCookie(any());
+        }
+
+        @Test
+        void onAuthenticationSuccess_NewUser() throws Exception {
+                Role customerRole = new Role();
+                customerRole.setName(RoleName.CUSTOMER.getRoleName());
+
+                when(userRepository.findByEmail(anyString())).thenReturn(Optional.empty());
+                when(roleRepository.findByName(RoleName.CUSTOMER.getRoleName())).thenReturn(Optional.of(customerRole));
+                when(userRepository.save(any(User.class))).thenAnswer(inv -> {
+                        User u = inv.getArgument(0);
+                        u.setId(UUID.randomUUID());
+                        return u;
+                });
+                when(userMapper.usertoUserRespond(any())).thenReturn(new UserRespond());
+                when(jwtUtil.generateAccessToken(anyString(), anyString(), anyString(), any(), any()))
+                                .thenReturn("access-token");
+                when(jwtUtil.generateRefreshToken(anyString(), anyString(), anyString(), any(), any()))
+                                .thenReturn("refresh-token");
+                when(request.getParameter("state")).thenReturn(null);
+
+                successHandler.onAuthenticationSuccess(request, response, authentication);
+
+                verify(userRepository).save(any(User.class));
+                verify(customerProfileService).saveCustomerProfile(any(), any());
+                verify(response).sendRedirect(contains("accessToken="));
+        }
+
+        @Test
+        void onAuthenticationSuccess_WithCustomerProfile() throws Exception {
+                User user = new User();
+                user.setId(UUID.randomUUID());
+                user.setEmail("test@example.com");
+                Role customerRole = new Role();
+                customerRole.setName(RoleName.CUSTOMER.getRoleName());
+                user.setRoles(Set.of(customerRole));
+
+                com.ev.user_service.entity.CustomerProfile cp = new com.ev.user_service.entity.CustomerProfile();
+                cp.setCustomerId(UUID.randomUUID());
+
+                when(userRepository.findByEmail(anyString())).thenReturn(Optional.of(user));
+                when(userMapper.usertoUserRespond(any())).thenReturn(new UserRespond());
+                when(customerProfileRepository.findByUserId(any())).thenReturn(Optional.of(cp));
+                when(jwtUtil.generateAccessToken(anyString(), anyString(), anyString(), any(), any()))
+                                .thenReturn("access-token");
+                when(jwtUtil.generateRefreshToken(anyString(), anyString(), anyString(), any(), any()))
+                                .thenReturn("refresh-token");
+                when(request.getParameter("state")).thenReturn(null);
+
+                successHandler.onAuthenticationSuccess(request, response, authentication);
+
+                verify(customerProfileRepository).findByUserId(any());
+                verify(response).sendRedirect(contains("accessToken="));
+        }
+
+        @Test
+        void onAuthenticationSuccess_WithValidRedirectUri() throws Exception {
+                User user = new User();
+                user.setId(UUID.randomUUID());
+                user.setEmail("test@example.com");
+                user.setRoles(Collections.emptySet());
+
+                String base64Redirect = java.util.Base64.getUrlEncoder()
+                                .encodeToString("http://localhost:3000/callback".getBytes());
+
+                when(userRepository.findByEmail(anyString())).thenReturn(Optional.of(user));
+                when(userMapper.usertoUserRespond(any())).thenReturn(new UserRespond());
+                when(jwtUtil.generateAccessToken(anyString(), anyString(), anyString(), any(), any()))
+                                .thenReturn("access-token");
+                when(jwtUtil.generateRefreshToken(anyString(), anyString(), anyString(), any(), any()))
+                                .thenReturn("refresh-token");
+                when(request.getParameter("state")).thenReturn("someState|" + base64Redirect);
+
+                successHandler.onAuthenticationSuccess(request, response, authentication);
+
+                verify(response).sendRedirect(contains("http://localhost:3000/callback"));
+        }
+
+        @Test
+        void onAuthenticationSuccess_WithNonCustomerHavingProfileId() throws Exception {
+                User user = new User();
+                user.setId(UUID.randomUUID());
+                user.setEmail("test@example.com");
+                com.ev.user_service.entity.DealerStaffProfile staffProfile = new com.ev.user_service.entity.DealerStaffProfile();
+                staffProfile.setStaffId(UUID.randomUUID());
+                user.setDealerStaffProfile(staffProfile);
+                Role staffRole = new Role();
+                staffRole.setName("DEALER_STAFF");
+                user.setRoles(Set.of(staffRole));
+
+                when(userRepository.findByEmail(anyString())).thenReturn(Optional.of(user));
+                when(userMapper.usertoUserRespond(any())).thenReturn(new UserRespond());
+                when(jwtUtil.generateAccessToken(anyString(), anyString(), anyString(), any(), any()))
+                                .thenReturn("access-token");
+                when(jwtUtil.generateRefreshToken(anyString(), anyString(), anyString(), any(), any()))
+                                .thenReturn("refresh-token");
+                when(request.getParameter("state")).thenReturn(null);
+
+                successHandler.onAuthenticationSuccess(request, response, authentication);
+
+                verify(response).sendRedirect(contains("accessToken="));
         }
 }
