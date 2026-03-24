@@ -1,6 +1,5 @@
 package com.ev.gateway.config;
 
-import com.ev.common_lib.constant.HeaderConstants;
 import com.ev.common_lib.exception.ErrorCode;
 import com.ev.gateway.util.JwtUtil;
 import com.ev.gateway.service.RedisService;
@@ -133,59 +132,35 @@ public class JwtGlobalFilter implements GlobalFilter, Ordered {
 
         // Trích xuất các claims từ JWT
         String role = jwtUtil.extractRole(token);
-        Long userId = jwtUtil.extractUserId(token);
+        String userId = jwtUtil.extractUserId(token);
         String profileId = jwtUtil.extractProfileId(token);
         String dealerId = jwtUtil.extractDealerId(token);
 
-        logAuthenticationSuccess(path, email, role, userId, profileId);
+        // 6. Ghi log thành công
+        logAuthenticationSuccess(email, role, userId, profileId, dealerId);
 
-        // Gắn thông tin người dùng vào header và chuyển tiếp request
+        // 7. Mutate Request với các headers thông tin User
         ServerWebExchange mutatedExchange = mutateExchangeWithUserHeaders(exchange, email, role, userId, profileId,
-                dealerId, path);
+                dealerId, token);
         return chain.filter(mutatedExchange);
     }
 
-    private void logAuthenticationSuccess(String path, String email, String role, Long userId, String profileId) {
-        if (path.startsWith("/payments")) {
-            log.debug(
-                    "[JwtGlobalFilter] [PAYMENT_SERVICE] Authentication successful - Path: {} | Email: {} | Role: {} | UserId: {} | ProfileId: {}",
-                    path, email, role, userId, profileId);
-        }
-        log.info("[JwtGlobalFilter] Extracted from JWT - Path: {} | Email: {} | Role: {} | UserId: {} | ProfileId: {}",
-                path, email, role, userId, profileId);
+    private void logAuthenticationSuccess(String email, String role, String userId, String profileId, String dealerId) {
+        log.info("JWT Validation Success - User: {}, Role: {}, ID: {}, Profile: {}, Dealer: {}",
+                email, role, userId, profileId, dealerId);
     }
 
     private ServerWebExchange mutateExchangeWithUserHeaders(ServerWebExchange exchange, String email, String role,
-            Long userId, String profileId, String dealerId, String path) {
+            String userId, String profileId, String dealerId, String token) {
         return exchange.mutate()
-                .request(r -> r.headers(headers -> {
-                    headers.add(HeaderConstants.X_USER_EMAIL, email);
-                    headers.add(HeaderConstants.X_USER_ROLE, role);
-                    headers.add(HeaderConstants.X_USER_ID, String.valueOf(userId));
-                    headers.add(HeaderConstants.X_USER_PROFILE_ID, profileId);
-                    if (dealerId != null) {
-                        headers.add(HeaderConstants.X_USER_DEALER_ID, dealerId);
-                    }
-                    if (exchange.getRequest().getRemoteAddress() != null) {
-                        headers.add("X-Forwarded-For",
-                                exchange.getRequest().getRemoteAddress().getAddress().getHostAddress());
-                    }
-
-                    logHeaderAddition(path, email, role, userId, profileId, dealerId);
-                }))
+                .request(r -> r
+                        .header("X-User-Email", email)
+                        .header("X-User-Role", role)
+                        .header("X-User-Id", userId != null ? userId : "")
+                        .header("X-User-ProfileId", profileId != null ? profileId : "")
+                        .header("X-User-DealerId", dealerId != null ? dealerId : "")
+                        .header("Authorization", "Bearer " + token))
                 .build();
-    }
-
-    private void logHeaderAddition(String path, String email, String role, Long userId, String profileId,
-            String dealerId) {
-        if (path.startsWith("/payments")) {
-            log.debug(
-                    "[JwtGlobalFilter] [PAYMENT_SERVICE] Added headers to request - X-User-Email: {}, X-User-Role: {}, X-User-Id: {}, X-User-ProfileId: {}, X-User-DealerId: {}",
-                    email, role, userId, profileId, dealerId);
-        } else {
-            log.debug("[JwtGlobalFilter] Added headers - X-User-Email: {}, X-User-Role: {}, X-User-ProfileId: {}",
-                    email, role, profileId);
-        }
     }
 
     @Override
@@ -202,7 +177,8 @@ public class JwtGlobalFilter implements GlobalFilter, Ordered {
         response.setStatusCode(httpStatus);
         response.getHeaders().add("Content-Type", "application/json; charset=UTF-8");
 
-        String body = String.format("{\"code\":\"%s\",\"message\":\"%s\",\"data\":null}", code, message);
+        String body = String.format("{\"timestamp\":\"%s\",\"code\":\"%s\",\"message\":\"%s\",\"data\":null}",
+                java.time.Instant.now(), code, message);
         byte[] bytes = body.getBytes(java.nio.charset.StandardCharsets.UTF_8);
 
         return response.writeWith(Mono.just(response.bufferFactory().wrap(bytes)));
