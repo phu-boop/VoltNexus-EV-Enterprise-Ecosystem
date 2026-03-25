@@ -2,6 +2,7 @@ package com.ev.sales_service.service.Implementation;
 
 import com.ev.sales_service.entity.SalesOrder;
 import com.ev.sales_service.enums.OrderStatusB2B;
+import com.ev.sales_service.enums.SaleOderType;
 import com.ev.sales_service.repository.NotificationRepository;
 import com.ev.sales_service.repository.OutboxRepository;
 import com.ev.sales_service.repository.SalesOrderRepositoryB2B;
@@ -25,7 +26,7 @@ import static org.mockito.Mockito.*;
 class SalesOrderServiceB2BImplTest {
 
     @Mock
-    private SalesOrderRepositoryB2B salesOrderRepository;
+    private SalesOrderRepositoryB2B salesOrderRepositoryB2B;
 
     @Mock
     private OutboxRepository outboxRepository;
@@ -49,11 +50,12 @@ class SalesOrderServiceB2BImplTest {
         order = new SalesOrder();
         order.setOrderId(UUID.randomUUID());
         order.setOrderStatus(OrderStatusB2B.PENDING);
+        order.setTypeOder(SaleOderType.B2B);
     }
 
     @Test
     void getOrderById_ShouldReturnOrder() {
-        when(salesOrderRepository.findById(order.getOrderId())).thenReturn(Optional.of(order));
+        when(salesOrderRepositoryB2B.findById(order.getOrderId())).thenReturn(Optional.of(order));
 
         SalesOrder result = salesOrderService.getOrderById(order.getOrderId());
 
@@ -63,12 +65,13 @@ class SalesOrderServiceB2BImplTest {
 
     @Test
     void cancelOrderByStaff_ShouldUpdateStatus() {
-        when(salesOrderRepository.findById(order.getOrderId())).thenReturn(Optional.of(order));
-        when(salesOrderRepository.save(any(SalesOrder.class))).thenReturn(order);
+        when(salesOrderRepositoryB2B.findByOrderIdAndTypeOder(order.getOrderId(), SaleOderType.B2B))
+                .thenReturn(Optional.of(order));
+        when(salesOrderRepositoryB2B.save(any(SalesOrder.class))).thenReturn(order);
 
         salesOrderService.cancelOrderByStaff(order.getOrderId(), "staff@ev.com");
 
         assertThat(order.getOrderStatus()).isEqualTo(OrderStatusB2B.CANCELLED);
-        verify(salesOrderRepository).save(order);
+        verify(salesOrderRepositoryB2B).save(order);
     }
 }
