@@ -15,7 +15,7 @@
 
     <groupId>com.ev</groupId>
     <artifactId>common-lib</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+    <version>1.0.0</version>
     <name>common-lib</name>
     <description>Common library for ev services</description>
     <packaging>jar</packaging>
@@ -86,7 +86,7 @@
                         </manifest>
                     </archive>
                 </configuration>
-            </plugin>
+            </plugin>0.1-SNAPSHOTz
         
             <plugin>
                 <groupId>org.jacoco</groupId>

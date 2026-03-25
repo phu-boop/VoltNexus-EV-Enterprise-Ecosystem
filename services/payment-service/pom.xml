@@ -8,7 +8,7 @@
 		<version>3.5.6</version> <relativePath/> </parent>
 	<groupId>com.ev</groupId>
 	<artifactId>payment-service</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>1.0.0</version>
 	<name>payment-service</name>
 	<description>Payment Service for EVDMS</description>
 	<properties>
@@ -58,7 +58,7 @@
 			<scope>runtime</scope>
 		</dependency>
 
-		<dependency>
+		<dependency>ố
 			<groupId>me.paulschwarz</groupId>
 			<artifactId>spring-dotenv</artifactId>
 			<version>3.0.0</version>
