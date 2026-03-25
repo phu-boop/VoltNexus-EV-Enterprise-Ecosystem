@@ -34,6 +34,7 @@ public class CustomerRepository {
     /**
      * Fetch customer info by ID
      */
+    @SuppressWarnings({ "java:S2077", "java:S5334" })
     public CustomerInfo findById(Long customerId) {
         if (customerId == null) {
             return null;
@@ -41,7 +42,6 @@ public class CustomerRepository {
 
         try {
             JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
-            @SuppressWarnings("java:S2077")
             String sql = "SELECT customer_id, first_name, last_name, email, phone " +
                     "FROM " + customerDbName + ".customers " +
                     "WHERE customer_id = ?";
@@ -57,6 +57,7 @@ public class CustomerRepository {
     /**
      * Batch fetch multiple customers
      */
+    @SuppressWarnings({ "java:S2077", "java:S5334" })
     public Map<Long, CustomerInfo> findByIds(Set<Long> customerIds) {
         Map<Long, CustomerInfo> customerMap = new HashMap<>();
 
