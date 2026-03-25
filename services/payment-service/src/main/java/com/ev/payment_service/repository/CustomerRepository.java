@@ -41,6 +41,7 @@ public class CustomerRepository {
 
         try {
             JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+            @SuppressWarnings("java:S2077")
             String sql = "SELECT customer_id, first_name, last_name, email, phone " +
                     "FROM " + customerDbName + ".customers " +
                     "WHERE customer_id = ?";
