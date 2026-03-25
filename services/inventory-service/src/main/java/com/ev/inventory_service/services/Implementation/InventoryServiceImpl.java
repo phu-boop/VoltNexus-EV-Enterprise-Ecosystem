@@ -812,7 +812,8 @@ public class InventoryServiceImpl implements InventoryService {
 
         if (vehiclesToReturn.isEmpty()) {
             // (Idempotent) Có thể đơn hàng đã được trả, hoặc chưa bao giờ được giao
-            log.warn("Không tìm thấy xe nào để trả về kho cho Order ID: {}", orderId);
+            log.warn("Không tìm thấy xe nào để trả về kho cho Order ID: {}",
+                    String.valueOf(orderId).replaceAll("[\n\r]", "_"));
             return;
         }
 

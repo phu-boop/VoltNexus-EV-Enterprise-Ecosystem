@@ -23,8 +23,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.UriComponentsBuilder;
 import java.util.concurrent.CompletableFuture;
-
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -39,7 +39,6 @@ import com.ev.sales_service.entity.Outbox;
 import com.ev.sales_service.entity.Notification;
 import com.ev.sales_service.enums.NotificationAudience;
 
-
 @Service
 @Transactional
 @Slf4j
@@ -53,7 +52,7 @@ public class SalesOrderServiceB2CImpl implements SalesOrderServiceB2C {
     private final EmailService emailService;
     private final CustomerClient customerClient;
     private final RestTemplate restTemplate;
-    
+
     // Injected for Outbox/Notification
     private final com.ev.sales_service.repository.OutboxRepository outboxRepository;
     private final com.ev.sales_service.repository.NotificationRepository notificationRepository;
@@ -70,7 +69,6 @@ public class SalesOrderServiceB2CImpl implements SalesOrderServiceB2C {
 
     @org.springframework.beans.factory.annotation.Value("${reporting-service.url}")
     private String reportingServiceUrl;
-
 
     @Override
     public SalesOrderB2CResponse createSalesOrderFromQuotation(UUID quotationId) {
@@ -128,9 +126,9 @@ public class SalesOrderServiceB2CImpl implements SalesOrderServiceB2C {
         // --- NOTIFICATION & EVENT ---
         try {
             // 1. Create Notification for Dealer
-            String message = String.format("Đơn hàng B2C mới (từ Báo giá). Khách: %s. Mã ĐH: %s", 
+            String message = String.format("Đơn hàng B2C mới (từ Báo giá). Khách: %s. Mã ĐH: %s",
                     savedSalesOrder.getCustomerName(), savedSalesOrder.getOrderId().toString().substring(0, 8));
-            
+
             Notification notification = Notification.builder()
                     .type("ORDER_PLACED")
                     .message(message)
@@ -140,9 +138,9 @@ public class SalesOrderServiceB2CImpl implements SalesOrderServiceB2C {
                     .isRead(false)
                     .createdAt(LocalDateTime.now())
                     .build();
-            
+
             notificationRepository.save(notification);
-            
+
             // 2. Publish B2COrderPlacedEvent to Outbox
             com.ev.common_lib.event.B2COrderPlacedEvent event = com.ev.common_lib.event.B2COrderPlacedEvent.builder()
                     .orderId(savedSalesOrder.getOrderId())
@@ -155,15 +153,14 @@ public class SalesOrderServiceB2CImpl implements SalesOrderServiceB2C {
                     .modelName(fetchModelName(quotation.getModelId()))
                     .variantName(fetchVariantName(quotation.getVariantId())) // Assuming helper exists or null
                     .build();
-            
+
             saveOutboxEvent(savedSalesOrder.getOrderId(), "SalesOrder", "B2COrderPlaced", event);
             log.info("Published B2COrderPlacedEvent for Order {}", savedSalesOrder.getOrderId());
-            
+
         } catch (Exception e) {
             log.error("Failed to publish B2C Order Event: {}", e.getMessage(), e);
             // Don't rollback transaction for notification failure
         }
-
 
         // Async Report
         String modelName = fetchModelName(quotation.getModelId());
@@ -181,7 +178,10 @@ public class SalesOrderServiceB2CImpl implements SalesOrderServiceB2C {
         // 1. Fetch PaymentRecord from payment-service
         Map<String, Object> paymentRecord;
         try {
-            String url = paymentServiceUrl + "/api/v1/payments/admin/payment-records/" + request.getRecordId();
+            String url = UriComponentsBuilder.fromHttpUrl(paymentServiceUrl)
+                    .path("/api/v1/payments/admin/payment-records/{recordId}")
+                    .buildAndExpand(request.getRecordId())
+                    .toUriString();
             log.info("Calling Payment Service: {}", url);
 
             // Create headers
@@ -255,7 +255,7 @@ public class SalesOrderServiceB2CImpl implements SalesOrderServiceB2C {
         String customerName = (String) paymentRecord.get("customerName");
         String customerPhone = (String) paymentRecord.get("customerPhone");
         String customerEmail = (String) paymentRecord.get("customerEmail");
-        
+
         // 3.5 Get Customer ID from PaymentRecord if available
         Long customerId = null;
         if (paymentRecord.get("customerId") != null) {
@@ -266,7 +266,7 @@ public class SalesOrderServiceB2CImpl implements SalesOrderServiceB2C {
                 log.warn("Failed to parse customerId from PaymentRecord: {}", e.getMessage());
             }
         }
-        
+
         // 4. Create Sales Order
         SalesOrder salesOrder = new SalesOrder();
         salesOrder.setOrderDate(LocalDateTime.now());
@@ -274,7 +274,7 @@ public class SalesOrderServiceB2CImpl implements SalesOrderServiceB2C {
         salesOrder.setPaymentStatus(PaymentStatus.PARTIALLY_PAID); // Đã cọc
         salesOrder.setTypeOder(SaleOderType.B2C);
         salesOrder.setPaymentMethod((String) paymentRecord.get("paymentMethodName"));
-        
+
         // Link to customer if customerId exists
         if (customerId != null) {
             salesOrder.setCustomerId(customerId);
@@ -356,7 +356,10 @@ public class SalesOrderServiceB2CImpl implements SalesOrderServiceB2C {
         if (imageUrl == null || imageUrl.isBlank() || "/placeholder-car.png".equals(imageUrl)) {
             // Try fetch from vehicle-service as fallback
             try {
-                String variantUrl = vehicleServiceUri + "/vehicle-catalog/variants/" + variantId;
+                String variantUrl = UriComponentsBuilder.fromHttpUrl(vehicleServiceUri)
+                        .path("/vehicle-catalog/variants/{variantId}")
+                        .buildAndExpand(variantId)
+                        .toUriString();
                 ApiRespond<Map<String, Object>> variantResponse = restTemplate.exchange(
                         variantUrl,
                         org.springframework.http.HttpMethod.GET,
@@ -396,21 +399,21 @@ public class SalesOrderServiceB2CImpl implements SalesOrderServiceB2C {
         // --- NOTIFICATION & EVENT ---
         try {
             // 1. Create Notification for Dealer
-            String message = String.format("Đơn hàng B2C mới (Booking). Khách: %s. Mã ĐH: %s", 
+            String message = String.format("Đơn hàng B2C mới (Booking). Khách: %s. Mã ĐH: %s",
                     savedOrder.getCustomerName(), savedOrder.getOrderId().toString().substring(0, 8));
-            
+
             Notification notification = Notification.builder()
                     .type("ORDER_PLACED")
                     .message(message)
                     .link("/evm/b2c-orders/" + savedOrder.getOrderId())
-                    .audience(NotificationAudience.DEALER) 
+                    .audience(NotificationAudience.DEALER)
                     .dealerId(savedOrder.getDealerId())
                     .isRead(false)
                     .createdAt(LocalDateTime.now())
                     .build();
-            
+
             notificationRepository.save(notification);
-            
+
             // 2. Publish B2COrderPlacedEvent to Outbox
             com.ev.common_lib.event.B2COrderPlacedEvent event = com.ev.common_lib.event.B2COrderPlacedEvent.builder()
                     .orderId(savedOrder.getOrderId())
@@ -423,14 +426,13 @@ public class SalesOrderServiceB2CImpl implements SalesOrderServiceB2C {
                     .modelName((String) metadata.get("modelName"))
                     .variantName((String) metadata.get("variantName"))
                     .build();
-            
+
             saveOutboxEvent(savedOrder.getOrderId(), "SalesOrder", "B2COrderPlaced", event);
             log.info("Published B2COrderPlacedEvent for Order {}", savedOrder.getOrderId());
-            
-        } catch (Exception e) {
-             log.error("Failed to publish B2C Order Event: {}", e.getMessage(), e);
-        }
 
+        } catch (Exception e) {
+            log.error("Failed to publish B2C Order Event: {}", e.getMessage(), e);
+        }
 
         // Async Report
         Long rptVariantId = variantId;
@@ -461,7 +463,10 @@ public class SalesOrderServiceB2CImpl implements SalesOrderServiceB2C {
             // Fetch showroom/dealer name
             String showroomName = "N/A";
             try {
-                String dealerUrl = dealerServiceUrl + "/api/dealers/" + savedOrder.getDealerId();
+                String dealerUrl = UriComponentsBuilder.fromHttpUrl(dealerServiceUrl)
+                        .path("/api/dealers/{dealerId}")
+                        .buildAndExpand(savedOrder.getDealerId())
+                        .toUriString();
                 ApiRespond<Map<String, Object>> dealerResponse = restTemplate.exchange(
                         dealerUrl,
                         org.springframework.http.HttpMethod.GET,
@@ -521,28 +526,28 @@ public class SalesOrderServiceB2CImpl implements SalesOrderServiceB2C {
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
     }
-    
+
     @Override
     public List<SalesOrderB2CResponse> getSalesOrdersByProfileId(String profileId) {
         log.info("Fetching orders for profileId: {}", profileId);
-        
+
         // Get customer by profileId from customer-service
         try {
             ApiRespond<CustomerResponse> customerRespond = customerClient.getCustomerByProfileId(profileId);
-            
+
             if (customerRespond == null || customerRespond.getData() == null) {
                 log.warn("No customer found for profileId: {}", profileId);
                 return List.of(); // Return empty list if customer not found
             }
-            
+
             CustomerResponse customer = customerRespond.getData();
             Long customerId = customer.getCustomerId();
-            
+
             log.info("Found customerId: {} for profileId: {}", customerId, profileId);
-            
+
             // Fetch orders by customerId
             return getSalesOrdersByCustomer(customerId);
-            
+
         } catch (Exception e) {
             log.error("Error fetching customer by profileId: {}", profileId, e);
             return List.of(); // Return empty list on error
@@ -871,13 +876,13 @@ public class SalesOrderServiceB2CImpl implements SalesOrderServiceB2C {
                 .orElseThrow(() -> new AppException(ErrorCode.SALES_ORDER_NOT_FOUND));
 
         if (salesOrder.getOrderStatusB2C() != OrderStatusB2C.PENDING &&
-            salesOrder.getOrderStatusB2C() != OrderStatusB2C.EDITED) {
+                salesOrder.getOrderStatusB2C() != OrderStatusB2C.EDITED) {
             throw new AppException(ErrorCode.INVALID_ORDER_STATUS);
         }
 
         salesOrder.setOrderStatusB2C(OrderStatusB2C.CANCELLED);
-        
-         // Add tracking entry
+
+        // Add tracking entry
         OrderTracking tracking = OrderTracking.builder()
                 .salesOrder(salesOrder)
                 .statusB2C(OrderTrackingStatus.CANCELLED)
@@ -922,17 +927,17 @@ public class SalesOrderServiceB2CImpl implements SalesOrderServiceB2C {
             throw new AppException(ErrorCode.DATABASE_ERROR);
         }
     }
-    
+
     // Add helper if missing
     private String fetchVariantName(Long variantId) {
-         try {
+        try {
             String url = vehicleServiceUri + "/vehicle-catalog/variants/" + variantId;
             ApiRespond<Map<String, Object>> response = restTemplate.exchange(
                     url,
                     org.springframework.http.HttpMethod.GET,
                     null,
-                    new org.springframework.core.ParameterizedTypeReference<ApiRespond<Map<String, Object>>>() {}
-            ).getBody();
+                    new org.springframework.core.ParameterizedTypeReference<ApiRespond<Map<String, Object>>>() {
+                    }).getBody();
             if (response != null && response.getData() != null) {
                 return (String) response.getData().get("versionName");
             }
@@ -1113,7 +1118,8 @@ public class SalesOrderServiceB2CImpl implements SalesOrderServiceB2C {
     public List<SalesOrderB2CResponse> getAllSalesForReporting(java.time.LocalDateTime since) {
         List<com.ev.sales_service.entity.SalesOrder> orders;
         if (since != null) {
-            // Assuming orderDate is the main timestamp. ideally we use updatedAt if available.
+            // Assuming orderDate is the main timestamp. ideally we use updatedAt if
+            // available.
             // Using orderDate for now as per entity definition availability.
             orders = salesOrderRepository.findAll().stream()
                     .filter(o -> o.getOrderDate().isAfter(since))
@@ -1121,14 +1127,15 @@ public class SalesOrderServiceB2CImpl implements SalesOrderServiceB2C {
         } else {
             orders = salesOrderRepository.findAll();
         }
-        
+
         return orders.stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
     }
 
     private String fetchModelName(Long modelId) {
-        if (modelId == null) return "Unknown Model";
+        if (modelId == null)
+            return "Unknown Model";
         try {
             String url = vehicleServiceUri + "/vehicle-catalog/models/" + modelId;
             ApiRespond<Map<String, Object>> response = restTemplate.exchange(
@@ -1151,7 +1158,7 @@ public class SalesOrderServiceB2CImpl implements SalesOrderServiceB2C {
         CompletableFuture.runAsync(() -> {
             try {
                 String url = reportingServiceUrl + "/api/reports/sales";
-                
+
                 Map<String, Object> body = new java.util.HashMap<>();
                 body.put("orderId", salesOrder.getOrderId());
                 body.put("totalAmount", salesOrder.getTotalAmount());
@@ -1160,7 +1167,7 @@ public class SalesOrderServiceB2CImpl implements SalesOrderServiceB2C {
                 body.put("variantId", variantId);
                 body.put("dealerName", dealerName);
                 // Region could be inferred from dealer or address
-                
+
                 log.info("Sending sales report for Order ID: {}", salesOrder.getOrderId());
                 restTemplate.postForObject(url, body, String.class);
             } catch (Exception e) {
