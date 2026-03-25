@@ -75,6 +75,19 @@ class ForecastAlgorithmServiceTest {
 
             assertThat(result).isZero();
         }
+
+        @Test
+        @DisplayName("Should return 0 when daysToAverage is zero or negative")
+        void forecastWithMovingAverage_WhenInvalidDays_ShouldReturnZero() {
+            when(salesHistoryRepository.findByVariantIdAndSaleDateBetween(eq(variantId), any(), any()))
+                    .thenReturn(historicalData);
+
+            Integer resultZero = forecastAlgorithmService.forecastWithMovingAverage(variantId, 0, 7);
+            Integer resultNegative = forecastAlgorithmService.forecastWithMovingAverage(variantId, -1, 7);
+
+            assertThat(resultZero).isZero();
+            assertThat(resultNegative).isZero();
+        }
     }
 
     @Nested
