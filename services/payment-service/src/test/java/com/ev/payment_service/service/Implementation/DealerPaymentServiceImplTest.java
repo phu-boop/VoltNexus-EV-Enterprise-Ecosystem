@@ -18,6 +18,7 @@ import org.springframework.web.client.RestTemplate;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -55,6 +56,9 @@ class DealerPaymentServiceImplTest {
 
     @BeforeEach
     void setUp() {
+        org.springframework.test.util.ReflectionTestUtils.setField(dealerPaymentService, "salesServiceUrl",
+                "http://sales-service");
+
         request = new CreateDealerInvoiceRequest();
         request.setDealerId(UUID.randomUUID());
         request.setAmount(new BigDecimal("1000000.00"));
@@ -73,6 +77,18 @@ class DealerPaymentServiceImplTest {
 
     @Test
     void createDealerInvoice_ShouldSaveAndReturnResponse() {
+        Map<String, Object> orderData = new java.util.HashMap<>();
+        orderData.put("typeOder", "B2B");
+        orderData.put("dealerId", request.getDealerId());
+
+        com.ev.common_lib.dto.respond.ApiRespond<Map<String, Object>> apiResponse = new com.ev.common_lib.dto.respond.ApiRespond<>();
+        apiResponse.setData(orderData);
+
+        when(restTemplate.exchange(anyString(), any(), any(),
+                any(org.springframework.core.ParameterizedTypeReference.class)))
+                .thenReturn(new org.springframework.http.ResponseEntity<>(apiResponse,
+                        org.springframework.http.HttpStatus.OK));
+
         when(dealerInvoiceRepository.save(any(DealerInvoice.class))).thenReturn(invoice);
         when(dealerPaymentMapper.toInvoiceResponse(any(DealerInvoice.class))).thenReturn(response);
 
