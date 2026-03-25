@@ -75,7 +75,7 @@ class PromotionControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.status").value("SUCCESS"))
+                .andExpect(jsonPath("$.code").value("1000"))
                 .andExpect(jsonPath("$.data.promotionName").value("National Day Sale"));
     }
 
@@ -86,7 +86,7 @@ class PromotionControllerTest {
 
         mockMvc.perform(get("/promotions/" + promotion.getPromotionId()))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.status").value("SUCCESS"))
+                .andExpect(jsonPath("$.code").value("1000"))
                 .andExpect(jsonPath("$.data.promotionId").value(promotion.getPromotionId().toString()));
     }
 
@@ -97,7 +97,7 @@ class PromotionControllerTest {
 
         mockMvc.perform(get("/promotions"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.status").value("SUCCESS"))
+                .andExpect(jsonPath("$.code").value("1000"))
                 .andExpect(jsonPath("$.data").isArray())
                 .andExpect(jsonPath("$.data[0].promotionName").value("National Day Sale"));
     }
@@ -106,6 +106,6 @@ class PromotionControllerTest {
     void deletePromotion_ShouldReturnSuccess() throws Exception {
         mockMvc.perform(delete("/promotions/" + promotion.getPromotionId()))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.status").value("SUCCESS"));
+                .andExpect(jsonPath("$.code").value("1000"));
     }
 }

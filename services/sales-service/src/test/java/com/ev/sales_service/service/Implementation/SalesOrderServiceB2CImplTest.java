@@ -2,6 +2,8 @@ package com.ev.sales_service.service.Implementation;
 
 import com.ev.sales_service.dto.response.SalesOrderB2CResponse;
 import com.ev.sales_service.entity.SalesOrder;
+import com.ev.sales_service.enums.OrderStatusB2C;
+import com.ev.sales_service.enums.SaleOderType;
 import com.ev.sales_service.repository.SalesOrderRepositoryB2C;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -31,6 +33,8 @@ class SalesOrderServiceB2CImplTest {
     void setUp() {
         order = new SalesOrder();
         order.setOrderId(UUID.randomUUID());
+        order.setTypeOder(SaleOderType.B2C);
+        order.setOrderStatusB2C(OrderStatusB2C.PENDING);
     }
 
     @Test
