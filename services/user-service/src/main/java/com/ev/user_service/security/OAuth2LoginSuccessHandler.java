@@ -125,7 +125,7 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
         // Set refresh token trong cookie HttpOnly
         Cookie cookie = new Cookie("refreshToken", refreshToken);
         cookie.setHttpOnly(true);
-        cookie.setSecure(false);
+        cookie.setSecure(true); // Important: Must be true in production (requires HTTPS)
         cookie.setPath("/");
         cookie.setMaxAge(30 * 24 * 60 * 60);
         response.addCookie(cookie);

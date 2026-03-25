@@ -40,6 +40,7 @@ public class SalesServiceApplication {
     }
 
     @Bean
+    @SuppressWarnings("java:S4502") // Disable CSRF check for stateless AI service APIs
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 
         http
