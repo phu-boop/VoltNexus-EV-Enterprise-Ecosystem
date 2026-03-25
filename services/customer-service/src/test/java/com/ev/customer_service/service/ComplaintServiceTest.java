@@ -134,6 +134,22 @@ class ComplaintServiceTest {
             assertThat(complaint.getFirstResponseAt()).isNotNull();
             verify(complaintRepository).save(complaint);
         }
+
+        @Test
+        @DisplayName("Phân công khi đã có firstResponseAt -> không cập nhật lại thời gian")
+        void assignComplaint_alreadyHasFirstResponse() {
+            LocalDateTime firstResponse = LocalDateTime.now().minusDays(1);
+            complaint.setFirstResponseAt(firstResponse);
+            AssignComplaintRequest request = new AssignComplaintRequest();
+            request.setAssignedStaffId("STAFF2");
+
+            when(complaintRepository.findById(1L)).thenReturn(Optional.of(complaint));
+            when(complaintRepository.save(any(Complaint.class))).thenReturn(complaint);
+
+            complaintService.assignComplaint(1L, request);
+
+            assertThat(complaint.getFirstResponseAt()).isEqualTo(firstResponse);
+        }
     }
 
     @Nested
@@ -193,6 +209,23 @@ class ComplaintServiceTest {
             verify(mailSender).send(any(MimeMessage.class));
             verify(complaintRepository, times(2)).save(complaint); // save in resolve + save in notification update
         }
+
+        @Test
+        @DisplayName("Gửi notification thất bại -> ném RuntimeException")
+        void resolveComplaint_notificationFailure() {
+            ResolveComplaintRequest request = new ResolveComplaintRequest();
+            request.setSendNotification(true);
+            request.setCustomerMessage("Fix");
+
+            when(complaintRepository.findById(1L)).thenReturn(Optional.of(complaint));
+            when(complaintRepository.save(any(Complaint.class))).thenReturn(complaint);
+            when(mailSender.createMimeMessage()).thenReturn(mock(MimeMessage.class));
+            doThrow(new RuntimeException("SMTP Error")).when(mailSender).send(any(MimeMessage.class));
+
+            assertThatThrownBy(() -> complaintService.resolveComplaint(1L, request))
+                    .isInstanceOf(RuntimeException.class)
+                    .hasMessageContaining("Không thể gửi email");
+        }
     }
 
     @Nested
@@ -222,6 +255,30 @@ class ComplaintServiceTest {
     }
 
     @Nested
+    @DisplayName("getComplaintById()")
+    class GetComplaintById {
+        @Test
+        @DisplayName("Lấy chi tiết khiếu nại thành công")
+        void getComplaintById_success() {
+            when(complaintRepository.findById(1L)).thenReturn(Optional.of(complaint));
+
+            ComplaintResponse result = complaintService.getComplaintById(1L);
+
+            assertThat(result).isNotNull();
+            assertThat(result.getComplaintId()).isEqualTo(1L);
+        }
+
+        @Test
+        @DisplayName("Lấy chi tiết khiếu nại không tồn tại -> ném ResourceNotFoundException")
+        void getComplaintById_notFound() {
+            when(complaintRepository.findById(99L)).thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> complaintService.getComplaintById(99L))
+                    .isInstanceOf(ResourceNotFoundException.class);
+        }
+    }
+
+    @Nested
     @DisplayName("Statistics and Filtering")
     class StatisticsAndFiltering {
         @Test
@@ -240,6 +297,42 @@ class ComplaintServiceTest {
             var result = complaintService.filterComplaints(filter);
 
             assertThat(result.getContent()).hasSize(1);
+        }
+
+        @Test
+        @DisplayName("Lọc khiếu nại với đầy đủ filter")
+        void filterComplaints_withAllFilters_success() {
+            ComplaintFilterRequest filter = new ComplaintFilterRequest();
+            filter.setDealerId("DEALER1");
+            filter.setStatus(ComplaintStatus.NEW);
+            filter.setComplaintType(ComplaintType.VEHICLE_QUALITY);
+            filter.setSeverity(ComplaintSeverity.HIGH);
+            filter.setAssignedStaffId("STAFF1");
+            filter.setCustomerId(1L);
+            filter.setStartDate(LocalDateTime.now().minusDays(30));
+            filter.setEndDate(LocalDateTime.now());
+            filter.setPage(0);
+            filter.setSize(10);
+            filter.setSortBy("createdAt");
+            filter.setSortDirection("ASC");
+
+            Page<Complaint> page = new PageImpl<>(List.of(complaint));
+            when(complaintRepository.findAll(any(Specification.class), any(PageRequest.class)))
+                    .thenReturn(page);
+
+            var result = complaintService.filterComplaints(filter);
+
+            assertThat(result.getContent()).hasSize(1);
+        }
+
+        @Test
+        @DisplayName("Lấy danh sách khiếu nại theo dealer thành công")
+        void getComplaintsByDealer_success() {
+            when(complaintRepository.findByDealerId("DEALER1")).thenReturn(List.of(complaint));
+
+            List<ComplaintResponse> result = complaintService.getComplaintsByDealer("DEALER1");
+
+            assertThat(result).hasSize(1);
         }
 
         @Test
@@ -273,26 +366,30 @@ class ComplaintServiceTest {
         }
     }
 
-    @Test
-    @DisplayName("Gửi notification thủ công thành công")
-    void sendNotificationToCustomer_manual_success() {
-        complaint.setCustomerMessage("Ready");
-        when(complaintRepository.findById(1L)).thenReturn(Optional.of(complaint));
-        when(mailSender.createMimeMessage()).thenReturn(mock(MimeMessage.class));
+    @Nested
+    @DisplayName("Notifications")
+    class Notifications {
+        @Test
+        @DisplayName("Gửi notification thủ công thành công")
+        void sendNotificationToCustomer_manual_success() {
+            complaint.setCustomerMessage("Ready");
+            when(complaintRepository.findById(1L)).thenReturn(Optional.of(complaint));
+            when(mailSender.createMimeMessage()).thenReturn(mock(MimeMessage.class));
 
-        complaintService.sendNotificationToCustomer(1L);
+            complaintService.sendNotificationToCustomer(1L);
 
-        verify(mailSender).send(any(MimeMessage.class));
-    }
+            verify(mailSender).send(any(MimeMessage.class));
+        }
 
-    @Test
-    @DisplayName("Gửi notification thủ công khi chưa có message -> ném IllegalStateException")
-    void sendNotificationToCustomer_noMessage_throwsException() {
-        complaint.setCustomerMessage(null);
-        complaint.setResolution(null);
-        when(complaintRepository.findById(1L)).thenReturn(Optional.of(complaint));
+        @Test
+        @DisplayName("Gửi notification thủ công khi chưa có message -> ném IllegalStateException")
+        void sendNotificationToCustomer_noMessage_throwsException() {
+            complaint.setCustomerMessage(null);
+            complaint.setResolution(null);
+            when(complaintRepository.findById(1L)).thenReturn(Optional.of(complaint));
 
-        assertThatThrownBy(() -> complaintService.sendNotificationToCustomer(1L))
-                .isInstanceOf(IllegalStateException.class);
+            assertThatThrownBy(() -> complaintService.sendNotificationToCustomer(1L))
+                    .isInstanceOf(IllegalStateException.class);
+        }
     }
 }

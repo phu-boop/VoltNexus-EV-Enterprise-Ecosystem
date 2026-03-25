@@ -233,7 +233,7 @@ public class TestController {
 
         @lombok.Data
         @lombok.Builder
-        private static class DataStatus {
+        static class DataStatus {
                 private long salesHistoryCount;
                 private long inventorySnapshotCount;
                 private boolean hasData;

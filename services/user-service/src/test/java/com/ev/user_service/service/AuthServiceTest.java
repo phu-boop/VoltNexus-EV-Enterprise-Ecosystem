@@ -320,12 +320,119 @@ class AuthServiceTest {
     }
 
     @Test
-    void testAddTokenBlacklist_Expired() {
-        HttpServletRequest request = mock(HttpServletRequest.class);
-        when(request.getHeader("Authorization")).thenReturn("Bearer access123");
-        when(request.getCookies()).thenReturn(new Cookie[] { new Cookie("refreshToken", "refresh123") });
+    void testGenerateRefreshToken_Success() {
+        User user = setupUser("CUSTOMER");
+        when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(user));
+        when(jwtUtil.generateRefreshToken(anyString(), anyString(), anyString(), anyString(), isNull()))
+                .thenReturn("refreshToken");
 
-        when(jwtUtil.validateToken("access123")).thenReturn(false);
+        String token = authService.generateRefreshToken("test@example.com");
+
+        assertEquals("refreshToken", token);
+    }
+
+    @Test
+    void testGenerateRefreshToken_UserNotFound() {
+        when(userRepository.findByEmail(anyString())).thenReturn(Optional.empty());
+        assertThrows(AppException.class, () -> authService.generateRefreshToken("none"));
+    }
+
+    @Test
+    void testChangePassword_Success() {
+        User user = setupUser("CUSTOMER");
+        when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches("old", "encodedPassword")).thenReturn(true);
+        when(passwordEncoder.encode("new")).thenReturn("encodedNew");
+
+        authService.changePassword("test@example.com", "old", "new");
+
+        assertEquals("encodedNew", user.getPassword());
+        verify(userRepository).save(user);
+    }
+
+    @Test
+    void testChangePassword_InvalidOldPassword() {
+        User user = setupUser("CUSTOMER");
+        when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches("wrong", "encodedPassword")).thenReturn(false);
+
+        AppException ex = assertThrows(AppException.class,
+                () -> authService.changePassword("test@example.com", "wrong", "new"));
+        assertEquals(ErrorCode.INVALID_PASSWORD, ex.getErrorCode());
+    }
+
+    @Test
+    void testSendOtp_UserNotFound() {
+        when(userRepository.findByEmail(anyString())).thenReturn(Optional.empty());
+        assertThrows(AppException.class, () -> authService.sendOtp("none"));
+    }
+
+    @Test
+    void testResetPassword_InvalidOtp() {
+        User user = setupUser("CUSTOMER");
+        when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(user));
+        when(redisService.validateOtp("test@example.com", "wrong")).thenReturn(false);
+
+        boolean result = authService.resetPassword("test@example.com", "wrong", "newPass");
+
+        assertFalse(result);
+        verify(userRepository, never()).save(any());
+    }
+
+    @Test
+    void testAddTokenBlacklist_NoAccessToken() {
+        HttpServletRequest request = mock(HttpServletRequest.class);
+        when(request.getHeader("Authorization")).thenReturn(null);
+        when(request.getCookies()).thenReturn(new Cookie[] { new Cookie("refreshToken", "refresh") });
+
         assertThrows(AppException.class, () -> authService.addTokenBlacklist(request));
+    }
+
+    @Test
+    void testAddTokenBlacklist_NoRefreshToken() {
+        HttpServletRequest request = mock(HttpServletRequest.class);
+        when(request.getHeader("Authorization")).thenReturn("Bearer access");
+        when(request.getCookies()).thenReturn(new Cookie[] {});
+
+        assertThrows(AppException.class, () -> authService.addTokenBlacklist(request));
+    }
+
+    @Test
+    void testRegisterCustomer_EmailExists() {
+        CustomerRegistrationRequest request = new CustomerRegistrationRequest();
+        request.setEmail("exists@example.com");
+        when(userRepository.existsByEmail("exists@example.com")).thenReturn(true);
+
+        AppException ex = assertThrows(AppException.class, () -> authService.registerCustomer(request));
+        assertEquals(ErrorCode.EMAIL_ALREADY_EXISTS, ex.getErrorCode());
+    }
+
+    @Test
+    void testRegisterCustomer_PhoneExists() {
+        CustomerRegistrationRequest request = new CustomerRegistrationRequest();
+        request.setEmail("new@example.com");
+        request.setPhone("12345");
+        when(userRepository.existsByEmail(anyString())).thenReturn(false);
+        when(userRepository.existsByPhone("12345")).thenReturn(true);
+
+        AppException ex = assertThrows(AppException.class, () -> authService.registerCustomer(request));
+        assertEquals(ErrorCode.PHONE_ALREADY_EXISTS, ex.getErrorCode());
+    }
+
+    @Test
+    void testNewRefreshTokenAndAccessToken_NoCookie() {
+        HttpServletRequest request = mock(HttpServletRequest.class);
+        when(request.getCookies()).thenReturn(null);
+
+        assertThrows(AppException.class, () -> authService.newRefreshTokenAndAccessToken(request));
+    }
+
+    @Test
+    void testNewRefreshTokenAndAccessToken_InvalidToken() {
+        HttpServletRequest request = mock(HttpServletRequest.class);
+        when(request.getCookies()).thenReturn(new Cookie[] { new Cookie("refreshToken", "invalid") });
+        when(jwtUtil.validateToken("invalid")).thenReturn(false);
+
+        assertThrows(AppException.class, () -> authService.newRefreshTokenAndAccessToken(request));
     }
 }

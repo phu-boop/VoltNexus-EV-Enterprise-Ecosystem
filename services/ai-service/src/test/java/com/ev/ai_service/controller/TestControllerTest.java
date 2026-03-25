@@ -74,4 +74,39 @@ class TestControllerTest {
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody().getData()).isNotNull();
     }
+
+    @Test
+    @DisplayName("Lấy trạng thái dữ liệu khi không có dữ liệu")
+    void getDataStatus_noData() {
+        when(salesHistoryRepository.count()).thenReturn(0L);
+        when(inventorySnapshotRepository.count()).thenReturn(0L);
+
+        var response = testController.getDataStatus();
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody().getData().toString()).contains("hasData=false");
+        assertThat(response.getBody().getData().toString()).contains("No data");
+    }
+
+    @Test
+    @DisplayName("Seed dữ liệu thất bại do lỗi database")
+    void seedData_exception() {
+        when(salesHistoryRepository.saveAll(anyList())).thenThrow(new RuntimeException("DB Error"));
+
+        ResponseEntity<ApiRespond<String>> response = testController.seedData(1, 1);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(response.getBody().getMessage()).contains("Failed to seed data");
+    }
+
+    @Test
+    @DisplayName("Xóa dữ liệu thất bại do lỗi database")
+    void clearData_exception() {
+        doThrow(new RuntimeException("DB Error")).when(salesHistoryRepository).deleteAll();
+
+        ResponseEntity<ApiRespond<String>> response = testController.clearData();
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(response.getBody().getMessage()).contains("Failed to clear data");
+    }
 }
