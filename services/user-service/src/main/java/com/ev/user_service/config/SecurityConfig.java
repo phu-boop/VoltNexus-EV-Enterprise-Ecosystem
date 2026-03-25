@@ -26,7 +26,7 @@ import com.ev.user_service.security.OAuth2LoginSuccessHandler;
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
-public class    SecurityConfig {
+public class SecurityConfig {
     private final OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
     private final String urlFrontend;
     private final RateLimitFilter rateLimitFilter;
@@ -50,7 +50,7 @@ public class    SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http, JwtAuthenticationFilter jwtAuthenticationFilter)
             throws Exception {
         http
-                .csrf(AbstractHttpConfigurer::disable)
+                // .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/", "/error", "/auth/**", "/auth/oauth2/success", "/users/**",
