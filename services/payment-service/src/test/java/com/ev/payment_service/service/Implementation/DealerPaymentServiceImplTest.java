@@ -17,6 +17,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.web.client.RestTemplate;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -57,37 +58,39 @@ class DealerPaymentServiceImplTest {
         request = new CreateDealerInvoiceRequest();
         request.setDealerId(UUID.randomUUID());
         request.setAmount(new BigDecimal("1000000.00"));
-        request.setDescription("Test Invoice");
+        request.setOrderId(UUID.randomUUID());
+        request.setDueDate(LocalDate.now().plusWeeks(1));
+        request.setNotes("Test Invoice");
 
         invoice = new DealerInvoice();
-        invoice.setInvoiceId(UUID.randomUUID());
-        invoice.setAmount(request.getAmount());
+        invoice.setDealerInvoiceId(UUID.randomUUID());
+        invoice.setTotalAmount(request.getAmount());
 
         response = new DealerInvoiceResponse();
-        response.setInvoiceId(invoice.getInvoiceId());
-        response.setAmount(invoice.getAmount());
+        response.setDealerInvoiceId(invoice.getDealerInvoiceId());
+        response.setTotalAmount(invoice.getTotalAmount());
     }
 
     @Test
-    void createInvoice_ShouldSaveAndReturnResponse() {
+    void createDealerInvoice_ShouldSaveAndReturnResponse() {
         when(dealerInvoiceRepository.save(any(DealerInvoice.class))).thenReturn(invoice);
         when(dealerPaymentMapper.toInvoiceResponse(any(DealerInvoice.class))).thenReturn(response);
 
-        DealerInvoiceResponse result = dealerPaymentService.createInvoice(request);
+        DealerInvoiceResponse result = dealerPaymentService.createDealerInvoice(request, UUID.randomUUID());
 
         assertThat(result).isNotNull();
-        assertThat(result.getAmount()).isEqualTo(request.getAmount());
+        assertThat(result.getTotalAmount()).isEqualTo(request.getAmount());
         verify(dealerInvoiceRepository).save(any(DealerInvoice.class));
     }
 
     @Test
-    void getInvoiceById_ShouldReturnInvoice() {
-        when(dealerInvoiceRepository.findById(invoice.getInvoiceId())).thenReturn(Optional.of(invoice));
+    void getDealerInvoiceById_ShouldReturnInvoice() {
+        when(dealerInvoiceRepository.findById(invoice.getDealerInvoiceId())).thenReturn(Optional.of(invoice));
         when(dealerPaymentMapper.toInvoiceResponse(invoice)).thenReturn(response);
 
-        DealerInvoiceResponse result = dealerPaymentService.getInvoiceById(invoice.getInvoiceId());
+        DealerInvoiceResponse result = dealerPaymentService.getDealerInvoiceById(invoice.getDealerInvoiceId());
 
         assertThat(result).isNotNull();
-        assertThat(result.getInvoiceId()).isEqualTo(invoice.getInvoiceId());
+        assertThat(result.getDealerInvoiceId()).isEqualTo(invoice.getDealerInvoiceId());
     }
 }

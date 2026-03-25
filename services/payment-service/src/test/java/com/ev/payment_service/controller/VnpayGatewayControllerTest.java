@@ -16,6 +16,7 @@ import java.math.BigDecimal;
 import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -46,7 +47,7 @@ class VnpayGatewayControllerTest {
 
     @Test
     void initiateB2CPayment_ShouldReturnUrl() throws Exception {
-        when(vnpayService.createVnpayPaymentUrl(any(), any(), any())).thenReturn("http://vnpay.url");
+        when(vnpayService.initiateB2CPayment(any(), anyString())).thenReturn("http://vnpay.url");
 
         mockMvc.perform(post("/api/v1/payments/gateway/initiate-b2c")
                 .contentType(MediaType.APPLICATION_JSON)

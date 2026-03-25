@@ -40,14 +40,6 @@ class ProductionSecurityConfigTest {
     void testSecurityFilterChain() throws Exception {
         // We need to ensure the lambdas passed to httpSecurity are actually executed
         doAnswer(invocation -> {
-            org.springframework.security.config.Customizer<org.springframework.security.config.annotation.web.configurers.CsrfConfigurer<HttpSecurity>> customizer = invocation
-                    .getArgument(0);
-            customizer.customize(
-                    mock(org.springframework.security.config.annotation.web.configurers.CsrfConfigurer.class));
-            return httpSecurity;
-        }).when(httpSecurity).csrf(any());
-
-        doAnswer(invocation -> {
             org.springframework.security.config.Customizer<org.springframework.security.config.annotation.web.configurers.AuthorizeHttpRequestsConfigurer<HttpSecurity>.AuthorizationManagerRequestMatcherRegistry> customizer = invocation
                     .getArgument(0);
             customizer.customize(mock(
