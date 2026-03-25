@@ -48,8 +48,7 @@ public class PromotionService {
                 saved.getDiscountRate(),
                 saved.getStartDate(),
                 saved.getEndDate(),
-                LocalDateTime.now()
-        );
+                LocalDateTime.now());
 
         try {
             String payload = objectMapper.writeValueAsString(event);
@@ -83,6 +82,7 @@ public class PromotionService {
         existing.setStartDate(promotion.getStartDate());
         existing.setEndDate(promotion.getEndDate());
         existing.setApplicableModelsJson(promotion.getApplicableModelsJson());
+        existing.setDealerIdJson(promotion.getDealerIdJson());
         existing.setStatus(promotion.getStatus());
         return promotionRepository.save(existing);
     }
@@ -97,16 +97,17 @@ public class PromotionService {
         return promotionRepository.findAll();
     }
 
-
     private void updatePromotionStatuses() {
         LocalDateTime now = LocalDateTime.now();
         List<Promotion> promotions = promotionRepository.findAll();
 
         for (Promotion promotion : promotions) {
-            if (promotion.getStartDate() == null || promotion.getEndDate() == null) continue;
+            if (promotion.getStartDate() == null || promotion.getEndDate() == null)
+                continue;
 
             // Bỏ qua nếu đã xóa
-            if (promotion.getStatus().equals(PromotionStatus.DELETED)) continue;
+            if (promotion.getStatus().equals(PromotionStatus.DELETED))
+                continue;
 
             // Hết hạn
             if (promotion.getEndDate().isBefore(now)) {
@@ -126,7 +127,6 @@ public class PromotionService {
         }
         promotionRepository.saveAll(promotions);
     }
-
 
     public void deletePromotion(UUID id) {
         Promotion promotion = promotionRepository.findById(id)
@@ -165,8 +165,10 @@ public class PromotionService {
                     LocalDateTime now = LocalDateTime.now();
 
                     // 2.1. Kiểm tra ngày (phòng trường hợp cron job chưa chạy)
-                    if (promo.getStartDate() != null && promo.getStartDate().isAfter(now)) return false;
-                    if (promo.getEndDate() != null && promo.getEndDate().isBefore(now)) return false;
+                    if (promo.getStartDate() != null && promo.getStartDate().isAfter(now))
+                        return false;
+                    if (promo.getEndDate() != null && promo.getEndDate().isBefore(now))
+                        return false;
 
                     // 2.2. Lọc theo Đại lý
                     boolean dealerMatch = false;
@@ -176,7 +178,8 @@ public class PromotionService {
                         dealerMatch = dealerJson.contains(dealerId.toString()); // KM riêng
                     }
 
-                    if (!dealerMatch) return false; // Nếu không khớp đại lý -> loại
+                    if (!dealerMatch)
+                        return false; // Nếu không khớp đại lý -> loại
 
                     // 2.3. Lọc theo Model (NẾU modelId được cung cấp)
                     if (modelId.isPresent()) {
@@ -206,8 +209,10 @@ public class PromotionService {
         return allActivePromotions.stream()
                 .filter(promo -> {
                     // Kiểm tra thời gian hợp lệ
-                    if (promo.getStartDate() != null && promo.getStartDate().isAfter(now)) return false;
-                    if (promo.getEndDate() != null && promo.getEndDate().isBefore(now)) return false;
+                    if (promo.getStartDate() != null && promo.getStartDate().isAfter(now))
+                        return false;
+                    if (promo.getEndDate() != null && promo.getEndDate().isBefore(now))
+                        return false;
 
                     // Nếu có modelId, lọc theo model
                     if (modelId.isPresent()) {
@@ -223,4 +228,3 @@ public class PromotionService {
     }
 
 }
-

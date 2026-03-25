@@ -66,7 +66,7 @@ public class DealerPaymentController {
                 principal != null ? principal.getProfileId() : "null");
 
         // Lấy staffId từ principal (ProfileId là userId từ user-service)
-        UUID staffId = principal.getProfileId();
+        UUID staffId = (principal != null) ? principal.getProfileId() : null;
         if (staffId == null) {
             log.error("[DealerPaymentController] StaffId is null in principal");
             throw new com.ev.common_lib.exception.AppException(com.ev.common_lib.exception.ErrorCode.BAD_REQUEST);
@@ -97,7 +97,7 @@ public class DealerPaymentController {
         // Lấy dealerId từ principal
         // ProfileId của DEALER_MANAGER là managerId, không phải dealerId
         // Cần gọi User Service để lấy dealerId từ managerId
-        UUID managerId = principal.getProfileId();
+        UUID managerId = (principal != null) ? principal.getProfileId() : null;
         if (managerId == null) {
             log.error("[DealerPaymentController] ManagerId is null in principal");
             throw new AppException(ErrorCode.BAD_REQUEST);
@@ -170,7 +170,7 @@ public class DealerPaymentController {
                 principal != null ? principal.getProfileId() : "null");
 
         // Lấy staffId từ principal (ProfileId là userId từ user-service)
-        UUID staffId = principal.getProfileId();
+        UUID staffId = (principal != null) ? principal.getProfileId() : null;
         if (staffId == null) {
             log.error("[DealerPaymentController] StaffId is null in principal");
             throw new com.ev.common_lib.exception.AppException(com.ev.common_lib.exception.ErrorCode.BAD_REQUEST);

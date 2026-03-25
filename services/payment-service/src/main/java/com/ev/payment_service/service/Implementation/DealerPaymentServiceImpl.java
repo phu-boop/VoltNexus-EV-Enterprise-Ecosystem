@@ -32,6 +32,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -51,17 +52,17 @@ public class DealerPaymentServiceImpl implements IDealerPaymentService {
     private final DealerDebtRecordRepository dealerDebtRecordRepository;
     private final PaymentMethodRepository paymentMethodRepository;
     private final DealerPaymentMapper dealerPaymentMapper;
-    
+
     // === DYNAMIC CALL (SỬ DỤNG RestTemplate) ===
     private final RestTemplate restTemplate;
-    
+
     @Value("${sales-service.url}") // Lấy URL từ application.properties
     private String salesServiceUrl;
 
     @Override
     @Transactional
     public DealerInvoiceResponse createDealerInvoice(CreateDealerInvoiceRequest request, UUID staffId) {
-        log.info("Creating dealer invoice - OrderId: {}, DealerId: {}, Amount: {}, StaffId: {}", 
+        log.info("Creating dealer invoice - OrderId: {}, DealerId: {}, Amount: {}, StaffId: {}",
                 request.getOrderId(), request.getDealerId(), request.getAmount(), staffId);
 
         // 1. Validate orderId
@@ -73,12 +74,13 @@ public class DealerPaymentServiceImpl implements IDealerPaymentService {
         // 2. Validate order từ Sales Service: phải là B2B order
         log.info("Validating order from sales-service - OrderId: {}", request.getOrderId());
         Map<String, Object> orderData = validateB2BOrder(request.getOrderId());
-        
+
         // 3. Validate order type phải là B2B
-        // typeOder có thể là String ("B2B"), Enum object, hoặc Map (nếu Jackson serialize enum)
+        // typeOder có thể là String ("B2B"), Enum object, hoặc Map (nếu Jackson
+        // serialize enum)
         Object typeOderObj = orderData.get("typeOder");
         String orderType = null;
-        
+
         if (typeOderObj == null) {
             log.error("Order typeOder is null - OrderId: {}", request.getOrderId());
             throw new AppException(ErrorCode.BAD_REQUEST);
@@ -101,15 +103,15 @@ public class DealerPaymentServiceImpl implements IDealerPaymentService {
             // Nếu là Enum object hoặc object khác, convert sang String
             orderType = typeOderObj.toString();
         }
-        
+
         if (orderType == null || !"B2B".equalsIgnoreCase(orderType)) {
-            log.error("Order is not B2B type - OrderId: {}, Type: {}, TypeObject: {}", 
+            log.error("Order is not B2B type - OrderId: {}, Type: {}, TypeObject: {}",
                     request.getOrderId(), orderType, typeOderObj);
             throw new AppException(ErrorCode.BAD_REQUEST);
         }
-        
+
         log.info("Order type validated - OrderId: {}, Type: {}", request.getOrderId(), orderType);
-        
+
         // 4. Validate dealerId từ order phải match với request
         Object dealerIdObj = orderData.get("dealerId");
         UUID orderDealerId = null;
@@ -119,7 +121,7 @@ public class DealerPaymentServiceImpl implements IDealerPaymentService {
             try {
                 orderDealerId = UUID.fromString((String) dealerIdObj);
             } catch (IllegalArgumentException e) {
-                log.error("Invalid dealerId format in order - OrderId: {}, DealerId: {}", 
+                log.error("Invalid dealerId format in order - OrderId: {}, DealerId: {}",
                         request.getOrderId(), dealerIdObj);
                 throw new AppException(ErrorCode.BAD_REQUEST);
             }
@@ -128,23 +130,23 @@ public class DealerPaymentServiceImpl implements IDealerPaymentService {
             try {
                 orderDealerId = UUID.fromString(dealerIdObj.toString());
             } catch (IllegalArgumentException e) {
-                log.error("Invalid dealerId format in order - OrderId: {}, DealerId: {}", 
+                log.error("Invalid dealerId format in order - OrderId: {}, DealerId: {}",
                         request.getOrderId(), dealerIdObj);
                 throw new AppException(ErrorCode.BAD_REQUEST);
             }
         }
-        
+
         if (orderDealerId == null) {
             log.error("Order does not have dealerId - OrderId: {}", request.getOrderId());
             throw new AppException(ErrorCode.BAD_REQUEST);
         }
-        
+
         if (!orderDealerId.equals(request.getDealerId())) {
-            log.error("DealerId mismatch - Request DealerId: {}, Order DealerId: {}", 
+            log.error("DealerId mismatch - Request DealerId: {}, Order DealerId: {}",
                     request.getDealerId(), orderDealerId);
             throw new AppException(ErrorCode.BAD_REQUEST);
         }
-        
+
         // 5. Validate amount (có thể lấy từ order nếu cần)
         if (request.getAmount() == null || request.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
             log.error("Invalid amount for invoice creation - Amount: {}", request.getAmount());
@@ -172,12 +174,13 @@ public class DealerPaymentServiceImpl implements IDealerPaymentService {
                 .build();
 
         DealerInvoice savedInvoice = dealerInvoiceRepository.save(invoice);
-        log.info("DealerInvoice created - InvoiceId: {}, OrderId: {}, DealerId: {}, Amount: {}", 
-                savedInvoice.getDealerInvoiceId(), request.getOrderId(), savedInvoice.getDealerId(), savedInvoice.getTotalAmount());
+        log.info("DealerInvoice created - InvoiceId: {}, OrderId: {}, DealerId: {}, Amount: {}",
+                savedInvoice.getDealerInvoiceId(), request.getOrderId(), savedInvoice.getDealerId(),
+                savedInvoice.getTotalAmount());
 
         // 8. Update (hoặc create) DealerDebtRecord
         updateDealerDebtRecord(savedInvoice.getDealerId(), savedInvoice.getTotalAmount(), BigDecimal.ZERO);
-        log.info("DealerDebtRecord updated - DealerId: {}, TotalOwed increased by: {}", 
+        log.info("DealerDebtRecord updated - DealerId: {}, TotalOwed increased by: {}",
                 savedInvoice.getDealerId(), savedInvoice.getTotalAmount());
 
         // 9. Update payment status của order trong Sales Service thành UNPAID
@@ -185,7 +188,7 @@ public class DealerPaymentServiceImpl implements IDealerPaymentService {
             updateOrderPaymentStatus(request.getOrderId(), "UNPAID");
             log.info("Order payment status updated to UNPAID - OrderId: {}", request.getOrderId());
         } catch (Exception e) {
-            log.error("Failed to update order payment status - OrderId: {}, Error: {}", 
+            log.error("Failed to update order payment status - OrderId: {}, Error: {}",
                     request.getOrderId(), e.getMessage(), e);
             // Không throw exception để không rollback invoice creation
             // Payment status có thể được cập nhật sau
@@ -196,41 +199,45 @@ public class DealerPaymentServiceImpl implements IDealerPaymentService {
         response.setTransactions(List.of()); // Chưa có transactions
         return response;
     }
-    
+
     /**
      * Validate order từ Sales Service: phải tồn tại và là B2B order
+     * 
      * @param orderId Order ID từ sales_db
      * @return Order data từ Sales Service
      * @throws AppException nếu order không tồn tại hoặc không phải B2B
      */
     private Map<String, Object> validateB2BOrder(UUID orderId) {
-        String url = salesServiceUrl + "/api/v1/sales-orders/" + orderId;
+        String url = UriComponentsBuilder.fromHttpUrl(salesServiceUrl)
+                .path("/api/v1/sales-orders/{orderId}")
+                .buildAndExpand(orderId)
+                .toUriString();
         log.info("Calling Sales Service to validate order - URL: {}", url);
 
-        ParameterizedTypeReference<ApiRespond<Map<String, Object>>> responseType =
-                new ParameterizedTypeReference<ApiRespond<Map<String, Object>>>() {};
-        
+        ParameterizedTypeReference<ApiRespond<Map<String, Object>>> responseType = new ParameterizedTypeReference<ApiRespond<Map<String, Object>>>() {
+        };
+
         try {
-            ResponseEntity<ApiRespond<Map<String, Object>>> response = 
-                    restTemplate.exchange(url, HttpMethod.GET, null, responseType);
-            
+            ResponseEntity<ApiRespond<Map<String, Object>>> response = restTemplate.exchange(url, HttpMethod.GET, null,
+                    responseType);
+
             ApiRespond<Map<String, Object>> apiResponse = response.getBody();
             if (apiResponse == null || apiResponse.getData() == null) {
                 log.error("Failed to fetch order from Sales Service - OrderId: {}, Response is null", orderId);
                 throw new AppException(ErrorCode.DOWNSTREAM_SERVICE_UNAVAILABLE);
             }
-            
+
             Map<String, Object> orderData = apiResponse.getData();
-            log.info("Order fetched from Sales Service - OrderId: {}, Type: {}, Type Class: {}", 
-                    orderId, orderData.get("typeOder"), 
+            log.info("Order fetched from Sales Service - OrderId: {}, Type: {}, Type Class: {}",
+                    orderId, orderData.get("typeOder"),
                     orderData.get("typeOder") != null ? orderData.get("typeOder").getClass().getName() : "null");
-            
+
             // Log toàn bộ orderData để debug
             log.debug("Full order data: {}", orderData);
-            
+
             return orderData;
         } catch (RestClientException e) {
-            log.error("Failed to fetch order from Sales Service - OrderId: {}, Error: {}", 
+            log.error("Failed to fetch order from Sales Service - OrderId: {}, Error: {}",
                     orderId, e.getMessage());
             throw new AppException(ErrorCode.DOWNSTREAM_SERVICE_UNAVAILABLE);
         }
@@ -239,7 +246,7 @@ public class DealerPaymentServiceImpl implements IDealerPaymentService {
     @Override
     @Transactional
     public DealerTransactionResponse payDealerInvoice(UUID invoiceId, PayDealerInvoiceRequest request, UUID dealerId) {
-        log.info("Paying dealer invoice - InvoiceId: {}, Amount: {}, DealerId: {}", 
+        log.info("Paying dealer invoice - InvoiceId: {}, Amount: {}, DealerId: {}",
                 invoiceId, request.getAmount(), dealerId);
 
         // 1. Validate invoice tồn tại
@@ -249,19 +256,19 @@ public class DealerPaymentServiceImpl implements IDealerPaymentService {
                     return new AppException(ErrorCode.DATA_NOT_FOUND);
                 });
 
-        // 2. Validate dealerId match (Dealer chỉ được thanh toán invoice của chính mình)
+        // 2. Validate dealerId match (Dealer chỉ được thanh toán invoice của chính
+        // mình)
         if (!invoice.getDealerId().equals(dealerId)) {
-            log.error("DealerId mismatch - Invoice DealerId: {}, Request DealerId: {}", 
+            log.error("DealerId mismatch - Invoice DealerId: {}, Request DealerId: {}",
                     invoice.getDealerId(), dealerId);
             throw new AppException(ErrorCode.FORBIDDEN);
         }
 
         // 3. Validate amount
         BigDecimal remainingAmount = invoice.getTotalAmount().subtract(
-                invoice.getAmountPaid() != null ? invoice.getAmountPaid() : BigDecimal.ZERO
-        );
+                invoice.getAmountPaid() != null ? invoice.getAmountPaid() : BigDecimal.ZERO);
         if (request.getAmount().compareTo(remainingAmount) > 0) {
-            log.error("Amount exceeds remaining amount - Request Amount: {}, Remaining Amount: {}", 
+            log.error("Amount exceeds remaining amount - Request Amount: {}, Remaining Amount: {}",
                     request.getAmount(), remainingAmount);
             throw new AppException(ErrorCode.BAD_REQUEST);
         }
@@ -275,14 +282,14 @@ public class DealerPaymentServiceImpl implements IDealerPaymentService {
 
         // Validate payment method scope (phải là B2B hoặc ALL)
         if (paymentMethod.getScope() != PaymentScope.B2B && paymentMethod.getScope() != PaymentScope.ALL) {
-            log.error("Payment method scope is not valid for B2B - MethodId: {}, Scope: {}", 
+            log.error("Payment method scope is not valid for B2B - MethodId: {}, Scope: {}",
                     request.getPaymentMethodId(), paymentMethod.getScope());
             throw new AppException(ErrorCode.BAD_REQUEST);
         }
 
         // 5. Tạo DealerTransaction
-        LocalDateTime transactionDate = request.getPaidDate() != null 
-                ? request.getPaidDate() 
+        LocalDateTime transactionDate = request.getPaidDate() != null
+                ? request.getPaidDate()
                 : LocalDateTime.now();
 
         // Xác định status dựa trên payment method type
@@ -308,12 +315,13 @@ public class DealerPaymentServiceImpl implements IDealerPaymentService {
                 .build();
 
         DealerTransaction savedTransaction = dealerTransactionRepository.save(transaction);
-        log.info("DealerTransaction created - TransactionId: {}, InvoiceId: {}, Amount: {}, Status: {}", 
+        log.info("DealerTransaction created - TransactionId: {}, InvoiceId: {}, Amount: {}, Status: {}",
                 savedTransaction.getDealerTransactionId(), invoiceId, request.getAmount(), transactionStatus);
 
         // 6. Nếu là GATEWAY (VNPAY), tự động cập nhật invoice và debt record
         if ("SUCCESS".equals(transactionStatus)) {
-            // Auto confirm logic (giống như confirmDealerTransaction nhưng không cần staffId)
+            // Auto confirm logic (giống như confirmDealerTransaction nhưng không cần
+            // staffId)
             BigDecimal newAmountPaid = invoice.getAmountPaid().add(savedTransaction.getAmount());
             invoice.setAmountPaid(newAmountPaid);
 
@@ -333,7 +341,7 @@ public class DealerPaymentServiceImpl implements IDealerPaymentService {
 
             // Update DealerDebtRecord
             updateDealerDebtRecord(invoice.getDealerId(), BigDecimal.ZERO, savedTransaction.getAmount());
-            log.info("DealerDebtRecord updated - DealerId: {}, TotalPaid increased by: {}", 
+            log.info("DealerDebtRecord updated - DealerId: {}, TotalPaid increased by: {}",
                     invoice.getDealerId(), savedTransaction.getAmount());
         }
 
@@ -355,7 +363,7 @@ public class DealerPaymentServiceImpl implements IDealerPaymentService {
 
         // 2. Validate status (phải là PENDING_CONFIRMATION)
         if (!"PENDING_CONFIRMATION".equals(transaction.getStatus())) {
-            log.error("Transaction status is not PENDING_CONFIRMATION - TransactionId: {}, Status: {}", 
+            log.error("Transaction status is not PENDING_CONFIRMATION - TransactionId: {}, Status: {}",
                     transactionId, transaction.getStatus());
             throw new AppException(ErrorCode.INVALID_STATE);
         }
@@ -383,11 +391,11 @@ public class DealerPaymentServiceImpl implements IDealerPaymentService {
             // Kiểm tra overdue trước khi set PARTIALLY_PAID
             if (invoice.getDueDate().isBefore(LocalDate.now())) {
                 invoice.setStatus("OVERDUE");
-                log.info("Invoice is overdue (partially paid) - InvoiceId: {}, AmountPaid: {}, TotalAmount: {}", 
+                log.info("Invoice is overdue (partially paid) - InvoiceId: {}, AmountPaid: {}, TotalAmount: {}",
                         invoice.getDealerInvoiceId(), newAmountPaid, invoice.getTotalAmount());
             } else {
                 invoice.setStatus("PARTIALLY_PAID");
-                log.info("Invoice partially paid - InvoiceId: {}, AmountPaid: {}, TotalAmount: {}", 
+                log.info("Invoice partially paid - InvoiceId: {}, AmountPaid: {}, TotalAmount: {}",
                         invoice.getDealerInvoiceId(), newAmountPaid, invoice.getTotalAmount());
             }
         } else {
@@ -402,7 +410,7 @@ public class DealerPaymentServiceImpl implements IDealerPaymentService {
 
         // 5. Update DealerDebtRecord
         updateDealerDebtRecord(invoice.getDealerId(), BigDecimal.ZERO, transaction.getAmount());
-        log.info("DealerDebtRecord updated - DealerId: {}, TotalPaid increased by: {}", 
+        log.info("DealerDebtRecord updated - DealerId: {}, TotalPaid increased by: {}",
                 invoice.getDealerId(), transaction.getAmount());
 
         // TODO: Emit event DEALER_PAYMENT_CONFIRMED (nếu cần)
@@ -439,22 +447,22 @@ public class DealerPaymentServiceImpl implements IDealerPaymentService {
     @Transactional(readOnly = true)
     public DealerInvoiceResponse getDealerInvoiceById(UUID invoiceId) {
         log.info("Getting dealer invoice by ID - InvoiceId: {}", invoiceId);
-        
+
         DealerInvoice invoice = dealerInvoiceRepository.findById(invoiceId)
                 .orElseThrow(() -> {
                     log.error("Invoice not found - InvoiceId: {}", invoiceId);
                     return new AppException(ErrorCode.DATA_NOT_FOUND);
                 });
-        
+
         // Map to response và load transactions
         DealerInvoiceResponse response = dealerPaymentMapper.toInvoiceResponse(invoice);
         List<DealerTransaction> transactions = dealerTransactionRepository
                 .findByDealerInvoice_DealerInvoiceId(invoice.getDealerInvoiceId());
         response.setTransactions(dealerPaymentMapper.toTransactionResponseList(transactions));
-        
+
         return response;
     }
-    
+
     @Override
     @Transactional(readOnly = true)
     public Page<DealerDebtSummaryResponse> getDealerDebtSummary(Pageable pageable) {
@@ -468,10 +476,10 @@ public class DealerPaymentServiceImpl implements IDealerPaymentService {
     @Transactional(readOnly = true)
     public boolean hasInvoiceForOrder(UUID orderId) {
         log.info("Checking if order has invoice - OrderId: {}", orderId);
-        
+
         Optional<DealerInvoice> invoice = dealerInvoiceRepository.findByOrderId(orderId.toString());
         boolean hasInvoice = invoice.isPresent();
-        
+
         log.info("Order {} has invoice: {}", orderId, hasInvoice);
         return hasInvoice;
     }
@@ -487,9 +495,12 @@ public class DealerPaymentServiceImpl implements IDealerPaymentService {
 
     /**
      * Helper method: Update DealerDebtRecord
-     * @param dealerId ID của đại lý
-     * @param amountToAddToOwed Số tiền cần thêm vào total_owed (dùng BigDecimal.ZERO nếu không thay đổi)
-     * @param amountToAddToPaid Số tiền cần thêm vào total_paid (dùng BigDecimal.ZERO nếu không thay đổi)
+     * 
+     * @param dealerId          ID của đại lý
+     * @param amountToAddToOwed Số tiền cần thêm vào total_owed (dùng
+     *                          BigDecimal.ZERO nếu không thay đổi)
+     * @param amountToAddToPaid Số tiền cần thêm vào total_paid (dùng
+     *                          BigDecimal.ZERO nếu không thay đổi)
      */
     private void updateDealerDebtRecord(UUID dealerId, BigDecimal amountToAddToOwed, BigDecimal amountToAddToPaid) {
         DealerDebtRecord debtRecord = dealerDebtRecordRepository.findById(dealerId)
@@ -513,23 +524,27 @@ public class DealerPaymentServiceImpl implements IDealerPaymentService {
 
     /**
      * Helper method: Update payment status của order trong Sales Service
-     * @param orderId Order ID từ sales_db
+     * 
+     * @param orderId       Order ID từ sales_db
      * @param paymentStatus Payment status (UNPAID, PARTIALLY_PAID, PAID, NONE)
      */
     private void updateOrderPaymentStatus(UUID orderId, String paymentStatus) {
-        String url = salesServiceUrl + "/api/v1/sales-orders/" + orderId + "/payment-status?status=" + paymentStatus;
-        log.info("Calling Sales Service to update payment status - URL: {}, OrderId: {}, Status: {}", 
+        String url = UriComponentsBuilder.fromHttpUrl(salesServiceUrl)
+                .path("/api/v1/sales-orders/{orderId}/payment-status")
+                .queryParam("status", paymentStatus)
+                .buildAndExpand(orderId)
+                .toUriString();
+        log.info("Calling Sales Service to update payment status - URL: {}, OrderId: {}, Status: {}",
                 url, orderId, paymentStatus);
 
         try {
             restTemplate.put(url, null);
-            log.info("Successfully updated payment status in Sales Service for orderId: {}, status: {}", 
+            log.info("Successfully updated payment status in Sales Service for orderId: {}, status: {}",
                     orderId, paymentStatus);
         } catch (RestClientException e) {
-            log.error("Failed to update payment status in Sales Service - OrderId: {}, Status: {}, Error: {}", 
+            log.error("Failed to update payment status in Sales Service - OrderId: {}, Status: {}, Error: {}",
                     orderId, paymentStatus, e.getMessage(), e);
             throw new AppException(ErrorCode.DOWNSTREAM_SERVICE_UNAVAILABLE);
         }
     }
 }
-
