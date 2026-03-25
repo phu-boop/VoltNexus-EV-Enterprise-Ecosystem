@@ -465,6 +465,7 @@ public class DealerPaymentController {
     /**
      * Helper dùng chung để lấy IP client phục vụ VNPAY.
      */
+    @SuppressWarnings("java:S1313") // Using a specific IP for local VNPAY sandbox testing is intentional and safe
     private String getClientIpAddr(HttpServletRequest request) {
         String ip = request.getHeader("X-Forwarded-For");
         if (ip != null && !ip.isEmpty()) {

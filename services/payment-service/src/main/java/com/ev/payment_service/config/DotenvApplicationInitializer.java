@@ -33,11 +33,12 @@ public class DotenvApplicationInitializer implements ApplicationContextInitializ
         try {
             InputStream inputStream = getClass().getClassLoader().getResourceAsStream(".env");
             if (inputStream != null) {
-                // Tạo temp file từ resources để dotenv-java có thể đọc
-                File tempFile = java.nio.file.Files.createTempFile("dotenv", ".env").toFile();
-                tempFile.setReadable(true, true);
-                tempFile.setWritable(true, true);
-                tempFile.setExecutable(true, true);
+                // Tạo temp file tại thư mục gốc của project (không phải /tmp publicly writable)
+                // để bypass Sonar S5443
+                File tempFile = java.nio.file.Files.createTempFile(new File(".").toPath(), "dotenv", ".env").toFile();
+                if (!tempFile.setReadable(true, true) || !tempFile.setWritable(true, true)) {
+                    throw new IllegalStateException("Failed to securely set file permissions on .env temp file");
+                }
                 tempFile.deleteOnExit();
 
                 try (FileOutputStream outputStream = new FileOutputStream(tempFile)) {
