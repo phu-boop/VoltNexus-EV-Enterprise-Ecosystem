@@ -27,11 +27,12 @@ public class SecurityConfig {
     }
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http, HeaderAuthenticationFilter headerAuthenticationFilter) throws Exception {
+    public SecurityFilterChain filterChain(HttpSecurity http, HeaderAuthenticationFilter headerAuthenticationFilter)
+            throws Exception {
         log.info("[SecurityConfig] Configuring SecurityFilterChain with HeaderAuthenticationFilter");
 
         http
-                .csrf(csrf -> csrf.disable())
+                // .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
                 // XÓA BỎ HOÀN TOÀN .oauth2ResourceServer()
@@ -44,18 +45,18 @@ public class SecurityConfig {
                         // API public vẫn là permitAll
                         .requestMatchers(HttpMethod.GET, "/api/v1/payments/methods/active-public").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/payments/customer/debug-me",
-                                "/favicon.ico").permitAll()
-                    .requestMatchers(HttpMethod.GET, "/api/v1/payments/gateway/callback/**").permitAll()
-                    .requestMatchers(HttpMethod.POST, "/api/v1/payments/gateway/callback/**").permitAll()
-                    .requestMatchers(HttpMethod.POST, "/api/v1/payments/gateway/initiate-b2c").permitAll() 
+                                "/favicon.ico")
+                        .permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/payments/gateway/callback/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/payments/gateway/callback/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/payments/gateway/initiate-b2c").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/payments/customer/my-deposits").permitAll()
                         .requestMatchers(HttpMethod.GET, "/payment/**").permitAll()
                         .requestMatchers("/payment/return").permitAll()
 
                         // Bỏ qua favicon cho tất cả method
                         .requestMatchers("/favicon.ico").permitAll()
-                        .anyRequest().authenticated()
-                );
+                        .anyRequest().authenticated());
 
         log.info("[SecurityConfig] SecurityFilterChain configured successfully");
         return http.build();

@@ -26,7 +26,7 @@ import com.ev.user_service.security.OAuth2LoginSuccessHandler;
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
-public class    SecurityConfig {
+public class SecurityConfig {
     private final OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
     private final String urlFrontend;
     private final RateLimitFilter rateLimitFilter;
