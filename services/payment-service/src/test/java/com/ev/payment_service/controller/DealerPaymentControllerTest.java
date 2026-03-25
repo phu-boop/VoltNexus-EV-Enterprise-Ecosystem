@@ -50,7 +50,7 @@ class DealerPaymentControllerTest {
         request = new CreateDealerInvoiceRequest();
         request.setDealerId(UUID.randomUUID());
         request.setAmount(new BigDecimal("5000000.00"));
-        request.setDescription("Monthly dealer fees");
+        request.setNotes("Monthly dealer fees");
 
         response = new DealerInvoiceResponse();
         response.setDealerInvoiceId(UUID.randomUUID());
@@ -60,7 +60,7 @@ class DealerPaymentControllerTest {
 
     @Test
     void createInvoice_ShouldReturnCreated() throws Exception {
-        when(dealerPaymentService.createInvoice(any())).thenReturn(response);
+        when(dealerPaymentService.createDealerInvoice(any(), any())).thenReturn(response);
 
         mockMvc.perform(post("/api/v1/payments/dealer/invoices")
                 .contentType(MediaType.APPLICATION_JSON)

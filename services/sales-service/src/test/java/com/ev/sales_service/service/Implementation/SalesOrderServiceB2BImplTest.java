@@ -48,7 +48,7 @@ class SalesOrderServiceB2BImplTest {
     void setUp() {
         order = new SalesOrder();
         order.setOrderId(UUID.randomUUID());
-        order.setOrderStatusB2B(OrderStatusB2B.PENDING);
+        order.setOrderStatus(OrderStatusB2B.PENDING);
     }
 
     @Test
@@ -62,13 +62,13 @@ class SalesOrderServiceB2BImplTest {
     }
 
     @Test
-    void cancelOrder_ShouldUpdateStatus() {
+    void cancelOrderByStaff_ShouldUpdateStatus() {
         when(salesOrderRepository.findById(order.getOrderId())).thenReturn(Optional.of(order));
         when(salesOrderRepository.save(any(SalesOrder.class))).thenReturn(order);
 
-        salesOrderService.cancelOrder(order.getOrderId(), "Test Reason");
+        salesOrderService.cancelOrderByStaff(order.getOrderId(), "staff@ev.com");
 
-        assertThat(order.getOrderStatusB2B()).isEqualTo(OrderStatusB2B.CANCELLED);
+        assertThat(order.getOrderStatus()).isEqualTo(OrderStatusB2B.CANCELLED);
         verify(salesOrderRepository).save(order);
     }
 }
