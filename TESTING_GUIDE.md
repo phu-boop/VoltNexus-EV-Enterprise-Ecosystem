@@ -87,4 +87,3 @@ class YourServiceTest {
 
 
 
-ssh -i voltnexus-key.pem ubuntu@54.242.202.65
