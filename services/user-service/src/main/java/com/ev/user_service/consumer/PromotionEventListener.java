@@ -14,7 +14,7 @@ public class PromotionEventListener {
     private final ObjectMapper objectMapper;
     private final NotificationService notificationService; // implement accordingly
 
-    @KafkaListener(topics = "promotion-events", groupId = "user-service-group")
+    @KafkaListener(topics = "promotion-events", groupId = "user-service-group", autoStartup = "${kafka.listener.enabled:false}")
     public void onMessage(String payload) {
         try {
             PromotionCreatedEvent event = objectMapper.readValue(payload, PromotionCreatedEvent.class);
@@ -30,7 +30,8 @@ public class PromotionEventListener {
             notificationService.sendPromotionFCM(event);
 
         } catch (Exception e) {
-            // log and rethrow if needed to let Kafka retry depending on your consumer settings
+            // log and rethrow if needed to let Kafka retry depending on your consumer
+            // settings
             throw new RuntimeException("Failed to process promotion event", e);
         }
     }
