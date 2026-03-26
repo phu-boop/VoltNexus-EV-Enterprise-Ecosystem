@@ -2,42 +2,60 @@ package com.ev.user_service.service;
 
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 
 @Component
 public class RedisService {
-     private final RedisTemplate<String, String> redisTemplate;
+    private static final Logger log = LoggerFactory.getLogger(RedisService.class);
+    private final RedisTemplate<String, String> redisTemplate;
 
-    //Service OTP
     public RedisService(RedisTemplate<String, String> redisTemplate) {
         this.redisTemplate = redisTemplate;
     }
 
     public void saveOtp(String email, String otp, long expiryMinutes) {
-        redisTemplate.opsForValue().set("OTP:" + email, otp, Duration.ofMinutes(1));
+        try {
+            redisTemplate.opsForValue().set("OTP:" + email, otp, Duration.ofMinutes(1));
+        } catch (Exception e) {
+            log.warn("Lỗi kết nối Redis (saveOtp): {}", e.getMessage());
+        }
     }
 
     public boolean validateOtp(String email, String otp) {
-        String storedOtp = redisTemplate.opsForValue().get("OTP:" + email);
-        return otp.equals(storedOtp);
+        try {
+            String storedOtp = redisTemplate.opsForValue().get("OTP:" + email);
+            return otp.equals(storedOtp);
+        } catch (Exception e) {
+            log.warn("Lỗi kết nối Redis (validateOtp): {}", e.getMessage());
+            return false;
+        }
     }
 
     public void removeOtp(String email) {
-        redisTemplate.delete("OTP:" + email);
+        try {
+            redisTemplate.delete("OTP:" + email);
+        } catch (Exception e) {
+            log.warn("Lỗi kết nối Redis (removeOtp): {}", e.getMessage());
+        }
     }
 
-
-
-
-    //Service Token(Add token in backlist)
     public void addToken(String token, long expirationSeconds) {
-        redisTemplate.opsForValue().set("LOGOUT:"+token, "logout", Duration.ofSeconds(expirationSeconds));
+        try {
+            redisTemplate.opsForValue().set("LOGOUT:" + token, "logout", Duration.ofSeconds(expirationSeconds));
+        } catch (Exception e) {
+            log.warn("Lỗi kết nối Redis (addToken): {}", e.getMessage());
+        }
     }
 
     public boolean contains(String token) {
-        return Boolean.TRUE.equals(redisTemplate.hasKey("LOGOUT:"+token));
+        try {
+            return Boolean.TRUE.equals(redisTemplate.hasKey("LOGOUT:" + token));
+        } catch (Exception e) {
+            log.warn("Lỗi kết nối Redis (contains token): {}", e.getMessage());
+            return false;
+        }
     }
-
-
 }
