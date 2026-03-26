@@ -11,7 +11,7 @@ public class PromotionEventConsumer {
 
     private final NotificationService notificationService;
 
-    @KafkaListener(topics = "promotion-events", groupId = "user-service-group")
+    @KafkaListener(topics = "promotion-events", groupId = "user-service-group", autoStartup = "${kafka.listener.enabled:true}")
     public void handlePromotionCreated(PromotionCreatedEvent event) {
         notificationService.sendPromotionFCM(event);
     }
