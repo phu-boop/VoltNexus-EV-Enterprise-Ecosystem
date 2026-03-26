@@ -15,7 +15,7 @@
 
     <groupId>com.ev</groupId>
     <artifactId>common-lib</artifactId>
-    <version>1.0.0</version>
+    <version>0.0.1-SNAPSHOT</version>
     <name>common-lib</name>
     <description>Common library for ev services</description>
     <packaging>jar</packaging>
@@ -79,7 +79,8 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
                 <version>3.2.2</version>
-                <configuration>
+                <configurati0.0.1-SNAPSHOT
+Error:  on>
                     <archive>
                         <manifest>
                             <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
