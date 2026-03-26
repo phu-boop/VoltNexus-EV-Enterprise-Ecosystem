@@ -70,7 +70,7 @@ Job này chỉ chạy **sau khi Stage 1 thành công** và **chỉ trên nhánh 
 | Bước | Tên | Mô tả |
 | :--- | :--- | :--- |
 | 1 | **Manual Approval Gate** | Sử dụng `environment: production` của GitHub → Yêu cầu reviewer phê duyệt thủ công trước khi tiếp tục |
-| 2 | **Deploy Production** | Placeholder cho lệnh `kubectl apply -Rf k8s/` lên cụm Production thật |
+| 2 | **Deploy Production** | Kết nối SSH vào máy chủ EC2, thực thi `docker compose pull && up -d` để chạy image mới nhất |
 | 3 | **Monitoring** | Placeholder kiểm tra sức khỏe qua Prometheus/Grafana |
 
 ---
@@ -107,5 +107,5 @@ Job này chỉ chạy **sau khi Stage 1 thành công** và **chỉ trên nhánh 
 | **Auto Jira Bug (API Failure)** | ✅ | Tạo Bug với độ ưu tiên Highest |
 | **E2E Test** | ⚠️ | Placeholder, chưa triển khai |
 | **Manual Approval (Production)** | ✅ | GitHub Environment Gate |
-| **Production Deployment** | ⚠️ | Placeholder, chưa kết nối cụm thật |
+| **Production Deployment** | ✅ | Đã cấu hình kết nối SSH tới EC2 chạy Docker Compose |
 | **Monitoring** | ⚠️ | Placeholder Prometheus/Grafana |
