@@ -93,19 +93,24 @@ Job này chỉ chạy **sau khi Stage 1 thành công** và **chỉ trên nhánh 
 
 ## Trạng thái tích hợp hệ thống
 
-| Tính năng | Trạng thái | Ghi chú |
-| :--- | :---: | :--- |
-| **Build Common Library** | ✅ | `mvn install -pl common-lib` |
-| **Backend Unit Test** | ✅ | `mvn test -DskipITs`, mock dependencies |
-| **Frontend Test** | ⚠️ | Đang bị comment trong pipeline |
-| **Static Analysis (SonarCloud)** | ✅ | Quality Gate blocking |
-| **Auto Jira Bug (SonarCloud)** | ✅ | Tạo Bug khi có BLOCKER/CRITICAL |
-| **Security Scan (Trivy)** | ✅ | Non-blocking FS scan |
-| **Docker Build/Push** | ✅ | 10 services, Docker Hub |
-| **Kubernetes Staging (Minikube)** | ✅ | Minikube-in-CI |
-| **API Test (Newman)** | ✅ | Report → GitHub Pages |
-| **Auto Jira Bug (API Failure)** | ✅ | Tạo Bug với độ ưu tiên Highest |
-| **E2E Test** | ⚠️ | Placeholder, chưa triển khai |
-| **Manual Approval (Production)** | ✅ | GitHub Environment Gate |
-| **Production Deployment** | ✅ | Đã cấu hình kết nối SSH tới EC2 chạy Docker Compose |
-| **Monitoring** | ⚠️ | Placeholder Prometheus/Grafana |
+| Tính năng | Trạng thái | Ghi chú | Công nghệ sử dụng |
+| :--- | :---: | :--- | :--- |
+| **Checkout Code** | ✅ | Lấy toàn bộ lịch sử mã nguồn | GitHub Actions (`actions/checkout@v4`), Git |
+| **Build Common Library** | ✅ | Biên dịch thư viện chung của hệ thống | Java 21, Maven (`actions/setup-java@v4`) |
+| **Backend Unit Test** | ✅ | Kiểm thử đơn vị cho toàn bộ microservices | Maven, Java (`mvn test`) |
+| **Frontend Test** | ⚠️ | Đang bị comment trong pipeline | npm, React/Vue (Dự kiến) |
+| **Static Analysis & Quality Gate** | ✅ | Quét chất lượng code, chặn pipeline nếu có lỗi | SonarCloud, Maven (`sonar-maven-plugin`) |
+| **Check SonarCloud Issues** | ✅ | Đếm và trích xuất số lượng lỗi Blocker/Critical | Bash, `curl`, `jq`, SonarCloud REST API |
+| **Auto Jira Bug (SonarCloud)** | ✅ | Tự động tạo Bug trên Jira khi có lỗi nghiêm trọng từ Sonar | Bash, `curl`, Jira REST API v2 |
+| **Security Scan** | ✅ | Kiểm tra lỗ hổng bảo mật tập tin hệ thống | Trivy (`aquasecurity/trivy-action`) |
+| **Kubernetes Staging (Minikube)** | ✅ | Khởi tạo cụm K8s nội bộ cho môi trường CI | Minikube (`medyagh/setup-minikube`) |
+| **Docker Build/Push** | ✅ | Build 10 services, đẩy lên registry Docker Hub | Docker, Minikube docker-env, Docker Hub |
+| **Deploy Staging: Secrets & K8s** | ✅ | Cấu hình Firebase & inject K8s Secrets từ GitHub Secrets | Bash, Kubernetes (`kubectl create secret`, `kubectl apply`) |
+| **Deploy Staging: Backend Services** | ✅ | Triển khai microservices lên K8s và chờ các pod sẵn sàng | Kubernetes (`kubectl apply`, `kubectl wait`) |
+| **API Test: Setup & Execution** | ✅ | Tải collection từ Postman, chạy và port-forward tới Gateway | Node.js, `npm`, Postman API, Newman CLI |
+| **Publish Test Report** | ✅ | Xuất kết quả kiểm thử tĩnh (HTML) | GitHub Pages (`git checkout gh-pages`) |
+| **Auto Jira Bug (API Failure)** | ✅ | Tạo thẻ lỗi ưu tiên Highest trên Jira nếu tích hợp API thất bại | Bash, `curl`, Jira REST API v2 |
+| **E2E Test** | ⚠️ | Khởi chạy kịch bản kiểm thử giao diện (hiện đang comment) | Playwright / Cypress (Dự kiến) |
+| **Manual Approval (Production)** | ✅ | Cổng xét duyệt thủ công trước khi đưa lên môi trường thật | GitHub Environments |
+| **Production Deployment** | ✅ | Kết nối SSH vào máy chủ, khởi động kiến trúc microservices | SSH (`appleboy/ssh-action`), Docker Compose, AWS EC2 |
+| **Monitoring** | ⚠️ | Giám sát sức khỏe hạ tầng qua API (hiện đang comment) | Prometheus / Grafana (Dự kiến) |

@@ -336,6 +336,7 @@ jobs:
             echo "--- Kết nối máy chủ EC2 thành công ---"
             echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
             cd /home/ubuntu
+            docker compose down
             echo "Kéo image cập nhật mới nhất từ Docker Hub..."
             docker compose pull
             echo "Tái khởi động kiến trúc microservices mới..."
