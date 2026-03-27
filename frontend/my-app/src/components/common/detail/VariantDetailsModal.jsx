@@ -6,7 +6,7 @@ const VariantDetailsModal = ({ isOpen, onClose, variant }) => {
   if (!isOpen || !variant) return null;
 
   return (
-    <div className="fixed inset-0 backdrop-blur-lg bg-opacity-60 z-50 flex justify-center items-center p-4 animate-in fade-in-0">
+    <div className="fixed inset-0 backdrop-blur-lg bg-opacity-10 z-50 flex justify-center items-center p-4 animate-in fade-in-0">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
         <div className="flex justify-between items-center p-6 border-b">
           <h2 className="text-2xl font-bold text-gray-800">
@@ -37,8 +37,8 @@ const VariantDetailsModal = ({ isOpen, onClose, variant }) => {
               <strong className="text-gray-600">Giá sỉ:</strong>{" "}
               {variant.wholesalePrice
                 ? `${Number(variant.wholesalePrice).toLocaleString(
-                    "vi-VN"
-                  )} VNĐ`
+                  "vi-VN"
+                )} VNĐ`
                 : "N/A"}
             </p>
             <p>

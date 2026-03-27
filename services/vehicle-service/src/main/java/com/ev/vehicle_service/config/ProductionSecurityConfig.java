@@ -24,7 +24,7 @@ public class ProductionSecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 
         http
-                // .csrf(csrf -> csrf.disable())
+                .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.GET, "/vehicle-models/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/vehicle-models")

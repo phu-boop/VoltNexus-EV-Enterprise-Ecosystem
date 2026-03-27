@@ -47,7 +47,7 @@ const B2BOrderDetailsModal = ({ isOpen, onClose, order, dealerMap }) => {
     `Đại lý (ID: ${order.dealerId.substring(0, 8)}...)`;
 
   return (
-    <div className="fixed inset-0 backdrop-blur-lg bg-opacity-60 z-50 flex justify-center items-center p-4 animate-in fade-in-0">
+    <div className="fixed inset-0 backdrop-blur-lg bg-opacity-10 z-50 flex justify-center items-center p-4 animate-in fade-in-0">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col">
         {/* Header */}
         <div className="flex justify-between items-center p-6 border-b">

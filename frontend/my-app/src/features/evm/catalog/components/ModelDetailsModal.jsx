@@ -1,187 +1,155 @@
-// Hiển thị thông tin chi tiết của xe, bao gồm cả các phiên bản (variants) và thông số kỹ thuật một cách rõ ràng.
-import React from "react";
-import { FiX, FiInfo, FiLayers, FiTag, FiPlus } from "react-icons/fi";
+import React from 'react';
+import { Drawer, Descriptions, Tag, Typography, Table, Image, Space, Badge } from 'antd';
+import { CarOutlined, SettingOutlined, AppstoreOutlined } from '@ant-design/icons';
+
+const { Title, Text } = Typography;
+
+const STATUS_COLORS = {
+  COMING_SOON: "orange",
+  IN_PRODUCTION: "green",
+  DISCONTINUED: "red",
+};
+
+const STATUS_LABELS = {
+  COMING_SOON: "Sắp ra mắt",
+  IN_PRODUCTION: "Đang sản xuất",
+  DISCONTINUED: "Ngừng sản xuất",
+};
 
 const ModelDetailsModal = ({ isOpen, onClose, model }) => {
-  if (!isOpen || !model) return null;
+  if (!model) return null;
 
-  let specifications = {};
-  try {
-    // Parse chuỗi JSON để hiển thị
-    if (model.specificationsJson) {
-      specifications = JSON.parse(model.specificationsJson);
-    }
-  } catch (error) {
-    console.error("Lỗi parse JSON:", error);
-    specifications = { Error: "Dữ liệu thông số kỹ thuật bị lỗi." };
-  }
+  const variantColumns = [
+    {
+      title: 'Tên Phiên Bản',
+      dataIndex: 'versionName',
+      key: 'versionName',
+      render: (text) => <Text strong className="text-blue-800">{text}</Text>,
+    },
+    {
+      title: 'Màu Sắc',
+      dataIndex: 'color',
+      key: 'color',
+      render: (color) => <Tag color="blue" className="rounded-full shadow-sm">{color}</Tag>,
+    },
+    {
+      title: 'Mã SKU',
+      dataIndex: 'skuCode',
+      key: 'skuCode',
+      render: (sku) => <Text code className="bg-gray-100 text-gray-700">{sku}</Text>,
+    },
+    {
+      title: 'Giá Bán (VNĐ)',
+      dataIndex: 'price',
+      key: 'price',
+      render: (price) => <Text className="text-red-600 font-bold">{Number(price).toLocaleString("vi-VN")} đ</Text>,
+    },
+  ];
 
   return (
-    <div className="fixed inset-0 backdrop-blur-lg bg-opacity-60 z-50 flex justify-center items-center p-4 animate-in fade-in-0">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col">
-        <div className="flex justify-between items-center p-6 border-b">
-          <h2 className="text-2xl font-bold text-gray-800">
-            Chi tiết: {model.brand} {model.modelName}
-          </h2>
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-full"
-          >
-            <FiX />
-          </button>
-        </div>
-
-        <div className="flex-1 overflow-y-auto p-6 space-y-6">
-          {/* Thông tin chung */}
-          <div className="p-4 border rounded-lg">
-            <h3 className="font-semibold text-lg mb-4 flex items-center">
-              <FiInfo className="mr-2 text-blue-500" />
-              Thông tin chung
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-              <p>
-                <strong className="text-gray-600">ID:</strong> {model.modelId}
-              </p>
-              <p>
-                <strong className="text-gray-600">Hãng xe:</strong>{" "}
-                {model.brand}
-              </p>
-              <p>
-                <strong className="text-gray-600">Tên mẫu xe:</strong>{" "}
-                {model.modelName}
-              </p>
-              <div className="flex items-center">
-                <strong className="text-gray-600 mr-2">Trạng thái:</strong>
-                <span
-                  className={`px-2 py-1 text-xs font-bold rounded-full ${
-                    model.status === "IN_PRODUCTION"
-                      ? "bg-green-100 text-green-800"
-                      : model.status === "COMING_SOON"
-                      ? "bg-blue-100 text-blue-800"
-                      : "bg-gray-100 text-gray-800"
-                  }`}
-                >
-                  {model.status === "IN_PRODUCTION"
-                    ? "Đang sản xuất"
-                    : model.status === "COMING_SOON"
-                    ? "Sắp ra mắt"
-                    : "Ngừng sản xuất"}
-                </span>
-              </div>
-              <div className="col-span-full">
-                <p>
-                  <strong className="text-gray-600">Ảnh đại diện:</strong>
-                </p>
-                <img
-                  src={model.thumbnailUrl}
-                  alt={`${model.brand} ${model.modelName}`}
-                  className="mt-2 h-32 w-auto rounded-lg object-cover"
-                />
-              </div>
+    <Drawer
+      title={<Space><CarOutlined className="text-blue-600 text-xl" /><span className="text-xl font-extrabold text-gray-900 tracking-tight">Chi tiết Mẫu Xe</span></Space>}
+      width={800}
+      placement="right"
+      onClose={onClose}
+      open={isOpen}
+      styles={{ body: { paddingBottom: 80, backgroundColor: '#fcfcfc' }, header: { borderBottom: '1px solid #f0f0f0', backgroundColor: '#ffffff' } }}
+    >
+      <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 mb-6 animate-in fade-in-0 duration-300">
+        <div className="flex flex-col md:flex-row gap-8 items-start">
+          {model.thumbnailUrl ? (
+            <div className="w-full md:w-5/12 flex-shrink-0 bg-gray-50 rounded-2xl p-2 border border-gray-100 flex items-center justify-center">
+              <Image
+                src={model.thumbnailUrl}
+                alt={model.modelName}
+                className="rounded-xl object-contain mix-blend-multiply"
+                style={{ maxHeight: '200px' }}
+              />
             </div>
-          </div>
-
-          {/* Thông số kỹ thuật */}
-          <div className="p-4 border rounded-lg">
-            <h3 className="font-semibold text-lg mb-4 flex items-center">
-              <FiTag className="mr-2 text-green-500" />
-              Thông số kỹ thuật chính
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2 text-sm">
-              <p>
-                <strong className="text-gray-600">Quãng đường cơ bản:</strong>{" "}
-                {model.baseRangeKm ? `${model.baseRangeKm} km` : "N/A"}
-              </p>
-              <p>
-                <strong className="text-gray-600">Công suất cơ bản:</strong>{" "}
-                {model.baseMotorPower ? `${model.baseMotorPower} kW` : "N/A"}
-              </p>
-              <p>
-                <strong className="text-gray-600">
-                  Dung lượng pin cơ bản:
-                </strong>{" "}
-                {model.baseBatteryCapacity
-                  ? `${model.baseBatteryCapacity} kWh`
-                  : "N/A"}
-              </p>
-              <p>
-                <strong className="text-gray-600">Thời gian sạc cơ bản:</strong>{" "}
-                {model.baseChargingTime
-                  ? `${model.baseChargingTime} giờ`
-                  : "N/A"}
-              </p>
+          ) : (
+            <div className="w-full md:w-5/12 aspect-[4/3] bg-gray-50 rounded-2xl flex items-center justify-center border border-dashed border-gray-200">
+              <Text type="secondary" className="font-medium">Chưa có hình ảnh</Text>
             </div>
-          </div>
+          )}
 
-          {/* Các phiên bản */}
-          <div className="p-4 border rounded-lg">
-            <h3 className="font-semibold text-lg mb-4 flex items-center">
-              <FiLayers className="mr-2 text-purple-500" />
-              Các phiên bản
-            </h3>
-            <div className="space-y-4">
-              {model.variants && model.variants.length > 0 ? (
-                model.variants.map((variant) => (
-                  <div
-                    key={variant.variantId}
-                    className="p-3 border-t first:border-t-0"
-                  >
-                    <p className="font-bold">
-                      {variant.versionName} - {variant.color}
-                    </p>
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mt-2 text-sm">
-                      <p>
-                        <strong className="text-gray-600">Giá:</strong>{" "}
-                        {Number(variant.price).toLocaleString("vi-VN")} VNĐ
-                      </p>
-                      <p>
-                        <strong className="text-gray-600">SKU:</strong>{" "}
-                        {variant.skuCode}
-                      </p>
-                      <p>
-                        <strong className="text-gray-600">ID Phiên bản:</strong>{" "}
-                        {variant.variantId}
-                      </p>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <p className="text-gray-500">
-                  Chưa có phiên bản nào cho mẫu xe này.
-                </p>
-              )}
-            </div>
-          </div>
-          {/* Thông số kỹ thuật MỞ RỘNG */}
-          {model.extendedSpecs &&
-            Object.keys(model.extendedSpecs).length > 0 && (
-              <div className="p-4 border rounded-lg">
-                <h3 className="font-semibold text-lg mb-4 flex items-center">
-                  <FiPlus className="mr-2 text-indigo-500" />
-                  Thông số mở rộng
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2 text-sm">
-                  {Object.entries(model.extendedSpecs).map(([key, value]) => (
-                    <p key={key}>
-                      <strong className="text-gray-600">{key}:</strong>{" "}
-                      {String(value)}
-                    </p>
-                  ))}
-                </div>
+          <div className="w-full md:w-7/12">
+            <div className="mb-6 flex flex-col items-start justify-between">
+              <div className="flex items-center justify-between w-full mb-2">
+                <Text className="text-blue-600 tracking-widest text-xs font-bold uppercase">{model.brand}</Text>
+                <Tag color={STATUS_COLORS[model.status] || 'default'} className="m-0 px-3 py-1 text-xs font-bold rounded-full border-none shadow-sm uppercase tracking-wide">
+                  {STATUS_LABELS[model.status] || model.status}
+                </Tag>
               </div>
-            )}
-        </div>
+              <Title level={2} className="mt-0 mb-1 text-gray-900 font-extrabold">{model.modelName}</Title>
+              <Text type="secondary" className="text-xs font-mono bg-gray-100 px-2 py-1 rounded-md mt-1">ID: {model.modelId}</Text>
+            </div>
 
-        <div className="p-4 border-t bg-gray-50 flex justify-end">
-          <button
-            onClick={onClose}
-            className="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition"
-          >
-            Đóng
-          </button>
+            <Descriptions column={1} size="small" className="mt-4">
+              <Descriptions.Item label={<Text className="text-gray-500 font-medium">Chi tiết mẫu xe</Text>}>
+                Cấu hình hệ thống mặc định cho xe EVM.
+              </Descriptions.Item>
+            </Descriptions>
+          </div>
         </div>
       </div>
-    </div>
+
+      <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 mb-6 animate-in slide-in-from-bottom-4 duration-500">
+        <Title level={5} className="mb-5 flex items-center text-gray-800 font-bold">
+          <SettingOutlined className="mr-2 text-green-500" /> Thông số kỹ thuật cơ bản
+        </Title>
+        <Descriptions bordered column={{ xxl: 2, xl: 2, lg: 2, md: 1, sm: 1, xs: 1 }} size="middle" labelStyle={{ backgroundColor: '#fafafa', fontWeight: 600, color: '#4b5563' }} contentStyle={{ backgroundColor: '#ffffff', color: '#111827' }} className="rounded-xl overflow-hidden shadow-sm">
+          <Descriptions.Item label="Quãng đường">
+            {model.baseRangeKm ? <Text strong>{model.baseRangeKm} km</Text> : <Text type="secondary">N/A</Text>}
+          </Descriptions.Item>
+          <Descriptions.Item label="Công suất">
+            {model.baseMotorPower ? <Text strong>{model.baseMotorPower} kW</Text> : <Text type="secondary">N/A</Text>}
+          </Descriptions.Item>
+          <Descriptions.Item label="Dung lượng Pin">
+            {model.baseBatteryCapacity ? <Text strong>{model.baseBatteryCapacity} kWh</Text> : <Text type="secondary">N/A</Text>}
+          </Descriptions.Item>
+          <Descriptions.Item label="Thời gian sạc">
+            {model.baseChargingTime ? <Text strong>{model.baseChargingTime} giờ</Text> : <Text type="secondary">N/A</Text>}
+          </Descriptions.Item>
+        </Descriptions>
+      </div>
+
+      {model.extendedSpecs && Object.keys(model.extendedSpecs).length > 0 && (
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 mb-6 animate-in slide-in-from-bottom-6 duration-500">
+          <Title level={5} className="mb-5 flex items-center text-gray-800 font-bold">
+            <AppstoreOutlined className="mr-2 text-indigo-500" /> Thông số kỹ thuật mở rộng
+          </Title>
+          <Descriptions bordered column={1} size="small" labelStyle={{ backgroundColor: '#fafafa', fontWeight: 600, width: '40%', color: '#4b5563' }} contentStyle={{ backgroundColor: '#ffffff', color: '#111827' }} className="rounded-xl overflow-hidden shadow-sm">
+            {Object.entries(model.extendedSpecs).map(([key, value]) => (
+              <Descriptions.Item key={key} label={key}>
+                {String(value)}
+              </Descriptions.Item>
+            ))}
+          </Descriptions>
+        </div>
+      )}
+
+      <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 animate-in slide-in-from-bottom-8 duration-500">
+        <Title level={5} className="mb-5 flex items-center text-gray-800 font-bold">
+          <Badge status="processing" className="mr-2" /> Các Phiên Bản (Variants)
+        </Title>
+        {model.variants && model.variants.length > 0 ? (
+          <div className="border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+            <Table
+              columns={variantColumns}
+              dataSource={model.variants}
+              rowKey="variantId"
+              pagination={false}
+              size="middle"
+              className="m-0"
+            />
+          </div>
+        ) : (
+          <div className="p-10 text-center bg-gray-50 rounded-2xl border border-dashed border-gray-300">
+            <Text type="secondary" className="text-base">Chưa có phiên bản nào cho mẫu xe này.</Text>
+          </div>
+        )}
+      </div>
+    </Drawer>
   );
 };
 
