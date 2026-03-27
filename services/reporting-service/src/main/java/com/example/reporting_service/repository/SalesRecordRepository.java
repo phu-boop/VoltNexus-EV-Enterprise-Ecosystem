@@ -10,6 +10,7 @@ import java.util.UUID;
 @Repository
 public interface SalesRecordRepository extends JpaRepository<SalesRecord, UUID> {
     List<SalesRecord> findByModelName(String modelName);
+    boolean existsByOrderId(UUID orderId);
     @org.springframework.data.jpa.repository.Query("SELECT MAX(s.orderDate) FROM SalesRecord s")
     java.time.LocalDateTime findMaxOrderDate();
 }
