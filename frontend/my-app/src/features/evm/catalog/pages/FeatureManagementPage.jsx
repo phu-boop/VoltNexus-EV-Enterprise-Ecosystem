@@ -18,6 +18,7 @@ import {
   getAllFeatures,
   deleteFeature,
 } from "../services/vehicleCatalogService";
+import { Spin } from "antd";
 import FeatureFormModal from "../components/FeatureFormModal";
 import ConfirmationModal from "../components/ConfirmationModal";
 
@@ -103,14 +104,14 @@ const FeatureManagementPage = () => {
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
         >
-          <div className="flex items-center gap-2 text-blue-600 font-semibold mb-2">
-            <Cpu className="w-5 h-5" />
-            <span className="uppercase tracking-widest text-xs">Thư viện Thành phần</span>
+          <div className="flex items-center gap-1.5 text-indigo-600 font-semibold mb-1.5">
+            <Cpu className="w-4 h-4" />
+            <span className="uppercase tracking-widest text-[9px] font-black italic">Hệ thống & Thành phần v2.0</span>
           </div>
-          <h1 className="text-4xl font-extrabold text-neutral-900 tracking-tight">
-            Kho tính năng
+          <h1 className="text-2xl font-black text-slate-900 tracking-tight">
+            Kho tính năng <span className="text-indigo-600 font-thin italic -ml-1">Catalog</span>
           </h1>
-          <p className="text-neutral-500 mt-2">Quản lý thư viện toàn cầu về các tính năng kỹ thuật và thông số có sẵn cho xe.</p>
+          <p className="text-neutral-400 mt-1 text-sm italic font-medium">Quản lý thư viện tính năng kỹ thuật và thông số xe.</p>
         </motion.div>
 
         <motion.div
@@ -127,9 +128,9 @@ const FeatureManagementPage = () => {
           </button>
           <button
             onClick={handleOpenAddForm}
-            className="flex items-center gap-2 bg-blue-600 text-white px-6 py-3.5 rounded-2xl shadow-lg hover:bg-blue-700 transition-all font-bold active:scale-95"
+            className="flex items-center gap-2 bg-indigo-600 text-white px-6 py-3 rounded-xl shadow-xl shadow-indigo-100 hover:bg-indigo-700 transition-all font-black text-xs active:scale-95 italic uppercase tracking-widest"
           >
-            <Plus className="w-5 h-5" /> Thêm tính năng mới
+            <Plus className="w-4 h-4" /> Khởi tạo ngay
           </button>
         </motion.div>
       </div>
@@ -153,14 +154,14 @@ const FeatureManagementPage = () => {
             />
           </div>
 
-          <div className="flex items-center gap-3 text-sm text-neutral-500 font-medium">
-            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg">
+          <div className="flex items-center gap-3 text-xs text-slate-500 font-bold uppercase tracking-wider">
+            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 text-indigo-600 rounded-xl border border-indigo-100">
               <Box className="w-4 h-4" />
-              <span>{features.length} Tổng số tính năng</span>
+              <span>{features.length} Thành phần</span>
             </div>
-            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-600 rounded-lg">
+            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 text-slate-600 rounded-xl border border-slate-200">
               <CheckCircle2 className="w-4 h-4" />
-              <span>Hệ thống đã xác minh</span>
+              <span>Đã xác thực</span>
             </div>
           </div>
         </div>
@@ -168,9 +169,9 @@ const FeatureManagementPage = () => {
         {/* Table/List Area */}
         <div className="overflow-x-auto">
           {isLoading ? (
-            <div className="py-24 text-center">
-              <div className="w-12 h-12 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin mx-auto mb-4" />
-              <p className="text-neutral-500 font-medium">Đang đồng bộ hóa kho lưu trữ...</p>
+            <div className="py-20 text-center flex flex-col items-center gap-3">
+              <Spin size="large" />
+              <p className="text-neutral-400 font-black text-[10px] uppercase tracking-widest italic">Đang đồng bộ hóa kho lưu trữ...</p>
             </div>
           ) : error ? (
             <div className="p-12 text-center">

@@ -21,15 +21,16 @@ import {
   getModelDetails,
   deactivateVariant,
 } from "../services/vehicleCatalogService";
+import { Spin } from "antd";
 import VariantForm from "../components/VariantForm";
 import ConfirmationModal from "../components/ConfirmationModal";
 import FeatureAssignmentModal from "../components/FeatureAssignmentModal";
 import VariantDetailsModal from "../../../../components/common/detail/VariantDetailsModal";
 
 const STATUS_OPTIONS = {
-  IN_PRODUCTION: { label: "Đang sản xuất", color: "bg-emerald-100 text-emerald-700 border-emerald-200" },
-  COMING_SOON: { label: "Sắp ra mắt", color: "bg-blue-100 text-blue-700 border-blue-200" },
-  DISCONTINUED: { label: "Ngừng sản xuất", color: "bg-neutral-100 text-neutral-600 border-neutral-200" },
+  IN_PRODUCTION: { label: "Đang sản xuất", color: "bg-indigo-50 text-indigo-700 border-indigo-100 shadow-sm shadow-indigo-50/50" },
+  COMING_SOON: { label: "Sắp ra mắt", color: "bg-blue-50 text-blue-700 border-blue-100 shadow-sm shadow-blue-50/50" },
+  DISCONTINUED: { label: "Ngừng sản xuất", color: "bg-slate-100 text-slate-600 border-slate-200" },
 };
 
 const VariantManagementPage = () => {
@@ -166,14 +167,14 @@ const VariantManagementPage = () => {
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
         >
-          <div className="flex items-center gap-2 text-blue-600 font-semibold mb-2">
-            <Layers className="w-5 h-5" />
-            <span className="uppercase tracking-widest text-xs">Quản lý Danh mục</span>
+          <div className="flex items-center gap-1.5 text-indigo-600 font-bold mb-1.5">
+            <Layers className="w-4 h-4 shadow-lg shadow-indigo-100 rounded-lg" />
+            <span className="uppercase tracking-[0.2em] text-[9px] font-black italic">Hệ thống Biến thể v3.0</span>
           </div>
-          <h1 className="text-4xl font-extrabold text-neutral-900 tracking-tight">
-            Biến thể & Phiên bản
+          <h1 className="text-2xl font-black text-slate-900 tracking-tighter">
+            Biến thể & <span className="text-indigo-600 font-thin italic">Phiên bản</span>
           </h1>
-          <p className="text-neutral-500 mt-2">Quản lý các phiên bản, màu sắc và giá bán cụ thể cho từng mẫu xe.</p>
+          <p className="text-slate-400 mt-1 text-sm font-medium italic">Cấu trúc chi tiết cấu hình, màu sắc và định giá.</p>
         </motion.div>
 
         <motion.div
@@ -191,9 +192,9 @@ const VariantManagementPage = () => {
           <button
             onClick={handleOpenAddForm}
             disabled={!selectedModelId}
-            className="flex items-center gap-2 bg-blue-600 text-white px-6 py-3.5 rounded-2xl shadow-lg hover:bg-blue-700 transition-all font-bold active:scale-95 disabled:bg-neutral-300 disabled:shadow-none disabled:cursor-not-allowed"
+            className="flex items-center gap-2 bg-indigo-600 text-white px-6 py-3 rounded-xl shadow-2xl shadow-indigo-100 hover:bg-indigo-700 transition-all font-black text-xs active:scale-95 disabled:bg-slate-200 disabled:shadow-none disabled:cursor-not-allowed uppercase tracking-widest italic"
           >
-            <Plus className="w-5 h-5" /> Thêm phiên bản mới
+            <Plus className="w-4 h-4" /> Khởi tạo ngay
           </button>
         </motion.div>
       </div>
@@ -205,9 +206,9 @@ const VariantManagementPage = () => {
           animate={{ opacity: 1, y: 0 }}
           className="lg:col-span-4 bg-white rounded-3xl p-6 shadow-sm border border-neutral-100"
         >
-          <div className="flex items-center gap-2 mb-6 text-neutral-800">
-            <Box className="w-5 h-5 text-blue-500" />
-            <h3 className="font-bold text-lg">Chọn mẫu xe cơ sở</h3>
+          <div className="flex items-center gap-2 mb-6">
+            <Box className="w-5 h-5 text-indigo-600" />
+            <h3 className="font-black text-slate-900 tracking-tight italic uppercase text-sm">Mẫu xe cơ sở</h3>
           </div>
 
           <div className="space-y-2">
@@ -221,13 +222,13 @@ const VariantManagementPage = () => {
                   key={model.modelId}
                   onClick={() => setSelectedModelId(model.modelId)}
                   className={`w-full flex items-center justify-between p-4 rounded-2xl border transition-all cursor-pointer ${selectedModelId === model.modelId
-                    ? "bg-blue-50 border-blue-200 text-blue-700 font-bold shadow-sm"
-                    : "bg-white border-neutral-100 text-neutral-600 hover:bg-neutral-50"
+                    ? "bg-indigo-50 border-indigo-200 text-indigo-700 font-black shadow-xl shadow-indigo-50/50"
+                    : "bg-white border-slate-100 text-slate-500 hover:bg-slate-50 hover:border-slate-200"
                     }`}
                 >
                   <div className="flex items-center gap-3">
-                    <div className={`w-2 h-2 rounded-full ${selectedModelId === model.modelId ? "bg-blue-500 animate-pulse" : "bg-neutral-200"}`} />
-                    <span>{model.brand} {model.modelName}</span>
+                    <div className={`w-2 h-2 rounded-full ${selectedModelId === model.modelId ? "bg-indigo-500 shadow-[0_0_8px_rgba(79,70,229,0.5)]" : "bg-slate-200"}`} />
+                    <span className="text-sm tracking-tight">{model.brand} {model.modelName}</span>
                   </div>
                   <ChevronRight className={`w-4 h-4 transition-transform ${selectedModelId === model.modelId ? "translate-x-1" : ""}`} />
                 </button>
@@ -266,9 +267,9 @@ const VariantManagementPage = () => {
 
           <div className="p-0">
             {isLoadingVariants ? (
-              <div className="p-12 text-center">
-                <div className="w-12 h-12 border-3 border-blue-100 border-t-blue-600 rounded-full animate-spin mx-auto mb-4" />
-                <p className="text-neutral-500 font-medium">Đang tải các phiên bản...</p>
+              <div className="p-12 text-center flex flex-col items-center gap-3">
+                <Spin size="large" />
+                <p className="text-neutral-400 font-black text-[10px] uppercase tracking-widest italic">Đang tải các phiên bản...</p>
               </div>
             ) : selectedModelDetails && selectedModelDetails.variants.length > 0 ? (
               <div className="overflow-x-auto">

@@ -1,16 +1,30 @@
-// Components xem chi tiết phiên bản xe
-import React from "react";
+import React, { useEffect, useRef } from "react";
+import ReactDOM from "react-dom";
 import { FiX } from "react-icons/fi";
 
 const VariantDetailsModal = ({ isOpen, onClose, variant }) => {
+  const scrollRef = useRef(null);
+
+  useEffect(() => {
+    if (isOpen && scrollRef.current) {
+      scrollRef.current.scrollTop = 0;
+    }
+  }, [isOpen, variant?.variantId]);
+
   if (!isOpen || !variant) return null;
 
-  return (
-    <div className="fixed inset-0 backdrop-blur-lg bg-opacity-10 z-50 flex justify-center items-center p-4 animate-in fade-in-0">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
-        <div className="flex justify-between items-center p-6 border-b">
-          <h2 className="text-2xl font-bold text-gray-800">
-            Chi tiết phiên bản: {variant.versionName} - {variant.color}
+  const portalContent = (
+    <div className="fixed inset-0 z-[9999] flex justify-center items-center p-4">
+      {/* Backdrop */}
+      <div
+        className="absolute inset-0 bg-slate-900/60 backdrop-blur-md transition-opacity animate-in fade-in duration-300"
+        onClick={onClose}
+      />
+
+      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-xl max-h-[90vh] flex flex-col border border-gray-100 overflow-hidden ring-1 ring-black/5 animate-in zoom-in-95 duration-200">
+        <div className="flex justify-between items-center p-5 border-b border-gray-100 bg-slate-50/50 shrink-0">
+          <h2 className="text-lg font-black text-gray-900 tracking-tight">
+            Chi tiết: {variant.versionName} <span className="text-indigo-600 font-thin italic">({variant.color})</span>
           </h2>
           <button
             onClick={onClose}
@@ -20,7 +34,10 @@ const VariantDetailsModal = ({ isOpen, onClose, variant }) => {
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-6 space-y-4">
+        <div
+          ref={scrollRef}
+          className="flex-1 overflow-y-auto p-6 space-y-6 bg-white scrollbar-thin scrollbar-thumb-slate-200"
+        >
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
             <p>
               <strong className="text-gray-600">ID:</strong> {variant.variantId}
@@ -74,26 +91,32 @@ const VariantDetailsModal = ({ isOpen, onClose, variant }) => {
             )}
           </div>
 
-          <div>
-            <h3 className="font-semibold text-lg mt-4 mb-2">Các tính năng</h3>
+          <div className="pt-2">
+            <h3 className="font-bold text-sm text-gray-900 mb-3 flex items-center gap-2 uppercase tracking-widest italic">
+              <div className="w-1.5 h-4 bg-indigo-500 rounded-full"></div>
+              Trang bị & Tính năng
+            </h3>
             {variant.features && variant.features.length > 0 ? (
-              <ul className="list-disc list-inside space-y-1 text-sm">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {variant.features.map((feature) => (
-                  <li key={feature.featureId}>{feature.featureName}</li>
+                  <div key={feature.featureId} className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg text-xs font-medium text-gray-700 border border-gray-100 shadow-sm">
+                    <div className="w-1 h-1 rounded-full bg-indigo-400"></div>
+                    {feature.featureName}
+                  </div>
                 ))}
-              </ul>
+              </div>
             ) : (
-              <p className="text-gray-500 text-sm">
-                Phiên bản này chưa có tính năng đặc biệt nào.
+              <p className="text-gray-400 text-xs italic">
+                Phiên bản này chưa có tính năng đặc biệt.
               </p>
             )}
           </div>
         </div>
 
-        <div className="p-4 border-t bg-gray-50 flex justify-end">
+        <div className="p-4 border-t border-gray-50 bg-gray-50/50 flex justify-end">
           <button
             onClick={onClose}
-            className="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
+            className="px-8 py-2.5 bg-gray-900 text-white text-xs font-black rounded-lg hover:bg-black transition-all uppercase tracking-widest italic"
           >
             Đóng
           </button>
@@ -101,6 +124,8 @@ const VariantDetailsModal = ({ isOpen, onClose, variant }) => {
       </div>
     </div>
   );
+
+  return ReactDOM.createPortal(portalContent, document.body);
 };
 
 export default VariantDetailsModal;

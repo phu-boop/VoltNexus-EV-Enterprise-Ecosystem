@@ -1,18 +1,17 @@
 import React, { useState, useEffect } from "react";
-import { FiX } from "react-icons/fi";
+import { FiX, FiInfo } from "react-icons/fi";
+import { motion, AnimatePresence } from "framer-motion";
+import { Spin } from "antd";
 import {
   createFeature,
   updateFeature,
-} from "../services/vehicleCatalogService"; // Import các hàm API mới
+} from "../services/vehicleCatalogService";
 
 const FeatureFormModal = ({ isOpen, onClose, onSuccess, feature }) => {
   const isEditMode = !!feature;
 
   const initialFormState = {
-    featureName: "",
-    description: "",
-    category: "Chung", // Đặt giá trị mặc định
-    featureType: "",
+    featureName: "", description: "", category: "Khoang lái (Cabin)", featureType: "",
   };
 
   const [formData, setFormData] = useState(initialFormState);
@@ -23,26 +22,21 @@ const FeatureFormModal = ({ isOpen, onClose, onSuccess, feature }) => {
     if (isOpen) {
       if (isEditMode && feature) {
         setFormData({
-          featureName: feature.featureName || "",
-          description: feature.description || "",
-          category: feature.category || "Chung",
-          featureType: feature.featureType || "",
+          featureName: feature.featureName || "", description: feature.description || "",
+          category: feature.category || "Khoang lái (Cabin)", featureType: feature.featureType || "",
         });
       } else {
         setFormData(initialFormState);
       }
-      setError(null); // Reset lỗi mỗi khi mở modal
+      setError(null);
     }
   }, [isEditMode, feature, isOpen]);
 
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
+  const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setIsLoading(true);
-    setError(null);
+    setIsLoading(true); setError(null);
 
     try {
       if (isEditMode) {
@@ -50,8 +44,7 @@ const FeatureFormModal = ({ isOpen, onClose, onSuccess, feature }) => {
       } else {
         await createFeature(formData);
       }
-      onSuccess(); // Gọi onSuccess để tải lại dữ liệu trên trang chính
-      onClose(); // Đóng modal
+      onSuccess(); onClose();
     } catch (err) {
       setError(err.response?.data?.message || "Đã xảy ra lỗi.");
     } finally {
@@ -62,118 +55,84 @@ const FeatureFormModal = ({ isOpen, onClose, onSuccess, feature }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 backdrop-blur-lg bg-opacity-50 z-50 flex justify-center items-center p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col">
-        <div className="flex justify-between items-center p-6 border-b">
-          <h2 className="text-2xl font-bold text-gray-800">
-            {isEditMode ? "Chỉnh Sửa Tính Năng" : "Tạo Tính Năng Mới"}
-          </h2>
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-full"
-          >
-            <FiX />
-          </button>
-        </div>
-
-        <form onSubmit={handleSubmit} className="p-6 space-y-4 overflow-y-auto">
-          {/* Tên tính năng */}
-          <div>
-            <label
-              htmlFor="featureName"
-              className="block text-sm font-medium text-gray-700 mb-1"
+    <AnimatePresence>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex justify-end"
+        onClick={onClose}
+      >
+        <motion.div
+          initial={{ x: "100%", opacity: 0.5 }}
+          animate={{ x: 0, opacity: 1 }}
+          exit={{ x: "100%", opacity: 0.5 }}
+          transition={{ type: "spring", damping: 25, stiffness: 200 }}
+          className="bg-white shadow-2xl w-full max-w-md h-full flex flex-col overflow-hidden"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* Header */}
+          <div className="flex justify-between items-center px-5 py-4 border-b border-gray-100 bg-white z-10 shadow-sm text-gray-900 font-black">
+            <div>
+              <h2 className="text-lg tracking-tight">
+                {isEditMode ? "Tùy chỉnh Tính Năng" : "Thêm Tính Năng Mới"}
+              </h2>
+              <p className="text-[9px] text-indigo-500 font-bold uppercase tracking-widest mt-0.5 italic">Cấu hình hệ thống Catalog</p>
+            </div>
+            <button
+              onClick={onClose}
+              className="p-2 hover:bg-gray-100 text-gray-400 hover:text-gray-900 rounded-lg transition-all"
             >
-              Tên tính năng*
-            </label>
-            <input
-              id="featureName"
-              name="featureName"
-              value={formData.featureName}
-              onChange={handleChange}
-              placeholder="VD: Cửa sổ trời toàn cảnh"
-              required
-              className="p-2 border rounded-lg w-full"
-            />
+              <FiX className="w-5 h-5" />
+            </button>
           </div>
 
-          {/* Danh mục */}
-          <div>
-            <label
-              htmlFor="category"
-              className="block text-sm font-medium text-gray-700 mb-1"
-            >
-              Danh mục*
-            </label>
-            <input
-              id="category"
-              name="category"
-              value={formData.category}
-              onChange={handleChange}
-              placeholder="VD: Nội thất, Ngoại thất, An toàn"
-              required
-              className="p-2 border rounded-lg w-full"
-            />
+          <form onSubmit={handleSubmit} id="feature-form" className="flex-1 overflow-y-auto p-5 space-y-5 bg-gray-50/10 scrollbar-thin scrollbar-thumb-slate-200">
+            <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Tên tính năng <span className="text-red-500">*</span></label>
+                <input name="featureName" value={formData.featureName} onChange={handleChange} placeholder="VD: Màn hình cảm ứng 15.6 inch" required className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all font-bold text-gray-900 shadow-sm" />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Nhóm cấu hình <span className="text-red-500">*</span></label>
+                  <input name="category" value={formData.category} onChange={handleChange} placeholder="VD: Nội thất, Ngoại thất" required className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all font-bold text-gray-900 text-sm shadow-sm" />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Loại hệ thống</label>
+                  <input name="featureType" value={formData.featureType} onChange={handleChange} placeholder="VD: STANDARD, OPTION" className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all font-bold text-gray-900 uppercase text-xs shadow-sm" />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Mô tả kỹ thuật</label>
+                <textarea name="description" value={formData.description} onChange={handleChange} rows="5" placeholder="Cung cấp mô tả chi tiết về cơ chế hoạt động hoặc thiết kế..." className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all font-medium text-gray-800 text-sm resize-none shadow-sm h-32" />
+              </div>
+            </div>
+
+            <div className="bg-indigo-50/50 p-4 rounded-xl border border-indigo-100 flex items-start gap-3">
+              <FiInfo className="w-5 h-5 text-indigo-500 shrink-0 mt-0.5" />
+              <p className="text-[11px] text-indigo-700 font-medium leading-relaxed">
+                Tính năng này sẽ được áp dụng cho toàn bộ danh mục sau khi khởi tạo. Bạn có thể gán tính năng này cho các mẫu xe cụ thể trong phần quản lý chi tiết.
+              </p>
+            </div>
+          </form>
+
+          {/* Footer */}
+          <div className="p-5 border-t border-gray-100 bg-white shadow-sm z-10">
+            {error && <div className="mb-3 p-3 bg-red-50 border border-red-100 text-red-600 text-[10px] font-bold rounded-xl flex items-center gap-2 shadow-sm italic uppercase"><FiInfo className="w-4 h-4" /> {error}</div>}
+            <div className="flex gap-2.5">
+              <button type="button" onClick={onClose} className="flex-1 px-4 py-3 bg-gray-50 text-gray-600 font-bold rounded-xl hover:bg-gray-100 transition-all text-xs uppercase tracking-tighter">Hủy</button>
+              <button type="button" onClick={() => document.getElementById('feature-form').requestSubmit()} disabled={isLoading} className="flex-[2] px-6 py-3 bg-indigo-600 text-white font-black rounded-xl shadow-xl shadow-indigo-50 hover:bg-indigo-700 disabled:opacity-50 transition-all text-xs uppercase tracking-widest italic">
+                {isLoading ? <Spin size="small" /> : isEditMode ? "Cập nhật ngay" : "Tạo mới ngay"}
+              </button>
+            </div>
           </div>
-
-          {/* Loại tính năng */}
-          <div>
-            <label
-              htmlFor="featureType"
-              className="block text-sm font-medium text-gray-700 mb-1"
-            >
-              Loại tính năng
-            </label>
-            <input
-              id="featureType"
-              name="featureType"
-              value={formData.featureType}
-              onChange={handleChange}
-              placeholder="VD: STANDARD, OPTION (tùy chọn)"
-              className="p-2 border rounded-lg w-full"
-            />
-          </div>
-
-          {/* Mô tả */}
-          <div>
-            <label
-              htmlFor="description"
-              className="block text-sm font-medium text-gray-700 mb-1"
-            >
-              Mô tả
-            </label>
-            <textarea
-              id="description"
-              name="description"
-              value={formData.description}
-              onChange={handleChange}
-              rows="3"
-              placeholder="Mô tả chi tiết về tính năng..."
-              className="p-2 border rounded-lg w-full"
-            />
-          </div>
-
-          {error && <p className="text-red-500 text-sm text-center">{error}</p>}
-        </form>
-
-        <div className="p-6 border-t bg-gray-50 flex justify-end space-x-4">
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg"
-          >
-            Hủy
-          </button>
-          <button
-            type="submit"
-            onClick={handleSubmit}
-            disabled={isLoading}
-            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-          >
-            {isLoading ? "Đang lưu..." : "Lưu Thay Đổi"}
-          </button>
-        </div>
-      </div>
-    </div>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
   );
 };
 

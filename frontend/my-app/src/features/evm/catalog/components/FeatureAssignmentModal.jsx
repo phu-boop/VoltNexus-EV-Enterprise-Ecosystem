@@ -1,6 +1,7 @@
-// Đây là component UI Quản Lý Tính Năng. Nó sẽ hiển thị hai cột: một cột là các tính năng có sẵn, cột còn lại là các tính năng đã được gán
 import React, { useState, useEffect } from "react";
-import { FiX, FiArrowRight, FiTrash2, FiLoader } from "react-icons/fi";
+import { FiX, FiArrowRight, FiTrash2, FiLoader, FiCheckCircle, FiMinusCircle, FiLayout } from "react-icons/fi";
+import { motion, AnimatePresence } from "framer-motion";
+import { Spin } from "antd";
 import Swal from "sweetalert2";
 import {
   getAllFeatures,
@@ -18,15 +19,12 @@ const FeatureAssignmentModal = ({ isOpen, onClose, variant, onSuccess }) => {
     if (isOpen) {
       const fetchAll = async () => {
         try {
-          setIsLoading(true);
-          setError("");
+          setIsLoading(true); setError("");
           const response = await getAllFeatures();
           setAllFeatures(response.data.data || []);
-          // Lấy danh sách feature đã gán từ prop `variant`
           setAssignedFeatures(variant.features || []);
         } catch (err) {
           setError("Không thể tải danh sách tính năng.");
-          console.error(err);
         } finally {
           setIsLoading(false);
         }
@@ -36,18 +34,10 @@ const FeatureAssignmentModal = ({ isOpen, onClose, variant, onSuccess }) => {
   }, [isOpen, variant]);
 
   const handleAssign = async (featureToAssign) => {
-    const featureData = {
-      featureId: featureToAssign.featureId,
-      isStandard: true, // Mặc định
-      additionalCost: 0,
-    };
+    const featureData = { featureId: featureToAssign.featureId, isStandard: true, additionalCost: 0 };
     try {
       await assignFeatureToVariant(variant.variantId, featureData);
-      // Cập nhật UI ngay lập tức
-      setAssignedFeatures([
-        ...assignedFeatures,
-        { ...featureToAssign, ...featureData },
-      ]);
+      setAssignedFeatures([...assignedFeatures, { ...featureToAssign, ...featureData }]);
     } catch (err) {
       Swal.fire("Lỗi!", "Không thể gán tính năng.", "error");
     }
@@ -55,137 +45,166 @@ const FeatureAssignmentModal = ({ isOpen, onClose, variant, onSuccess }) => {
 
   const handleUnassign = async (featureToUnassign) => {
     try {
-      await unassignFeatureFromVariant(
-        variant.variantId,
-        featureToUnassign.featureId
-      );
-      // Cập nhật UI ngay lập tức
-      setAssignedFeatures(
-        assignedFeatures.filter(
-          (f) => f.featureId !== featureToUnassign.featureId
-        )
-      );
+      await unassignFeatureFromVariant(variant.variantId, featureToUnassign.featureId);
+      setAssignedFeatures(assignedFeatures.filter((f) => f.featureId !== featureToUnassign.featureId));
     } catch (err) {
       Swal.fire("Lỗi!", "Không thể bỏ gán tính năng.", "error");
     }
   };
 
-  // Lọc ra các tính năng chưa được gán để hiển thị ở cột bên trái
-  const availableFeatures = allFeatures.filter(
-    (feature) =>
-      !assignedFeatures.some(
-        (assigned) => assigned.featureId === feature.featureId
-      )
-  );
+  const availableFeatures = allFeatures.filter((feature) => !assignedFeatures.some((assigned) => assigned.featureId === feature.featureId));
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-60 z-50 flex justify-center items-center p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col">
-        <div className="flex justify-between items-center p-6 border-b">
-          <h2 className="text-2xl font-bold text-gray-800">
-            Quản lý tính năng cho:{" "}
-            <span className="text-blue-600">
-              {variant.versionName} - {variant.color}
-            </span>
-          </h2>
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-full"
-          >
-            <FiX />
-          </button>
-        </div>
-
-        {isLoading ? (
-          <div className="flex-1 flex justify-center items-center">
-            <FiLoader className="animate-spin h-8 w-8 text-blue-600" />
-          </div>
-        ) : error ? (
-          <div className="flex-1 flex justify-center items-center text-red-500">
-            {error}
-          </div>
-        ) : (
-          <div className="flex-1 p-6 grid grid-cols-1 md:grid-cols-2 gap-6 overflow-y-auto">
-            {/* Cột 1: Các tính năng có sẵn */}
-            <div className="border rounded-lg p-4 flex flex-col">
-              <h3 className="font-semibold text-lg mb-4">
-                Các tính năng có sẵn
-              </h3>
-              <ul className="space-y-2 overflow-y-auto">
-                {availableFeatures.map((feature) => (
-                  <li
-                    key={feature.featureId}
-                    className="flex justify-between items-center p-2 bg-gray-50 rounded"
-                  >
-                    <span>
-                      {feature.featureName}{" "}
-                      <em className="text-gray-500 text-sm">
-                        ({feature.category})
-                      </em>
-                    </span>
-                    <button
-                      onClick={() => handleAssign(feature)}
-                      className="p-2 text-green-600 hover:bg-green-100 rounded-full"
-                      title="Gán"
-                    >
-                      <FiArrowRight />
-                    </button>
-                  </li>
-                ))}
-                {availableFeatures.length === 0 && (
-                  <p className="text-sm text-gray-500 text-center py-4">
-                    Đã gán hết tính năng.
-                  </p>
-                )}
-              </ul>
+    <AnimatePresence>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex justify-end"
+        onClick={onClose}
+      >
+        <motion.div
+          initial={{ x: "100%", opacity: 0.5 }}
+          animate={{ x: 0, opacity: 1 }}
+          exit={{ x: "100%", opacity: 0.5 }}
+          transition={{ type: "spring", damping: 25, stiffness: 200 }}
+          className="bg-white shadow-2xl w-full max-w-3xl h-full flex flex-col overflow-hidden"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* Header */}
+          <div className="flex justify-between items-center px-5 py-4 border-b border-gray-100 bg-white z-10 shadow-sm">
+            <div>
+              <p className="text-[9px] font-bold text-indigo-500 uppercase tracking-widest leading-none mb-1">Cấu hình thành phần</p>
+              <h2 className="text-lg font-black text-gray-900 tracking-tight leading-none">
+                {variant.versionName} <span className="text-gray-400 font-medium ml-2 text-xs italic">({variant.color})</span>
+              </h2>
             </div>
-
-            {/* Cột 2: Các tính năng đã gán */}
-            <div className="border rounded-lg p-4 flex flex-col">
-              <h3 className="font-semibold text-lg mb-4">
-                Các tính năng đã gán
-              </h3>
-              <ul className="space-y-2 overflow-y-auto">
-                {assignedFeatures.map((feature) => (
-                  <li
-                    key={feature.featureId}
-                    className="flex justify-between items-center p-2 bg-blue-50 rounded"
-                  >
-                    <span>{feature.featureName}</span>
-                    <button
-                      onClick={() => handleUnassign(feature)}
-                      className="p-2 text-red-600 hover:bg-red-100 rounded-full"
-                      title="Bỏ gán"
-                    >
-                      <FiTrash2 />
-                    </button>
-                  </li>
-                ))}
-                {assignedFeatures.length === 0 && (
-                  <p className="text-sm text-gray-500 text-center py-4">
-                    Chưa có tính năng nào được gán.
-                  </p>
-                )}
-              </ul>
-            </div>
+            <button
+              onClick={onClose}
+              className="p-2 hover:bg-gray-100 text-gray-400 hover:text-gray-900 rounded-lg transition-all"
+            >
+              <FiX className="w-5 h-5" />
+            </button>
           </div>
-        )}
 
-        <div className="p-6 border-t bg-gray-50 flex justify-end">
-          <button
-            onClick={() => {
-              onSuccess();
-              onClose();
-            }}
-            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-          >
-            Hoàn tất
-          </button>
-        </div>
-      </div>
-    </div>
+          {isLoading ? (
+            <div className="flex-1 flex flex-col justify-center items-center py-24 bg-gray-50/10">
+              <Spin size="large" />
+              <p className="text-gray-400 font-black text-[10px] uppercase tracking-widest mt-4 italic">Đang đồng bộ hóa cấu hình...</p>
+            </div>
+          ) : error ? (
+            <div className="flex-1 flex flex-col justify-center items-center bg-red-50/20 py-32">
+              <FiX className="w-10 h-10 text-red-500 mb-4" />
+              <p className="text-red-500 px-8 text-center font-bold text-sm tracking-tight">{error}</p>
+            </div>
+          ) : (
+            <div className="flex-1 p-4 grid grid-cols-1 lg:grid-cols-2 gap-4 overflow-hidden bg-gray-50/10 scrollbar-thin scrollbar-thumb-slate-200">
+              {/* Column 1: Available */}
+              <div className="flex flex-col bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden min-h-0">
+                <div className="px-5 py-4 bg-gray-50/50 border-b border-gray-100 flex justify-between items-center">
+                  <h3 className="text-sm font-black text-gray-900 flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-indigo-500 shadow-[0_0_8px_rgba(79,70,229,0.5)]"></div>
+                    Kho linh kiện & thiết bị
+                  </h3>
+                  <span className="bg-indigo-600 text-white text-[10px] font-black px-2.5 py-1 rounded-full shadow-lg shadow-indigo-100 italic">{availableFeatures.length}</span>
+                </div>
+                <ul className="flex-1 overflow-y-auto p-4 space-y-2 bg-gray-50/30 scroll-smooth">
+                  <AnimatePresence>
+                    {availableFeatures.map((feature) => (
+                      <motion.li
+                        key={feature.featureId}
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: 10 }}
+                        layout
+                        className="group p-3.5 bg-white border border-gray-100 rounded-xl hover:border-indigo-200 hover:shadow-md transition-all flex justify-between items-center cursor-default transform hover:-translate-y-0.5"
+                      >
+                        <div className="max-w-[80%]">
+                          <p className="font-bold text-gray-900 mb-1 leading-tight text-sm truncate">{feature.featureName}</p>
+                          <p className="text-[9px] font-black text-indigo-500 tracking-wider uppercase bg-indigo-50 inline-block px-1.5 py-0.5 rounded shadow-sm italic">{feature.category}</p>
+                        </div>
+                        <button
+                          onClick={() => handleAssign(feature)}
+                          className="w-10 h-10 flex items-center justify-center bg-gray-50 text-gray-400 group-hover:bg-indigo-600 group-hover:text-white rounded-xl transition-all shadow-sm group-hover:shadow-lg group-hover:shadow-indigo-100 shrink-0"
+                          title="Gán tính năng"
+                        >
+                          <FiArrowRight className="w-5 h-5" />
+                        </button>
+                      </motion.li>
+                    ))}
+                  </AnimatePresence>
+                  {availableFeatures.length === 0 && (
+                    <div className="text-center py-20 px-4">
+                      <FiCheckCircle className="w-10 h-10 text-indigo-400 mx-auto mb-4 opacity-30" />
+                      <p className="text-sm font-black text-gray-900 italic uppercase">Hoàn tất trang bị</p>
+                      <p className="text-[11px] text-gray-400 font-medium mt-1">Đã cấu hình toàn bộ tính năng khả dụng.</p>
+                    </div>
+                  )}
+                </ul>
+              </div>
+
+              {/* Column 2: Assigned */}
+              <div className="flex flex-col bg-white rounded-2xl border border-indigo-100 shadow-md overflow-hidden min-h-0">
+                <div className="px-5 py-4 bg-indigo-600 border-b border-indigo-700 flex justify-between items-center shadow-md">
+                  <h3 className="text-sm font-black text-white flex items-center gap-2 tracking-tight">
+                    <div className="w-2 h-2 rounded-full bg-white shadow-[0_0_8px_white]"></div>
+                    Gói trang bị hiện tại
+                  </h3>
+                  <span className="bg-white text-indigo-600 text-[10px] font-black px-2.5 py-1 rounded-full shadow-lg italic">{assignedFeatures.length}</span>
+                </div>
+                <ul className="flex-1 overflow-y-auto p-4 space-y-2 bg-indigo-50/10 scroll-smooth">
+                  <AnimatePresence>
+                    {assignedFeatures.map((feature) => (
+                      <motion.li
+                        key={feature.featureId}
+                        initial={{ opacity: 0, x: 10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: -10 }}
+                        layout
+                        className="group p-3.5 bg-white border border-indigo-50 rounded-xl hover:border-red-200 hover:bg-red-50/30 hover:shadow-md transition-all flex justify-between items-center cursor-default"
+                      >
+                        <div className="max-w-[80%]">
+                          <p className="font-bold text-gray-900 mb-1 leading-tight text-sm truncate">{feature.featureName}</p>
+                          <div className="flex items-center gap-2">
+                            <p className="text-[9px] font-black text-slate-500 tracking-wider uppercase bg-slate-50 inline-block px-1.5 py-0.5 rounded shadow-sm italic">Tiêu chuẩn</p>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => handleUnassign(feature)}
+                          className="w-10 h-10 flex items-center justify-center bg-red-50 text-red-300 hover:bg-red-600 hover:text-white rounded-xl transition-all shadow-sm opacity-50 group-hover:opacity-100 hover:shadow-lg hover:shadow-red-100 shrink-0"
+                          title="Bỏ gán"
+                        >
+                          <FiMinusCircle className="w-5 h-5" />
+                        </button>
+                      </motion.li>
+                    ))}
+                  </AnimatePresence>
+                  {assignedFeatures.length === 0 && (
+                    <div className="text-center py-10 px-4">
+                      <FiLayout className="w-8 h-8 text-gray-200 mx-auto mb-3" />
+                      <p className="text-xs font-black text-gray-400 italic uppercase">Chưa có trang bị</p>
+                      <p className="text-[10px] text-gray-400 font-medium mt-1">Sử dụng kho linh kiện để bổ sung cấu hình.</p>
+                    </div>
+                  )}
+                </ul>
+              </div>
+            </div>
+          )}
+
+          {/* Footer */}
+          <div className="p-5 bg-white border-t border-gray-100 shadow-sm z-10">
+            <button
+              onClick={() => { onSuccess(); onClose(); }}
+              className="w-full py-3 bg-gray-900 text-white text-xs font-black rounded-xl shadow-xl shadow-gray-100 hover:bg-black transition-all uppercase tracking-widest italic"
+            >
+              Phê duyệt & Đồng bộ cấu hình
+            </button>
+          </div>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
   );
 };
 

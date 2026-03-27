@@ -18,6 +18,7 @@ public class DevSecurityConfig {
         http
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/api/vehicle/**").permitAll()
                         .anyRequest().permitAll());
         return http.build();
     }
