@@ -98,6 +98,7 @@ contract.setDealer(dealer);
         //dòng gây crash 74
         //DealerContractResponse response = modelMapper.map(contract, DealerContractResponse.class); 
         //Về sửa lại ngay đây và thêm code
+        //bổ sung commit 233 logbug trên jira nhầm mã 
         DealerContractResponse response = new DealerContractResponse();
         response.setContractId(contract.getContractId());
         response.setContractNumber(contract.getContractNumber());
