@@ -46,20 +46,25 @@ export const updateModel = (modelId, modelData) => {
 };
 
 /**
- * Ngừng sản xuất (xóa mềm) một mẫu xe.
+ * Ngừng sản xuất (Xóa mềm) một mẫu xe.
  * @param {number | string} modelId - ID của mẫu xe.
+ * @param {boolean} force - Bắt buộc xóa kèm theo phiên bản.
  */
-export const deactivateModel = (modelId) => {
-  return apiConstVehicleService.delete(`vehicle-catalog/models/${modelId}`);
+export const deactivateModel = (modelId, force = false) => {
+  return apiConstVehicleService.delete(`vehicle-catalog/models/${modelId}`, {
+    params: { force }
+  });
 };
 
 /**
  * Xóa nhiều mẫu xe cùng lúc.
  * @param {Array<number|string>} modelIds - Danh sách ID mẫu xe.
+ * @param {boolean} force - Bắt buộc xóa kèm theo phiên bản.
  */
-export const deleteModelsBulk = (modelIds) => {
+export const deleteModelsBulk = (modelIds, force = false) => {
   return apiConstVehicleService.delete("vehicle-catalog/models/bulk", {
     data: modelIds,
+    params: { force }
   });
 };
 

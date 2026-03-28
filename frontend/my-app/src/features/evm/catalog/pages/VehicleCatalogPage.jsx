@@ -43,6 +43,8 @@ const VehicleCatalogPage = () => {
   const [actionToConfirm, setActionToConfirm] = useState(null);
   const [selectedIds, setSelectedIds] = useState([]);
   const [isBulkConfirmOpen, setIsBulkConfirmOpen] = useState(false);
+  const [isCascadeConfirmOpen, setIsCascadeConfirmOpen] = useState(false);
+  const [cascadeContext, setCascadeContext] = useState(null);
 
   const [viewMode, setViewMode] = useState("list"); // 'list' or 'grid'
 
@@ -136,13 +138,20 @@ const VehicleCatalogPage = () => {
 
   const handleOpenConfirmModal = (model) => {
     setSelectedModel(model);
-    setActionToConfirm(() => async () => {
+    setActionToConfirm(() => async (force = false) => {
       try {
-        await deactivateModel(model.modelId);
+        await deactivateModel(model.modelId, force);
         fetchModels();
         setIsConfirmModalOpen(false);
+        setIsCascadeConfirmOpen(false);
       } catch (err) {
-        setError("Không thể ngừng sản xuất mẫu xe này.");
+        if (err.response?.data?.code === '8004') {
+          setIsConfirmModalOpen(false);
+          setCascadeContext({ type: 'single' });
+          setIsCascadeConfirmOpen(true);
+        } else {
+          setError("Không thể ngừng sản xuất mẫu xe này.");
+        }
       }
     });
     setIsConfirmModalOpen(true);
@@ -170,14 +179,21 @@ const VehicleCatalogPage = () => {
     );
   };
 
-  const handleBulkDelete = async () => {
+  const handleBulkDelete = async (force = false) => {
     try {
-      await deleteModelsBulk(selectedIds);
+      await deleteModelsBulk(selectedIds, force);
       setSelectedIds([]);
       setIsBulkConfirmOpen(false);
+      setIsCascadeConfirmOpen(false);
       fetchModels(currentPage, pageSize, searchQuery);
     } catch (err) {
-      setError("Không thể xóa các mẫu xe đã chọn. Một số có thể có phiên bản xe đang hoạt động.");
+      if (err.response?.data?.code === '8004') {
+        setIsBulkConfirmOpen(false);
+        setCascadeContext({ type: 'bulk' });
+        setIsCascadeConfirmOpen(true);
+      } else {
+        setError("Không thể xóa các mẫu xe đã chọn. Một số có thể có phiên bản xe đang hoạt động.");
+      }
     }
   };
 
@@ -606,9 +622,28 @@ const VehicleCatalogPage = () => {
         <ConfirmationModal
           isOpen={isBulkConfirmOpen}
           onClose={() => setIsBulkConfirmOpen(false)}
-          onConfirm={handleBulkDelete}
+          onConfirm={() => handleBulkDelete(false)}
           title="Xác nhận xóa hàng loạt"
           message={`Bạn có chắc chắn muốn xóa ${selectedIds.length} mẫu xe đã chọn không? Hành động này sẽ xóa vĩnh viễn dữ liệu nếu không có phiên bản xe nào đang hoạt động.`}
+        />
+      )}
+
+      {isCascadeConfirmOpen && (
+        <ConfirmationModal
+          isOpen={isCascadeConfirmOpen}
+          onClose={() => {
+            setIsCascadeConfirmOpen(false);
+            setCascadeContext(null);
+          }}
+          onConfirm={async () => {
+            if (cascadeContext?.type === 'bulk') {
+              await handleBulkDelete(true);
+            } else if (cascadeContext?.type === 'single' && actionToConfirm) {
+              await actionToConfirm(true);
+            }
+          }}
+          title="Xác nhận xóa kèm phiên bản"
+          message="Các mẫu xe này đang có phiên bản (variant) hoạt động. Bạn có muốn XÓA LUÔN TẤT CẢ các phiên bản liên quan không? Hành động này không thể hoàn tác."
         />
       )}
     </motion.div>

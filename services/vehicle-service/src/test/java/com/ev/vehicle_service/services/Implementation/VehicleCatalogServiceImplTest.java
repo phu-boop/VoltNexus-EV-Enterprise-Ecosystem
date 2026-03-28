@@ -353,7 +353,7 @@ class VehicleCatalogServiceImplTest {
         void deactivateModel_ShouldSucceed() {
             when(modelRepository.findById(1L)).thenReturn(Optional.of(model));
 
-            vehicleCatalogService.deactivateModel(1L, "admin@test.com");
+            vehicleCatalogService.deactivateModel(1L, false, "admin@test.com");
 
             assertThat(model.getStatus()).isEqualTo(VehicleStatus.DISCONTINUED);
             verify(modelRepository).save(model);

@@ -126,8 +126,9 @@ public class VehicleCatalogController {
     @PreAuthorize("hasAnyRole('ADMIN', 'EVM_STAFF')")
     public ResponseEntity<ApiRespond<Void>> deleteModel(
             @PathVariable Long modelId,
+            @RequestParam(defaultValue = "false") boolean force,
             @RequestHeader("X-User-Email") String email) {
-        vehicleCatalogService.deactivateModel(modelId, email);
+        vehicleCatalogService.deactivateModel(modelId, force, email);
         return ResponseEntity.ok(ApiRespond.success("Model deleted successfully", null));
     }
 
@@ -135,8 +136,9 @@ public class VehicleCatalogController {
     @PreAuthorize("hasAnyRole('ADMIN')")
     public ResponseEntity<ApiRespond<Void>> deleteModelsBulk(
             @RequestBody List<Long> modelIds,
+            @RequestParam(defaultValue = "false") boolean force,
             @RequestHeader("X-User-Email") String email) {
-        vehicleCatalogService.deleteModelsBulk(modelIds, email);
+        vehicleCatalogService.deleteModelsBulk(modelIds, force, email);
         return ResponseEntity.ok(ApiRespond.success("Models deleted successfully", null));
     }
 

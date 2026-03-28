@@ -569,7 +569,7 @@ const VariantManagementPage = () => {
           isOpen={isFeatureModalOpen}
           onClose={handleCloseModals}
           variant={variantForFeatures}
-          onSuccess={fetchVariantsForModel}
+          onSuccess={() => fetchVariants()}
         />
       )}
       {isDetailsOpen && (

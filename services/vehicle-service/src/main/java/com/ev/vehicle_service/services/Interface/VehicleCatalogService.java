@@ -73,7 +73,7 @@ public interface VehicleCatalogService {
 
         VehicleVariant updateVariant(Long variantId, UpdateVariantRequest request, String updatedByEmail);
 
-        void deactivateModel(Long modelId, String updatedByEmail);
+        void deactivateModel(Long modelId, boolean forceDelete, String updatedByEmail);
 
         void deactivateVariant(Long variantId, String updatedByEmail);
 
@@ -140,7 +140,7 @@ public interface VehicleCatalogService {
         Page<VariantDetailDto> getAllVariantsPaginated(String search, String status, Double minPrice, Double maxPrice,
                         Pageable pageable);
 
-        void deleteModelsBulk(List<Long> modelIds, String deletedByEmail);
+        void deleteModelsBulk(List<Long> modelIds, boolean forceDelete, String deletedByEmail);
 
         void deleteVariantsBulk(List<Long> variantIds, String deletedByEmail);
 
