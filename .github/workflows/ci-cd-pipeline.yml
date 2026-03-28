@@ -50,11 +50,13 @@ jobs:
           # Running unit tests for all services and generating coverage reports
           mvn test -DskipITs
 
-      # - name: "CI: Frontend Test"
-      #   run: |
-      #     echo "Running Frontend Tests..."
-      #     # Placeholder for frontend tests if package scripts are missing
-      #     # cd frontend/customer-app && npm install && npm test -- --watchAll=false || true
+      - name: "CI: Frontend Test"
+        run: |
+          echo "Running Frontend Tests..."
+          # Run tests for customer-app
+          cd frontend/customer-app && npm install && npm test -- --watchAll=false
+          # Run tests for my-app
+          cd ../my-app && npm install && npm test -- --watchAll=false
 
       - name: "CI: Static Analysis & Quality Gate"
         env:
