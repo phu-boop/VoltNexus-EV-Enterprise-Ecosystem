@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Plus,
@@ -61,6 +61,8 @@ const VariantManagementPage = () => {
 
   const [variantSearchQuery, setVariantSearchQuery] = useState("");
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const location = useLocation();
   const urlModelId = searchParams.get("modelId");
   const urlVariantId = searchParams.get("variantId");
 
@@ -202,16 +204,31 @@ const VariantManagementPage = () => {
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
         >
-          <div className="flex items-center gap-2 text-indigo-600 font-bold mb-2">
-            <Layers className="w-5 h-5 shadow-lg shadow-indigo-100 rounded-lg" />
-            <span className="uppercase tracking-[0.25em] text-[10px] font-black italic">
-              Hệ thống Biến thể v3.0
-            </span>
+          <div className="flex flex-col md:flex-row items-center gap-6 mb-12">
+            <div className="flex-1">
+              <div className="flex items-center gap-1.5 text-indigo-600 font-bold mb-1.5">
+                <div className="w-6 h-0.5 bg-indigo-600 rounded-full"></div>
+                <span className="uppercase tracking-widest text-[10px]">Cấu hình kỹ thuật</span>
+              </div>
+              <div className="flex items-center gap-4">
+                <h1 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight">
+                  Quản lý <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-500 to-indigo-700">Phiên bản</span>
+                </h1>
+                {selectedModelId && (
+                  <button
+                    onClick={() => {
+                      const isAdmin = location.pathname.includes('/admin/');
+                      const prefix = isAdmin ? '/evm/admin/products/catalog' : '/evm/staff/products/catalog';
+                      navigate(`${prefix}?modelId=${selectedModelId}`);
+                    }}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 text-indigo-600 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-indigo-600 hover:text-white transition-all shadow-sm border border-indigo-100"
+                  >
+                    <Eye className="w-3.5 h-3.5" /> Xem trong danh mục
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
-
-          <h1 className="text-3xl font-black text-slate-900 tracking-tight">
-            Biến thể & <span className="text-indigo-600 font-thin italic">Phiên bản</span>
-          </h1>
         </motion.div>
 
         <motion.div

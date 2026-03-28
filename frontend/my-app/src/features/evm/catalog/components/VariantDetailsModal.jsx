@@ -37,8 +37,8 @@ const VariantDetailsModal = ({ isOpen, onClose, variant }) => {
               <strong className="text-gray-600">Giá sỉ:</strong>{" "}
               {variant.wholesalePrice
                 ? `${Number(variant.wholesalePrice).toLocaleString(
-                    "vi-VN"
-                  )} VNĐ`
+                  "vi-VN"
+                )} VNĐ`
                 : "N/A"}
             </p>
             <p>
@@ -67,7 +67,7 @@ const VariantDetailsModal = ({ isOpen, onClose, variant }) => {
               <img
                 src={variant.imageUrl}
                 alt={`${variant.versionName}`}
-                className="mt-2 h-40 w-auto rounded-lg object-cover border"
+                className="mt-2 h-40 w-auto rounded-lg object-cover"
               />
             ) : (
               <p className="text-gray-500 text-sm">Chưa có hình ảnh.</p>

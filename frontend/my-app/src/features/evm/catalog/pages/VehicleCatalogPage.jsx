@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
+import { useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   FiPlus,
@@ -25,6 +26,8 @@ const VehicleCatalogPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isDetailLoading, setIsDetailLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [searchParams] = useSearchParams();
+  const urlModelId = searchParams.get("modelId");
 
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -67,6 +70,12 @@ const VehicleCatalogPage = () => {
   useEffect(() => {
     fetchModels();
   }, [fetchModels]);
+
+  useEffect(() => {
+    if (urlModelId && models.length > 0) {
+      handleViewDetails(urlModelId);
+    }
+  }, [urlModelId, models.length > 0]);
 
   const handleOpenForm = async (modelToEdit = null) => {
     if (!modelToEdit) {

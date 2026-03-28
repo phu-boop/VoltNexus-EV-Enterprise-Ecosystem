@@ -38,13 +38,26 @@ const FeatureVariantsModal = ({ isOpen, onClose, feature }) => {
         onClose();
     };
 
+    const handleJumpToCatalog = (modelId) => {
+        const isAdmin = location.pathname.includes('/admin/');
+        const prefix = isAdmin ? '/evm/admin/products/catalog' : '/evm/staff/products/catalog';
+        navigate(`${prefix}?modelId=${modelId}`);
+        onClose();
+    };
+
     const columns = [
         {
             title: 'Mẫu xe / Phiên bản',
             key: 'model',
             render: (text, record) => (
                 <div className="flex flex-col">
-                    <span className="font-semibold text-slate-900">{record.modelName}</span>
+                    <span
+                        className="font-semibold text-slate-900 hover:text-indigo-600 cursor-pointer transition-colors"
+                        onClick={() => handleJumpToCatalog(record.modelId)}
+                        title="Xem trong danh mục"
+                    >
+                        {record.modelName}
+                    </span>
                     <span className="text-xs text-slate-500 font-medium tracking-wide uppercase px-1.5 py-0.5 bg-slate-50 border border-slate-100 rounded w-fit mt-1">
                         {record.versionName}
                     </span>

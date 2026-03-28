@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
 import ReactDOM from "react-dom";
-import { FiX, FiArrowRight, FiTrash2, FiLoader, FiCheckCircle, FiMinusCircle, FiLayout } from "react-icons/fi";
+import { useNavigate, useLocation } from "react-router-dom";
+import { FiX, FiArrowRight, FiTrash2, FiLoader, FiCheckCircle, FiMinusCircle, FiLayout, FiExternalLink } from "react-icons/fi";
 import { motion, AnimatePresence } from "framer-motion";
-import { Spin } from "antd";
+import { Spin, Tooltip } from "antd";
 import Swal from "sweetalert2";
 import {
   getAllFeatures,
@@ -15,6 +16,15 @@ const FeatureAssignmentModal = ({ isOpen, onClose, variant, onSuccess }) => {
   const [assignedFeatures, setAssignedFeatures] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const handleJumpToFeature = (featureName) => {
+    const isAdmin = location.pathname.includes('/admin/');
+    const prefix = isAdmin ? '/evm/admin/products/features' : '/evm/staff/products/features';
+    navigate(`${prefix}?search=${encodeURIComponent(featureName)}`);
+    onClose();
+  };
 
   useEffect(() => {
     if (isOpen) {
@@ -130,7 +140,13 @@ const FeatureAssignmentModal = ({ isOpen, onClose, variant, onSuccess }) => {
                         className="group p-3.5 bg-white border border-gray-100 rounded-xl hover:border-indigo-200 hover:shadow-md transition-all flex justify-between items-center cursor-default transform hover:-translate-y-0.5"
                       >
                         <div className="max-w-[80%]">
-                          <p className="font-bold text-gray-900 mb-1 leading-tight text-sm truncate">{feature.featureName}</p>
+                          <p
+                            className="font-bold text-gray-900 mb-1 leading-tight text-sm truncate hover:text-indigo-600 cursor-pointer transition-colors"
+                            onClick={() => handleJumpToFeature(feature.featureName)}
+                            title="Xem chi tiết trong thư viện"
+                          >
+                            {feature.featureName}
+                          </p>
                           <p className="text-[9px] font-black text-indigo-500 tracking-wider uppercase bg-indigo-50 inline-block px-1.5 py-0.5 rounded shadow-sm italic">{feature.category}</p>
                         </div>
                         <button
@@ -174,7 +190,13 @@ const FeatureAssignmentModal = ({ isOpen, onClose, variant, onSuccess }) => {
                         className="group p-3.5 bg-white border border-indigo-50 rounded-xl hover:border-red-200 hover:bg-red-50/30 hover:shadow-md transition-all flex justify-between items-center cursor-default"
                       >
                         <div className="max-w-[80%]">
-                          <p className="font-bold text-gray-900 mb-1 leading-tight text-sm truncate">{feature.featureName}</p>
+                          <p
+                            className="font-bold text-gray-900 mb-1 leading-tight text-sm truncate hover:text-indigo-600 cursor-pointer transition-colors"
+                            onClick={() => handleJumpToFeature(feature.featureName)}
+                            title="Xem chi tiết trong thư viện"
+                          >
+                            {feature.featureName}
+                          </p>
                           <div className="flex items-center gap-2">
                             <p className="text-[9px] font-black text-slate-500 tracking-wider uppercase bg-slate-50 inline-block px-1.5 py-0.5 rounded shadow-sm italic">Tiêu chuẩn</p>
                           </div>
