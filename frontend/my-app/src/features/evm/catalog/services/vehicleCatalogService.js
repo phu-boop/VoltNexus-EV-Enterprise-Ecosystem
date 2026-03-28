@@ -6,8 +6,15 @@ import apiConstVehicleService from "../../../../services/apiConstVehicleService.
 /**
  * Lấy danh sách tóm tắt tất cả các mẫu xe.
  */
-export const getModels = () => {
-  return apiConstVehicleService.get("vehicle-catalog/models");
+export const getModels = (params) => {
+  return apiConstVehicleService.get("vehicle-catalog/models", { params });
+};
+
+/**
+ * Tìm kiếm danh sách mẫu xe (hỗ trợ phân trang và bộ lọc).
+ */
+export const searchModels = (params) => {
+  return apiConstVehicleService.get("vehicle-catalog/models/search", { params });
 };
 
 /**
@@ -46,6 +53,16 @@ export const deactivateModel = (modelId) => {
   return apiConstVehicleService.delete(`vehicle-catalog/models/${modelId}`);
 };
 
+/**
+ * Xóa nhiều mẫu xe cùng lúc.
+ * @param {Array<number|string>} modelIds - Danh sách ID mẫu xe.
+ */
+export const deleteModelsBulk = (modelIds) => {
+  return apiConstVehicleService.delete("vehicle-catalog/models/bulk", {
+    data: modelIds,
+  });
+};
+
 // ==========================================================
 // ============ API CHO VARIANTS ============================
 // ==========================================================
@@ -79,6 +96,16 @@ export const updateVariant = (variantId, variantData) => {
  */
 export const deactivateVariant = (variantId) => {
   return apiConstVehicleService.delete(`vehicle-catalog/variants/${variantId}`);
+};
+
+/**
+ * Xóa nhiều phiên bản xe cùng lúc.
+ * @param {Array<number|string>} variantIds - Danh sách ID phiên bản.
+ */
+export const deleteVariantsBulk = (variantIds) => {
+  return apiConstVehicleService.delete("vehicle-catalog/variants/bulk", {
+    data: variantIds,
+  });
 };
 
 /**
@@ -157,6 +184,14 @@ export const getAllFeatures = () => {
 };
 
 /**
+ * Lấy danh sách các tính năng có sẵn (phân trang & tìm kiếm).
+ * @param {object} params - ví dụ: { search: 'NFC', page: 0, size: 10 }
+ */
+export const getFeaturesPaginated = (params) => {
+  return apiConstVehicleService.get("/vehicle-catalog/features/paginated", { params });
+};
+
+/**
  * Gán một tính năng cho một phiên bản.
  * @param {number|string} variantId ID của phiên bản.
  * @param {object} featureData { featureId, isStandard, additionalCost }
@@ -207,4 +242,14 @@ export const deleteFeature = (featureId) => {
   return apiConstVehicleService.delete(
     `vehicle-catalog/features/${featureId}`
   );
+};
+
+/**
+ * Xóa nhiều tính năng khỏi thư viện cùng lúc.
+ * @param {Array<number|string>} featureIds - Danh sách ID tính năng.
+ */
+export const deleteFeaturesBulk = (featureIds) => {
+  return apiConstVehicleService.delete("vehicle-catalog/features/bulk", {
+    data: featureIds,
+  });
 };

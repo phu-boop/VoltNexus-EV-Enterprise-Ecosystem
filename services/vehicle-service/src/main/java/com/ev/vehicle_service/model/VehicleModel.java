@@ -18,10 +18,12 @@ import java.util.Set;
 
 @Entity
 @Table(name = "vehicle_models")
-@Getter 
-@Setter 
-// @EqualsAndHashCode(exclude = {"features", "priceHistories"}) // Thêm và loại trừ để tránh vòng lặp
-// @ToString(exclude = {"features", "priceHistories"}) // Thêm và loại trừ để tránh vòng lặp
+@Getter
+@Setter
+// @EqualsAndHashCode(exclude = {"features", "priceHistories"}) // Thêm và loại
+// trừ để tránh vòng lặp
+// @ToString(exclude = {"features", "priceHistories"}) // Thêm và loại trừ để
+// tránh vòng lặp
 public class VehicleModel {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -34,7 +36,7 @@ public class VehicleModel {
     private String brand;
 
     @Column(name = "created_by")
-    // private Long createdBy; // Giả sử là ID của User 
+    // private Long createdBy; // Giả sử là ID của User
     private String createdBy; // Email của user (tạm thời)
 
     @CreationTimestamp
@@ -52,7 +54,7 @@ public class VehicleModel {
     @Column(nullable = false)
     private VehicleStatus status;
 
-    @Column(name = "thumbnail_url")
+    @Column(name = "thumbnail_url", columnDefinition = "TEXT")
     private String thumbnailUrl;
 
     // Đây là các thông số cơ bản của mẫu xe, làm giá trị mặc định
@@ -64,7 +66,7 @@ public class VehicleModel {
 
     @Column(name = "base_battery_capacity")
     private Integer baseBatteryCapacity;
-    
+
     @Column(name = "base_charging_time")
     private Float baseChargingTime;
 

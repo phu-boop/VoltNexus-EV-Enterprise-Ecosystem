@@ -82,6 +82,11 @@ public interface VehicleCatalogService {
         // --- Methods for Features ---
         List<VehicleFeature> getAllFeatures();
 
+        /**
+         * Lấy danh sách tính năng có phân trang và tìm kiếm.
+         */
+        Page<VehicleFeature> getAllFeaturesPaginated(String keyword, Pageable pageable);
+
         // Gán tính năng cho variant
         VehicleVariant assignFeatureToVariant(Long variantId, FeatureRequest request, String updatedByEmail);
 
@@ -134,4 +139,10 @@ public interface VehicleCatalogService {
          */
         Page<VariantDetailDto> getAllVariantsPaginated(String search, String status, Double minPrice, Double maxPrice,
                         Pageable pageable);
+
+        void deleteModelsBulk(List<Long> modelIds, String deletedByEmail);
+
+        void deleteVariantsBulk(List<Long> variantIds, String deletedByEmail);
+
+        void deleteFeaturesBulk(List<Long> featureIds, String deletedByEmail);
 }

@@ -131,6 +131,15 @@ public class VehicleCatalogController {
         return ResponseEntity.ok(ApiRespond.success("Model deleted successfully", null));
     }
 
+    @DeleteMapping("/models/bulk")
+    @PreAuthorize("hasAnyRole('ADMIN')")
+    public ResponseEntity<ApiRespond<Void>> deleteModelsBulk(
+            @RequestBody List<Long> modelIds,
+            @RequestHeader("X-User-Email") String email) {
+        vehicleCatalogService.deleteModelsBulk(modelIds, email);
+        return ResponseEntity.ok(ApiRespond.success("Models deleted successfully", null));
+    }
+
     // ==========================================================
     // ENDPOINTS FOR VARIANTS
     // ==========================================================
@@ -210,6 +219,15 @@ public class VehicleCatalogController {
             @RequestHeader("X-User-Email") String email) {
         vehicleCatalogService.deactivateVariant(variantId, email);
         return ResponseEntity.ok(ApiRespond.success("Variant has been discontinued", null));
+    }
+
+    @DeleteMapping("/variants/bulk")
+    @PreAuthorize("hasAnyRole('ADMIN')")
+    public ResponseEntity<ApiRespond<Void>> deleteVariantsBulk(
+            @RequestBody List<Long> variantIds,
+            @RequestHeader("X-User-Email") String email) {
+        vehicleCatalogService.deleteVariantsBulk(variantIds, email);
+        return ResponseEntity.ok(ApiRespond.success("Variants deleted successfully", null));
     }
 
     /**
@@ -319,6 +337,17 @@ public class VehicleCatalogController {
     }
 
     /**
+     * Lấy danh sách tính năng có phân trang và tìm kiếm.
+     */
+    @GetMapping("/features/paginated")
+    public ResponseEntity<ApiRespond<Page<VehicleFeature>>> getFeaturesPaginated(
+            @RequestParam(required = false) String search,
+            @PageableDefault(size = 10, sort = "featureId") Pageable pageable) {
+        Page<VehicleFeature> results = vehicleCatalogService.getAllFeaturesPaginated(search, pageable);
+        return ResponseEntity.ok(ApiRespond.success("Fetched paginated features successfully", results));
+    }
+
+    /**
      * Gán một tính năng cho một phiên bản.
      */
     @PostMapping("/variants/{variantId}/features")
@@ -385,6 +414,15 @@ public class VehicleCatalogController {
 
         vehicleCatalogService.deleteFeature(featureId, email);
         return ResponseEntity.ok(ApiRespond.success("Feature deleted successfully", null));
+    }
+
+    @DeleteMapping("/features/bulk")
+    @PreAuthorize("hasAnyRole('ADMIN')")
+    public ResponseEntity<ApiRespond<Void>> deleteFeaturesBulk(
+            @RequestBody List<Long> featureIds,
+            @RequestHeader("X-User-Email") String email) {
+        vehicleCatalogService.deleteFeaturesBulk(featureIds, email);
+        return ResponseEntity.ok(ApiRespond.success("Features deleted successfully", null));
     }
 
     /**

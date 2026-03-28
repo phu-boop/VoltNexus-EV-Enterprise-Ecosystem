@@ -194,7 +194,7 @@ const ModelForm = ({ isOpen, onClose, onSuccess, model }) => {
         const hasVariants = formData.variants.some(v => v.versionName.trim() !== "");
         const variantsPayload = hasVariants ? formData.variants.filter(v => v.versionName.trim() !== "").map((v) => ({
           versionName: v.versionName, color: v.color, price: Number(v.price) || 0, skuCode: v.skuCode, imageUrl: v.imageUrl,
-          batteryCapacity: Number(v.batteryCapacity) || null, baseChargingTime: Number(v.baseChargingTime) || null,
+          batteryCapacity: Number(v.batteryCapacity) || null, chargingTime: Number(v.chargingTime) || null,
           rangeKm: Number(v.rangeKm) || null, motorPower: Number(v.motorPower) || null, status: v.status || "IN_PRODUCTION",
         })) : [];
 

@@ -9,14 +9,17 @@ import {
   FiRefreshCw,
   FiSearch,
   FiX,
-  FiImage
+  FiImage,
+  FiCheckCircle
 } from "react-icons/fi";
 import {
   getModels,
+  searchModels,
   deactivateModel,
   getModelDetails,
+  deleteModelsBulk,
 } from "../services/vehicleCatalogService";
-import { Spin } from "antd";
+import { Spin, Pagination, Checkbox } from "antd";
 import ModelForm from "../components/ModelForm";
 import ConfirmationModal from "../components/ConfirmationModal";
 import ModelDetailsModal from "../components/ModelDetailsModal";
@@ -38,38 +41,48 @@ const VehicleCatalogPage = () => {
   const [selectedModel, setSelectedModel] = useState(null);
   const [modelForDetails, setModelForDetails] = useState(null);
   const [actionToConfirm, setActionToConfirm] = useState(null);
+  const [selectedIds, setSelectedIds] = useState([]);
+  const [isBulkConfirmOpen, setIsBulkConfirmOpen] = useState(false);
 
   const [viewMode, setViewMode] = useState("list"); // 'list' or 'grid'
 
-  const fetchModels = useCallback(async () => {
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(12);
+  const [totalElements, setTotalElements] = useState(0);
+
+  const fetchModels = useCallback(async (page = 1, size = pageSize, query = searchQuery) => {
     try {
       setIsLoading(true);
-      const response = await getModels();
+      const params = { page: page - 1, size };
+      if (query) params.keyword = query;
+
+      const response = await searchModels(params);
       const responseData = response.data?.data;
 
-      let modelsArray = [];
-      if (Array.isArray(responseData)) {
-        modelsArray = responseData;
-      } else if (responseData?.content && Array.isArray(responseData.content)) {
-        modelsArray = responseData.content;
+      if (responseData?.content) {
+        setModels(responseData.content);
+        setTotalElements(responseData.totalElements);
       } else {
-        console.warn("API did not return an array or paginated content:", responseData);
+        setModels([]);
+        setTotalElements(0);
       }
-
-      setModels(modelsArray);
       setError(null);
     } catch (err) {
       setError("Không thể tải danh mục xe. Vui lòng thử lại.");
       console.error(err);
       setModels([]);
+      setTotalElements(0);
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [pageSize, searchQuery]);
 
   useEffect(() => {
-    fetchModels();
-  }, [fetchModels]);
+    const timer = setTimeout(() => {
+      fetchModels(currentPage, pageSize, searchQuery);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchQuery, currentPage, pageSize, fetchModels]);
 
   useEffect(() => {
     if (urlModelId && models.length > 0) {
@@ -141,11 +154,39 @@ const VehicleCatalogPage = () => {
     setActionToConfirm(null);
   };
 
-  const filteredModels = (Array.isArray(models) ? models : []).filter((model) => {
-    const query = searchQuery.toLowerCase().replace(/\s+/g, "");
-    const combinedData = (model.brand + model.modelName).toLowerCase().replace(/\s+/g, "");
-    return combinedData.includes(query);
-  });
+  const handleSelectAll = (checked) => {
+    if (checked) {
+      const allIdsOnPage = models.map(m => m.modelId);
+      setSelectedIds(prev => Array.from(new Set([...prev, ...allIdsOnPage])));
+    } else {
+      const allIdsOnPage = models.map(m => m.modelId);
+      setSelectedIds(prev => prev.filter(id => !allIdsOnPage.includes(id)));
+    }
+  };
+
+  const handleSelectItem = (id) => {
+    setSelectedIds(prev =>
+      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+    );
+  };
+
+  const handleBulkDelete = async () => {
+    try {
+      await deleteModelsBulk(selectedIds);
+      setSelectedIds([]);
+      setIsBulkConfirmOpen(false);
+      fetchModels(currentPage, pageSize, searchQuery);
+    } catch (err) {
+      setError("Không thể xóa các mẫu xe đã chọn. Một số có thể có phiên bản xe đang hoạt động.");
+    }
+  };
+
+  const filteredModels = models;
+
+  const handlePageChange = (page, size) => {
+    setCurrentPage(page);
+    setPageSize(size);
+  };
 
   const renderGridView = () => (
     <motion.div
@@ -167,8 +208,13 @@ const VehicleCatalogPage = () => {
               damping: 20
             }}
             key={model.modelId}
-            className="group bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-lg transition-all duration-300 flex flex-col"
+            className="group bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-lg transition-all duration-300 flex flex-col relative"
           >
+            <Checkbox
+              checked={selectedIds.includes(model.modelId)}
+              onChange={(e) => handleSelectItem(model.modelId)}
+              className="absolute top-3 left-3 z-10 scale-125"
+            />
             <div className="relative h-48 bg-gray-50 flex items-center justify-center overflow-hidden">
               {model.thumbnailUrl ? (
                 <img
@@ -251,6 +297,11 @@ const VehicleCatalogPage = () => {
             key={model.modelId}
             className="group bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-all duration-300 flex items-center p-3 gap-4"
           >
+            <Checkbox
+              checked={selectedIds.includes(model.modelId)}
+              onChange={(e) => handleSelectItem(model.modelId)}
+              className="ml-2 scale-110"
+            />
             <div className="w-16 h-16 bg-gray-50 rounded-lg flex items-center justify-center shrink-0 overflow-hidden border border-gray-50">
               {model.thumbnailUrl ? (
                 <img src={model.thumbnailUrl} alt={model.modelName} className="w-full h-full object-cover transition-transform duration-500" />
@@ -359,7 +410,10 @@ const VehicleCatalogPage = () => {
             type="text"
             placeholder="Tìm kiếm mẫu xe..."
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              setCurrentPage(1);
+            }}
             className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-indigo-500/10 font-medium text-gray-900 outline-none transition-all placeholder:text-gray-400 text-sm"
           />
         </div>
@@ -387,11 +441,57 @@ const VehicleCatalogPage = () => {
           </button>
         </div>
 
-        <div className="flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-600 rounded-xl font-black text-xs">
+        <div className="flex items-center gap-3 px-4 py-2 bg-gray-50 rounded-2xl border border-gray-100">
+          <Checkbox
+            onChange={(e) => handleSelectAll(e.target.checked)}
+            checked={models.length > 0 && models.every(m => selectedIds.includes(m.modelId))}
+            indeterminate={models.some(m => selectedIds.includes(m.modelId)) && !models.every(m => selectedIds.includes(m.modelId))}
+          />
+          <span className="text-[10px] font-black uppercase text-gray-500 tracking-widest">Chọn tất cả</span>
+        </div>
+
+        <div className="flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-600 rounded-xl font-black text-xs ml-auto">
           <div className="w-1.5 h-1.5 rounded-full bg-indigo-600 animate-pulse"></div>
-          {filteredModels.length} XE PHẢN HỒI
+          {totalElements} XE PHẢN HỒI
         </div>
       </div>
+
+      {/* Bulk Action Bar */}
+      <AnimatePresence>
+        {selectedIds.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="mb-8 p-4 bg-slate-900 rounded-2xl shadow-xl shadow-slate-200 flex items-center justify-between text-white"
+          >
+            <div className="flex items-center gap-4">
+              <div className="bg-white/20 p-2 rounded-xl">
+                <FiCheckCircle className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <p className="font-bold text-sm uppercase tracking-widest italic">Đã chọn {selectedIds.length} mẫu xe</p>
+                <p className="text-[10px] opacity-70 font-bold uppercase tracking-tighter">Sẵn sàng để xóa hàng loạt</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setSelectedIds([])}
+                className="px-4 py-2 text-xs font-bold uppercase tracking-widest hover:bg-white/10 rounded-xl transition-all cursor-pointer"
+              >
+                Hủy chọn
+              </button>
+              <button
+                onClick={() => setIsBulkConfirmOpen(true)}
+                className="flex items-center gap-2 bg-red-500 hover:bg-red-600 px-6 py-2 rounded-xl text-xs font-bold uppercase tracking-widest shadow-lg shadow-red-900/20 transition-all active:scale-95 cursor-pointer"
+              >
+                <FiTrash2 className="w-4 h-4" /> Xóa hàng loạt
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
 
       {error && (
         <motion.div
@@ -434,7 +534,22 @@ const VehicleCatalogPage = () => {
       ) : (
         <React.Fragment>
           {filteredModels.length > 0 ? (
-            viewMode === "grid" ? renderGridView() : renderListView()
+            <div className="flex flex-col gap-6 w-full">
+              {viewMode === "grid" ? renderGridView() : renderListView()}
+
+              <div className="flex justify-center md:justify-end mt-8 w-[98%] max-w-[1550px] mx-auto bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+                <Pagination
+                  current={currentPage}
+                  pageSize={pageSize}
+                  total={totalElements}
+                  onChange={handlePageChange}
+                  showSizeChanger
+                  pageSizeOptions={['8', '12', '24', '48']}
+                  showTotal={(total, range) => `${range[0]}-${range[1]} của ${total} xe`}
+                  className="custom-pagination"
+                />
+              </div>
+            </div>
           ) : (
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
@@ -447,7 +562,10 @@ const VehicleCatalogPage = () => {
               <p className="text-xl font-bold text-gray-900">Không tìm thấy mẫu xe nào</p>
               <p className="text-gray-500 mt-2 max-w-sm mx-auto font-medium">Thử thay đổi từ khóa tìm kiếm hoặc làm mới lại danh sách.</p>
               <button
-                onClick={() => setSearchQuery("")}
+                onClick={() => {
+                  setSearchQuery("");
+                  setCurrentPage(1);
+                }}
                 className="mt-8 px-8 py-3 bg-white border border-gray-200 text-gray-700 font-bold rounded-xl shadow-sm hover:bg-gray-50 hover:shadow-md transition-all cursor-pointer active:scale-95"
               >
                 Xóa bộ lọc
@@ -481,6 +599,16 @@ const VehicleCatalogPage = () => {
           onConfirm={actionToConfirm}
           title="Xác nhận hành động"
           message={`Bạn có chắc chắn muốn ngừng sản xuất mẫu xe "${selectedModel?.brand} ${selectedModel?.modelName}" không? Lịch sử và dữ liệu vẫn được giữ lại nhưng xe sẽ không còn mua được.`}
+        />
+      )}
+
+      {isBulkConfirmOpen && (
+        <ConfirmationModal
+          isOpen={isBulkConfirmOpen}
+          onClose={() => setIsBulkConfirmOpen(false)}
+          onConfirm={handleBulkDelete}
+          title="Xác nhận xóa hàng loạt"
+          message={`Bạn có chắc chắn muốn xóa ${selectedIds.length} mẫu xe đã chọn không? Hành động này sẽ xóa vĩnh viễn dữ liệu nếu không có phiên bản xe nào đang hoạt động.`}
         />
       )}
     </motion.div>

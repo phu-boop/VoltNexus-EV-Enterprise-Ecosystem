@@ -1,9 +1,12 @@
 import React, { useEffect, useRef } from "react";
 import ReactDOM from "react-dom";
-import { FiX } from "react-icons/fi";
+import { FiX, FiExternalLink } from "react-icons/fi";
+import { useNavigate, useLocation } from "react-router-dom";
 
 const VariantDetailsModal = ({ isOpen, onClose, variant }) => {
   const scrollRef = useRef(null);
+  const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     if (isOpen && scrollRef.current) {
@@ -12,6 +15,13 @@ const VariantDetailsModal = ({ isOpen, onClose, variant }) => {
   }, [isOpen, variant?.variantId]);
 
   if (!isOpen || !variant) return null;
+
+  const handleJumpToFeature = (featureName) => {
+    const isAdmin = location.pathname.includes('/admin/');
+    const prefix = isAdmin ? '/evm/admin/products/features' : '/evm/staff/products/features';
+    navigate(`${prefix}?search=${encodeURIComponent(featureName)}`);
+    onClose();
+  };
 
   const portalContent = (
     <div className="fixed inset-0 z-[9999] flex justify-end">
@@ -84,7 +94,7 @@ const VariantDetailsModal = ({ isOpen, onClose, variant }) => {
               <img
                 src={variant.imageUrl}
                 alt={`${variant.versionName}`}
-                className="mt-2 h-40 w-auto rounded-lg object-cover border"
+                className="mt-2 h-40 w-auto rounded-lg object-cover"
               />
             ) : (
               <p className="text-gray-500 text-sm">Chưa có hình ảnh.</p>
@@ -99,9 +109,18 @@ const VariantDetailsModal = ({ isOpen, onClose, variant }) => {
             {variant.features && variant.features.length > 0 ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {variant.features.map((feature) => (
-                  <div key={feature.featureId} className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg text-xs font-medium text-gray-700 border border-gray-100 shadow-sm">
-                    <div className="w-1 h-1 rounded-full bg-indigo-400"></div>
-                    {feature.featureName}
+                  <div key={feature.featureId} className="group flex items-center justify-between p-2 bg-gray-50 rounded-lg text-xs font-medium text-gray-700 border border-gray-100 shadow-sm transition-all hover:bg-white hover:border-indigo-100 hover:shadow-md">
+                    <div className="flex items-center gap-2">
+                      <div className="w-1 h-1 rounded-full bg-indigo-400"></div>
+                      {feature.featureName}
+                    </div>
+                    <button
+                      onClick={() => handleJumpToFeature(feature.featureName)}
+                      className="p-1 text-indigo-400 hover:text-indigo-600 hover:bg-indigo-50 rounded opacity-0 group-hover:opacity-100 transition-all"
+                      title="Xem chi tiết tính năng"
+                    >
+                      <FiExternalLink className="w-3.5 h-3.5" />
+                    </button>
                   </div>
                 ))}
               </div>

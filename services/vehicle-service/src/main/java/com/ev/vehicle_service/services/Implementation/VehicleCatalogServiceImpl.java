@@ -640,12 +640,20 @@ public class VehicleCatalogServiceImpl implements VehicleCatalogService {
     }
 
     // ==========================================================
-    // TRIỂN KHAI CHO QUẢN LÝ FEATURES
+    // ============ FEATURE METHODS ============================
     // ==========================================================
 
     @Override
     public List<VehicleFeature> getAllFeatures() {
         return featureRepository.findAll();
+    }
+
+    @Override
+    public Page<VehicleFeature> getAllFeaturesPaginated(String keyword, Pageable pageable) {
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            return featureRepository.searchFeatures(keyword.trim(), pageable);
+        }
+        return featureRepository.findAll(pageable);
     }
 
     @Override
@@ -752,6 +760,49 @@ public class VehicleCatalogServiceImpl implements VehicleCatalogService {
                             .build();
                 })
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional
+    public void deleteModelsBulk(List<Long> modelIds, String deletedByEmail) {
+        for (Long modelId : modelIds) {
+            VehicleModel model = modelRepository.findById(modelId)
+                    .orElseThrow(() -> new AppException(ErrorCode.VEHICLE_MODEL_NOT_FOUND));
+
+            if (!model.getVariants().isEmpty()) {
+                throw new AppException(ErrorCode.MODEL_HAS_VARIANTS);
+            }
+            modelRepository.delete(model);
+        }
+    }
+
+    @Override
+    @Transactional
+    public void deleteVariantsBulk(List<Long> variantIds, String deletedByEmail) {
+        for (Long variantId : variantIds) {
+            VehicleVariant variant = variantRepository.findById(variantId)
+                    .orElseThrow(() -> new AppException(ErrorCode.VEHICLE_VARIANT_NOT_FOUND));
+
+            // Check if variant has dependencies that prevent deletion (e.g. in orders)
+            // For now, we'll just delete it, assuming CascadeType.ALL handles internal
+            // entities like features/history if configured, or we delete them manually.
+            variantRepository.delete(variant);
+        }
+    }
+
+    @Override
+    @Transactional
+    public void deleteFeaturesBulk(List<Long> featureIds, String deletedByEmail) {
+        for (Long featureId : featureIds) {
+            VehicleFeature feature = featureRepository.findById(featureId)
+                    .orElseThrow(() -> new AppException(ErrorCode.FEATURE_NOT_FOUND));
+
+            boolean isAssigned = variantFeatureRepository.existsByVehicleFeature_FeatureId(featureId);
+            if (isAssigned) {
+                throw new AppException(ErrorCode.FEATURE_IS_ASSIGNED);
+            }
+            featureRepository.delete(feature);
+        }
     }
 
     // --- Helper Methods ---

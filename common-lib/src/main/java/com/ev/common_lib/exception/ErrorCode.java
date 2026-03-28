@@ -201,6 +201,7 @@ public enum ErrorCode {
 
     ALLOCATION_NOT_FOUND("8003", "Không tìm thấy dữ liệu phân bổ cho đại lý và phiên bản này", HttpStatus.NOT_FOUND),
 
+    MODEL_HAS_VARIANTS("8004", "Model đang có phiên bảng đang hoạt động", HttpStatus.BAD_REQUEST),
     // ===== 9xxx - Dịch vụ bên ngoài =====
     EMAIL_SENDING_FAILED("9001", "Gửi email thất bại", HttpStatus.INTERNAL_SERVER_ERROR),
 
