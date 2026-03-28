@@ -43,4 +43,5 @@ apiConstVehicleService.interceptors.response.use(
   }
 );
 
+export const API_BASE_VEHICLE = `${import.meta.env.VITE_API_BASE_URL}/vehicles/`;
 export default apiConstVehicleService;

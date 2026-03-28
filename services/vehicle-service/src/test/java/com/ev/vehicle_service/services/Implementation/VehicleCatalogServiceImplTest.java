@@ -135,6 +135,34 @@ class VehicleCatalogServiceImplTest {
     }
 
     @Nested
+    @DisplayName("History Retrieval Tests")
+    class HistoryRetrievalTests {
+        @Test
+        @DisplayName("Should return variant price history")
+        void getVariantPriceHistory_ShouldReturnList() {
+            when(priceHistoryRepository.findByVehicleVariant_VariantIdOrderByChangeDateDesc(1L))
+                    .thenReturn(List.of(new PriceHistory()));
+
+            List<com.ev.vehicle_service.dto.response.PriceHistoryDto> result = vehicleCatalogService
+                    .getVariantPriceHistory(1L);
+
+            assertThat(result).hasSize(1);
+        }
+
+        @Test
+        @DisplayName("Should return variant audit history")
+        void getVariantAuditHistory_ShouldReturnList() {
+            when(variantHistoryRepository.findByVariantIdOrderByActionDateDesc(1L))
+                    .thenReturn(List.of(new VehicleVariantHistory()));
+
+            List<com.ev.vehicle_service.dto.response.VariantHistoryDto> result = vehicleCatalogService
+                    .getVariantAuditHistory(1L);
+
+            assertThat(result).hasSize(1);
+        }
+    }
+
+    @Nested
     @DisplayName("Model Search Tests")
     class ModelSearchTests {
         @Test
@@ -520,6 +548,7 @@ class VehicleCatalogServiceImplTest {
 
         @Test
         @DisplayName("Should handle missing attributes in request context during inventory fetch")
+        @SuppressWarnings("unchecked")
         void getComparisonData_WhenNoRequest_ShouldStillWork() {
             List<Long> ids = List.of(1L);
             when(variantRepository.findAllWithDetailsByIds(ids)).thenReturn(List.of(variant));
@@ -572,6 +601,7 @@ class VehicleCatalogServiceImplTest {
 
         @Test
         @DisplayName("Should return empty list when inventory fetch fails")
+        @SuppressWarnings("unchecked")
         void getVariantIdsFromInventory_WhenFetchFails_ShouldReturnEmptyList() {
             when(restTemplate.exchange(anyString(), any(), any(), any(ParameterizedTypeReference.class)))
                     .thenThrow(new RuntimeException("Fetch Error"));

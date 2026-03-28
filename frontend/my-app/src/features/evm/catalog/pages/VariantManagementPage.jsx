@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
+import { useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Plus,
@@ -14,6 +15,7 @@ import {
   AlertCircle,
   CheckCircle2,
   Info,
+  History,
 } from "lucide-react";
 import Swal from "sweetalert2";
 import {
@@ -26,6 +28,7 @@ import VariantForm from "../components/VariantForm";
 import ConfirmationModal from "../components/ConfirmationModal";
 import FeatureAssignmentModal from "../components/FeatureAssignmentModal";
 import VariantDetailsModal from "../../../../components/common/detail/VariantDetailsModal";
+import VariantHistoryDrawer from "../components/VariantHistoryDrawer";
 
 const STATUS_OPTIONS = {
   IN_PRODUCTION: { label: "Đang sản xuất", color: "bg-indigo-50 text-indigo-700 border-indigo-100 shadow-sm shadow-indigo-50/50" },
@@ -53,7 +56,13 @@ const VariantManagementPage = () => {
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [variantForDetails, setVariantForDetails] = useState(null);
 
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  const [variantForHistory, setVariantForHistory] = useState(null);
+
   const [variantSearchQuery, setVariantSearchQuery] = useState("");
+  const [searchParams] = useSearchParams();
+  const urlModelId = searchParams.get("modelId");
+  const urlVariantId = searchParams.get("variantId");
 
   useEffect(() => {
     const fetchAllModels = async () => {
@@ -97,6 +106,25 @@ const VariantManagementPage = () => {
     }
   }, [selectedModelId]);
 
+  // Xử lý deep-linking từ URL params
+  useEffect(() => {
+    if (urlModelId && models.length > 0) {
+      setSelectedModelId(urlModelId);
+    }
+  }, [urlModelId, models]);
+
+  useEffect(() => {
+    if (urlVariantId && selectedModelDetails?.variants) {
+      const variant = selectedModelDetails.variants.find(
+        (v) => v.variantId.toString() === urlVariantId
+      );
+      if (variant) {
+        setVariantForDetails(variant);
+        setIsDetailsOpen(true);
+      }
+    }
+  }, [urlVariantId, selectedModelDetails]);
+
   useEffect(() => {
     fetchVariantsForModel();
   }, [fetchVariantsForModel]);
@@ -126,15 +154,22 @@ const VariantManagementPage = () => {
     setIsConfirmOpen(false);
     setIsFeatureModalOpen(false);
     setIsDetailsOpen(false);
+    setIsHistoryOpen(false);
     setVariantToEdit(null);
     setVariantToDeactivate(null);
     setVariantForFeatures(null);
     setVariantForDetails(null);
+    setVariantForHistory(null);
   };
 
   const handleOpenDetailsModal = (variant) => {
     setVariantForDetails(variant);
     setIsDetailsOpen(true);
+  };
+
+  const handleOpenHistoryDrawer = (variant) => {
+    setVariantForHistory(variant);
+    setIsHistoryOpen(true);
   };
 
   const handleDeactivateConfirm = async () => {
@@ -340,6 +375,13 @@ const VariantManagementPage = () => {
                                 <Settings className="w-4 h-4" />
                               </button>
                               <button
+                                onClick={() => handleOpenHistoryDrawer(variant)}
+                                className="p-2 text-neutral-500 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition-all cursor-pointer"
+                                title="Xem lịch sử thay đổi"
+                              >
+                                <History className="w-4 h-4" />
+                              </button>
+                              <button
                                 onClick={() => handleOpenEditForm(variant)}
                                 className="p-2 text-neutral-500 hover:bg-amber-50 hover:text-amber-600 rounded-xl transition-all cursor-pointer"
                                 title="Chỉnh sửa phiên bản"
@@ -434,6 +476,12 @@ const VariantManagementPage = () => {
           variant={variantForDetails}
         />
       )}
+      <VariantHistoryDrawer
+        isOpen={isHistoryOpen}
+        onClose={handleCloseModals}
+        variantId={variantForHistory?.variantId}
+        variantName={variantForHistory?.versionName}
+      />
     </div>
   );
 };

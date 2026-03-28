@@ -111,6 +111,30 @@ export const getVariantDetails = (variantId) => {
 };
 
 /**
+ * Lấy lịch sử giá của một phiên bản xe.
+ * @param {number | string} variantId - ID của phiên bản.
+ */
+export const getVariantPriceHistory = (variantId) => {
+  return apiConstVehicleService.get(`vehicle-catalog/variants/${variantId}/price-history`);
+};
+
+/**
+ * Lấy nhật ký thay đổi (audit log) của một phiên bản xe.
+ * @param {number | string} variantId - ID của phiên bản.
+ */
+export const getVariantAuditHistory = (variantId) => {
+  return apiConstVehicleService.get(`vehicle-catalog/variants/${variantId}/history`);
+};
+
+/**
+ * Lấy danh sách các phiên bản xe có gán một tính năng cụ thể.
+ * @param {number | string} featureId - ID của tính năng.
+ */
+export const getVariantsByFeature = (featureId) => {
+  return apiConstVehicleService.get(`vehicle-catalog/features/${featureId}/variants`);
+};
+
+/**
  * Lấy chi tiết của nhiều phiên bản dựa trên danh sách ID.
  * @param {Array<number|string>} ids - Mảng các variantId.
  */

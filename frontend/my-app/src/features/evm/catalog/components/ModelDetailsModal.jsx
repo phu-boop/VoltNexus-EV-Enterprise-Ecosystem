@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import ReactDOM from "react-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import {
   FiX,
   FiInfo,
@@ -9,13 +10,16 @@ import {
   FiCheckCircle,
   FiBatteryCharging,
   FiZap,
-  FiMap
+  FiMap,
+  FiExternalLink
 } from "react-icons/fi";
 import { motion, AnimatePresence } from "framer-motion";
 
 const ModelDetailsModal = ({ isOpen, onClose, model }) => {
   const [activeTab, setActiveTab] = useState("general");
   const scrollContainerRef = useRef(null);
+  const navigate = useNavigate();
+  const location = useLocation();
 
   // Reset scroll and tab when model changes or modal opens
   useEffect(() => {
@@ -216,6 +220,20 @@ const ModelDetailsModal = ({ isOpen, onClose, model }) => {
                       {model.variants && model.variants.length > 0 ? (
                         model.variants.map((variant) => (
                           <div key={variant.variantId} className="bg-white p-6 border border-gray-100 rounded-3xl hover:border-indigo-100 shadow-sm transition-all group relative overflow-hidden">
+                            {/* Nút điều hướng chi tiết */}
+                            <button
+                              onClick={() => {
+                                const isAdmin = location.pathname.includes('/admin/');
+                                const prefix = isAdmin ? '/evm/admin/products/variants' : '/evm/staff/products/variants';
+                                navigate(`${prefix}?modelId=${model.modelId}&variantId=${variant.variantId}`);
+                                onClose();
+                              }}
+                              className="absolute top-4 right-4 p-2 bg-indigo-50 text-indigo-600 rounded-xl opacity-0 group-hover:opacity-100 transition-all hover:bg-indigo-600 hover:text-white shadow-sm z-10"
+                              title="Xem chi tiết tại trang quản lý"
+                            >
+                              <FiExternalLink className="w-4 h-4" />
+                            </button>
+
                             <div className="flex flex-col gap-4">
                               <div className="flex justify-between items-start">
                                 <h4 className="text-lg font-black text-gray-900 group-hover:text-indigo-600 transition-colors uppercase italic tracking-tight">

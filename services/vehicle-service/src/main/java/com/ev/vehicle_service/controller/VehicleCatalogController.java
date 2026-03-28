@@ -12,6 +12,8 @@ import com.ev.vehicle_service.dto.request.UpdateModelRequest;
 import com.ev.vehicle_service.dto.request.UpdateVariantRequest;
 import com.ev.vehicle_service.dto.response.ModelDetailDto;
 import com.ev.vehicle_service.dto.response.ModelSummaryDto;
+import com.ev.vehicle_service.dto.response.PriceHistoryDto;
+import com.ev.vehicle_service.dto.response.VariantHistoryDto;
 import com.ev.vehicle_service.model.VehicleFeature;
 import com.ev.vehicle_service.model.VehicleModel;
 import com.ev.vehicle_service.model.VehicleVariant;
@@ -257,7 +259,7 @@ public class VehicleCatalogController {
     @PostMapping("/public/compare")
     public ResponseEntity<ApiRespond<List<ComparisonDto>>> getPublicComparisonDetails(
             @RequestBody List<Long> variantIds) {
-        
+
         // For public comparison, we don't need dealer-specific inventory data
         // Just return the vehicle details without inventory information
         List<ComparisonDto> results = vehicleCatalogService.getComparisonData(variantIds, null, new HttpHeaders());
@@ -383,5 +385,34 @@ public class VehicleCatalogController {
 
         vehicleCatalogService.deleteFeature(featureId, email);
         return ResponseEntity.ok(ApiRespond.success("Feature deleted successfully", null));
+    }
+
+    /**
+     * Lấy danh sách biến thể có gán tính năng cụ thể.
+     */
+    @GetMapping("/features/{featureId}/variants")
+    public ResponseEntity<ApiRespond<List<com.ev.vehicle_service.dto.response.FeatureVariantDto>>> getVariantsByFeatureId(
+            @PathVariable Long featureId) {
+        List<com.ev.vehicle_service.dto.response.FeatureVariantDto> variants = vehicleCatalogService
+                .getVariantsByFeatureId(featureId);
+        return ResponseEntity.ok(ApiRespond.success("Fetched variants for feature successfully", variants));
+    }
+
+    /**
+     * Lấy lịch sử giá của một phiên bản xe.
+     */
+    @GetMapping("/variants/{variantId}/price-history")
+    public ResponseEntity<ApiRespond<List<PriceHistoryDto>>> getVariantPriceHistory(@PathVariable Long variantId) {
+        List<PriceHistoryDto> history = vehicleCatalogService.getVariantPriceHistory(variantId);
+        return ResponseEntity.ok(ApiRespond.success("Fetched price history successfully", history));
+    }
+
+    /**
+     * Lấy nhật ký thay đổi (audit log) của một phiên bản xe.
+     */
+    @GetMapping("/variants/{variantId}/history")
+    public ResponseEntity<ApiRespond<List<VariantHistoryDto>>> getVariantAuditHistory(@PathVariable Long variantId) {
+        List<VariantHistoryDto> history = vehicleCatalogService.getVariantAuditHistory(variantId);
+        return ResponseEntity.ok(ApiRespond.success("Fetched audit history successfully", history));
     }
 }

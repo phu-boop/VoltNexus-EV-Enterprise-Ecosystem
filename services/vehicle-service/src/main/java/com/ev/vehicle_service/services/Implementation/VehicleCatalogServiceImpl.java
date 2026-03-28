@@ -22,6 +22,8 @@ import com.ev.vehicle_service.dto.request.UpdateFeatureRequest;
 import com.ev.vehicle_service.dto.response.ModelDetailDto;
 import com.ev.vehicle_service.dto.response.ModelSummaryDto;
 
+import com.ev.vehicle_service.dto.response.PriceHistoryDto;
+import com.ev.vehicle_service.dto.response.VariantHistoryDto;
 import com.ev.vehicle_service.model.VehicleFeature;
 import com.ev.vehicle_service.model.VehicleModel;
 import com.ev.vehicle_service.model.VehicleVariant;
@@ -56,6 +58,8 @@ import org.springframework.data.domain.Sort.Direction;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
+import java.util.stream.Collectors;
+import com.ev.vehicle_service.dto.response.FeatureVariantDto;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
@@ -72,11 +76,9 @@ import java.util.List;
 import java.util.UUID;
 import java.util.Map;
 import java.util.ArrayList;
-import java.util.stream.Collectors;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.math.BigDecimal;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -388,6 +390,14 @@ public class VehicleCatalogServiceImpl implements VehicleCatalogService {
 
         saveVariantHistory(variant, EVMAction.UPDATE, updatedByEmail);
         // Cập nhật thông tin cho variant
+
+        // Kiểm tra nếu SKU thay đổi và xử lý trùng lặp
+        if (request.getSkuCode() != null && !request.getSkuCode().equals(variant.getSkuCode())) {
+            if (variantRepository.existsBySkuCode(request.getSkuCode())) {
+                throw new AppException(ErrorCode.VEHICLE_VARIANT_SKU_ALREADY_EXISTS);
+            }
+            variant.setSkuCode(request.getSkuCode());
+        }
 
         variant.setVersionName(request.getVersionName());
         variant.setColor(request.getColor());
@@ -723,6 +733,27 @@ public class VehicleCatalogServiceImpl implements VehicleCatalogService {
         featureRepository.delete(feature);
     }
 
+    @Override
+    public List<FeatureVariantDto> getVariantsByFeatureId(Long featureId) {
+        return variantFeatureRepository.findByVehicleFeature_FeatureId(featureId)
+                .stream()
+                .map(vf -> {
+                    VehicleVariant variant = vf.getVehicleVariant();
+                    return FeatureVariantDto.builder()
+                            .variantId(variant.getVariantId())
+                            .modelId(variant.getVehicleModel() != null ? variant.getVehicleModel().getModelId() : null)
+                            .modelName(variant.getVehicleModel() != null ? variant.getVehicleModel().getModelName()
+                                    : "N/A")
+                            .versionName(variant.getVersionName())
+                            .price(variant.getPrice())
+                            .status(variant.getStatus())
+                            .isStandard(vf.isStandard())
+                            .additionalCost(vf.getAdditionalCost())
+                            .build();
+                })
+                .collect(Collectors.toList());
+    }
+
     // --- Helper Methods ---
 
     private VehicleModel findModelById(Long modelId) {
@@ -963,6 +994,39 @@ public class VehicleCatalogServiceImpl implements VehicleCatalogService {
         }
 
         return Collections.emptyList();
+    }
+
+    @Override
+    public List<PriceHistoryDto> getVariantPriceHistory(Long variantId) {
+        return priceHistoryRepository.findByVehicleVariant_VariantIdOrderByChangeDateDesc(variantId)
+                .stream()
+                .map(price -> PriceHistoryDto.builder()
+                        .priceId(price.getPriceId())
+                        .oldPrice(price.getOldPrice())
+                        .newPrice(price.getNewPrice())
+                        .changeDate(price.getChangeDate())
+                        .reason(price.getReason())
+                        .changedBy(price.getChangedBy())
+                        .build())
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<VariantHistoryDto> getVariantAuditHistory(Long variantId) {
+        return variantHistoryRepository.findByVariantIdOrderByActionDateDesc(variantId)
+                .stream()
+                .map(history -> VariantHistoryDto.builder()
+                        .id(history.getId())
+                        .variantId(history.getVariantId())
+                        .action(history.getAction())
+                        .actionDate(history.getActionDate())
+                        .changedBy(history.getChangedBy())
+                        .versionName(history.getVersionName())
+                        .color(history.getColor())
+                        .price(history.getPrice())
+                        .status(history.getStatus())
+                        .build())
+                .collect(Collectors.toList());
     }
 
 }

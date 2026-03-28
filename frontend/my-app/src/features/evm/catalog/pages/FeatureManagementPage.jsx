@@ -13,6 +13,7 @@ import {
   MoreVertical,
   CheckCircle2,
   Box,
+  Eye,
 } from "lucide-react";
 import {
   getAllFeatures,
@@ -21,6 +22,7 @@ import {
 import { Spin } from "antd";
 import FeatureFormModal from "../components/FeatureFormModal";
 import ConfirmationModal from "../components/ConfirmationModal";
+import FeatureVariantsModal from "../components/FeatureVariantsModal";
 
 const FeatureManagementPage = () => {
   const [features, setFeatures] = useState([]);
@@ -33,6 +35,8 @@ const FeatureManagementPage = () => {
 
   const [featureToEdit, setFeatureToEdit] = useState(null);
   const [featureToDelete, setFeatureToDelete] = useState(null);
+  const [isVariantsOpen, setIsVariantsOpen] = useState(false);
+  const [selectedFeatureForVariants, setSelectedFeatureForVariants] = useState(null);
 
   const fetchFeatures = useCallback(async () => {
     try {
@@ -68,10 +72,15 @@ const FeatureManagementPage = () => {
   };
 
   const handleCloseModals = () => {
-    setIsFormOpen(false);
-    setIsConfirmOpen(false);
     setFeatureToEdit(null);
     setFeatureToDelete(null);
+    setIsVariantsOpen(false);
+    setSelectedFeatureForVariants(null);
+  };
+
+  const handleOpenVariantsModal = (feature) => {
+    setSelectedFeatureForVariants(feature);
+    setIsVariantsOpen(true);
   };
 
   const handleDeleteConfirm = async () => {
@@ -202,8 +211,14 @@ const FeatureManagementPage = () => {
                       className="group hover:bg-neutral-50/50 transition-all"
                     >
                       <td className="px-8 py-5">
-                        <div className="flex flex-col">
-                          <span className="font-bold text-neutral-800 text-base">{feature.featureName}</span>
+                        <div
+                          className="flex flex-col cursor-pointer group/name"
+                          onClick={() => handleOpenVariantsModal(feature)}
+                        >
+                          <span className="font-bold text-neutral-800 text-base group-hover/name:text-indigo-600 transition-colors flex items-center gap-2">
+                            {feature.featureName}
+                            <Eye className="w-3 h-3 opacity-0 group-hover/name:opacity-100 transition-opacity" />
+                          </span>
                           <p className="text-sm text-neutral-500 mt-1 line-clamp-1 max-w-sm">
                             {feature.description || "Không có mô tả kỹ thuật."}
                           </p>
@@ -222,6 +237,13 @@ const FeatureManagementPage = () => {
                       </td>
                       <td className="px-8 py-5">
                         <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button
+                            onClick={() => handleOpenVariantsModal(feature)}
+                            className="p-2.5 text-neutral-500 hover:bg-indigo-50 hover:text-indigo-600 rounded-xl transition-all cursor-pointer"
+                            title="Xem các biến thể"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </button>
                           <button
                             onClick={() => handleOpenEditForm(feature)}
                             className="p-2.5 text-neutral-500 hover:bg-amber-50 hover:text-amber-600 rounded-xl transition-all cursor-pointer"
@@ -280,6 +302,13 @@ const FeatureManagementPage = () => {
           onConfirm={handleDeleteConfirm}
           title="Xác nhận xóa thành phần"
           message={`Bạn có chắc chắn muốn xóa vĩnh viễn "${featureToDelete?.featureName}" không? Thành phần này có thể được liên kết với các biến thể xe đang hoạt động.`}
+        />
+      )}
+      {isVariantsOpen && (
+        <FeatureVariantsModal
+          isOpen={isVariantsOpen}
+          onClose={handleCloseModals}
+          feature={selectedFeatureForVariants}
         />
       )}
     </div>
