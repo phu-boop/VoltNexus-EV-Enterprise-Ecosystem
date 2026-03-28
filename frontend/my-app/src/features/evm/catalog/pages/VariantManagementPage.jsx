@@ -162,19 +162,21 @@ const VariantManagementPage = () => {
   return (
     <div className="min-h-screen bg-neutral-50/30">
       {/* Header Section */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 m-5">
         <motion.div
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
         >
-          <div className="flex items-center gap-1.5 text-indigo-600 font-bold mb-1.5">
-            <Layers className="w-4 h-4 shadow-lg shadow-indigo-100 rounded-lg" />
-            <span className="uppercase tracking-[0.2em] text-[9px] font-black italic">Hệ thống Biến thể v3.0</span>
+          <div className="flex items-center gap-2 text-indigo-600 font-bold mb-2">
+            <Layers className="w-5 h-5 shadow-lg shadow-indigo-100 rounded-lg" />
+            <span className="uppercase tracking-[0.25em] text-[10px] font-black italic">
+              Hệ thống Biến thể v3.0
+            </span>
           </div>
-          <h1 className="text-2xl font-black text-slate-900 tracking-tighter">
+
+          <h1 className="text-3xl font-black text-slate-900 tracking-tight">
             Biến thể & <span className="text-indigo-600 font-thin italic">Phiên bản</span>
           </h1>
-          <p className="text-slate-400 mt-1 text-sm font-medium italic">Cấu trúc chi tiết cấu hình, màu sắc và định giá.</p>
         </motion.div>
 
         <motion.div
@@ -204,7 +206,7 @@ const VariantManagementPage = () => {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="lg:col-span-4 bg-white rounded-3xl p-6 shadow-sm border border-neutral-100"
+          className="lg:col-span-4 bg-white rounded-3xl p-6 shadow-sm border border-neutral-100 ml-5"
         >
           <div className="flex items-center gap-2 mb-6">
             <Box className="w-5 h-5 text-indigo-600" />
@@ -242,7 +244,7 @@ const VariantManagementPage = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="lg:col-span-8 bg-white rounded-3xl shadow-sm border border-neutral-100 overflow-hidden min-h-[500px]"
+          className="lg:col-span-8  bg-white rounded-3xl shadow-sm border border-neutral-100 overflow-hidden min-h-[500px]"
         >
           <div className="p-6 border-b border-neutral-100 bg-neutral-50/50 flex flex-wrap items-center justify-between gap-4">
             <h2 className="text-xl font-bold text-neutral-800">

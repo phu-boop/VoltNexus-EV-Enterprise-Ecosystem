@@ -9,10 +9,14 @@ const apiConstVehicleService = axios.create({
 apiConstVehicleService.interceptors.request.use((config) => {
   const token = sessionStorage.getItem("token");
   if (token) config.headers.Authorization = `Bearer ${token}`;
-  
+
   const userEmail = sessionStorage.getItem("email");
-  if (userEmail) config.headers["X-User-Email"] = userEmail;
-  
+  if (userEmail) {
+    config.headers["X-User-Email"] = userEmail;
+  } else {
+    console.warn("X-User-Email is missing from sessionStorage. This may cause 400 errors on protected endpoints.");
+  }
+
   return config;
 });
 

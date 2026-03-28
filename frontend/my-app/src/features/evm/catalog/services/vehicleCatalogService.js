@@ -97,7 +97,7 @@ export const searchVariants = (params) => {
  * @param {object} params - ví dụ: { search: 'VF8', page: 0, size: 10 }
  */
 export const getAllVariantsPaginated = (params) => {
-  return apiConstVehicleService.get("/vehicle-catalog/variants/paginated", {
+  return apiConstVehicleService.get("vehicle-catalog/variants/paginated", {
     params,
   });
 };
@@ -107,7 +107,7 @@ export const getAllVariantsPaginated = (params) => {
  * @param {number | string} variantId - ID của phiên bản.
  */
 export const getVariantDetails = (variantId) => {
-  return apiConstVehicleService.get(`/vehicle-catalog/variants/${variantId}`);
+  return apiConstVehicleService.get(`vehicle-catalog/variants/${variantId}`);
 };
 
 /**
@@ -139,7 +139,7 @@ export const getAllFeatures = () => {
  */
 export const assignFeatureToVariant = (variantId, featureData) => {
   return apiConstVehicleService.post(
-    `/vehicle-catalog/variants/${variantId}/features`,
+    `vehicle-catalog/variants/${variantId}/features`,
     featureData
   );
 };
@@ -151,7 +151,7 @@ export const assignFeatureToVariant = (variantId, featureData) => {
  */
 export const unassignFeatureFromVariant = (variantId, featureId) => {
   return apiConstVehicleService.delete(
-    `/vehicle-catalog/variants/${variantId}/features/${featureId}`
+    `vehicle-catalog/variants/${variantId}/features/${featureId}`
   );
 };
 
@@ -170,7 +170,7 @@ export const createFeature = (featureData) => {
  */
 export const updateFeature = (featureId, featureData) => {
   return apiConstVehicleService.put(
-    `/vehicle-catalog/features/${featureId}`,
+    `vehicle-catalog/features/${featureId}`,
     featureData
   );
 };
@@ -181,6 +181,6 @@ export const updateFeature = (featureId, featureData) => {
  */
 export const deleteFeature = (featureId) => {
   return apiConstVehicleService.delete(
-    `/vehicle-catalog/features/${featureId}`
+    `vehicle-catalog/features/${featureId}`
   );
 };

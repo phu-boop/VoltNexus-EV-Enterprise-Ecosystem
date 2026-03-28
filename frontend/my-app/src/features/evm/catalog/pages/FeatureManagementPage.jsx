@@ -99,21 +99,22 @@ const FeatureManagementPage = () => {
   return (
     <div className="min-h-screen bg-neutral-50/30">
       {/* Header Section */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 m-5">
         <motion.div
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
         >
-          <div className="flex items-center gap-1.5 text-indigo-600 font-semibold mb-1.5">
-            <Cpu className="w-4 h-4" />
-            <span className="uppercase tracking-widest text-[9px] font-black italic">Hệ thống & Thành phần v2.0</span>
+          <div className="flex items-center gap-2 text-indigo-600 font-semibold mb-2">
+            <Cpu className="w-6 h-6" />
+            <span className="uppercase tracking-[0.3em] text-xs font-black italic">
+              Hệ thống & Thành phần v2.0
+            </span>
           </div>
-          <h1 className="text-2xl font-black text-slate-900 tracking-tight">
-            Kho tính năng <span className="text-indigo-600 font-thin italic -ml-1">Catalog</span>
-          </h1>
-          <p className="text-neutral-400 mt-1 text-sm italic font-medium">Quản lý thư viện tính năng kỹ thuật và thông số xe.</p>
-        </motion.div>
 
+          <h1 className="text-4xl font-black text-slate-900 tracking-tight">
+            Kho tính năng <span className="text-indigo-600 font-light italic -ml-1">Catalog</span>
+          </h1>
+        </motion.div>
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -139,7 +140,7 @@ const FeatureManagementPage = () => {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-white rounded-3xl shadow-sm border border-neutral-100 overflow-hidden"
+        className="bg-white mx-10 rounded-3xl shadow-sm border border-neutral-100 overflow-hidden"
       >
         {/* Search and Filters */}
         <div className="p-6 border-b border-neutral-100 bg-neutral-50/50 flex flex-col md:flex-row items-center justify-between gap-6">

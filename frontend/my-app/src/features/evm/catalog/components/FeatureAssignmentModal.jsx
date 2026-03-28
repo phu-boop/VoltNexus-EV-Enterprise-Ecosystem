@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import ReactDOM from "react-dom";
 import { FiX, FiArrowRight, FiTrash2, FiLoader, FiCheckCircle, FiMinusCircle, FiLayout } from "react-icons/fi";
 import { motion, AnimatePresence } from "framer-motion";
 import { Spin } from "antd";
@@ -34,7 +35,11 @@ const FeatureAssignmentModal = ({ isOpen, onClose, variant, onSuccess }) => {
   }, [isOpen, variant]);
 
   const handleAssign = async (featureToAssign) => {
-    const featureData = { featureId: featureToAssign.featureId, isStandard: true, additionalCost: 0 };
+    const featureData = {
+      featureId: featureToAssign.featureId,
+      standard: true,
+      additionalCost: 0,
+    };
     try {
       await assignFeatureToVariant(variant.variantId, featureData);
       setAssignedFeatures([...assignedFeatures, { ...featureToAssign, ...featureData }]);
@@ -56,25 +61,28 @@ const FeatureAssignmentModal = ({ isOpen, onClose, variant, onSuccess }) => {
 
   if (!isOpen) return null;
 
-  return (
+  const modalContent = (
     <AnimatePresence>
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex justify-end"
-        onClick={onClose}
-      >
+      <div className="fixed inset-0 z-[1000] flex justify-end">
+        {/* Backdrop */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
+          onClick={onClose}
+        />
+
         <motion.div
           initial={{ x: "100%", opacity: 0.5 }}
           animate={{ x: 0, opacity: 1 }}
           exit={{ x: "100%", opacity: 0.5 }}
-          transition={{ type: "spring", damping: 25, stiffness: 200 }}
-          className="bg-white shadow-2xl w-full max-w-3xl h-full flex flex-col overflow-hidden"
+          transition={{ type: "spring", damping: 30, stiffness: 200 }}
+          className="relative bg-white shadow-2xl w-full max-w-3xl h-full flex flex-col overflow-hidden shadow-2xl"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
-          <div className="flex justify-between items-center px-5 py-4 border-b border-gray-100 bg-white z-10 shadow-sm">
+          <div className="flex justify-between items-center px-5 py-4 border-b border-gray-100 bg-white z-10 shadow-sm shrink-0">
             <div>
               <p className="text-[9px] font-bold text-indigo-500 uppercase tracking-widest leading-none mb-1">Cấu hình thành phần</p>
               <h2 className="text-lg font-black text-gray-900 tracking-tight leading-none">
@@ -194,18 +202,20 @@ const FeatureAssignmentModal = ({ isOpen, onClose, variant, onSuccess }) => {
           )}
 
           {/* Footer */}
-          <div className="p-5 bg-white border-t border-gray-100 shadow-sm z-10">
+          <div className="p-5 border-t border-gray-100 bg-white shadow-[0_-10px_30px_-15px_rgba(0,0,0,0.05)] z-10 shrink-0">
             <button
               onClick={() => { onSuccess(); onClose(); }}
-              className="w-full py-3 bg-gray-900 text-white text-xs font-black rounded-xl shadow-xl shadow-gray-100 hover:bg-black transition-all uppercase tracking-widest italic"
+              className="w-full py-3 bg-gray-900 text-white text-xs font-black rounded-xl shadow-xl shadow-gray-100 hover:bg-black transition-all uppercase tracking-tighter italic"
             >
               Phê duyệt & Đồng bộ cấu hình
             </button>
           </div>
         </motion.div>
-      </motion.div>
+      </div>
     </AnimatePresence>
   );
+
+  return ReactDOM.createPortal(modalContent, document.body);
 };
 
 export default FeatureAssignmentModal;

@@ -1,7 +1,9 @@
 import profileService from "../services/profileService.js";
 import React, { useState, useEffect, useCallback } from "react";
 import { useAuthContext } from "../../auth/AuthProvider.jsx";
-import { Save, Shield } from "lucide-react";
+import { Save, Shield, User, Mail, Phone, MapPin, Calendar, Clock, Activity } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Spin } from "antd";
 import Swal from "sweetalert2";
 
 // Import components
@@ -82,7 +84,7 @@ const ProfileForm = () => {
     } catch (error) {
       setMessage(
         "Lỗi khi tải thông tin: " +
-          (error.response?.data?.data?.message || "Vui lòng thử lại")
+        (error.response?.data?.data?.message || "Vui lòng thử lại")
       );
     } finally {
       setLoading(false);
@@ -146,7 +148,7 @@ const ProfileForm = () => {
       console.error("Update error:", error);
       setMessage(
         "Lỗi khi cập nhật: " +
-          (error.response.data.data || error.message || "Vui lòng thử lại")
+        (error.response.data.data || error.message || "Vui lòng thử lại")
       );
     } finally {
       setLoading(false);
@@ -202,101 +204,192 @@ const ProfileForm = () => {
     }).format(amount);
   }, []);
 
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: { staggerChildren: 0.1 }
+    }
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { opacity: 1, y: 0 }
+  };
+
   return (
-    <div className="min-h-screen bg-slate-50">
-      <div className="max-w-8xl mx-auto px-4">
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+    <div className="min-h-screen bg-[#f8fafc]">
+      <div className="mx-auto">
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-white rounded-[2.5rem] shadow-2xl shadow-slate-200/60 border border-slate-100 overflow-hidden"
+        >
           {/* Header */}
-          <div className="bg-gradient-to-r from-slate-600 to-slate-700 px-6 py-6 text-white">
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-2xl font-bold">Hồ sơ cá nhân</h1>
-                <p className="text-slate-300 mt-1">
-                  Quản lý thông tin tài khoản của bạn
-                </p>
+          <div className="relative bg-gradient-to-br from-slate-50 via-indigo-50/30 to-slate-100 px-4 py-6 border-b border-slate-100 overflow-hidden">
+            {/* Background Decorations */}
+            <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-500/5 rounded-full -mr-48 -mt-48 blur-3xl"></div>
+            <div className="absolute bottom-0 left-0 w-96 h-96 bg-purple-500/5 rounded-full -ml-48 -mb-48 blur-3xl"></div>
+
+            <div className="relative flex flex-col md:flex-row items-center justify-between gap-8">
+              <div className="text-center md:text-left">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-600/5 border border-indigo-600/10 text-[10px] font-black uppercase tracking-[0.2em] text-indigo-600 mb-4">
+                  <Shield size={8} />
+                  Secure Account Portal
+                </div>
+                <h2 className="text-4xl font-black text-slate-900 tracking-tight mb-3">Hồ sơ cá nhân</h2>
+
               </div>
-              <div className="text-right text-black">
-                <div className="bg-white/20 px-3 py-1 rounded-full text-sm font-medium">
+              <div className="flex flex-col items-center md:items-end gap-4">
+                <div className="px-6 py-2.5 rounded-2xl bg-white border border-slate-200 shadow-xl shadow-slate-200/20 text-xs font-black uppercase tracking-widest text-slate-800 flex items-center gap-3">
+                  <div className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse"></div>
                   {getRoleDisplayName()}
                 </div>
-                <p className="text-slate-300 text-sm mt-1">{formData.email}</p>
+                <div className="flex items-center gap-3 px-4 py-2 rounded-xl bg-slate-100/50 border border-slate-200/50">
+                  <Mail size={14} className="text-slate-400" />
+                  <span className="text-sm font-black text-slate-600 tracking-tight">{formData.email}</span>
+                </div>
               </div>
             </div>
           </div>
 
-          <div className="p-6">
-            {message && (
-              <div
-                className={`mb-6 p-4 rounded-lg ${
-                  message.includes("thành công")
-                    ? "bg-emerald-100 text-emerald-700 border border-emerald-200"
-                    : "bg-red-100 text-red-700 border border-red-200"
-                }`}
-              >
-                {message}
-              </div>
-            )}
-
-            <form onSubmit={handleSubmit} className="space-y-8">
-              <AvatarSection formData={formData} handleChange={handleChange} />
-
-              <BasicInfoSection
-                formData={formData}
-                errors={errors}
-                handleChange={handleChange}
-              />
-
-              <ContactInfoSection
-                formData={formData}
-                errors={errors}
-                handleChange={handleChange}
-              />
-
-              <AddressInfoSection
-                formData={formData}
-                handleChange={handleChange}
-              />
-
-              {/* System Information */}
-              <div className="bg-slate-50 rounded-xl p-6 border border-slate-200">
-                <h3 className="text-lg font-semibold text-slate-800 mb-4 flex items-center">
-                  <Shield className="h-5 w-5 text-slate-600 mr-2" />
-                  Thông tin hệ thống
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <InfoField label="Trạng thái" value={userProfile.status} />
-                  <InfoField
-                    label="Ngày tạo"
-                    value={formatDate(userProfile.createdAt)}
-                  />
-                  <InfoField
-                    label="Đăng nhập cuối"
-                    value={formatDate(userProfile.lastLogin)}
-                  />
-                </div>
-              </div>
-
-              {/* Role Specific Information */}
-              <RoleSpecificInfo
-                userProfile={userProfile}
-                formatDate={formatDate}
-                formatCurrency={formatCurrency}
-              />
-
-              {/* Submit Button */}
-              <div className="flex justify-end pt-4">
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="flex items-center px-8 py-3 bg-slate-800 text-white rounded-lg hover:bg-slate-700 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+          <div className="p-8 sm:p-12">
+            <AnimatePresence>
+              {message && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className={`mb-10 p-5 rounded-3xl flex items-center gap-4 font-bold text-xs uppercase tracking-tight ${message.includes("thành công")
+                    ? "bg-emerald-50 text-emerald-600 border border-emerald-100 shadow-lg shadow-emerald-100/20"
+                    : "bg-red-50 text-red-600 border border-red-100 shadow-lg shadow-red-100/20"
+                    }`}
                 >
-                  <Save size={18} className="mr-2" />
-                  {loading ? "Đang lưu..." : "Lưu thay đổi"}
-                </button>
+                  <div className={`w-2.5 h-2.5 rounded-full animate-bounce ${message.includes("thành công") ? "bg-emerald-500" : "bg-red-500"}`}></div>
+                  {message}
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            <motion.form
+              variants={containerVariants}
+              initial="hidden"
+              animate="visible"
+              onSubmit={handleSubmit}
+              className="lg:grid lg:grid-cols-12 gap-12"
+            >
+              {/* Left Column: Sidebar Info */}
+              <div className="lg:col-span-4 space-y-8">
+                <motion.div variants={itemVariants}>
+                  <AvatarSection formData={formData} handleChange={handleChange} />
+                </motion.div>
+
+                <motion.div variants={itemVariants} className="bg-slate-50/50 rounded-[2.5rem] p-8 border border-slate-100 shadow-sm flex flex-col h-full">
+                  <h3 className="text-[11px] font-black text-slate-400 mb-8 flex items-center uppercase tracking-[0.2em] italic">
+                    <Activity className="h-4 w-4 text-indigo-500 mr-2" />
+                    System Metrics
+                  </h3>
+                  <div className="space-y-8 ">
+                    <div className="group">
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 group-hover:text-indigo-500 transition-colors">Trạng thái tài khoản</p>
+                      <div className="flex items-center gap-3">
+                        <div className="relative w-3 h-3">
+                          <span className="absolute inset-0 rounded-full bg-emerald-500 animate-ping opacity-25"></span>
+                          <span className="relative block w-full h-full rounded-full bg-emerald-500 shadow-[0_0_12px_rgba(16,185,129,0.4)]"></span>
+                        </div>
+                        <p className="text-sm font-black text-slate-800 uppercase tracking-tighter">{userProfile.status}</p>
+                      </div>
+                    </div>
+
+                    <div>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Đăng ký ngày</p>
+                      <div className="flex items-center gap-3 text-slate-700">
+                        <Calendar size={14} className="text-slate-400" />
+                        <p className="text-sm font-bold">{formatDate(userProfile.createdAt)}</p>
+                      </div>
+                    </div>
+
+                    <div>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Truy cập cuối</p>
+                      <div className="flex items-center gap-3 text-slate-700">
+                        <Clock size={14} className="text-slate-400" />
+                        <p className="text-sm font-bold">{formatDate(userProfile.lastLogin)}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-8 pt-8 border-t border-slate-200/60">
+                    <div className="p-4 bg-indigo-50 rounded-2xl border border-indigo-100/50">
+                      <p className="text-[10px] font-bold text-indigo-600 uppercase tracking-widest mb-1">Bảo mật cấp độ cao</p>
+                      <p className="text-[10px] text-indigo-400 font-medium leading-relaxed italic">
+                        Dữ liệu của bạn được đồng bộ và mã hóa đầu cuối.
+                      </p>
+                    </div>
+                  </div>
+                </motion.div>
               </div>
-            </form>
+
+              {/* Right Column: Main Form Sections */}
+              <div className="lg:col-span-8 space-y-10 mt-12 lg:mt-0">
+                <motion.div variants={itemVariants} className="space-y-12">
+                  <div className="p-2 sm:p-0">
+                    <BasicInfoSection
+                      formData={formData}
+                      errors={errors}
+                      handleChange={handleChange}
+                    />
+                  </div>
+
+                  <div className="p-2 sm:p-0">
+                    <ContactInfoSection
+                      formData={formData}
+                      errors={errors}
+                      handleChange={handleChange}
+                    />
+                  </div>
+
+                  <div className="p-2 sm:p-0">
+                    <AddressInfoSection
+                      formData={formData}
+                      handleChange={handleChange}
+                    />
+                  </div>
+
+                  <motion.div variants={itemVariants}>
+                    <RoleSpecificInfo
+                      userProfile={userProfile}
+                      formatDate={formatDate}
+                      formatCurrency={formatCurrency}
+                    />
+                  </motion.div>
+                </motion.div>
+
+                {/* Submit Button Section */}
+                <motion.div variants={itemVariants} className="flex flex-col sm:flex-row items-center justify-between gap-6 pt-10 border-t border-slate-100 mt-12">
+                  <div className="flex items-center gap-3 text-slate-400">
+                    <Shield size={16} />
+                    <span className="text-[10px] font-bold uppercase tracking-widest italic">An toàn & Bảo mật</span>
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="group relative w-full sm:w-auto flex items-center justify-center px-12 py-4.5 bg-slate-900 text-white rounded-2xl hover:bg-black transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-2xl shadow-slate-200 overflow-hidden"
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-600 opacity-0 group-hover:opacity-10 rounded-2xl transition-opacity"></div>
+                    {loading ? (
+                      <Spin size="small" className="mr-3" />
+                    ) : (
+                      <Save size={18} className="mr-3 text-indigo-400 group-hover:text-white transition-all duration-300 group-hover:scale-110" />
+                    )}
+                    <span className="font-black text-xs uppercase tracking-[0.2em] italic relative z-10 transition-transform duration-300 group-hover:translate-x-1">
+                      {loading ? "Đang xử lý dữ liệu..." : "Cập nhật tài khoản"}
+                    </span>
+                  </button>
+                </motion.div>
+              </div>
+            </motion.form>
           </div>
-        </div>
+        </motion.div>
       </div>
     </div>
   );

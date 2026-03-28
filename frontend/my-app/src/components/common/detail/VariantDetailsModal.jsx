@@ -14,14 +14,14 @@ const VariantDetailsModal = ({ isOpen, onClose, variant }) => {
   if (!isOpen || !variant) return null;
 
   const portalContent = (
-    <div className="fixed inset-0 z-[9999] flex justify-center items-center p-4">
+    <div className="fixed inset-0 z-[9999] flex justify-end">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-slate-900/60 backdrop-blur-md transition-opacity animate-in fade-in duration-300"
+        className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity animate-in fade-in duration-300"
         onClick={onClose}
       />
 
-      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-xl max-h-[90vh] flex flex-col border border-gray-100 overflow-hidden ring-1 ring-black/5 animate-in zoom-in-95 duration-200">
+      <div className="relative bg-white shadow-2xl w-full max-w-xl h-full flex flex-col border border-gray-100 overflow-hidden ring-1 ring-black/5 animate-in slide-in-from-right duration-300">
         <div className="flex justify-between items-center p-5 border-b border-gray-100 bg-slate-50/50 shrink-0">
           <h2 className="text-lg font-black text-gray-900 tracking-tight">
             Chi tiết: {variant.versionName} <span className="text-indigo-600 font-thin italic">({variant.color})</span>

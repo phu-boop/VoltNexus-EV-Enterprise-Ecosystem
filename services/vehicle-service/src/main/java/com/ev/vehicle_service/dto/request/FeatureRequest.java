@@ -9,7 +9,7 @@ public class FeatureRequest {
     @NotNull(message = "Feature ID is required")
     private Long featureId;
 
-    private boolean isStandard = true;
+    private boolean standard = true;
 
     private BigDecimal additionalCost = BigDecimal.ZERO;
 }
