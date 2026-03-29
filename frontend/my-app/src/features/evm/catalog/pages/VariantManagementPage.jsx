@@ -68,7 +68,7 @@ const VariantManagementPage = () => {
   const [isBulkConfirmOpen, setIsBulkConfirmOpen] = useState(false);
 
   const [variantSearchQuery, setVariantSearchQuery] = useState("");
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const location = useLocation();
   const urlModelId = searchParams.get("modelId");
@@ -139,21 +139,23 @@ const VariantManagementPage = () => {
   }, [variantSearchQuery, currentPage, pageSize, selectedModelId, fetchVariants]);
 
   useEffect(() => {
+    if (!urlVariantId) return;
+    let cancelled = false;
     const loadDeepLinkedVariant = async () => {
-      if (urlVariantId && !variantForDetails) {
-        try {
-          const response = await getVariantDetails(urlVariantId);
-          if (response.data?.data) {
-            setVariantForDetails(response.data.data);
-            setIsDetailsOpen(true);
-          }
-        } catch (err) {
-          console.error("Failed to fetch deep linked variant details:", err);
+      try {
+        const response = await getVariantDetails(urlVariantId);
+        if (response.data?.data && !cancelled) {
+          setVariantForDetails(response.data.data);
+          setIsDetailsOpen(true);
         }
+      } catch (err) {
+        console.error("Failed to fetch deep linked variant details:", err);
       }
     };
     loadDeepLinkedVariant();
-  }, [urlVariantId, variantForDetails]);
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [urlVariantId]);
 
   const handleOpenAddForm = () => {
     setVariantToEdit(null);
@@ -213,6 +215,13 @@ const VariantManagementPage = () => {
     setVariantForFeatures(null);
     setVariantForDetails(null);
     setVariantForHistory(null);
+    // Clear deep-link params from URL so the modal doesn't re-open
+    if (searchParams.has("variantId") || searchParams.has("modelId")) {
+      const next = new URLSearchParams(searchParams);
+      next.delete("variantId");
+      next.delete("modelId");
+      setSearchParams(next, { replace: true });
+    }
   };
 
   const handleOpenDetailsModal = (variant) => {
