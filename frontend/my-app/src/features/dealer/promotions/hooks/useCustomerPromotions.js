@@ -17,7 +17,7 @@ export const useCustomerPromotions = () => {
     try {
       // Load promotions, dealers, và models song song
       const [promotionsRes, dealersRes, modelsRes] = await Promise.all([
-        customerPromotionService.getAllPromotions(),
+        customerPromotionService.getDealerActivePromotions(),
         customerPromotionService.getAllDealers(),
         customerPromotionService.getAllModels(),
       ]);

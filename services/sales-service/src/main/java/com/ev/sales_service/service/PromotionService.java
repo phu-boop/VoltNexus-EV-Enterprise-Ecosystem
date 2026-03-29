@@ -13,6 +13,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -25,6 +26,7 @@ import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class PromotionService {
 
     @Value("${user-service.base-url}")
@@ -232,6 +234,42 @@ public class PromotionService {
                         }
                     }
                     return true;
+                })
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Lấy danh sách Khuyến mãi ACTIVE và NEAR cho Dealer Staff View
+     * (Vì bạn yêu cầu không sửa API cũ và chỉ hiển thị ACTIVE/NEAR)
+     */
+    public List<Promotion> getActivePromotionsForDealerList(UUID dealerId) {
+        // 1. Lấy tất cả KM ACTIVE và NEAR (Đã được duyệt)
+        List<Promotion> promotions = promotionRepository.findByStatusIn(
+                List.of(PromotionStatus.ACTIVE, PromotionStatus.NEAR));
+
+        // 2. Lọc theo Dealer
+        return promotions.stream()
+                .filter(promo -> {
+                    // KM chung hoặc KM thuộc dealerId
+                    String dealerJson = promo.getDealerIdJson();
+
+                    if (dealerJson == null || dealerJson.isEmpty() || dealerJson.equals("[]")) {
+                        return true;
+                    }
+
+                    try {
+                        // Parse thành List<String> để chấp nhận cả DLRxxx và UUID
+                        List<String> dealerIds = objectMapper.readValue(dealerJson,
+                                new com.fasterxml.jackson.core.type.TypeReference<List<String>>() {
+                                });
+
+                        String searchId = dealerId.toString();
+                        return dealerIds != null && dealerIds.stream()
+                                .anyMatch(id -> id.equalsIgnoreCase(searchId));
+                    } catch (Exception e) {
+                        // Fallback an toàn nếu parse lỗi
+                        return dealerJson.contains(dealerId.toString());
+                    }
                 })
                 .collect(Collectors.toList());
     }

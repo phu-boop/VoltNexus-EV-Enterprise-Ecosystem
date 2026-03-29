@@ -31,27 +31,14 @@ export const PromotionViewPage = () => {
     getModelsByIds,
   } = useCustomerPromotions();
 
-  // Lọc khuyến mãi theo dealerId và status
+  // Backend đã lọc sẵn theo dealerId và status (ACTIVE/NEAR)
   useEffect(() => {
-    if (currentDealerId && promotions && promotions.length > 0) {
-      const filtered = promotions.filter((promotion) => {
-        try {
-          const dealerIds = promotion.applicableDealers || [];
-
-          const isForThisDealer = dealerIds.includes(currentDealerId);
-          const isStatusValid = promotion.status === "ACTIVE" || promotion.status === "NEAR" || promotion.status === "UPCOMING";
-
-          return isForThisDealer && isStatusValid;
-        } catch (error) {
-          return false;
-        }
-      });
-
-      setFilteredPromotions(filtered);
+    if (promotions && promotions.length > 0) {
+      setFilteredPromotions(promotions);
     } else {
       setFilteredPromotions([]);
     }
-  }, [promotions, currentDealerId]);
+  }, [promotions]);
 
   // Tính toán lại số lượng khuyến mãi sau khi lọc
   const activePromotionsCountFiltered = filteredPromotions.filter(
@@ -124,70 +111,76 @@ export const PromotionViewPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50/30">
-      <div className="max-w-7xl mx-auto">
+    <div className="min-h-screen bg-gray-50/50 py-10 px-4">
+      <div className="max-w-6xl mx-auto">
         {/* Header Section */}
-        <div className="text-center mb-8">
-          <h1 className="text-3xl md:text-4xl font-bold text-gray-800 mb-4">
-            <div className="inline-flex items-center justify-center w-15 h-15 mr-5 bg-gradient-to-br from-blue-100 to-cyan-100 rounded-3xl shadow-sm border border-blue-200/50 mb-6">
-              <GiftIcon className="h-10 w-10 text-blue-600" />
+        <div className="relative mb-12">
+          <div className="flex flex-col items-center">
+            <div className="flex items-center justify-center w-16 h-16 bg-white rounded-2xl shadow-sm border border-gray-100 mb-6">
+              <GiftIcon className="h-8 w-8 text-blue-500" />
             </div>
-            Ưu Đãi & Khuyến Mãi
-          </h1>
-          {currentDealerId && (
-            <p className="text-gray-600 text-sm">
-              Hiển thị khuyến mãi cho đại lý của bạn
-            </p>
-          )}
-        </div>
-
-        {/* Filter Section */}
-        <PromotionFilter
-          selectedFilter={filter}
-          onFilterChange={setFilter}
-          activePromotionsCount={activePromotionsCountFiltered}
-          upcomingPromotionsCount={upcomingPromotionsCountFiltered} // Đã đổi từ upcomingPromotionsCount sang NEAR
-          totalCount={filteredPromotions.length}
-        />
-        {/* Refresh and Info Section */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
-          <div className="flex items-center space-x-4 text-sm text-gray-500">
-            <div className="flex items-center space-x-2">
-              <div className="w-2 h-2 bg-emerald-400 rounded-full"></div>
-              <span>Đang hoạt động: {activePromotionsCountFiltered}</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
-              <span>Sắp diễn ra: {upcomingPromotionsCountFiltered}</span>
-            </div>
-            {lastUpdated && (
-              <div className="flex items-center space-x-2">
-                <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
-                <span>Cập nhật: {formatLastUpdated(lastUpdated)}</span>
+            <h1 className="text-3xl md:text-4xl font-extrabold text-gray-900 tracking-tight mb-2">
+              Ưu Đãi & Khuyến Mãi
+            </h1>
+            {currentDealerId && (
+              <div className="flex items-center text-gray-500 text-sm font-medium">
+                <div className="w-1.5 h-1.5 bg-blue-500 rounded-full mr-2"></div>
+                Dành riêng cho đại lý của bạn
               </div>
             )}
           </div>
-
-          <button
-            onClick={refresh}
-            disabled={loading}
-            className="flex items-center px-5 py-3 bg-white border border-gray-200 rounded-2xl text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-all duration-300 disabled:opacity-50 shadow-sm"
-          >
-            <ArrowPathIcon
-              className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`}
-            />
-            <span className="text-sm font-medium">
-              {loading ? "Đang tải..." : "Làm mới"}
-            </span>
-          </button>
         </div>
 
-        {/* Promotions Grid */}
-        <PromotionGrid
-          promotions={filteredPromotions}
-          onViewDetails={handleViewDetails}
-          loading={loading}
-        />
+        {/* Filter & Actions Bar */}
+        <div className="flex flex-col space-y-6">
+          <PromotionFilter
+            selectedFilter={filter}
+            onFilterChange={setFilter}
+            activePromotionsCount={activePromotionsCountFiltered}
+            upcomingPromotionsCount={upcomingPromotionsCountFiltered}
+            totalCount={filteredPromotions.length}
+          />
+          {/* Status and Refresh Row */}
+          <div className="flex flex-wrap items-center justify-between gap-4 bg-white/50 backdrop-blur-sm p-4 rounded-2xl border border-gray-100">
+            <div className="flex items-center space-x-6 text-sm text-gray-500">
+              <div className="flex items-center space-x-2">
+                <span className="w-2 h-2 bg-emerald-400 rounded-full shadow-sm"></span>
+                <span className="font-medium text-gray-600">Đang chạy: {activePromotionsCountFiltered}</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <span className="w-2 h-2 bg-amber-400 rounded-full shadow-sm"></span>
+                <span className="font-medium text-gray-600">Sắp tới: {upcomingPromotionsCountFiltered}</span>
+              </div>
+              {lastUpdated && (
+                <div className="hidden sm:flex items-center text-xs text-gray-400 border-l border-gray-200 pl-6">
+                  Cập nhật: {formatLastUpdated(lastUpdated)}
+                </div>
+              )}
+            </div>
+
+            <button
+              onClick={refresh}
+              disabled={loading}
+              className="group flex items-center px-4 py-2 bg-white border border-gray-200 rounded-xl text-gray-700 hover:text-blue-600 hover:border-blue-200 hover:bg-blue-50/30 transition-all duration-300 disabled:opacity-50 shadow-sm overflow-hidden relative"
+            >
+              <ArrowPathIcon
+                className={`h-4 w-4 mr-2 transition-transform duration-500 ${loading ? "animate-spin" : "group-hover:rotate-180"}`}
+              />
+              <span className="text-sm font-semibold whitespace-nowrap">
+                {loading ? "Đang cập nhật..." : "Làm mới dữ liệu"}
+              </span>
+            </button>
+          </div>
+        </div>
+
+        <div className="mt-10">
+          {/* Promotions Grid */}
+          <PromotionGrid
+            promotions={filteredPromotions}
+            onViewDetails={handleViewDetails}
+            loading={loading}
+          />
+        </div>
 
         {/* Empty State */}
         {!loading && filteredPromotions.length === 0 && currentDealerId && (
