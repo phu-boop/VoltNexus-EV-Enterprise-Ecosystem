@@ -494,6 +494,10 @@ public class InventoryServiceImpl implements InventoryService {
     @Transactional
     @CacheEvict(value = CACHE_INVENTORY_STATUS, allEntries = true)
     public void allocateStockForOrder(AllocationRequestDto request, String staffEmail) {
+        if (request == null || request.getItems() == null || request.getItems().isEmpty()) {
+            throw new AppException(ErrorCode.BAD_REQUEST);
+        }
+
         for (AllocationRequestDto.AllocationItem item : request.getItems()) {
             CentralInventory central = centralRepo.findByVariantId(item.getVariantId())
                     .orElseThrow(() -> new AppException(ErrorCode.INVENTORY_NOT_FOUND));
