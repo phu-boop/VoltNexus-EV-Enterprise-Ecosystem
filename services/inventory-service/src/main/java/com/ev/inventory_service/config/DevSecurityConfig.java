@@ -28,7 +28,7 @@ public class DevSecurityConfig {
         // In môi trường dev, cho phép tất cả request đi qua
 
         http
-                // .csrf(csrf -> csrf.disable())
+                .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
                         .anyRequest().permitAll())
                 // .authorizeHttpRequests(auth -> auth

@@ -36,22 +36,13 @@ export const PromotionViewPage = () => {
     if (currentDealerId && promotions && promotions.length > 0) {
       const filtered = promotions.filter((promotion) => {
         try {
-          // Parse dealerIdJson từ chuỗi JSON thành mảng
-          const dealerIds = JSON.parse(promotion.dealerIdJson);
+          const dealerIds = promotion.applicableDealers || [];
 
-          // Kiểm tra xem dealerId hiện tại có trong mảng dealerIds không
-          // VÀ chỉ lấy những promotion có status ACTIVE hoặc NEAR
-          const shouldInclude =
-            dealerIds.includes(currentDealerId) &&
-            (promotion.status === "ACTIVE" || promotion.status === "NEAR");
+          const isForThisDealer = dealerIds.includes(currentDealerId);
+          const isStatusValid = promotion.status === "ACTIVE" || promotion.status === "NEAR" || promotion.status === "UPCOMING";
 
-          return shouldInclude;
+          return isForThisDealer && isStatusValid;
         } catch (error) {
-          console.error(
-            "Error parsing dealerIdJson for promotion:",
-            promotion.promotionId,
-            error
-          );
           return false;
         }
       });

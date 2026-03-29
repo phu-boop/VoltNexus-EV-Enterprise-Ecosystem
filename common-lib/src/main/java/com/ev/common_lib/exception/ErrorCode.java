@@ -44,16 +44,18 @@ public enum ErrorCode {
     DEPARTMENT_MUST_NOT_BE_BLANK("2029", "Phòng ban không được để trống", HttpStatus.BAD_REQUEST),
     MANAGEMENT_LEVEL_MUST_NOT_BE_BLANK("2030", "Cấp quản lý không được để trống", HttpStatus.BAD_REQUEST),
     APPROVAL_LIMIT_IS_REQUIRED("2031", "Giới hạn phê duyệt là bắt buộc", HttpStatus.BAD_REQUEST),
-    APPROVAL_LIMIT_INVALID_FORMAT("2032", "Giới hạn phê duyệt phải là số hợp lệ, tối đa 13 chữ số nguyên và 2 thập phân", HttpStatus.BAD_REQUEST),
+    APPROVAL_LIMIT_INVALID_FORMAT("2032",
+            "Giới hạn phê duyệt phải là số hợp lệ, tối đa 13 chữ số nguyên và 2 thập phân", HttpStatus.BAD_REQUEST),
     POSITION_MUST_NOT_BE_BLANK("2033", "Chức vụ không được để trống", HttpStatus.BAD_REQUEST),
     HIRE_DATE_IS_REQUIRED("2034", "Ngày nhận việc là bắt buộc", HttpStatus.BAD_REQUEST),
     HIRE_DATE_INVALID_FORMAT("2035", "Ngày nhận việc không đúng định dạng yyyy-MM-dd", HttpStatus.BAD_REQUEST),
     SALARY_IS_REQUIRED("2036", "Lương là bắt buộc", HttpStatus.BAD_REQUEST),
-    SALARY_INVALID_FORMAT("2037", "Lương phải là số hợp lệ, tối đa 13 chữ số nguyên và 2 thập phân", HttpStatus.BAD_REQUEST),
+    SALARY_INVALID_FORMAT("2037", "Lương phải là số hợp lệ, tối đa 13 chữ số nguyên và 2 thập phân",
+            HttpStatus.BAD_REQUEST),
     COMMISSION_RATE_IS_REQUIRED("2038", "Tỷ lệ hoa hồng là bắt buộc", HttpStatus.BAD_REQUEST),
-    COMMISSION_RATE_INVALID_FORMAT("2039", "Tỷ lệ hoa hồng phải là số hợp lệ, tối đa 3 chữ số nguyên và 2 thập phân", HttpStatus.BAD_REQUEST),
+    COMMISSION_RATE_INVALID_FORMAT("2039", "Tỷ lệ hoa hồng phải là số hợp lệ, tối đa 3 chữ số nguyên và 2 thập phân",
+            HttpStatus.BAD_REQUEST),
     SPECIALIZATION_MUST_NOT_BE_BLANK("2040", "Chuyên môn không được để trống", HttpStatus.BAD_REQUEST),
-
 
     // ===== 3xxx - Lỗi hệ thống (Server) =====
     INTERNAL_ERROR("3001", "Lỗi hệ thống nội bộ", HttpStatus.INTERNAL_SERVER_ERROR),
@@ -62,7 +64,8 @@ public enum ErrorCode {
 
     TIMEOUT("3003", "Yêu cầu quá thời gian chờ", HttpStatus.REQUEST_TIMEOUT),
 
-    DOWNSTREAM_SERVICE_UNAVAILABLE("3004", "Dịch vụ phụ thuộc đang tạm ngừng hoạt động", HttpStatus.SERVICE_UNAVAILABLE),
+    DOWNSTREAM_SERVICE_UNAVAILABLE("3004", "Dịch vụ phụ thuộc đang tạm ngừng hoạt động",
+            HttpStatus.SERVICE_UNAVAILABLE),
 
     // ===== 4xxx - Lỗi xác thực & phân quyền =====
     UNAUTHORIZED("4001", "Chưa xác thực", HttpStatus.UNAUTHORIZED),
@@ -133,6 +136,8 @@ public enum ErrorCode {
 
     SALE_ORDER_CALCULATED("6012", "Đơn hàng đã được tính toán không thể thêm", HttpStatus.BAD_REQUEST),
 
+    PROMOTION_IN_USE("6013", "Khuyến mãi đang được sử dụng trong báo giá, không thể xoá", HttpStatus.BAD_REQUEST),
+
     // ===== 6xxx-2 - Lỗi OrderItem, Tracking, Contract =====
     ORDER_ITEM_NOT_FOUND("6020", "Không tìm thấy sản phẩm trong đơn hàng", HttpStatus.NOT_FOUND),
 
@@ -156,7 +161,8 @@ public enum ErrorCode {
 
     ORDER_ITEM_OPERATION_INVALID_STATE("6032", "Chỉ được phép thao tác khi chưa tính toán", HttpStatus.BAD_REQUEST),
 
-    INVALID_CONTRACT_OPERATION_STATE("6033", "đơn hàng chưa được xác nhận hợp đồng  không được thao tác", HttpStatus.BAD_REQUEST),
+    INVALID_CONTRACT_OPERATION_STATE("6033", "đơn hàng chưa được xác nhận hợp đồng  không được thao tác",
+            HttpStatus.BAD_REQUEST),
 
     SALES_CONTRACT_NOT_FOUND("6040", "Không tìm thấy hợp đồng bán hàng", HttpStatus.NOT_FOUND),
 

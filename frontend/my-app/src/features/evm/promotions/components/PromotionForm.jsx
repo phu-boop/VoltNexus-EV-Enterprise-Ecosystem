@@ -58,7 +58,7 @@ export default function PromotionForm({ onSubmit, onCancel, initialData, isEdit 
     loadDealers();
   }, []);
 
-  // Initialize form data và selected items khi initialData changes
+  // Initialize form data khi initialData changes
   useEffect(() => {
     if (initialData) {
       const formatDateForInput = (dateString) => {
@@ -79,42 +79,34 @@ export default function PromotionForm({ onSubmit, onCancel, initialData, isEdit 
           : "",
         startDate: formatDateForInput(initialData.startDate),
         endDate: formatDateForInput(initialData.endDate),
-
-        // Parse và lấy ra danh sách ID
-        applicableModelsJson: JSON.stringify(
-          Array.isArray(initialData.applicableModelsJson)
-            ? initialData.applicableModelsJson.map((m) => m.modelId)
-            : JSON.parse(initialData.applicableModelsJson || "[]")
-        ),
-        dealerIdJson: JSON.stringify(
-          Array.isArray(initialData.dealerIdJson)
-            ? initialData.dealerIdJson.map((d) => d.dealerId)
-            : JSON.parse(initialData.dealerIdJson || "[]")
-        ),
-
         status: initialData.status || "DRAFT",
       });
-
-
-      // Parse và set selected models từ JSON
-      try {
-        const models = JSON.parse(initialData.applicableModelsJson || "[]");
-        setSelectedModels(models);
-      } catch (error) {
-        console.error("Error parsing applicableModelsJson:", error);
-        setSelectedModels([]);
-      }
-
-      // Parse và set selected dealers từ JSON
-      try {
-        const dealersData = JSON.parse(initialData.dealerIdJson || "[]");
-        setSelectedDealers(dealersData);
-      } catch (error) {
-        console.error("Error parsing dealerIdJson:", error);
-        setSelectedDealers([]);
-      }
     }
   }, [initialData]);
+
+  // Map selected models từ initialData.applicableModels array
+  useEffect(() => {
+    if (initialData?.applicableModels && vehicleModels.length > 0) {
+      const modelIds = initialData.applicableModels;
+      const selectedModelsData = modelIds.map(id => {
+        const found = vehicleModels.find(m => m.modelId === id);
+        return found || null;
+      }).filter(Boolean);
+      setSelectedModels(selectedModelsData);
+    }
+  }, [initialData, vehicleModels]);
+
+  // Map selected dealers từ initialData.applicableDealers array
+  useEffect(() => {
+    if (initialData?.applicableDealers && dealers.length > 0) {
+      const dealerIds = initialData.applicableDealers;
+      const selectedDealersData = dealerIds.map(id => {
+        const found = dealers.find(d => d.dealerId === id);
+        return found || null;
+      }).filter(Boolean);
+      setSelectedDealers(selectedDealersData);
+    }
+  }, [initialData, dealers]);
 
 
   const getIdDealerCurrent = async () => {
@@ -387,15 +379,13 @@ export default function PromotionForm({ onSubmit, onCancel, initialData, isEdit 
       setIsSubmitting(true);
 
       try {
+        // eslint-disable-next-line no-unused-vars
+        const { applicableModelsJson, dealerIdJson, ...cleanFormData } = formData;
         const submitData = {
-          ...formData,
+          ...cleanFormData,
           discountRate: parseFloat(formData.discountRate) / 100,
-          applicableModelsJson: JSON.stringify(
-            selectedModels.map((m) => m.modelId)
-          ),
-          dealerIdJson: JSON.stringify(
-            selectedDealers.map((d) => d.dealerId)
-          ),
+          applicableModels: selectedModels.map((m) => m.modelId),
+          applicableDealers: selectedDealers.map((d) => d.dealerId),
         };
 
         await onSubmit(submitData);
@@ -421,11 +411,11 @@ export default function PromotionForm({ onSubmit, onCancel, initialData, isEdit 
       ACTIVE: {
         label: "Đang hoạt động",
         description: "Chương trình đang được áp dụng",
-        color: "text-green-600",
-        bgColor: "bg-green-50",
-        borderColor: "border-green-200",
+        color: "text-sky-600",
+        bgColor: "bg-sky-50",
+        borderColor: "border-sky-200",
         icon: PlayIcon,
-        buttonColor: "bg-green-100 hover:bg-green-200 text-green-700 border-green-300"
+        buttonColor: "bg-sky-100 hover:bg-sky-200 text-sky-700 border-sky-300"
       },
       EXPIRED: {
         label: "Đã hết hạn",
@@ -484,13 +474,19 @@ export default function PromotionForm({ onSubmit, onCancel, initialData, isEdit 
   const StatusIcon = statusConfig.icon;
 
   return (
-    <div className="max-w-7xl mx-auto">
+    <div className="max-w-7xl mx-auto mb-10">
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">
-          {isEdit ? "Chỉnh sửa Khuyến mãi" : "Tạo Khuyến mãi Mới"}
-        </h1>
-        <p className="mt-2 text-sm text-gray-600">
+      <div className="flex justify-between p-5 mb-5 bg-white rounded-t-lg shadow-sm border border-slate-200">
+        <div className="mb-8">
+          <div className="flex items-center gap-2">
+            <img src="/icon/promotion.png" alt="" className="w-10 h-10" />
+            <h1 className="text-2xl font-bold text-slate-900">
+              {isEdit ? "Chỉnh sửa Khuyến mãi" : "Tạo Khuyến mãi Mới"}
+            </h1>
+          </div>
+        </div>
+
+        <p className="mt-4 text-sm text-slate-600 items-center text-center">
           {isEdit
             ? "Cập nhật thông tin chương trình khuyến mãi của bạn"
             : "Thiết lập chương trình khuyến mãi mới để thu hút khách hàng"
@@ -499,84 +495,200 @@ export default function PromotionForm({ onSubmit, onCancel, initialData, isEdit 
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-8">
-        {/* Basic Information Card */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center mb-6">
-            <div className="flex-shrink-0">
-              <TagIcon className="h-6 w-6 text-indigo-600" />
+        <div className="flex gap-8">
+          {/* Basic Information Card */}
+          <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-7">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <TagIcon className="h-6 w-6 text-indigo-600" />
+              </div>
+              <div className="ml-3">
+                <h2 className="text-lg font-medium text-slate-900">Thông tin cơ bản</h2>
+                <p className="text-sm text-slate-500">Thông tin chính về chương trình khuyến mãi</p>
+              </div>
             </div>
-            <div className="ml-3">
-              <h2 className="text-lg font-medium text-gray-900">Thông tin cơ bản</h2>
-              <p className="text-sm text-gray-500">Thông tin chính về chương trình khuyến mãi</p>
-            </div>
-          </div>
 
-          <div className="grid grid-cols-1 gap-6">
-            {/* Promotion Name */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Tên chương trình <span className="text-red-500">*</span>
-              </label>
-              <div className="relative">
-                <input
-                  name="promotionName"
-                  value={formData.promotionName}
-                  onChange={handleChange}
-                  className={`block w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors ${errors.promotionName
-                    ? 'border-red-300 focus:border-red-500'
-                    : 'border-gray-300 focus:border-indigo-500'
-                    }`}
-                  placeholder="Ví dụ: Khuyến mãi Black Friday 2024"
-                />
+            <div className="grid grid-cols-1 gap-6">
+              {/* Promotion Name */}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  Tên chương trình <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <input
+                    name="promotionName"
+                    value={formData.promotionName}
+                    onChange={handleChange}
+                    className={`block w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors ${errors.promotionName
+                      ? 'border-red-300 focus:border-red-500'
+                      : 'border-gray-300 focus:border-indigo-500'
+                      }`}
+                    placeholder="Ví dụ: Khuyến mãi Black Friday 2024"
+                  />
+                  {errors.promotionName && (
+                    <div className="absolute inset-y-0 right-0 flex items-center pr-3">
+                      <ExclamationCircleIcon className="h-5 w-5 text-red-500" />
+                    </div>
+                  )}
+                </div>
                 {errors.promotionName && (
-                  <div className="absolute inset-y-0 right-0 flex items-center pr-3">
-                    <ExclamationCircleIcon className="h-5 w-5 text-red-500" />
-                  </div>
+                  <p className="mt-2 text-sm text-red-600 flex items-center">
+                    <ExclamationCircleIcon className="h-4 w-4 mr-1" />
+                    {errors.promotionName}
+                  </p>
                 )}
               </div>
-              {errors.promotionName && (
-                <p className="mt-2 text-sm text-red-600 flex items-center">
-                  <ExclamationCircleIcon className="h-4 w-4 mr-1" />
-                  {errors.promotionName}
-                </p>
-              )}
-            </div>
 
-            {/* Description */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Mô tả chi tiết
-              </label>
-              <textarea
-                name="description"
-                value={formData.description}
-                onChange={handleChange}
-                rows={4}
-                className="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
-                placeholder="Mô tả chi tiết về chương trình khuyến mãi, điều kiện áp dụng..."
-              />
-              <p className="mt-2 text-sm text-gray-500">
-                {formData.description.length}/500 ký tự
-              </p>
+              {/* Description */}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  Mô tả chi tiết
+                </label>
+                <textarea
+                  name="description"
+                  value={formData.description}
+                  onChange={handleChange}
+                  rows={4}
+                  className="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+                  placeholder="Mô tả chi tiết về chương trình khuyến mãi, điều kiện áp dụng..."
+                />
+                <p className="mt-2 text-sm text-slate-500">
+                  {formData.description.length}/500 ký tự
+                </p>
+              </div>
             </div>
           </div>
+
+          <div className="bg-white rounded-lg shadow-sm border border-slate-200 flex-1 p-6">
+            <div className="flex items-center mb-6">
+              <div className="flex-shrink-0">
+                <TagIcon className="h-6 w-6 text-sky-600" />
+              </div>
+              <div className="ml-3">
+                <h2 className="text-lg font-medium text-slate-900">Thiết lập Giảm giá</h2>
+                <p className="text-sm text-slate-500">Cấu hình tỷ lệ giảm giá và trạng thái</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Discount Rate */}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  Tỷ lệ giảm giá (%) <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0.01"
+                    max="100"
+                    name="discountRate"
+                    value={formData.discountRate}
+                    onChange={handleChange}
+                    className={`block w-full px-4 py-3 pr-12 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors ${errors.discountRate
+                      ? 'border-red-300 focus:border-red-500'
+                      : 'border-gray-300 focus:border-indigo-500'
+                      }`}
+                    placeholder="0.00"
+                  />
+                  <div className="absolute inset-y-0 right-0 flex items-center pr-3">
+                    <span className="text-slate-500 font-medium">%</span>
+                  </div>
+                </div>
+                {errors.discountRate && (
+                  <p className="mt-2 text-sm text-red-600 flex items-center">
+                    <ExclamationCircleIcon className="h-4 w-4 mr-1" />
+                    {errors.discountRate}
+                  </p>
+                )}
+                {formData.discountRate && !errors.discountRate && (
+                  <p className="mt-2 text-sm text-sky-600 flex items-center">
+                    <CheckCircleIcon className="h-4 w-4 mr-1" />
+                    Giảm {formData.discountRate}% cho đơn hàng
+                  </p>
+                )}
+              </div>
+
+              {/* Status Selection */}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  Trạng thái <span className="text-red-500">*</span>
+                </label>
+
+                <div className="grid grid-cols-2 gap-2 mb-3">
+                  {[
+                    { value: "DRAFT", label: "Chờ xác thực" }
+                  ].map((statusOption) => {
+                    const config = getStatusConfig(statusOption.value);
+                    const isSelected = formData.status === statusOption.value;
+
+                    return (
+                      <button
+                        key={statusOption.value}
+                        type="button"
+                        onClick={() => handleStatusChange(statusOption.value)}
+                        className={`p-2 border rounded-lg text-sm font-medium transition-all ${isSelected
+                          ? `${config.buttonColor} ring-2 ring-offset-1 ring-opacity-50`
+                          : 'bg-white border-gray-300 text-slate-700 hover:bg-gray-50'
+                          }`}
+                      >
+                        {statusOption.label}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {!isEdit && autoSuggestedStatus && autoSuggestedStatus !== formData.status && (
+                  <div className="mb-3 p-2 bg-blue-50 border border-blue-200 rounded-lg">
+                    <p className="text-sm text-blue-700">
+                      💡 Gợi ý: Dựa trên thời gian bạn chọn, hệ thống đề xuất trạng thái "
+                      <button
+                        type="button"
+                        onClick={() => handleStatusChange(autoSuggestedStatus)}
+                        className="underline font-medium hover:text-blue-800"
+                      >
+                        {getStatusConfig(autoSuggestedStatus).label}
+                      </button>
+                      "
+                    </p>
+                  </div>
+                )}
+
+                <div className={`p-3 rounded-lg border ${statusConfig.bgColor} ${statusConfig.borderColor}`}>
+                  <div className="flex items-start">
+                    <StatusIcon className={`h-5 w-5 mt-0.5 mr-2 ${statusConfig.color}`} />
+                    <div>
+                      <p className={`text-sm font-medium ${statusConfig.color}`}>
+                        {statusConfig.label}
+                      </p>
+                      <p className="text-sm text-slate-600 mt-1">
+                        {statusConfig.description}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+
         </div>
         <div className="flex gap-8">
           {/* Vehicle Models Selection */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
             <div className="flex items-center mb-6">
               <div className="flex-shrink-0">
                 <TagIcon className="h-6 w-6 text-blue-600" />
               </div>
               <div className="ml-3">
-                <h2 className="text-lg font-medium text-gray-900">Model Xe Áp dụng</h2>
-                <p className="text-sm text-gray-500">Chọn các model xe được áp dụng khuyến mãi</p>
+                <h2 className="text-lg font-medium text-slate-900">Model Xe Áp dụng</h2>
+                <p className="text-sm text-slate-500">Chọn các model xe được áp dụng khuyến mãi</p>
               </div>
             </div>
 
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-slate-700 mb-2">
                   Model xe áp dụng <span className="text-red-500">*</span>
                 </label>
 
@@ -590,12 +702,12 @@ export default function PromotionForm({ onSubmit, onCancel, initialData, isEdit 
                           className="inline-flex items-center bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm"
                         >
                           <div className="flex items-center justify-between w-full">
-                            <div className="text-sm text-gray-500 mt-0.5">{model.brand}-</div>
-                            <div className="font-semibold text-gray-900">{model.modelName}-</div>
+                            <div className="text-sm text-slate-500 mt-0.5">{model.brand}-</div>
+                            <div className="font-semibold text-slate-900">{model.modelName}-</div>
                             {/* Status tag */}
                             <span
                               className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${model.status === 'IN_PRODUCTION'
-                                ? 'bg-green-100 text-green-700'
+                                ? 'bg-sky-100 text-sky-700'
                                 : model.status === 'DISCONTINUED'
                                   ? 'bg-red-100 text-red-700'
                                   : 'bg-yellow-100 text-yellow-700'
@@ -630,24 +742,24 @@ export default function PromotionForm({ onSubmit, onCancel, initialData, isEdit 
                       : 'border-gray-300 focus:border-indigo-500'
                       }`}
                   >
-                    <span className="text-gray-500">
+                    <span className="text-slate-500">
                       {isLoadingModels ? "Đang tải model xe..." : "Chọn model xe..."}
                     </span>
                     {isModelDropdownOpen ? (
-                      <ChevronUpIcon className="h-5 w-5 text-gray-400" />
+                      <ChevronUpIcon className="h-5 w-5 text-slate-400" />
                     ) : (
-                      <ChevronDownIcon className="h-5 w-5 text-gray-400" />
+                      <ChevronDownIcon className="h-5 w-5 text-slate-400" />
                     )}
                   </button>
 
                   {isModelDropdownOpen && (
                     <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
                       {isLoadingModels ? (
-                        <div className="px-4 py-3 text-sm text-gray-500 text-center">
+                        <div className="px-4 py-3 text-sm text-slate-500 text-center">
                           Đang tải model xe...
                         </div>
                       ) : availableModels.length === 0 ? (
-                        <div className="px-4 py-3 text-sm text-gray-500 text-center">
+                        <div className="px-4 py-3 text-sm text-slate-500 text-center">
                           Đã chọn tất cả model xe
                         </div>
                       ) : (
@@ -659,11 +771,11 @@ export default function PromotionForm({ onSubmit, onCancel, initialData, isEdit 
                             className="w-full px-4 py-3 text-left hover:bg-gray-50 focus:outline-none focus:bg-gray-50 border-b border-gray-100 last:border-b-0"
                           >
                             <div className="flex items-center justify-between w-full">
-                              <div className="font-semibold text-gray-900">{model.modelName}</div>
+                              <div className="font-semibold text-slate-900">{model.modelName}</div>
                               {/* Status tag */}
                               <span
                                 className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${model.status === 'IN_PRODUCTION'
-                                  ? 'bg-green-100 text-green-700'
+                                  ? 'bg-sky-100 text-sky-700'
                                   : model.status === 'DISCONTINUED'
                                     ? 'bg-red-100 text-red-700'
                                     : 'bg-yellow-100 text-yellow-700'
@@ -675,7 +787,7 @@ export default function PromotionForm({ onSubmit, onCancel, initialData, isEdit 
                                 <span>{model.status.replace('_', ' ')}</span>
                               </span>
                             </div>
-                            <div className="text-sm text-gray-500 mt-0.5">{model.brand}</div>
+                            <div className="text-sm text-slate-500 mt-0.5">{model.brand}</div>
                           </button>
                         ))
                       )}
@@ -690,7 +802,7 @@ export default function PromotionForm({ onSubmit, onCancel, initialData, isEdit 
                   </p>
                 )}
 
-                <p className="mt-2 text-sm text-gray-500">
+                <p className="mt-2 text-sm text-slate-500">
                   Đã chọn {selectedModels.length} model xe
                 </p>
               </div>
@@ -698,23 +810,55 @@ export default function PromotionForm({ onSubmit, onCancel, initialData, isEdit 
           </div>
 
           {/* Dealer Selection */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 flex-1">
+          <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6 flex-1">
             <div className="flex items-center mb-6">
               <div className="flex-shrink-0">
                 <BuildingStorefrontIcon className="h-6 w-6 text-purple-600" />
               </div>
               <div className="ml-3">
-                <h2 className="text-lg font-medium text-gray-900">Đại Lý Áp dụng</h2>
-                <p className="text-sm text-gray-500">Chọn các đại lý được áp dụng khuyến mãi</p>
+                <h2 className="text-lg font-medium text-slate-900">Đại Lý Áp dụng</h2>
+                <p className="text-sm text-slate-500">Chọn các đại lý được áp dụng khuyến mãi</p>
               </div>
             </div>
 
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-slate-700 mb-2">
                   Đại lý áp dụng <span className="text-red-500">*</span>
                 </label>
 
+
+                {/* Selected Dealers Display */}
+                {selectedDealers.length > 0 && (
+                  <div className="mb-4">
+                    <div className="flex flex-wrap gap-2">
+                      {selectedDealers.map((dealer) => (
+                        <div
+                          key={dealer.dealerId}
+                          className="inline-flex items-center bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm"
+                        >
+                          <div className="flex items-center gap-1">
+                            <span className="font-semibold text-slate-900">{dealer.dealerName}</span>
+                            <span className="text-xs text-purple-600">({dealer.dealerCode})</span>
+                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${dealer.status === 'ACTIVE'
+                              ? 'bg-sky-100 text-sky-700'
+                              : 'bg-gray-100 text-slate-600'
+                              }`}>
+                              {dealer.status === 'ACTIVE' ? '🟢' : '⚪'} {dealer.city}
+                            </span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => removeDealer(dealer.dealerId)}
+                            className="ml-2 text-purple-600 hover:text-purple-800 focus:outline-none"
+                          >
+                            <XMarkIcon className="h-4 w-4" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {/* Dealer Selection Dropdown */}
                 <div className="relative">
@@ -726,24 +870,24 @@ export default function PromotionForm({ onSubmit, onCancel, initialData, isEdit 
                       : 'border-gray-300 focus:border-indigo-500'
                       }`}
                   >
-                    <span className="text-gray-500">
+                    <span className="text-slate-500">
                       {isLoadingDealers ? "Đang tải danh sách đại lý..." : "Chọn đại lý..."}
                     </span>
                     {isDealerDropdownOpen ? (
-                      <ChevronUpIcon className="h-5 w-5 text-gray-400" />
+                      <ChevronUpIcon className="h-5 w-5 text-slate-400" />
                     ) : (
-                      <ChevronDownIcon className="h-5 w-5 text-gray-400" />
+                      <ChevronDownIcon className="h-5 w-5 text-slate-400" />
                     )}
                   </button>
 
                   {isDealerDropdownOpen && (
                     <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
                       {isLoadingDealers ? (
-                        <div className="px-4 py-3 text-sm text-gray-500 text-center">
+                        <div className="px-4 py-3 text-sm text-slate-500 text-center">
                           Đang tải danh sách đại lý...
                         </div>
                       ) : availableDealers.length === 0 ? (
-                        <div className="px-4 py-3 text-sm text-gray-500 text-center">
+                        <div className="px-4 py-3 text-sm text-slate-500 text-center">
                           Đã chọn tất cả đại lý
                         </div>
                       ) : (
@@ -754,16 +898,16 @@ export default function PromotionForm({ onSubmit, onCancel, initialData, isEdit 
                             onClick={() => handleDealerSelect(dealer)}
                             className="w-full px-4 py-3 text-left hover:bg-gray-50 focus:outline-none focus:bg-gray-50 border-b border-gray-100 last:border-b-0"
                           >
-                            <div className="font-medium text-gray-900">{dealer.dealerName}</div>
-                            <div className="text-sm text-gray-500 flex justify-between">
+                            <div className="font-medium text-slate-900">{dealer.dealerName}</div>
+                            <div className="text-sm text-slate-500 flex justify-between">
                               <span>{dealer.dealerCode}</span>
                               <span>{dealer.city} • {dealer.region}</span>
                             </div>
-                            <div className="text-xs text-gray-400 mt-1">
+                            <div className="text-xs text-slate-400 mt-1">
                               {dealer.address}
                             </div>
                             <div className={`inline-flex items-center px-2 py-1 rounded-full text-xs mt-1 ${dealer.status === 'ACTIVE'
-                              ? 'bg-green-100 text-green-800'
+                              ? 'bg-sky-100 text-sky-800'
                               : 'bg-gray-100 text-gray-800'
                               }`}>
                               {dealer.status === 'ACTIVE' ? 'Đang hoạt động' : 'Không hoạt động'}
@@ -782,7 +926,7 @@ export default function PromotionForm({ onSubmit, onCancel, initialData, isEdit 
                   </p>
                 )}
 
-                <p className="mt-2 text-sm text-gray-500">
+                <p className="mt-2 text-sm text-slate-500">
                   Đã chọn {selectedDealers.length} đại lý
                 </p>
               </div>
@@ -792,128 +936,15 @@ export default function PromotionForm({ onSubmit, onCancel, initialData, isEdit 
         </div>
 
 
-        {/* Discount & Settings Card */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center mb-6">
-            <div className="flex-shrink-0">
-              <TagIcon className="h-6 w-6 text-green-600" />
-            </div>
-            <div className="ml-3">
-              <h2 className="text-lg font-medium text-gray-900">Thiết lập Giảm giá</h2>
-              <p className="text-sm text-gray-500">Cấu hình tỷ lệ giảm giá và trạng thái</p>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Discount Rate */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Tỷ lệ giảm giá (%) <span className="text-red-500">*</span>
-              </label>
-              <div className="relative">
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0.01"
-                  max="100"
-                  name="discountRate"
-                  value={formData.discountRate}
-                  onChange={handleChange}
-                  className={`block w-full px-4 py-3 pr-12 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors ${errors.discountRate
-                    ? 'border-red-300 focus:border-red-500'
-                    : 'border-gray-300 focus:border-indigo-500'
-                    }`}
-                  placeholder="0.00"
-                />
-                <div className="absolute inset-y-0 right-0 flex items-center pr-3">
-                  <span className="text-gray-500 font-medium">%</span>
-                </div>
-              </div>
-              {errors.discountRate && (
-                <p className="mt-2 text-sm text-red-600 flex items-center">
-                  <ExclamationCircleIcon className="h-4 w-4 mr-1" />
-                  {errors.discountRate}
-                </p>
-              )}
-              {formData.discountRate && !errors.discountRate && (
-                <p className="mt-2 text-sm text-green-600 flex items-center">
-                  <CheckCircleIcon className="h-4 w-4 mr-1" />
-                  Giảm {formData.discountRate}% cho đơn hàng
-                </p>
-              )}
-            </div>
-
-            {/* Status Selection */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Trạng thái <span className="text-red-500">*</span>
-              </label>
-
-              <div className="grid grid-cols-2 gap-2 mb-3">
-                {[
-                  { value: "DRAFT", label: "Chờ xác thực" }
-                ].map((statusOption) => {
-                  const config = getStatusConfig(statusOption.value);
-                  const isSelected = formData.status === statusOption.value;
-
-                  return (
-                    <button
-                      key={statusOption.value}
-                      type="button"
-                      onClick={() => handleStatusChange(statusOption.value)}
-                      className={`p-2 border rounded-lg text-sm font-medium transition-all ${isSelected
-                        ? `${config.buttonColor} ring-2 ring-offset-1 ring-opacity-50`
-                        : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
-                        }`}
-                    >
-                      {statusOption.label}
-                    </button>
-                  );
-                })}
-              </div>
-
-              {!isEdit && autoSuggestedStatus && autoSuggestedStatus !== formData.status && (
-                <div className="mb-3 p-2 bg-blue-50 border border-blue-200 rounded-lg">
-                  <p className="text-sm text-blue-700">
-                    💡 Gợi ý: Dựa trên thời gian bạn chọn, hệ thống đề xuất trạng thái "
-                    <button
-                      type="button"
-                      onClick={() => handleStatusChange(autoSuggestedStatus)}
-                      className="underline font-medium hover:text-blue-800"
-                    >
-                      {getStatusConfig(autoSuggestedStatus).label}
-                    </button>
-                    "
-                  </p>
-                </div>
-              )}
-
-              <div className={`p-3 rounded-lg border ${statusConfig.bgColor} ${statusConfig.borderColor}`}>
-                <div className="flex items-start">
-                  <StatusIcon className={`h-5 w-5 mt-0.5 mr-2 ${statusConfig.color}`} />
-                  <div>
-                    <p className={`text-sm font-medium ${statusConfig.color}`}>
-                      {statusConfig.label}
-                    </p>
-                    <p className="text-sm text-gray-600 mt-1">
-                      {statusConfig.description}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
         {/* Date & Time Card */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
           <div className="flex items-center mb-6">
             <div className="flex-shrink-0">
               <CalendarIcon className="h-6 w-6 text-blue-600" />
             </div>
             <div className="ml-3">
-              <h2 className="text-lg font-medium text-gray-900">Thời gian Áp dụng</h2>
-              <p className="text-sm text-gray-500">Thiết lập thời gian bắt đầu và kết thúc</p>
+              <h2 className="text-lg font-medium text-slate-900">Thời gian Áp dụng</h2>
+              <p className="text-sm text-slate-500">Thiết lập thời gian bắt đầu và kết thúc</p>
             </div>
           </div>
 
@@ -921,7 +952,7 @@ export default function PromotionForm({ onSubmit, onCancel, initialData, isEdit 
             {/* Start Date & Time */}
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-slate-700 mb-2">
                   Ngày bắt đầu <span className="text-red-500">*</span>
                 </label>
                 <div className="grid grid-cols-2 gap-3">
@@ -958,25 +989,25 @@ export default function PromotionForm({ onSubmit, onCancel, initialData, isEdit 
 
               {/* Quick Start Time Buttons */}
               <div className="flex flex-wrap gap-2">
-                <span className="text-xs text-gray-500 w-full">Chọn nhanh:</span>
+                <span className="text-xs text-slate-500 w-full">Chọn nhanh:</span>
                 <button
                   type="button"
                   onClick={() => setQuickTime('start', '08:00')}
-                  className="px-3 py-1.5 text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors"
+                  className="px-3 py-1.5 text-xs bg-gray-100 hover:bg-gray-200 text-slate-700 rounded-lg transition-colors"
                 >
                   08:00
                 </button>
                 <button
                   type="button"
                   onClick={() => setQuickTime('start', '09:00')}
-                  className="px-3 py-1.5 text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors"
+                  className="px-3 py-1.5 text-xs bg-gray-100 hover:bg-gray-200 text-slate-700 rounded-lg transition-colors"
                 >
                   09:00
                 </button>
                 <button
                   type="button"
                   onClick={() => setQuickTime('start', '12:00')}
-                  className="px-3 py-1.5 text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors"
+                  className="px-3 py-1.5 text-xs bg-gray-100 hover:bg-gray-200 text-slate-700 rounded-lg transition-colors"
                 >
                   12:00
                 </button>
@@ -993,7 +1024,7 @@ export default function PromotionForm({ onSubmit, onCancel, initialData, isEdit 
             {/* End Date & Time */}
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-slate-700 mb-2">
                   Ngày kết thúc <span className="text-red-500">*</span>
                 </label>
                 <div className="grid grid-cols-2 gap-3">
@@ -1030,32 +1061,32 @@ export default function PromotionForm({ onSubmit, onCancel, initialData, isEdit 
 
               {/* Quick End Time Buttons */}
               <div className="flex flex-wrap gap-2">
-                <span className="text-xs text-gray-500 w-full">Chọn nhanh:</span>
+                <span className="text-xs text-slate-500 w-full">Chọn nhanh:</span>
                 <button
                   type="button"
                   onClick={() => setQuickTime('end', '17:00')}
-                  className="px-3 py-1.5 text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors"
+                  className="px-3 py-1.5 text-xs bg-gray-100 hover:bg-gray-200 text-slate-700 rounded-lg transition-colors"
                 >
                   17:00
                 </button>
                 <button
                   type="button"
                   onClick={() => setQuickTime('end', '18:00')}
-                  className="px-3 py-1.5 text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors"
+                  className="px-3 py-1.5 text-xs bg-gray-100 hover:bg-gray-200 text-slate-700 rounded-lg transition-colors"
                 >
                   18:00
                 </button>
                 <button
                   type="button"
                   onClick={() => setQuickTime('end', '23:59')}
-                  className="px-3 py-1.5 text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors"
+                  className="px-3 py-1.5 text-xs bg-gray-100 hover:bg-gray-200 text-slate-700 rounded-lg transition-colors"
                 >
                   23:59
                 </button>
                 <button
                   type="button"
                   onClick={() => setQuickTime('end', 'tomorrow')}
-                  className="px-3 py-1.5 text-xs bg-green-100 hover:bg-green-200 text-green-700 rounded-lg transition-colors font-medium"
+                  className="px-3 py-1.5 text-xs bg-sky-100 hover:bg-sky-200 text-sky-700 rounded-lg transition-colors font-medium"
                 >
                   Ngày mai
                 </button>
@@ -1099,12 +1130,12 @@ export default function PromotionForm({ onSubmit, onCancel, initialData, isEdit 
         </div>
 
         {/* Action Buttons */}
-        <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200">
+        <div className="flex justify-end space-x-4 pt-6 border-t border-slate-200">
           <button
             type="button"
             onClick={onCancel}
             disabled={isSubmitting}
-            className="px-6 py-3 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="px-6 py-3 border border-gray-300 rounded-lg text-sm font-medium text-slate-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             Hủy bỏ
           </button>

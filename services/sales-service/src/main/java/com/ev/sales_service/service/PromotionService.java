@@ -8,6 +8,7 @@ import com.ev.sales_service.entity.Promotion;
 import com.ev.sales_service.enums.PromotionStatus;
 import com.ev.sales_service.repository.OutboxRepository;
 import com.ev.sales_service.repository.PromotionRepository;
+import com.ev.sales_service.repository.QuotationRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
@@ -31,6 +32,7 @@ public class PromotionService {
 
     private final PromotionRepository promotionRepository;
     private final OutboxRepository outboxRepository;
+    private final QuotationRepository quotationRepository;
     private final ObjectMapper objectMapper; // spring-boot auto-configures
 
     @Transactional
@@ -94,7 +96,9 @@ public class PromotionService {
 
     public List<Promotion> getAllPromotions() {
         updatePromotionStatuses();
-        return promotionRepository.findAll();
+        return promotionRepository.findAll().stream()
+                .filter(p -> p.getStatus() != PromotionStatus.DELETED)
+                .collect(Collectors.toList());
     }
 
     private void updatePromotionStatuses() {
@@ -128,11 +132,16 @@ public class PromotionService {
         promotionRepository.saveAll(promotions);
     }
 
+    @Transactional
     public void deletePromotion(UUID id) {
         Promotion promotion = promotionRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.DATA_NOT_FOUND));
-        promotion.setStatus(PromotionStatus.DELETED);
-        promotionRepository.save(promotion);
+
+        if (quotationRepository.existsByPromotionId(id)) {
+            throw new AppException(ErrorCode.PROMOTION_IN_USE);
+        }
+
+        promotionRepository.delete(promotion);
     }
 
     public List<Promotion> getPromotionsByStatus(PromotionStatus status) {

@@ -280,7 +280,7 @@ export const PromotionListPage = ({ onCreate, onEdit }) => {
               className="mt-4 sm:mt-0 inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
             >
               <PlusIcon className="h-5 w-5 mr-2" />
-              Tạo khuyến mãi mới
+              Tạo khuyến mãi mớ
             </button>
           </div>
         </div>
@@ -403,11 +403,10 @@ export const PromotionListPage = ({ onCreate, onEdit }) => {
                       sortedAndFilteredPromotions.map((promotion) => (
                         <tr
                           key={promotion.promotionId}
-                          className={`hover:bg-gray-50 transition-colors ${
-                            promotion.status === "DRAFT"
-                              ? "bg-yellow-50 border-l-4 border-l-yellow-400"
-                              : ""
-                          }`}
+                          className={`hover:bg-gray-50 transition-colors ${promotion.status === "DRAFT"
+                            ? "bg-yellow-50 border-l-4 border-l-yellow-400"
+                            : ""
+                            }`}
                         >
                           <td className="px-6 py-4">
                             <div className="flex items-start space-x-3">
@@ -536,10 +535,10 @@ export const PromotionListPage = ({ onCreate, onEdit }) => {
                             {!searchTerm && selectedStatus === "ALL" && (
                               <button
                                 onClick={onCreate}
-                                className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                                className="flex items-center gap-2 bg-indigo-600 text-white px-6 py-3 rounded-xl shadow-xl shadow-indigo-100 hover:bg-indigo-700 transition-all font-black text-xs active:scale-95 italic uppercase tracking-widest"
                               >
                                 <PlusIcon className="h-4 w-4 mr-2" />
-                                Tạo khuyến mãi đầu tiên
+                                <span>Tạo khuyến mãi đầu tiên</span>
                               </button>
                             )}
                           </div>
@@ -572,15 +571,15 @@ export const PromotionListPage = ({ onCreate, onEdit }) => {
                         {sortedAndFilteredPromotions.filter(
                           (p) => p.status === "ACTIVE"
                         ).length > 0 && (
-                          <span className="ml-2 text-green-600">
-                            {
-                              sortedAndFilteredPromotions.filter(
-                                (p) => p.status === "ACTIVE"
-                              ).length
-                            }{" "}
-                            đang hoạt động
-                          </span>
-                        )}
+                            <span className="ml-2 text-green-600">
+                              {
+                                sortedAndFilteredPromotions.filter(
+                                  (p) => p.status === "ACTIVE"
+                                ).length
+                              }{" "}
+                              đang hoạt động
+                            </span>
+                          )}
                       </span>
                     </div>
                   </div>
