@@ -65,7 +65,13 @@ export default function PromotionListPage({ onCreate }) {
     promotionService
       .getAll()
       .then((res) => {
-        const promotionsWithAutoStatus = res.data.map((promo) => ({
+        const rawData = res.data;
+        const list = Array.isArray(rawData)
+          ? rawData
+          : Array.isArray(rawData?.data)
+            ? rawData.data
+            : [];
+        const promotionsWithAutoStatus = list.map((promo) => ({
           ...promo,
           autoStatus: calculateAutoStatus(promo),
         }));
@@ -144,7 +150,13 @@ export default function PromotionListPage({ onCreate }) {
         promotionService
           .getByStatus(status)
           .then((res) => {
-            const promotionsWithAutoStatus = res.data.map((promo) => ({
+            const rawData = res.data;
+            const list = Array.isArray(rawData)
+              ? rawData
+              : Array.isArray(rawData?.data)
+                ? rawData.data
+                : [];
+            const promotionsWithAutoStatus = list.map((promo) => ({
               ...promo,
               autoStatus: calculateAutoStatus(promo),
             }));
@@ -160,8 +172,6 @@ export default function PromotionListPage({ onCreate }) {
   );
 
   const handleViewDetails = useCallback(async (promotion) => {
-    const mainEl = document.querySelector("main.flex-1");
-    mainEl.scrollTop = 0;
     setLoadingDetails(true);
     setSelectedPromotion(promotion);
     setShowDetailModal(true);
@@ -172,6 +182,27 @@ export default function PromotionListPage({ onCreate }) {
     setShowDetailModal(false);
     setSelectedPromotion(null);
   }, []);
+
+  const handleAuthenticate = useCallback(async (promotionId) => {
+    try {
+      await promotionService.authenticPromotion(promotionId);
+      loadPromotions();
+      closeDetailModal();
+    } catch (err) {
+      console.error("Error authenticating promotion:", err);
+    }
+  }, [loadPromotions, closeDetailModal]);
+
+  const handleDelete = useCallback(async (promotionId) => {
+    if (!window.confirm("Bạn có chắc chắn muốn xóa chương trình khuyến mãi này không?")) return;
+    try {
+      await promotionService.delete(promotionId);
+      loadPromotions();
+      closeDetailModal();
+    } catch (err) {
+      console.error("Error deleting promotion:", err);
+    }
+  }, [loadPromotions, closeDetailModal]);
 
   // Hàm lấy thông tin đầy đủ của models từ ID - ĐÃ SỬA
   const getApplicableModelsDetails = useCallback(
@@ -588,19 +619,18 @@ export default function PromotionListPage({ onCreate }) {
                               {model.brand}
                             </div>
                             <div
-                              className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${
-                                model.status === "COMING_SOON"
-                                  ? "bg-yellow-100 text-yellow-800"
-                                  : model.status === "DISCONTINUED"
+                              className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${model.status === "COMING_SOON"
+                                ? "bg-yellow-100 text-yellow-800"
+                                : model.status === "DISCONTINUED"
                                   ? "bg-red-100 text-red-800"
                                   : "bg-gray-100 text-gray-800"
-                              }`}
+                                }`}
                             >
                               {model.status === "COMING_SOON"
                                 ? "🟡 Sắp ra mắt"
                                 : model.status === "DISCONTINUED"
-                                ? "🔴 Ngừng sản xuất"
-                                : "⚪ Không xác định"}
+                                  ? "🔴 Ngừng sản xuất"
+                                  : "⚪ Không xác định"}
                             </div>
                           </div>
                         ))}
@@ -635,11 +665,10 @@ export default function PromotionListPage({ onCreate }) {
                                 </div>
                               </div>
                               <div
-                                className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${
-                                  dealer.status === "ACTIVE"
-                                    ? "bg-green-100 text-green-800"
-                                    : "bg-gray-100 text-gray-800"
-                                }`}
+                                className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${dealer.status === "ACTIVE"
+                                  ? "bg-green-100 text-green-800"
+                                  : "bg-gray-100 text-gray-800"
+                                  }`}
                               >
                                 {dealer.status === "ACTIVE"
                                   ? "🟢 Đang hoạt động"
@@ -688,7 +717,23 @@ export default function PromotionListPage({ onCreate }) {
           </div>
 
           {/* Modal Footer */}
-          <div className="flex justify-end space-x-3 p-6 border-t border-gray-200 sticky bottom-0 bg-white">
+          <div className="flex items-center justify-between p-6 border-t border-gray-200 sticky bottom-0 bg-white">
+            <div className="flex gap-2">
+              {selectedPromotion.autoStatus === "DRAFT" && (
+                <button
+                  onClick={() => handleAuthenticate(selectedPromotion.promotionId)}
+                  className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition-colors"
+                >
+                  ✅ Xác thực
+                </button>
+              )}
+              <button
+                onClick={() => handleDelete(selectedPromotion.promotionId)}
+                className="px-6 py-2 bg-red-50 hover:bg-red-100 border border-red-200 text-red-700 rounded-lg text-sm font-medium transition-colors"
+              >
+                🗑️ Xóa
+              </button>
+            </div>
             <button
               onClick={closeDetailModal}
               className="px-6 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
@@ -853,20 +898,19 @@ export default function PromotionListPage({ onCreate }) {
 
             <div className="flex flex-wrap gap-2">
               {[
-                { value: "ALL", label: "Tất cả", color: "gray" },
-                { value: "DRAFT", label: "Chờ xác thực", color: "yellow" },
-                { value: "ACTIVE", label: "Đang hoạt động", color: "green" },
-                { value: "EXPIRED", label: "Đã hết hạn", color: "red" },
-                { value: "INACTIVE", label: "Không hoạt động", color: "gray" },
+                { value: "ALL", label: "Tất cả", activeClass: "bg-gray-100 text-gray-800 border border-gray-200" },
+                { value: "DRAFT", label: "Chờ xác thực", activeClass: "bg-yellow-100 text-yellow-800 border border-yellow-200" },
+                { value: "ACTIVE", label: "Đang hoạt động", activeClass: "bg-green-100 text-green-800 border border-green-200" },
+                { value: "EXPIRED", label: "Đã hết hạn", activeClass: "bg-red-100 text-red-800 border border-red-200" },
+                { value: "INACTIVE", label: "Không hoạt động", activeClass: "bg-gray-100 text-gray-600 border border-gray-200" },
               ].map((filter) => (
                 <button
                   key={filter.value}
                   onClick={() => handleStatusFilter(filter.value)}
-                  className={`inline-flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                    filterStatus === filter.value
-                      ? `bg-${filter.color}-100 text-${filter.color}-800 border border-${filter.color}-200`
-                      : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"
-                  }`}
+                  className={`inline-flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors ${filterStatus === filter.value
+                    ? filter.activeClass
+                    : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"
+                    }`}
                 >
                   {filter.label}
                 </button>

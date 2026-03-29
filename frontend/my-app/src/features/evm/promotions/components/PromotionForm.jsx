@@ -1,8 +1,8 @@
 // components/PromotionForm.js
 import React, { useState, useEffect, useMemo } from "react";
-import { 
-  CalendarIcon, 
-  TagIcon, 
+import {
+  CalendarIcon,
+  TagIcon,
   InformationCircleIcon,
   ExclamationCircleIcon,
   CheckCircleIcon,
@@ -18,7 +18,7 @@ import {
   BuildingStorefrontIcon
 } from "@heroicons/react/24/outline";
 import { format, parseISO } from 'date-fns';
-import { se, vi } from 'date-fns/locale';
+import { vi } from 'date-fns/locale';
 
 //services
 import fetchModelVehicle from '../services/fetchModelVehicle';
@@ -45,7 +45,7 @@ export default function PromotionForm({ onSubmit, onCancel, initialData, isEdit 
   const [selectedModels, setSelectedModels] = useState([]);
   const [isModelDropdownOpen, setIsModelDropdownOpen] = useState(false);
   const [isLoadingModels, setIsLoadingModels] = useState(false);
-  
+
   // State cho dealers
   const [dealers, setDealers] = useState([]);
   const [selectedDealers, setSelectedDealers] = useState([]);
@@ -72,30 +72,30 @@ export default function PromotionForm({ onSubmit, onCancel, initialData, isEdit 
       };
 
       setFormData({
-      promotionName: initialData.promotionName || "",
-      description: initialData.description || "",
-      discountRate: initialData.discountRate
-        ? (initialData.discountRate * 100).toString()
-        : "",
-      startDate: formatDateForInput(initialData.startDate),
-      endDate: formatDateForInput(initialData.endDate),
+        promotionName: initialData.promotionName || "",
+        description: initialData.description || "",
+        discountRate: initialData.discountRate
+          ? (initialData.discountRate * 100).toString()
+          : "",
+        startDate: formatDateForInput(initialData.startDate),
+        endDate: formatDateForInput(initialData.endDate),
 
-      // Parse và lấy ra danh sách ID
-      applicableModelsJson: JSON.stringify(
-        Array.isArray(initialData.applicableModelsJson)
-          ? initialData.applicableModelsJson.map((m) => m.modelId)
-          : JSON.parse(initialData.applicableModelsJson || "[]")
-      ),
-      dealerIdJson: JSON.stringify(
-        Array.isArray(initialData.dealerIdJson)
-          ? initialData.dealerIdJson.map((d) => d.dealerId)
-          : JSON.parse(initialData.dealerIdJson || "[]")
-      ),
+        // Parse và lấy ra danh sách ID
+        applicableModelsJson: JSON.stringify(
+          Array.isArray(initialData.applicableModelsJson)
+            ? initialData.applicableModelsJson.map((m) => m.modelId)
+            : JSON.parse(initialData.applicableModelsJson || "[]")
+        ),
+        dealerIdJson: JSON.stringify(
+          Array.isArray(initialData.dealerIdJson)
+            ? initialData.dealerIdJson.map((d) => d.dealerId)
+            : JSON.parse(initialData.dealerIdJson || "[]")
+        ),
 
-      status: initialData.status || "DRAFT",
-    });
+        status: initialData.status || "DRAFT",
+      });
 
-        
+
       // Parse và set selected models từ JSON
       try {
         const models = JSON.parse(initialData.applicableModelsJson || "[]");
@@ -117,14 +117,14 @@ export default function PromotionForm({ onSubmit, onCancel, initialData, isEdit 
   }, [initialData]);
 
 
-  const getIdDealerCurrent = async() => {
+  const getIdDealerCurrent = async () => {
     try {
       const response = await fetchProfileDealer.getProfile();
-      if(response.data && response.data.code === "1000"){
+      if (response.data && response.data.code === "1000") {
         return response.data.data.user.dealerManagerProfile.dealerId;
       }
       return null;
-    }catch (error) {
+    } catch (error) {
       console.error("Error fetching profile dealer:", error);
     }
   }
@@ -142,9 +142,9 @@ export default function PromotionForm({ onSubmit, onCancel, initialData, isEdit 
       }
     } catch (error) {
       console.error("Error loading vehicle models:", error);
-      setErrors(prev => ({ 
-        ...prev, 
-        applicableModels: "Không thể tải danh sách model xe" 
+      setErrors(prev => ({
+        ...prev,
+        applicableModels: "Không thể tải danh sách model xe"
       }));
     } finally {
       setIsLoadingModels(false);
@@ -157,20 +157,20 @@ export default function PromotionForm({ onSubmit, onCancel, initialData, isEdit 
     try {
       const response = (await fetchDealer.getAllDealer()).data;
       if (response.success && response.data) {
-        if(sessionStorage.getItem("roles").includes("DEALER_MANAGER")){
+        if (sessionStorage.getItem("roles")?.includes("DEALER_MANAGER")) {
           const dealerCurrent = await getIdDealerCurrent();
-          if(response.data.map(d=>d.dealerId).includes(dealerCurrent)){
-            setDealers([response.data.find(d=>d.dealerId === dealerCurrent)]);
+          if (response.data.map(d => d.dealerId).includes(dealerCurrent)) {
+            setDealers([response.data.find(d => d.dealerId === dealerCurrent)]);
           }
-        }else{
+        } else {
           setDealers(response.data || []);
         }
       }
     } catch (error) {
       console.error("Error loading dealers:", error);
-      setErrors(prev => ({ 
-        ...prev, 
-        dealers: "Không thể tải danh sách đại lý" 
+      setErrors(prev => ({
+        ...prev,
+        dealers: "Không thể tải danh sách đại lý"
       }));
     } finally {
       setIsLoadingDealers(false);
@@ -181,18 +181,18 @@ export default function PromotionForm({ onSubmit, onCancel, initialData, isEdit 
   const handleDateTimeChange = (type, field, value) => {
     const currentDateTime = formData[`${type}Date`];
     const [currentDate, currentTime] = currentDateTime.split('T');
-    
+
     let newDate = currentDate;
     let newTime = currentTime || '00:00';
-    
+
     if (field === 'date') {
       newDate = value;
     } else if (field === 'time') {
       newTime = value + ':00';
     }
-    
+
     const newDateTime = `${newDate}T${newTime}`;
-    
+
     setFormData(prev => ({
       ...prev,
       [`${type}Date`]: newDateTime
@@ -209,7 +209,7 @@ export default function PromotionForm({ onSubmit, onCancel, initialData, isEdit 
         const start = new Date(formData.startDate);
         const end = new Date(formData.endDate);
         const now = new Date();
-        
+
         if (start && end) {
           if (start > now) {
             setFormData(prev => ({ ...prev, status: "DRAFT" }));
@@ -227,7 +227,7 @@ export default function PromotionForm({ onSubmit, onCancel, initialData, isEdit 
   const setQuickTime = (type, time) => {
     const now = new Date();
     let newDate = formData[`${type}Date`] ? new Date(formData[`${type}Date`]) : new Date();
-    
+
     switch (time) {
       case 'now':
         newDate = new Date();
@@ -246,10 +246,10 @@ export default function PromotionForm({ onSubmit, onCancel, initialData, isEdit 
         const [hours, minutes] = time.split(':');
         newDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
     }
-    
+
     const dateString = newDate.toISOString().slice(0, 10);
     const timeString = newDate.toTimeString().slice(0, 8);
-    
+
     setFormData(prev => ({
       ...prev,
       [`${type}Date`]: `${dateString}T${timeString}`
@@ -264,7 +264,7 @@ export default function PromotionForm({ onSubmit, onCancel, initialData, isEdit 
 
     const newSelectedModels = [...selectedModels, model];
     setSelectedModels(newSelectedModels);
-    
+
     setFormData(prev => ({
       ...prev,
       applicableModelsJson: JSON.stringify(newSelectedModels)
@@ -273,14 +273,14 @@ export default function PromotionForm({ onSubmit, onCancel, initialData, isEdit 
     if (errors.applicableModels) {
       setErrors(prev => ({ ...prev, applicableModels: "" }));
     }
-    
+
     setIsModelDropdownOpen(false);
   };
 
   const removeModel = (modelId) => {
     const newSelectedModels = selectedModels.filter(model => model.modelId !== modelId);
     setSelectedModels(newSelectedModels);
-    
+
     setFormData(prev => ({
       ...prev,
       applicableModelsJson: JSON.stringify(newSelectedModels)
@@ -295,7 +295,7 @@ export default function PromotionForm({ onSubmit, onCancel, initialData, isEdit 
 
     const newSelectedDealers = [...selectedDealers, dealer];
     setSelectedDealers(newSelectedDealers);
-    
+
     setFormData(prev => ({
       ...prev,
       dealerIdJson: JSON.stringify(newSelectedDealers)
@@ -304,14 +304,14 @@ export default function PromotionForm({ onSubmit, onCancel, initialData, isEdit 
     if (errors.dealers) {
       setErrors(prev => ({ ...prev, dealers: "" }));
     }
-    
+
     setIsDealerDropdownOpen(false);
   };
 
   const removeDealer = (dealerId) => {
     const newSelectedDealers = selectedDealers.filter(dealer => dealer.dealerId !== dealerId);
     setSelectedDealers(newSelectedDealers);
-    
+
     setFormData(prev => ({
       ...prev,
       dealerIdJson: JSON.stringify(newSelectedDealers)
@@ -320,31 +320,31 @@ export default function PromotionForm({ onSubmit, onCancel, initialData, isEdit 
 
   const validateForm = () => {
     const newErrors = {};
-    
+
     if (!formData.promotionName.trim()) {
       newErrors.promotionName = "Tên chương trình là bắt buộc";
     } else if (formData.promotionName.length < 3) {
       newErrors.promotionName = "Tên chương trình phải có ít nhất 3 ký tự";
     }
-    
+
     if (!formData.discountRate || parseFloat(formData.discountRate) <= 0) {
       newErrors.discountRate = "Tỷ lệ giảm phải lớn hơn 0";
     } else if (parseFloat(formData.discountRate) > 100) {
       newErrors.discountRate = "Tỷ lệ giảm không được vượt quá 100%";
     }
-    
+
     if (!formData.startDate) {
       newErrors.startDate = "Ngày bắt đầu là bắt buộc";
     }
-    
+
     if (!formData.endDate) {
       newErrors.endDate = "Ngày kết thúc là bắt buộc";
     }
-    
+
     if (formData.startDate && formData.endDate) {
       const start = new Date(formData.startDate);
       const end = new Date(formData.endDate);
-      
+
       if (end <= start) {
         newErrors.endDate = "Ngày kết thúc phải sau ngày bắt đầu";
       }
@@ -353,7 +353,7 @@ export default function PromotionForm({ onSubmit, onCancel, initialData, isEdit 
     if (selectedDealers.length === 0) {
       newErrors.dealers = "Vui lòng chọn ít nhất một đại lý";
     }
-    
+
 
     // Validate selected models
     if (selectedModels.length === 0) {
@@ -366,11 +366,11 @@ export default function PromotionForm({ onSubmit, onCancel, initialData, isEdit 
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ 
-      ...prev, 
-      [name]: value 
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
     }));
-    
+
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: "" }));
     }
@@ -382,10 +382,10 @@ export default function PromotionForm({ onSubmit, onCancel, initialData, isEdit 
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (validateForm()) {
       setIsSubmitting(true);
-      
+
       try {
         const submitData = {
           ...formData,
@@ -397,7 +397,7 @@ export default function PromotionForm({ onSubmit, onCancel, initialData, isEdit 
             selectedDealers.map((d) => d.dealerId)
           ),
         };
-        
+
         await onSubmit(submitData);
       } catch (error) {
         console.error("Form submission error:", error);
@@ -437,34 +437,34 @@ export default function PromotionForm({ onSubmit, onCancel, initialData, isEdit 
         buttonColor: "bg-red-100 hover:bg-red-200 text-red-700 border-red-300"
       }
     };
-    
+
     return configs[status] || configs.DRAFT;
   };
 
   // Tính thời lượng với useMemo
   const duration = useMemo(() => {
     if (!formData.startDate || !formData.endDate) return null;
-    
+
     const start = new Date(formData.startDate);
     const end = new Date(formData.endDate);
     const diffMs = end - start;
-    
+
     if (diffMs <= 0) return null;
-    
+
     const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
     const hours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
     const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-    
+
     return { days, hours, minutes };
   }, [formData.startDate, formData.endDate]);
 
   const getAutoSuggestedStatus = () => {
     if (!formData.startDate || !formData.endDate) return null;
-    
+
     const start = new Date(formData.startDate);
     const end = new Date(formData.endDate);
     const now = new Date();
-    
+
     if (start > now) return "DRAFT";
     if (start <= now && end >= now) return "ACTIVE";
     if (end < now) return "EXPIRED";
@@ -491,7 +491,7 @@ export default function PromotionForm({ onSubmit, onCancel, initialData, isEdit 
           {isEdit ? "Chỉnh sửa Khuyến mãi" : "Tạo Khuyến mãi Mới"}
         </h1>
         <p className="mt-2 text-sm text-gray-600">
-          {isEdit 
+          {isEdit
             ? "Cập nhật thông tin chương trình khuyến mãi của bạn"
             : "Thiết lập chương trình khuyến mãi mới để thu hút khách hàng"
           }
@@ -522,11 +522,10 @@ export default function PromotionForm({ onSubmit, onCancel, initialData, isEdit 
                   name="promotionName"
                   value={formData.promotionName}
                   onChange={handleChange}
-                  className={`block w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors ${
-                    errors.promotionName 
-                      ? 'border-red-300 focus:border-red-500' 
+                  className={`block w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors ${errors.promotionName
+                      ? 'border-red-300 focus:border-red-500'
                       : 'border-gray-300 focus:border-indigo-500'
-                  }`}
+                    }`}
                   placeholder="Ví dụ: Khuyến mãi Black Friday 2024"
                 />
                 {errors.promotionName && (
@@ -580,7 +579,7 @@ export default function PromotionForm({ onSubmit, onCancel, initialData, isEdit 
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Model xe áp dụng <span className="text-red-500">*</span>
                 </label>
-                
+
                 {/* Selected Models Display */}
                 {selectedModels.length > 0 && (
                   <div className="mb-4">
@@ -595,13 +594,12 @@ export default function PromotionForm({ onSubmit, onCancel, initialData, isEdit 
                             <div className="font-semibold text-gray-900">{model.modelName}-</div>
                             {/* Status tag */}
                             <span
-                              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${
-                                model.status === 'IN_PRODUCTION'
+                              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${model.status === 'IN_PRODUCTION'
                                   ? 'bg-green-100 text-green-700'
                                   : model.status === 'DISCONTINUED'
-                                  ? 'bg-red-100 text-red-700'
-                                  : 'bg-yellow-100 text-yellow-700'
-                              }`}
+                                    ? 'bg-red-100 text-red-700'
+                                    : 'bg-yellow-100 text-yellow-700'
+                                }`}
                             >
                               {model.status === 'IN_PRODUCTION' && '✅'}
                               {model.status === 'DISCONTINUED' && '🔴'}
@@ -627,11 +625,10 @@ export default function PromotionForm({ onSubmit, onCancel, initialData, isEdit 
                   <button
                     type="button"
                     onClick={() => setIsModelDropdownOpen(!isModelDropdownOpen)}
-                    className={`flex justify-between items-center w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors ${
-                      errors.applicableModels 
-                        ? 'border-red-300 focus:border-red-500' 
+                    className={`flex justify-between items-center w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors ${errors.applicableModels
+                        ? 'border-red-300 focus:border-red-500'
                         : 'border-gray-300 focus:border-indigo-500'
-                    }`}
+                      }`}
                   >
                     <span className="text-gray-500">
                       {isLoadingModels ? "Đang tải model xe..." : "Chọn model xe..."}
@@ -662,24 +659,23 @@ export default function PromotionForm({ onSubmit, onCancel, initialData, isEdit 
                             className="w-full px-4 py-3 text-left hover:bg-gray-50 focus:outline-none focus:bg-gray-50 border-b border-gray-100 last:border-b-0"
                           >
                             <div className="flex items-center justify-between w-full">
-                            <div className="font-semibold text-gray-900">{model.modelName}</div>
-                            {/* Status tag */}
-                            <span
-                              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${
-                                model.status === 'IN_PRODUCTION'
-                                  ? 'bg-green-100 text-green-700'
-                                  : model.status === 'DISCONTINUED'
-                                  ? 'bg-red-100 text-red-700'
-                                  : 'bg-yellow-100 text-yellow-700'
-                              }`}
-                            >
-                              {model.status === 'IN_PRODUCTION' && '✅'}
-                              {model.status === 'DISCONTINUED' && '🔴'}
-                              {model.status === 'COMING_SOON' && '🟡'}
-                              <span>{model.status.replace('_', ' ')}</span>
-                            </span>
-                          </div>
-                          <div className="text-sm text-gray-500 mt-0.5">{model.brand}</div>
+                              <div className="font-semibold text-gray-900">{model.modelName}</div>
+                              {/* Status tag */}
+                              <span
+                                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${model.status === 'IN_PRODUCTION'
+                                    ? 'bg-green-100 text-green-700'
+                                    : model.status === 'DISCONTINUED'
+                                      ? 'bg-red-100 text-red-700'
+                                      : 'bg-yellow-100 text-yellow-700'
+                                  }`}
+                              >
+                                {model.status === 'IN_PRODUCTION' && '✅'}
+                                {model.status === 'DISCONTINUED' && '🔴'}
+                                {model.status === 'COMING_SOON' && '🟡'}
+                                <span>{model.status.replace('_', ' ')}</span>
+                              </span>
+                            </div>
+                            <div className="text-sm text-gray-500 mt-0.5">{model.brand}</div>
                           </button>
                         ))
                       )}
@@ -718,67 +714,17 @@ export default function PromotionForm({ onSubmit, onCancel, initialData, isEdit 
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Đại lý áp dụng <span className="text-red-500">*</span>
                 </label>
-                  {/* Selected Dealers Display */}
-                    {selectedDealers.length > 0 && (
-                      <div className="mb-4">
-                        <div className="flex flex-wrap gap-2">
-                          {selectedDealers.map((dealer) => (
-                            <div
-                              key={dealer.dealerId}
-                              className="inline-flex items-center bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm"
-                            >
-                              <span className="font-medium">{dealer.dealerName}</span>
-                              <span className="mx-1">-</span>
-                              <span className="text-purple-600">{dealer.city}</span>
-                              <button
-                                type="button"
-                                onClick={() => removeDealer(dealer.dealerId)}
-                                className="ml-2 text-purple-600 hover:text-purple-800 focus:outline-none"
-                              >
-                                <XMarkIcon className="h-4 w-4" />
-                              </button>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  
 
-                {/* Selected Dealers Display */}
-                {selectedDealers.length > 0 && (
-                  <div className="mb-4">
-                    <div className="flex flex-wrap gap-2">
-                      {selectedDealers.map((dealer) => (
-                        <div
-                          key={dealer.dealerId}
-                          className="inline-flex items-center bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm"
-                        >
-                          <span className="font-medium">{dealer.dealerName}</span>
-                          <span className="mx-1">-</span>
-                          <span className="text-purple-600">{dealer.city}</span>
-                          <button
-                            type="button"
-                            onClick={() => removeDealer(dealer.dealerId)}
-                            className="ml-2 text-purple-600 hover:text-purple-800 focus:outline-none"
-                          >
-                            <XMarkIcon className="h-4 w-4" />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
 
                 {/* Dealer Selection Dropdown */}
                 <div className="relative">
                   <button
                     type="button"
                     onClick={() => setIsDealerDropdownOpen(!isDealerDropdownOpen)}
-                    className={`flex justify-between items-center w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors ${
-                      errors.dealers 
-                        ? 'border-red-300 focus:border-red-500' 
+                    className={`flex justify-between items-center w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors ${errors.dealers
+                        ? 'border-red-300 focus:border-red-500'
                         : 'border-gray-300 focus:border-indigo-500'
-                    }`}
+                      }`}
                   >
                     <span className="text-gray-500">
                       {isLoadingDealers ? "Đang tải danh sách đại lý..." : "Chọn đại lý..."}
@@ -816,11 +762,10 @@ export default function PromotionForm({ onSubmit, onCancel, initialData, isEdit 
                             <div className="text-xs text-gray-400 mt-1">
                               {dealer.address}
                             </div>
-                            <div className={`inline-flex items-center px-2 py-1 rounded-full text-xs mt-1 ${
-                              dealer.status === 'ACTIVE' 
-                                ? 'bg-green-100 text-green-800' 
+                            <div className={`inline-flex items-center px-2 py-1 rounded-full text-xs mt-1 ${dealer.status === 'ACTIVE'
+                                ? 'bg-green-100 text-green-800'
                                 : 'bg-gray-100 text-gray-800'
-                            }`}>
+                              }`}>
                               {dealer.status === 'ACTIVE' ? 'Đang hoạt động' : 'Không hoạt động'}
                             </div>
                           </button>
@@ -845,7 +790,7 @@ export default function PromotionForm({ onSubmit, onCancel, initialData, isEdit 
           </div>
 
         </div>
-        
+
 
         {/* Discount & Settings Card */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
@@ -874,11 +819,10 @@ export default function PromotionForm({ onSubmit, onCancel, initialData, isEdit 
                   name="discountRate"
                   value={formData.discountRate}
                   onChange={handleChange}
-                  className={`block w-full px-4 py-3 pr-12 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors ${
-                    errors.discountRate 
-                      ? 'border-red-300 focus:border-red-500' 
+                  className={`block w-full px-4 py-3 pr-12 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors ${errors.discountRate
+                      ? 'border-red-300 focus:border-red-500'
                       : 'border-gray-300 focus:border-indigo-500'
-                  }`}
+                    }`}
                   placeholder="0.00"
                 />
                 <div className="absolute inset-y-0 right-0 flex items-center pr-3">
@@ -904,31 +848,30 @@ export default function PromotionForm({ onSubmit, onCancel, initialData, isEdit 
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Trạng thái <span className="text-red-500">*</span>
               </label>
-              
+
               <div className="grid grid-cols-2 gap-2 mb-3">
                 {[
                   { value: "DRAFT", label: "Chờ xác thực" }
                 ].map((statusOption) => {
                   const config = getStatusConfig(statusOption.value);
                   const isSelected = formData.status === statusOption.value;
-                  
+
                   return (
                     <button
                       key={statusOption.value}
                       type="button"
                       onClick={() => handleStatusChange(statusOption.value)}
-                      className={`p-2 border rounded-lg text-sm font-medium transition-all ${
-                        isSelected 
-                          ? `${config.buttonColor} ring-2 ring-offset-1 ring-opacity-50` 
+                      className={`p-2 border rounded-lg text-sm font-medium transition-all ${isSelected
+                          ? `${config.buttonColor} ring-2 ring-offset-1 ring-opacity-50`
                           : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
-                      }`}
+                        }`}
                     >
                       {statusOption.label}
                     </button>
                   );
                 })}
               </div>
-              
+
               {!isEdit && autoSuggestedStatus && autoSuggestedStatus !== formData.status && (
                 <div className="mb-3 p-2 bg-blue-50 border border-blue-200 rounded-lg">
                   <p className="text-sm text-blue-700">
@@ -944,7 +887,7 @@ export default function PromotionForm({ onSubmit, onCancel, initialData, isEdit 
                   </p>
                 </div>
               )}
-              
+
               <div className={`p-3 rounded-lg border ${statusConfig.bgColor} ${statusConfig.borderColor}`}>
                 <div className="flex items-start">
                   <StatusIcon className={`h-5 w-5 mt-0.5 mr-2 ${statusConfig.color}`} />
@@ -987,11 +930,10 @@ export default function PromotionForm({ onSubmit, onCancel, initialData, isEdit 
                       type="date"
                       value={formData.startDate.split('T')[0] || ''}
                       onChange={(e) => handleDateTimeChange('start', 'date', e.target.value)}
-                      className={`block w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors ${
-                        errors.startDate 
-                          ? 'border-red-300 focus:border-red-500' 
+                      className={`block w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors ${errors.startDate
+                          ? 'border-red-300 focus:border-red-500'
                           : 'border-gray-300 focus:border-indigo-500'
-                      }`}
+                        }`}
                     />
                   </div>
                   <div className="relative">
@@ -999,11 +941,10 @@ export default function PromotionForm({ onSubmit, onCancel, initialData, isEdit 
                       type="time"
                       value={formData.startDate.split('T')[1]?.substring(0, 5) || '00:00'}
                       onChange={(e) => handleDateTimeChange('start', 'time', e.target.value)}
-                      className={`block w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors ${
-                        errors.startDate 
-                          ? 'border-red-300 focus:border-red-500' 
+                      className={`block w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors ${errors.startDate
+                          ? 'border-red-300 focus:border-red-500'
                           : 'border-gray-300 focus:border-indigo-500'
-                      }`}
+                        }`}
                     />
                   </div>
                 </div>
@@ -1061,11 +1002,10 @@ export default function PromotionForm({ onSubmit, onCancel, initialData, isEdit 
                       type="date"
                       value={formData.endDate.split('T')[0] || ''}
                       onChange={(e) => handleDateTimeChange('end', 'date', e.target.value)}
-                      className={`block w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors ${
-                        errors.endDate 
-                          ? 'border-red-300 focus:border-red-500' 
+                      className={`block w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors ${errors.endDate
+                          ? 'border-red-300 focus:border-red-500'
                           : 'border-gray-300 focus:border-indigo-500'
-                      }`}
+                        }`}
                     />
                   </div>
                   <div className="relative">
@@ -1073,11 +1013,10 @@ export default function PromotionForm({ onSubmit, onCancel, initialData, isEdit 
                       type="time"
                       value={formData.endDate.split('T')[1]?.substring(0, 5) || '23:59'}
                       onChange={(e) => handleDateTimeChange('end', 'time', e.target.value)}
-                      className={`block w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors ${
-                        errors.endDate 
-                          ? 'border-red-300 focus:border-red-500' 
+                      className={`block w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors ${errors.endDate
+                          ? 'border-red-300 focus:border-red-500'
                           : 'border-gray-300 focus:border-indigo-500'
-                      }`}
+                        }`}
                     />
                   </div>
                 </div>
@@ -1150,9 +1089,8 @@ export default function PromotionForm({ onSubmit, onCancel, initialData, isEdit 
               </div>
               <div className="mt-2">
                 <span className="text-blue-600 font-medium">Trạng thái tự động:</span>
-                <span className={`ml-2 px-2 py-1 text-xs font-medium rounded-full ${
-                  getStatusConfig(autoSuggestedStatus).bgColor
-                } ${getStatusConfig(autoSuggestedStatus).color}`}>
+                <span className={`ml-2 px-2 py-1 text-xs font-medium rounded-full ${getStatusConfig(autoSuggestedStatus).bgColor
+                  } ${getStatusConfig(autoSuggestedStatus).color}`}>
                   {getStatusConfig(autoSuggestedStatus).label}
                 </span>
               </div>
