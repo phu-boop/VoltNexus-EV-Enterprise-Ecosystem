@@ -523,8 +523,8 @@ export default function PromotionForm({ onSubmit, onCancel, initialData, isEdit 
                   value={formData.promotionName}
                   onChange={handleChange}
                   className={`block w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors ${errors.promotionName
-                      ? 'border-red-300 focus:border-red-500'
-                      : 'border-gray-300 focus:border-indigo-500'
+                    ? 'border-red-300 focus:border-red-500'
+                    : 'border-gray-300 focus:border-indigo-500'
                     }`}
                   placeholder="Ví dụ: Khuyến mãi Black Friday 2024"
                 />
@@ -595,10 +595,10 @@ export default function PromotionForm({ onSubmit, onCancel, initialData, isEdit 
                             {/* Status tag */}
                             <span
                               className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${model.status === 'IN_PRODUCTION'
-                                  ? 'bg-green-100 text-green-700'
-                                  : model.status === 'DISCONTINUED'
-                                    ? 'bg-red-100 text-red-700'
-                                    : 'bg-yellow-100 text-yellow-700'
+                                ? 'bg-green-100 text-green-700'
+                                : model.status === 'DISCONTINUED'
+                                  ? 'bg-red-100 text-red-700'
+                                  : 'bg-yellow-100 text-yellow-700'
                                 }`}
                             >
                               {model.status === 'IN_PRODUCTION' && '✅'}
@@ -626,8 +626,8 @@ export default function PromotionForm({ onSubmit, onCancel, initialData, isEdit 
                     type="button"
                     onClick={() => setIsModelDropdownOpen(!isModelDropdownOpen)}
                     className={`flex justify-between items-center w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors ${errors.applicableModels
-                        ? 'border-red-300 focus:border-red-500'
-                        : 'border-gray-300 focus:border-indigo-500'
+                      ? 'border-red-300 focus:border-red-500'
+                      : 'border-gray-300 focus:border-indigo-500'
                       }`}
                   >
                     <span className="text-gray-500">
@@ -663,10 +663,10 @@ export default function PromotionForm({ onSubmit, onCancel, initialData, isEdit 
                               {/* Status tag */}
                               <span
                                 className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${model.status === 'IN_PRODUCTION'
-                                    ? 'bg-green-100 text-green-700'
-                                    : model.status === 'DISCONTINUED'
-                                      ? 'bg-red-100 text-red-700'
-                                      : 'bg-yellow-100 text-yellow-700'
+                                  ? 'bg-green-100 text-green-700'
+                                  : model.status === 'DISCONTINUED'
+                                    ? 'bg-red-100 text-red-700'
+                                    : 'bg-yellow-100 text-yellow-700'
                                   }`}
                               >
                                 {model.status === 'IN_PRODUCTION' && '✅'}
@@ -722,8 +722,8 @@ export default function PromotionForm({ onSubmit, onCancel, initialData, isEdit 
                     type="button"
                     onClick={() => setIsDealerDropdownOpen(!isDealerDropdownOpen)}
                     className={`flex justify-between items-center w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors ${errors.dealers
-                        ? 'border-red-300 focus:border-red-500'
-                        : 'border-gray-300 focus:border-indigo-500'
+                      ? 'border-red-300 focus:border-red-500'
+                      : 'border-gray-300 focus:border-indigo-500'
                       }`}
                   >
                     <span className="text-gray-500">
@@ -763,8 +763,8 @@ export default function PromotionForm({ onSubmit, onCancel, initialData, isEdit 
                               {dealer.address}
                             </div>
                             <div className={`inline-flex items-center px-2 py-1 rounded-full text-xs mt-1 ${dealer.status === 'ACTIVE'
-                                ? 'bg-green-100 text-green-800'
-                                : 'bg-gray-100 text-gray-800'
+                              ? 'bg-green-100 text-green-800'
+                              : 'bg-gray-100 text-gray-800'
                               }`}>
                               {dealer.status === 'ACTIVE' ? 'Đang hoạt động' : 'Không hoạt động'}
                             </div>
@@ -820,8 +820,8 @@ export default function PromotionForm({ onSubmit, onCancel, initialData, isEdit 
                   value={formData.discountRate}
                   onChange={handleChange}
                   className={`block w-full px-4 py-3 pr-12 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors ${errors.discountRate
-                      ? 'border-red-300 focus:border-red-500'
-                      : 'border-gray-300 focus:border-indigo-500'
+                    ? 'border-red-300 focus:border-red-500'
+                    : 'border-gray-300 focus:border-indigo-500'
                     }`}
                   placeholder="0.00"
                 />
@@ -862,8 +862,8 @@ export default function PromotionForm({ onSubmit, onCancel, initialData, isEdit 
                       type="button"
                       onClick={() => handleStatusChange(statusOption.value)}
                       className={`p-2 border rounded-lg text-sm font-medium transition-all ${isSelected
-                          ? `${config.buttonColor} ring-2 ring-offset-1 ring-opacity-50`
-                          : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
+                        ? `${config.buttonColor} ring-2 ring-offset-1 ring-opacity-50`
+                        : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
                         }`}
                     >
                       {statusOption.label}
@@ -931,8 +931,8 @@ export default function PromotionForm({ onSubmit, onCancel, initialData, isEdit 
                       value={formData.startDate.split('T')[0] || ''}
                       onChange={(e) => handleDateTimeChange('start', 'date', e.target.value)}
                       className={`block w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors ${errors.startDate
-                          ? 'border-red-300 focus:border-red-500'
-                          : 'border-gray-300 focus:border-indigo-500'
+                        ? 'border-red-300 focus:border-red-500'
+                        : 'border-gray-300 focus:border-indigo-500'
                         }`}
                     />
                   </div>
@@ -942,8 +942,8 @@ export default function PromotionForm({ onSubmit, onCancel, initialData, isEdit 
                       value={formData.startDate.split('T')[1]?.substring(0, 5) || '00:00'}
                       onChange={(e) => handleDateTimeChange('start', 'time', e.target.value)}
                       className={`block w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors ${errors.startDate
-                          ? 'border-red-300 focus:border-red-500'
-                          : 'border-gray-300 focus:border-indigo-500'
+                        ? 'border-red-300 focus:border-red-500'
+                        : 'border-gray-300 focus:border-indigo-500'
                         }`}
                     />
                   </div>
@@ -1003,8 +1003,8 @@ export default function PromotionForm({ onSubmit, onCancel, initialData, isEdit 
                       value={formData.endDate.split('T')[0] || ''}
                       onChange={(e) => handleDateTimeChange('end', 'date', e.target.value)}
                       className={`block w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors ${errors.endDate
-                          ? 'border-red-300 focus:border-red-500'
-                          : 'border-gray-300 focus:border-indigo-500'
+                        ? 'border-red-300 focus:border-red-500'
+                        : 'border-gray-300 focus:border-indigo-500'
                         }`}
                     />
                   </div>
@@ -1014,8 +1014,8 @@ export default function PromotionForm({ onSubmit, onCancel, initialData, isEdit 
                       value={formData.endDate.split('T')[1]?.substring(0, 5) || '23:59'}
                       onChange={(e) => handleDateTimeChange('end', 'time', e.target.value)}
                       className={`block w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors ${errors.endDate
-                          ? 'border-red-300 focus:border-red-500'
-                          : 'border-gray-300 focus:border-indigo-500'
+                        ? 'border-red-300 focus:border-red-500'
+                        : 'border-gray-300 focus:border-indigo-500'
                         }`}
                     />
                   </div>

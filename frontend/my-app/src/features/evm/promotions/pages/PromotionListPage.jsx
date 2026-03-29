@@ -754,15 +754,18 @@ export default function PromotionListPage({ onCreate }) {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h1 className="text-3xl font-bold text-gray-900">
-                Danh sách Khuyến mãi
+                <div className="flex items-center">
+                  <img src="/icon/promotion.png" alt="promotion" className="w-9 h-9 mr-2" />
+                  Danh sách <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-500 to-indigo-700 ml-2 "> Khuyến mãi</span>
+                </div>
               </h1>
-              <p className="mt-2 text-sm text-gray-600">
+              <p className="mt-4 text-sm text-gray-600">
                 Xem tất cả các chương trình khuyến mãi hiện có
               </p>
             </div>
             <button
               onClick={onCreate}
-              className="mt-4 sm:mt-0 inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
+              className="flex items-center gap-2 bg-indigo-600 text-white px-6 py-3 rounded-xl shadow-xl shadow-indigo-100 hover:bg-indigo-700 transition-all font-black text-xs active:scale-95 italic uppercase tracking-widest"
             >
               <PlusIcon className="h-5 w-5 mr-2" />
               Tạo khuyến mãi mới
@@ -813,8 +816,8 @@ export default function PromotionListPage({ onCreate }) {
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                <div className="h-8 w-8 bg-yellow-100 rounded-full flex items-center justify-center">
-                  <span className="text-yellow-600 text-sm">⏳</span>
+                <div className="h-8 w-8 rounded-full flex items-center justify-center">
+                  <span className="text-sm"><img src="/icon/password.png" alt="pending" className="w-8 h-8" /></span>
                 </div>
               </div>
               <div className="ml-4">
@@ -831,7 +834,7 @@ export default function PromotionListPage({ onCreate }) {
             <div className="flex items-center">
               <div className="flex-shrink-0">
                 <div className="h-8 w-8 bg-green-100 rounded-full flex items-center justify-center">
-                  <span className="text-green-600 text-sm">✅</span>
+                  <span className="text-green-600 text-sm"><img src="/icon/original.png" alt="original" className="w-8 h-8" /></span>
                 </div>
               </div>
               <div className="ml-4">
@@ -863,7 +866,7 @@ export default function PromotionListPage({ onCreate }) {
             <div className="flex items-center">
               <div className="flex-shrink-0">
                 <div className="h-8 w-8 bg-gray-100 rounded-full flex items-center justify-center">
-                  <span className="text-gray-600 text-sm">⏸️</span>
+                  <span className="text-gray-600 text-sm"><img src="/icon/signboard.png" alt="inactive" className="w-8 h-8" /></span>
                 </div>
               </div>
               <div className="ml-4">
