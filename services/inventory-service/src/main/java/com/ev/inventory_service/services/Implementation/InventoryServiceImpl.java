@@ -11,24 +11,15 @@ import com.ev.common_lib.dto.inventory.InventoryComparisonDto;
 import com.ev.common_lib.dto.vehicle.VariantDetailDto;
 import com.ev.common_lib.event.StockAlertEvent;
 
+import com.ev.common_lib.event.DealerStockUpdatedEvent;
 import com.ev.inventory_service.dto.request.TransactionRequestDto;
 import com.ev.inventory_service.dto.request.UpdateReorderLevelRequest;
 import com.ev.inventory_service.dto.request.CreateTransferRequestDto;
 import com.ev.inventory_service.dto.response.DealerInventoryDto;
-import com.ev.inventory_service.model.PhysicalVehicle;
-import com.ev.inventory_service.model.Enum.VehiclePhysicalStatus;
-// import com.ev.inventory_service.dto.response.DealerInventoryDto;
-// import com.ev.inventory_service.dto.response.DealerInventoryDto
-// Sự kiện Kafka
-import com.ev.common_lib.event.DealerStockUpdatedEvent;
-
 import com.ev.inventory_service.dto.response.InventoryStatusDto;
-import com.ev.inventory_service.model.CentralInventory;
-import com.ev.inventory_service.model.DealerAllocation;
-import com.ev.inventory_service.model.InventoryTransaction;
-import com.ev.inventory_service.model.TransferRequest;
-import com.ev.inventory_service.model.StockAlert;
+import com.ev.inventory_service.model.*;
 import com.ev.inventory_service.model.Enum.TransferRequestStatus;
+import com.ev.inventory_service.model.Enum.VehiclePhysicalStatus;
 import com.ev.inventory_service.repository.CentralInventoryRepository;
 import com.ev.inventory_service.repository.DealerAllocationRepository;
 import com.ev.inventory_service.repository.InventoryTransactionRepository;
@@ -254,18 +245,18 @@ public class InventoryServiceImpl implements InventoryService {
     @Transactional
     public void executeTransaction(TransactionRequestDto request, String staffEmail, String role, String profileId) {
 
-        // Chỉ xử lý RESTOCK ở đây
-        if (request.getTransactionType() != TransactionType.RESTOCK) {
-            throw new IllegalArgumentException("Invalid transaction type for this endpoint.");
+        // Xử lý logic nghiệp vụ theo từng loại giao dịch
+        switch (request.getTransactionType()) {
+            case RESTOCK:
+            case ADJUSTMENT_ADD:
+                handleRestock(request);
+                break;
+            case ADJUSTMENT_SUBTRACT:
+                handleAdjustmentSubtract(request);
+                break;
+            default:
+                throw new AppException(ErrorCode.BAD_REQUEST);
         }
-
-        // Kiểm tra quyền
-        if (!role.equals("EVM_STAFF") && !role.equals("ADMIN")) {
-            throw new AppException(ErrorCode.FORBIDDEN);
-        }
-
-        // Xử lý logic nhập kho bằng VIN
-        handleRestock(request);
 
         // Ghi log giao dịch
         InventoryTransaction transaction = new InventoryTransaction();
@@ -279,7 +270,7 @@ public class InventoryServiceImpl implements InventoryService {
         try {
             kafkaTemplate.send(TOPIC_INVENTORY_EVENTS, savedTransaction);
         } catch (Exception e) {
-            System.err.println("WARN: Failed to send inventory event to Kafka. " + e.getMessage());
+            log.error("Failed to send inventory event to Kafka: {}", e.getMessage());
         }
     }
 
@@ -528,7 +519,7 @@ public class InventoryServiceImpl implements InventoryService {
             try {
                 kafkaTemplate.send(TOPIC_INVENTORY_EVENTS, savedAllocateTx);
             } catch (Exception e) {
-                System.err.println("WARN: Failed to send ALLOCATE event to Kafka. " + e.getMessage());
+                log.warn("Failed to send ALLOCATE event to Kafka: {}", e.getMessage());
             }
         }
     }
@@ -550,7 +541,7 @@ public class InventoryServiceImpl implements InventoryService {
                     .orElseThrow(() -> new AppException(ErrorCode.INVENTORY_NOT_FOUND));
 
             if (central.getAllocatedQuantity() < quantity) {
-                System.err.println("Lỗi phân bổ: Không đủ hàng đã giữ.");
+                log.error("Lỗi phân bổ: Không đủ hàng đã giữ.");
                 throw new AppException(ErrorCode.INSUFFICIENT_STOCK);
             }
             central.setAllocatedQuantity(central.getAllocatedQuantity() - quantity);
@@ -595,14 +586,14 @@ public class InventoryServiceImpl implements InventoryService {
 
             } catch (Exception e) {
                 // Chỉ log lỗi, không dừng transaction
-                System.err.println("WARN: Gửi sự kiện Kafka thất bại (dealer stock updated): " + e.getMessage());
+                log.warn("Gửi sự kiện Kafka thất bại (dealer stock updated): {}", e.getMessage());
             }
 
             // Cập nhật bảng VIN (xe vật lý)
             List<PhysicalVehicle> vehicles = physicalVehicleRepo.findAllById(vins);
             for (PhysicalVehicle vehicle : vehicles) {
                 if (vehicle.getStatus() != VehiclePhysicalStatus.IN_CENTRAL_WAREHOUSE) {
-                    System.err.println("Xe " + vehicle.getVin() + " không ở kho trung tâm.");
+                    log.error("Xe {} không ở kho trung tâm.", vehicle.getVin());
                     throw new AppException(ErrorCode.BAD_REQUEST);
                 }
                 vehicle.setStatus(VehiclePhysicalStatus.AT_DEALER); // Cập nhật trạng thái
@@ -821,7 +812,8 @@ public class InventoryServiceImpl implements InventoryService {
 
         if (vehiclesToReturn.isEmpty()) {
             // (Idempotent) Có thể đơn hàng đã được trả, hoặc chưa bao giờ được giao
-            System.err.println("Không tìm thấy xe nào để trả về kho cho Order ID: " + orderId);
+            log.warn("Không tìm thấy xe nào để trả về kho cho Order ID: {}",
+                    String.valueOf(orderId).replaceAll("[\n\r]", "_"));
             return;
         }
 
@@ -992,7 +984,7 @@ public class InventoryServiceImpl implements InventoryService {
                     new ParameterizedTypeReference<ApiRespond<List<VariantDetailDto>>>() {
                     });
         } catch (Exception e) {
-            System.err.println("Failed to call vehicle-service /details-by-ids: " + e.getMessage());
+            log.error("Failed to call vehicle-service /details-by-ids: {}", e.getMessage());
             throw new AppException(ErrorCode.DOWNSTREAM_SERVICE_UNAVAILABLE);
         }
 
@@ -1152,7 +1144,7 @@ public class InventoryServiceImpl implements InventoryService {
     // --- Helped cho báo cáo ---
     /**
      * Tạo hình ảnh biểu đồ tròn (Pie Chart) từ dữ liệu giao dịch.
-     * 
+     *
      * @param transactions Danh sách giao dịch
      * @return Mảng byte[] của hình ảnh PNG
      */
@@ -1286,7 +1278,7 @@ public class InventoryServiceImpl implements InventoryService {
 
             // Giới hạn số lượng kết quả
             if (allocations.size() > limit) {
-                allocations = allocations.subList(0, limit);
+                    allocations = allocations.subList(0, limit);
             }
 
             // Lấy danh sách variantId để gọi Vehicle Service
@@ -1347,5 +1339,40 @@ public class InventoryServiceImpl implements InventoryService {
         }
     }
 
-    // -----------
+    private void handleAdjustmentSubtract(TransactionRequestDto request) {
+        if (request.getVins() == null || request.getVins().isEmpty()) {
+            throw new AppException(ErrorCode.BAD_REQUEST);
+        }
+
+        int quantity = request.getVins().size();
+
+        // 1. Kiểm tra sự tồn tại và trạng thái của các VIN
+        List<PhysicalVehicle> vehicles = physicalVehicleRepo.findAllById(request.getVins());
+        if (vehicles.size() < quantity) {
+            throw new AppException(ErrorCode.BAD_REQUEST);
+        }
+
+        for (PhysicalVehicle vehicle : vehicles) {
+            if (vehicle.getStatus() != VehiclePhysicalStatus.IN_CENTRAL_WAREHOUSE) {
+                throw new AppException(ErrorCode.BAD_REQUEST);
+            }
+        }
+
+        // 2. Xóa các xe vật lý
+        physicalVehicleRepo.deleteAll(vehicles);
+
+        // 3. Cập nhật CentralInventory
+        CentralInventory inventory = centralRepo.findByVariantId(request.getVariantId())
+                .orElseThrow(() -> new AppException(ErrorCode.INVENTORY_NOT_FOUND));
+
+        if (inventory.getAvailableQuantity() < quantity) {
+            throw new AppException(ErrorCode.INSUFFICIENT_STOCK);
+        }
+
+        inventory.setTotalQuantity(inventory.getTotalQuantity() - quantity);
+        inventory.setAvailableQuantity(inventory.getAvailableQuantity() - quantity);
+        centralRepo.save(inventory);
+
+        checkStockThresholdAndNotify(request.getVariantId());
+    }
 }
