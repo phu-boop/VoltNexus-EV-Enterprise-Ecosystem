@@ -80,6 +80,11 @@ public class PromotionService {
     public Promotion updatePromotion(UUID id, Promotion promotion) {
         Promotion existing = promotionRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Promotion not found"));
+
+        if (quotationRepository.existsByPromotionId(id)) {
+            throw new AppException(ErrorCode.PROMOTION_IN_USE);
+        }
+
         existing.setPromotionName(promotion.getPromotionName());
         existing.setDescription(promotion.getDescription());
         existing.setDiscountRate(promotion.getDiscountRate());

@@ -86,27 +86,41 @@ export default function PromotionForm({ onSubmit, onCancel, initialData, isEdit 
 
   // Map selected models từ initialData.applicableModels array
   useEffect(() => {
-    if (initialData?.applicableModels && vehicleModels.length > 0) {
+    if (initialData?.applicableModels && Array.isArray(initialData.applicableModels) && vehicleModels.length > 0) {
       const modelIds = initialData.applicableModels;
       const selectedModelsData = modelIds.map(id => {
-        const found = vehicleModels.find(m => m.modelId === id);
-        return found || null;
+        // Use loose equality and String conversion for robust matching
+        return vehicleModels.find(m => String(m.modelId) === String(id));
       }).filter(Boolean);
+
       setSelectedModels(selectedModelsData);
+
+      // Also update the JSON string in formData for internal consistency
+      setFormData(prev => ({
+        ...prev,
+        applicableModelsJson: JSON.stringify(selectedModelsData)
+      }));
     }
-  }, [initialData, vehicleModels]);
+  }, [initialData?.applicableModels, vehicleModels]);
 
   // Map selected dealers từ initialData.applicableDealers array
   useEffect(() => {
-    if (initialData?.applicableDealers && dealers.length > 0) {
+    if (initialData?.applicableDealers && Array.isArray(initialData.applicableDealers) && dealers.length > 0) {
       const dealerIds = initialData.applicableDealers;
       const selectedDealersData = dealerIds.map(id => {
-        const found = dealers.find(d => d.dealerId === id);
-        return found || null;
+        // UUIDs are strings, but let's be safe
+        return dealers.find(d => String(d.dealerId) === String(id));
       }).filter(Boolean);
+
       setSelectedDealers(selectedDealersData);
+
+      // Also update the JSON string in formData
+      setFormData(prev => ({
+        ...prev,
+        dealerIdJson: JSON.stringify(selectedDealersData)
+      }));
     }
-  }, [initialData, dealers]);
+  }, [initialData?.applicableDealers, dealers]);
 
 
   const getIdDealerCurrent = async () => {

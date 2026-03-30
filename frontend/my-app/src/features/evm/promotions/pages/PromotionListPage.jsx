@@ -22,6 +22,7 @@ import {
   XCircleIcon,
   ArchiveBoxIcon,
   TrashIcon,
+  PencilIcon,
 } from "@heroicons/react/24/outline";
 import { format, parseISO, isBefore, isAfter } from "date-fns";
 import { vi } from "date-fns/locale";
@@ -31,7 +32,7 @@ import Swal from "sweetalert2";
 import fetchDealer from "../services/fetchDealer";
 import fetchModelVehicle from "../services/fetchModelVehicle";
 
-export default function PromotionListPage({ onCreate }) {
+export default function PromotionListPage({ onCreate, onEdit }) {
   const [promotions, setPromotions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState("ALL");
@@ -810,10 +811,18 @@ export default function PromotionListPage({ onCreate }) {
                 </button>
               )}
               <button
+                onClick={() => onEdit(selectedPromotion)}
+                className="flex items-center gap-2 bg-indigo-600 text-white px-6 py-2 rounded-lg shadow-sm hover:bg-indigo-700 transition-all font-medium text-sm"
+              >
+                <PencilIcon className="h-4 w-4" />
+                Chỉnh sửa
+              </button>
+              <button
                 onClick={() => handleDelete(selectedPromotion.promotionId)}
                 className="px-6 py-2 bg-red-50 hover:bg-red-100 border border-red-200 text-red-700 rounded-lg text-sm font-medium transition-colors"
+                title="Xóa khuyến mãi"
               >
-                <img src="public/icon/delete.png" alt="delete" className="w-4 h-4" />
+                <TrashIcon className="w-4 h-4" />
               </button>
             </div>
             <button
@@ -1265,13 +1274,24 @@ export default function PromotionListPage({ onCreate }) {
                               {getStatusBadge(promotion)}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                              <button
-                                onClick={() => handleViewDetails(promotion)}
-                                className="inline-flex items-center px-3 py-1 border border-gray-300 rounded-md text-blue-600 bg-white hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
-                              >
-                                <EyeIcon className="h-4 w-4 mr-1" />
-                                Xem chi tiết
-                              </button>
+                              <div className="flex items-center justify-end gap-2">
+                                <button
+                                  onClick={() => onEdit(promotion)}
+                                  className="inline-flex items-center px-3 py-1.5 border border-indigo-100 rounded-lg text-indigo-600 bg-indigo-50 hover:bg-indigo-100 transition-all"
+                                  title="Chỉnh sửa"
+                                >
+                                  <PencilIcon className="h-4 w-4 mr-1" />
+                                  Sửa
+                                </button>
+                                <button
+                                  onClick={() => handleViewDetails(promotion)}
+                                  className="inline-flex items-center px-3 py-1.5 border border-slate-200 rounded-lg text-slate-600 bg-white hover:bg-slate-50 transition-all"
+                                  title="Xem chi tiết"
+                                >
+                                  <EyeIcon className="h-4 w-4 mr-1" />
+                                  Chi tiết
+                                </button>
+                              </div>
                             </td>
                           </tr>
                         );
