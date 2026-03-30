@@ -82,6 +82,19 @@ public class PromotionController {
                                                 promotionMapper.toResponseList(list)));
         }
 
+        @GetMapping("/search")
+        public ResponseEntity<ApiRespond<List<PromotionResponse>>> searchPromotions(
+                        @RequestParam(required = false) String status,
+                        @RequestParam(required = false) String modelId,
+                        @RequestParam(required = false) String dealerId,
+                        @RequestParam(required = false) String searchTerm) {
+
+                List<Promotion> list = promotionService.searchPromotions(status, modelId, dealerId, searchTerm);
+                return ResponseEntity.ok(
+                                ApiRespond.success("Promotions searched successfully",
+                                                promotionMapper.toResponseList(list)));
+        }
+
         /**
          * API cho frontend (Form Báo giá) lấy các KM đang active của đại lý
          */

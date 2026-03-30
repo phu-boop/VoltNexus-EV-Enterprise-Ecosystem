@@ -143,11 +143,18 @@ public class PromotionService {
             throw new AppException(ErrorCode.PROMOTION_IN_USE);
         }
 
-        promotionRepository.delete(promotion);
+        // Thay vì hard delete, dùng soft delete để đồng bộ với logic list/filter
+        promotion.setStatus(PromotionStatus.DELETED);
+        promotionRepository.save(promotion);
     }
 
     public List<Promotion> getPromotionsByStatus(PromotionStatus status) {
         return promotionRepository.findByStatus(status);
+    }
+
+    public List<Promotion> searchPromotions(String status, String modelId, String dealerId, String searchTerm) {
+        updatePromotionStatuses();
+        return promotionRepository.searchPromotions(status, modelId, dealerId, searchTerm);
     }
 
     public Promotion authenticPromotion(UUID id) {

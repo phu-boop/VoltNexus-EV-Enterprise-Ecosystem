@@ -36,6 +36,8 @@ export default function PromotionListPage({ onCreate }) {
   const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState("ALL");
   const [searchTerm, setSearchTerm] = useState("");
+  const [filterModel, setFilterModel] = useState("");
+  const [filterDealer, setFilterDealer] = useState("");
   const [stats, setStats] = useState({
     total: 0,
     pending: 0,
@@ -56,41 +58,33 @@ export default function PromotionListPage({ onCreate }) {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
-  useEffect(() => {
-    loadPromotions();
-    loadAllDealers();
-    loadAllModels();
+  const calculateAutoStatus = useCallback((promotion) => {
+    const now = new Date();
+    const startDate = new Date(promotion.startDate);
+    const endDate = new Date(promotion.endDate);
+
+    if (isBefore(now, startDate)) return "DRAFT";
+    if (isAfter(now, endDate)) return "EXPIRED";
+    if (isAfter(now, startDate) && isBefore(now, endDate)) return "ACTIVE";
+    return "INACTIVE";
   }, []);
 
-  useEffect(() => {
-    calculateStats();
+  const calculateStats = useCallback(() => {
+    const newStats = {
+      total: promotions.length,
+      pending: promotions.filter(
+        (p) => p.status === "DRAFT" || p.autoStatus === "DRAFT"
+      ).length,
+      active: promotions.filter(
+        (p) => p.status === "ACTIVE" || p.autoStatus === "ACTIVE"
+      ).length,
+      expired: promotions.filter(
+        (p) => p.status === "EXPIRED" || p.autoStatus === "EXPIRED"
+      ).length,
+      inactive: promotions.filter((p) => p.status === "INACTIVE").length,
+    };
+    setStats(newStats);
   }, [promotions]);
-
-  const loadPromotions = useCallback(() => {
-    setLoading(true);
-    setError(null);
-    promotionService
-      .getAll()
-      .then((res) => {
-        const rawData = res.data;
-        const list = Array.isArray(rawData)
-          ? rawData
-          : Array.isArray(rawData?.data)
-            ? rawData.data
-            : [];
-        const promotionsWithAutoStatus = list.map((promo) => ({
-          ...promo,
-          autoStatus: calculateAutoStatus(promo),
-        }));
-        setPromotions(promotionsWithAutoStatus);
-        setLoading(false);
-      })
-      .catch((err) => {
-        console.error("Error loading promotions:", err);
-        setError("Không thể tải danh sách khuyến mãi");
-        setLoading(false);
-      });
-  }, []);
 
   const loadAllDealers = useCallback(async () => {
     setLoadingDealers(true);
@@ -124,62 +118,60 @@ export default function PromotionListPage({ onCreate }) {
     }
   }, []);
 
-  const calculateAutoStatus = useCallback((promotion) => {
-    const now = new Date();
-    const startDate = new Date(promotion.startDate);
-    const endDate = new Date(promotion.endDate);
+  const loadPromotions = useCallback(() => {
+    setLoading(true);
+    setError(null);
 
-    if (isBefore(now, startDate)) return "DRAFT";
-    if (isAfter(now, endDate)) return "EXPIRED";
-    if (isAfter(now, startDate) && isBefore(now, endDate)) return "ACTIVE";
-    return "INACTIVE";
-  }, []);
+    const params = {};
+    if (filterStatus !== "ALL") params.status = filterStatus;
+    if (filterModel) params.modelId = filterModel;
+    if (filterDealer) params.dealerId = filterDealer;
+    if (searchTerm) params.searchTerm = searchTerm;
 
-  const calculateStats = useCallback(() => {
-    const newStats = {
-      total: promotions.length,
-      pending: promotions.filter(
-        (p) => p.status === "DRAFT" || p.autoStatus === "DRAFT"
-      ).length,
-      active: promotions.filter(
-        (p) => p.status === "ACTIVE" || p.autoStatus === "ACTIVE"
-      ).length,
-      expired: promotions.filter(
-        (p) => p.status === "EXPIRED" || p.autoStatus === "EXPIRED"
-      ).length,
-      inactive: promotions.filter((p) => p.status === "INACTIVE").length,
-    };
-    setStats(newStats);
-  }, [promotions]);
+    promotionService
+      .search(params)
+      .then((res) => {
+        const rawData = res.data;
+        const list = Array.isArray(rawData)
+          ? rawData
+          : Array.isArray(rawData?.data)
+            ? rawData.data
+            : [];
+        const promotionsWithAutoStatus = list.map((promo) => ({
+          ...promo,
+          autoStatus: calculateAutoStatus(promo),
+        }));
+        setPromotions(promotionsWithAutoStatus);
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error("Error loading promotions:", err);
+        setError("Không thể tải danh sách khuyến mãi");
+        setLoading(false);
+      });
+  }, [filterStatus, filterModel, filterDealer, searchTerm, calculateAutoStatus]);
+
+  useEffect(() => {
+    loadAllDealers();
+    loadAllModels();
+  }, [loadAllDealers, loadAllModels]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      loadPromotions();
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [loadPromotions]);
+
+  useEffect(() => {
+    calculateStats();
+  }, [calculateStats]);
 
   const handleStatusFilter = useCallback(
     (status) => {
       setFilterStatus(status);
-      if (status === "ALL") {
-        loadPromotions();
-      } else {
-        promotionService
-          .getByStatus(status)
-          .then((res) => {
-            const rawData = res.data;
-            const list = Array.isArray(rawData)
-              ? rawData
-              : Array.isArray(rawData?.data)
-                ? rawData.data
-                : [];
-            const promotionsWithAutoStatus = list.map((promo) => ({
-              ...promo,
-              autoStatus: calculateAutoStatus(promo),
-            }));
-            setPromotions(promotionsWithAutoStatus);
-          })
-          .catch((err) => {
-            console.error(err);
-            setError("Lỗi khi lọc khuyến mãi!");
-          });
-      }
     },
-    [loadPromotions, calculateAutoStatus]
+    []
   );
 
   const handleViewDetails = useCallback(async (promotion) => {
@@ -281,14 +273,8 @@ export default function PromotionListPage({ onCreate }) {
   );
 
   const filteredPromotions = useMemo(() => {
-    return promotions.filter(
-      (promotion) =>
-        promotion.promotionName
-          .toLowerCase()
-          .includes(searchTerm.toLowerCase()) ||
-        promotion.description?.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-  }, [promotions, searchTerm]);
+    return promotions;
+  }, [promotions]);
 
   // Reset page when search or filter changes
   useEffect(() => {
@@ -827,7 +813,7 @@ export default function PromotionListPage({ onCreate }) {
                 onClick={() => handleDelete(selectedPromotion.promotionId)}
                 className="px-6 py-2 bg-red-50 hover:bg-red-100 border border-red-200 text-red-700 rounded-lg text-sm font-medium transition-colors"
               >
-                <img src="/icon/delete.png" alt="delete" className="w-4 h-4" />
+                <img src="public/icon/delete.png" alt="delete" className="w-4 h-4" />
               </button>
             </div>
             <button
@@ -979,41 +965,97 @@ export default function PromotionListPage({ onCreate }) {
 
         {/* Filters and Search */}
         <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6 mb-6">
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-            <div className="flex-1 max-w-md">
+          <div className="flex flex-col lg:flex-row lg:items-center gap-4">
+            <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Search */}
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <MagnifyingGlassIcon className="h-5 w-5 text-slate-400" />
                 </div>
                 <input
                   type="text"
-                  placeholder="Tìm kiếm theo tên hoặc mô tả..."
+                  placeholder="Tìm theo tên hoặc mô tả..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
+                  className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 text-sm"
                 />
+              </div>
+
+              {/* Model Filter */}
+              <div className="relative">
+                <select
+                  value={filterModel}
+                  onChange={(e) => setFilterModel(e.target.value)}
+                  className="block w-full pl-3 pr-10 py-2 border border-gray-300 rounded-md leading-5 bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 text-sm appearance-none"
+                >
+                  <option value="">Tất cả Model xe</option>
+                  {allModels.map((m) => (
+                    <option key={m.modelId} value={m.modelId}>
+                      {m.brand} {m.modelName}
+                    </option>
+                  ))}
+                </select>
+                <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                  <TruckIcon className="h-4 w-4 text-slate-400" />
+                </div>
+              </div>
+
+              {/* Dealer Filter */}
+              <div className="relative">
+                <select
+                  value={filterDealer}
+                  onChange={(e) => setFilterDealer(e.target.value)}
+                  className="block w-full pl-3 pr-10 py-2 border border-gray-300 rounded-md leading-5 bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 text-sm appearance-none"
+                >
+                  <option value="">Tất cả Đại lý</option>
+                  {allDealers.map((d) => (
+                    <option key={d.dealerId} value={d.dealerId}>
+                      {d.dealerName}
+                    </option>
+                  ))}
+                </select>
+                <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                  <BuildingStorefrontIcon className="h-4 w-4 text-slate-400" />
+                </div>
               </div>
             </div>
 
-            <div className="flex flex-wrap gap-2">
-              {[
-                { value: "ALL", label: "Tất cả", activeClass: "bg-gray-100 text-gray-800 border border-slate-200" },
-                { value: "DRAFT", label: "Chờ xác thực", activeClass: "bg-yellow-100 text-yellow-800 border border-yellow-200" },
-                { value: "ACTIVE", label: "Đang hoạt động", activeClass: "bg-sky-100 text-sky-800 border border-sky-200" },
-                { value: "EXPIRED", label: "Đã hết hạn", activeClass: "bg-red-100 text-red-800 border border-red-200" },
-                { value: "INACTIVE", label: "Không hoạt động", activeClass: "bg-gray-100 text-slate-600 border border-slate-200" },
-              ].map((filter) => (
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="flex bg-gray-100 p-1 rounded-lg">
+                {[
+                  { value: "ALL", label: "Tất cả" },
+                  { value: "DRAFT", label: "Chờ duyệt" },
+                  { value: "ACTIVE", label: "Hoạt động" },
+                  { value: "EXPIRED", label: "Hết hạn" },
+                  { value: "INACTIVE", label: "Vô hiệu" },
+                ].map((filter) => (
+                  <button
+                    key={filter.value}
+                    onClick={() => handleStatusFilter(filter.value)}
+                    className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${filterStatus === filter.value
+                      ? "bg-white text-indigo-600 shadow-sm"
+                      : "text-slate-500 hover:text-slate-700"
+                      }`}
+                  >
+                    {filter.label}
+                  </button>
+                ))}
+              </div>
+
+              {(filterStatus !== "ALL" || filterModel || filterDealer || searchTerm) && (
                 <button
-                  key={filter.value}
-                  onClick={() => handleStatusFilter(filter.value)}
-                  className={`inline-flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors ${filterStatus === filter.value
-                    ? filter.activeClass
-                    : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"
-                    }`}
+                  onClick={() => {
+                    setFilterStatus("ALL");
+                    setFilterModel("");
+                    setFilterDealer("");
+                    setSearchTerm("");
+                  }}
+                  className="p-2 text-slate-400 hover:text-red-500 transition-colors"
+                  title="Xóa bộ lọc"
                 >
-                  {filter.label}
+                  <XMarkIcon className="h-5 w-5" />
                 </button>
-              ))}
+              )}
             </div>
           </div>
         </div>

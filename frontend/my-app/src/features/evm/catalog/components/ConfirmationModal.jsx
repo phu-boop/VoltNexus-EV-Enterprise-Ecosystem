@@ -41,8 +41,8 @@ const ConfirmationModal = ({ isOpen, onClose, onConfirm, title, message }) => {
                             Hủy bỏ
                         </button>
                         <button
-                            onClick={onConfirm}
-                            className="flex-1 py-3 px-4 bg-red-600 text-white font-bold rounded-xl shadow-[0_4px_12px_rgba(220,38,38,0.3)] hover:bg-red-700 hover:shadow-[0_4px_16px_rgba(220,38,38,0.4)] transition-all transform hover:-translate-y-0.5"
+                            onClick={() => onConfirm()}
+                            className="flex-1 py-3 px-4 bg-red-600 text-white font-bold rounded-xl shadow-[0_4px_12px_rgba(220,38,38,0.3)] hover:bg-red-700 hover:shadow-[0_4_16px_rgba(220,38,38,0.4)] transition-all transform hover:-translate-y-0.5"
                         >
                             Xác nhận
                         </button>
