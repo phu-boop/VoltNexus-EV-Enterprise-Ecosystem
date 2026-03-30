@@ -62,6 +62,36 @@ public class SalesReportingService {
     @Transactional
     public void recordSale(SalesRecord record) {
         log.info("Recording sale for order: {}", record.getOrderId());
+
+        if (record.getTotalAmount() == null) {
+            record.setTotalAmount(java.math.BigDecimal.ZERO);
+        }
+
+        // 0. orderId là bắt buộc
+        if (record.getOrderId() == null) {
+            throw new RuntimeException("orderId is required");
+        }
+
+        // 1. Chặn duplicate: kiểm tra orderId đã được report chưa
+        if (salesRecordRepository.existsByOrderId(record.getOrderId())) {
+            throw new RuntimeException("Sale record for orderId " + record.getOrderId() + " already exists");
+        }
+
+        // 2. Validate orderId tồn tại trong sales-service (nếu có orderId)
+        if (record.getOrderId() != null) {
+            try {
+                String url = salesServiceUrl + "/api/v1/sales-orders/b2c/" + record.getOrderId();
+                restTemplate.getForObject(url, Object.class);
+                log.info("Order {} verified in sales-service", record.getOrderId());
+            } catch (org.springframework.web.client.HttpClientErrorException.NotFound e) {
+                throw new RuntimeException("Order " + record.getOrderId() + " does not exist in sales-service");
+            } catch (Exception e) {
+                // Nếu sales-service down hoặc lỗi network → vẫn cho lưu nhưng log cảnh báo
+                log.warn("Could not verify orderId {} with sales-service (service may be down): {}", 
+                         record.getOrderId(), e.getMessage());
+            }
+        }
+
         salesRecordRepository.save(record);
     }
 
