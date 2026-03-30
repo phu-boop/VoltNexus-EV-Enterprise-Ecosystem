@@ -194,7 +194,7 @@ const DistributionHistoryPage = () => {
   };
 
   return (
-    <div className="p-6 bg-gray-50 min-h-screen animate-in fade-in-0 duration-500">
+    <div className="p-6 bg-gray-50 min-h-screen animate-in fade-in-0 duration-500 m-10">
       <h1 className="text-3xl font-bold text-gray-800 mb-6">
         Lịch Sử Phân Phối (Đơn Hàng B2B)
       </h1>
