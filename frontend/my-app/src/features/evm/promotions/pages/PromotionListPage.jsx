@@ -1,6 +1,6 @@
-// pages/PromotionListPage.js (Final version with proper data mapping)
 import PromotionSkeleton from "./../components/PromotionSkeleton";
 import React, { useEffect, useState, useCallback, useMemo } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { promotionService } from "../services/promotionService";
 import {
   PlusIcon,
@@ -23,6 +23,7 @@ import {
   ArchiveBoxIcon,
   TrashIcon,
   PencilIcon,
+  ArrowTopRightOnSquareIcon,
 } from "@heroicons/react/24/outline";
 import { format, parseISO, isBefore, isAfter } from "date-fns";
 import { vi } from "date-fns/locale";
@@ -33,6 +34,9 @@ import fetchDealer from "../services/fetchDealer";
 import fetchModelVehicle from "../services/fetchModelVehicle";
 
 export default function PromotionListPage({ onCreate, onEdit }) {
+  const navigate = useNavigate();
+  const location = useLocation();
+
   const [promotions, setPromotions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState("ALL");
@@ -693,8 +697,19 @@ export default function PromotionListPage({ onCreate, onEdit }) {
                         {applicableModels.map((model, index) => (
                           <div
                             key={model.modelId || `model-${index}`}
-                            className="bg-blue-50 border border-blue-200 rounded-lg p-4 hover:bg-blue-100 transition-colors"
+                            className="group relative bg-blue-50 border border-blue-200 rounded-lg p-4 hover:bg-blue-100 transition-colors"
                           >
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                const basePath = location.pathname.includes('/admin/') ? '/evm/admin' : '/evm/staff';
+                                navigate(`${basePath}/products/catalog?modelId=${model.modelId}`);
+                              }}
+                              className="absolute top-2 right-2 p-1.5 bg-white shadow-sm rounded-lg text-slate-400 hover:text-indigo-600 transition-all opacity-0 group-hover:opacity-100 z-10"
+                              title="Xem chi tiết model"
+                            >
+                              <ArrowTopRightOnSquareIcon className="h-4 w-4" />
+                            </button>
                             <div className="font-medium text-blue-900 text-sm mb-1">
                               {model.modelName}
                             </div>
@@ -736,8 +751,19 @@ export default function PromotionListPage({ onCreate, onEdit }) {
                         {applicableDealers.map((dealer, index) => (
                           <div
                             key={dealer.dealerId || `dealer-${index}`}
-                            className="bg-purple-50 border border-purple-200 rounded-lg p-4 hover:bg-purple-100 transition-colors"
+                            className="group relative bg-purple-50 border border-purple-200 rounded-lg p-4 hover:bg-purple-100 transition-colors"
                           >
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                const basePath = location.pathname.includes('/admin/') ? '/evm/admin' : '/evm/staff';
+                                navigate(`${basePath}/dealers/list?dealerId=${dealer.dealerId}`);
+                              }}
+                              className="absolute top-2 right-3 p-1.5 bg-white shadow-sm rounded-lg text-slate-400 hover:text-indigo-600 transition-all opacity-0 group-hover:opacity-100 z-10"
+                              title="Xem chi tiết đại lý"
+                            >
+                              <ArrowTopRightOnSquareIcon className="h-4 w-4" />
+                            </button>
                             <div className="flex items-start justify-between mb-2">
                               <div className="flex-1">
                                 <div className="font-medium text-purple-900 text-sm mb-1">

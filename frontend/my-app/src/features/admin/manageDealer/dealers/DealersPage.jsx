@@ -1,5 +1,5 @@
-// DealersPage.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useDealers } from './hooks/useDealers';
 import DealerList from './components/DealerList';
 import DealerForm from './components/DealerForm';
@@ -19,11 +19,23 @@ const DealersPage = () => {
     activateDealer,
   } = useDealers();
 
+  const [searchParams] = useSearchParams();
+  const urlDealerId = searchParams.get("dealerId");
+
   const [filters, setFilters] = useState({
     search: '',
     city: '',
     status: '',
   });
+
+  useEffect(() => {
+    if (urlDealerId && dealers.length > 0) {
+      const dealer = dealers.find(d => String(d.dealerId) === String(urlDealerId));
+      if (dealer) {
+        handleEditDealer(dealer);
+      }
+    }
+  }, [urlDealerId, dealers]);
 
   const [showForm, setShowForm] = useState(false);
   const [editingDealer, setEditingDealer] = useState(null);
@@ -107,7 +119,7 @@ const DealersPage = () => {
 
   const handleSubmitForm = async (formData) => {
     setFormLoading(true);
-    
+
     let result;
     if (editingDealer) {
       result = await updateDealer(editingDealer.dealerId, formData);
@@ -183,15 +195,15 @@ const DealersPage = () => {
 
   // Filter dealers based on current filters
   const filteredDealers = dealers.filter(dealer => {
-    const matchesSearch = !filters.search || 
+    const matchesSearch = !filters.search ||
       dealer.dealerName.toLowerCase().includes(filters.search.toLowerCase()) ||
       dealer.dealerCode.toLowerCase().includes(filters.search.toLowerCase()) ||
       dealer.email?.toLowerCase().includes(filters.search.toLowerCase());
 
-    const matchesCity = !filters.city || 
+    const matchesCity = !filters.city ||
       dealer.city?.toLowerCase().includes(filters.city.toLowerCase());
 
-    const matchesStatus = !filters.status || 
+    const matchesStatus = !filters.status ||
       dealer.status === filters.status;
 
     return matchesSearch && matchesCity && matchesStatus;
