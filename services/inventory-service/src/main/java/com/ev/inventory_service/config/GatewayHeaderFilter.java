@@ -39,8 +39,6 @@ public class GatewayHeaderFilter extends OncePerRequestFilter {
             FilterChain filterChain)
             throws ServletException, IOException {
 
-        logHeaders(request);
-
         String email = request.getHeader(HEADER_EMAIL);
         if (email == null || email.isEmpty()) {
             log.warn("{} header missing or empty for request to {}", HEADER_EMAIL, request.getRequestURI());
@@ -56,13 +54,6 @@ public class GatewayHeaderFilter extends OncePerRequestFilter {
 
         processAuthentication(request, email);
         filterChain.doFilter(request, response);
-    }
-
-    private void logHeaders(HttpServletRequest request) {
-        log.debug("--- GatewayHeaderFilter: Received Headers for {} ---", request.getRequestURI());
-        Collections.list(request.getHeaderNames())
-                .forEach(headerName -> log.debug("{}: {}", headerName, request.getHeader(headerName)));
-        log.debug("-------------------------------------------");
     }
 
     private boolean isAlreadyAuthenticated() {
@@ -94,6 +85,7 @@ public class GatewayHeaderFilter extends OncePerRequestFilter {
         try {
             return Arrays.stream(roleHeader.split(","))
                     .map(String::trim)
+                    .map(r -> r.replaceAll("[\\[\\]\"']", "")) // Clean any JSON formatting (brackets, quotes)
                     .filter(r -> !r.isEmpty())
                     .map(r -> (GrantedAuthority) new SimpleGrantedAuthority("ROLE_" + r.toUpperCase()))
                     .toList();

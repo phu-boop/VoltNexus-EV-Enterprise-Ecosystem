@@ -14,7 +14,7 @@ import StockAlerts from "../components/StockAlerts";
 import InventoryStatusTab from "../components/InventoryStatusTab";
 import TransactionHistoryTab from "../components/TransactionHistoryTab";
 import InventoryReportsTab from "../components/InventoryReportsTab";
-import { getAllInventory, getActiveAlerts } from "../services/inventoryService";
+import { getAllInventory, getActiveAlerts, getInventoryStats } from "../services/inventoryService";
 import { useNavigate, useLocation } from "react-router-dom";
 
 const InventoryPage = () => {
@@ -35,18 +35,14 @@ const InventoryPage = () => {
     const fetchStats = async () => {
       setIsLoadingStats(true);
       try {
-        // Fetch inventory to count totals (simplified for dashboard)
-        const invRes = await getAllInventory({ size: 1000 });
-        const alertsRes = await getActiveAlerts();
-
-        const contents = invRes.data.data.content || [];
-        const alerts = alertsRes.data.data || [];
+        const res = await getInventoryStats();
+        const data = res.data.data;
 
         setStats({
-          totalUnits: contents.reduce((acc, curr) => acc + (curr.totalQuantity || 0), 0),
-          lowStock: contents.filter(item => item.status === "LOW_STOCK").length,
-          outOfStock: contents.filter(item => item.status === "OUT_OF_STOCK").length,
-          pendingAllocations: alerts.length // Just a placeholder or logic for pending tasks
+          totalUnits: data.totalUnits || 0,
+          lowStock: data.lowStockVariants || 0,
+          outOfStock: data.outOfStockVariants || 0,
+          pendingAllocations: data.pendingAllocations || 0
         });
       } catch (error) {
         console.error("Failed to fetch dashboard stats", error);

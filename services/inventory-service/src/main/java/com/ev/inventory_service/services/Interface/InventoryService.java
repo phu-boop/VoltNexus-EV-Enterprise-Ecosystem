@@ -9,6 +9,7 @@ import com.ev.inventory_service.dto.request.TransactionRequestDto;
 import com.ev.inventory_service.dto.request.UpdateReorderLevelRequest;
 import com.ev.inventory_service.dto.request.CreateTransferRequestDto;
 import com.ev.inventory_service.dto.response.InventoryStatusDto;
+import com.ev.inventory_service.dto.response.InventoryDashboardStatsDto;
 import com.ev.inventory_service.dto.response.DealerInventoryDto;
 import com.ev.inventory_service.model.InventoryTransaction;
 import org.springframework.data.domain.Page;
@@ -118,4 +119,6 @@ public interface InventoryService {
      * @return Danh sách DealerInventoryDto chứa thông tin tồn kho
      */
     List<DealerInventoryDto> getInventorySnapshotsForAnalytics(Long variantId, UUID dealerId, int limit);
+
+    InventoryDashboardStatsDto getInventorySummaryStats();
 }

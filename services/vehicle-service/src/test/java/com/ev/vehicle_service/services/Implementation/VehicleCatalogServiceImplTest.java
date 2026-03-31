@@ -394,7 +394,7 @@ class VehicleCatalogServiceImplTest {
                     .thenReturn(page);
 
             Page<VariantDetailDto> result = vehicleCatalogService.getAllVariantsPaginated(
-                    "Tesla", "IN_PRODUCTION", 50000.0, 100000.0, null, pageable);
+                    "Tesla", "IN_PRODUCTION", 50000.0, 100000.0, null, pageable, null);
 
             assertThat(result.getContent()).hasSize(1);
         }

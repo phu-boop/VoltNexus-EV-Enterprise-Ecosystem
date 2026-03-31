@@ -10,6 +10,7 @@ import com.ev.common_lib.dto.respond.ApiRespond;
 import com.ev.inventory_service.dto.request.TransactionRequestDto;
 import com.ev.inventory_service.dto.request.UpdateReorderLevelRequest;
 import com.ev.inventory_service.dto.response.InventoryStatusDto;
+import com.ev.inventory_service.dto.response.InventoryDashboardStatsDto;
 import com.ev.inventory_service.dto.response.DealerInventoryDto;
 import com.ev.inventory_service.model.InventoryTransaction;
 import com.ev.inventory_service.services.Interface.InventoryService;
@@ -181,12 +182,20 @@ public class InventoryController {
      * (IN_STOCK, LOW_STOCK, OUT_OF_STOCK)
      */
     @GetMapping("/variants/ids-by-status")
-    @PreAuthorize("hasAnyRole('ADMIN','EVM_STAFF')") // Đảm bảo an toàn
+    @PreAuthorize("hasAnyRole('ADMIN','EVM_STAFF','DEALER_STAFF','DEALER_MANAGER')") // Allow Dealer roles for status
+                                                                                     // filtering
     public ResponseEntity<ApiRespond<List<Long>>> getVariantIdsByStatus(
             @RequestParam("status") String status) {
 
         List<Long> variantIds = inventoryService.getVariantIdsByStatus(status);
         return ResponseEntity.ok(ApiRespond.success("Fetched variant IDs by status", variantIds));
+    }
+
+    @GetMapping("/stats/summary")
+    @PreAuthorize("hasAnyRole('ADMIN','EVM_STAFF')")
+    public ResponseEntity<ApiRespond<InventoryDashboardStatsDto>> getInventoryStats() {
+        return ResponseEntity.ok(ApiRespond.success("Fetched inventory dashboard stats",
+                inventoryService.getInventorySummaryStats()));
     }
 
     // ==========================================================

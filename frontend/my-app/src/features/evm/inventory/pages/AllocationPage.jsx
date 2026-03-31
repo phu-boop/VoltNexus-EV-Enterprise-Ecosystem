@@ -384,7 +384,10 @@ const AllocationPage = () => {
         {isLoading ? (
           <p className="text-gray-500">Đang tải đơn hàng...</p>
         ) : orders.length === 0 ? (
-          <p className="text-gray-500">Không có đơn hàng nào trong mục này.</p>
+          <div className="flex flex-col items-center justify-center py-20 text-center animate-in zoom-in-95 duration-500">
+            <div className="text-gray-300 text-8xl mb-6">📦</div>
+            <p className="text-slate-500 font-medium">Không có đơn hàng nào trong mục này.</p>
+          </div>
         ) : (
           <div className="grid grid-cols-1 gap-6">
             {orders.map((order) => (

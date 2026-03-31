@@ -17,6 +17,7 @@ import com.ev.inventory_service.dto.request.UpdateReorderLevelRequest;
 import com.ev.inventory_service.dto.request.CreateTransferRequestDto;
 import com.ev.inventory_service.dto.response.DealerInventoryDto;
 import com.ev.inventory_service.dto.response.InventoryStatusDto;
+import com.ev.inventory_service.dto.response.InventoryDashboardStatsDto;
 import com.ev.inventory_service.model.*;
 import com.ev.inventory_service.model.Enum.TransferRequestStatus;
 import com.ev.inventory_service.model.Enum.VehiclePhysicalStatus;
@@ -1413,5 +1414,20 @@ public class InventoryServiceImpl implements InventoryService {
         centralRepo.save(inventory);
 
         checkStockThresholdAndNotify(request.getVariantId());
+    }
+
+    @Override
+    public InventoryDashboardStatsDto getInventorySummaryStats() {
+        Long totalUnits = centralRepo.sumAvailableQuantity();
+        long lowStock = centralRepo.countLowStockVariants();
+        long outOfStock = centralRepo.countOutOfStockVariants();
+        long pending = stockAlertRepo.countByStatus("NEW");
+
+        return InventoryDashboardStatsDto.builder()
+                .totalUnits(totalUnits != null ? totalUnits : 0)
+                .lowStockVariants(lowStock)
+                .outOfStockVariants(outOfStock)
+                .pendingAllocations(pending)
+                .build();
     }
 }

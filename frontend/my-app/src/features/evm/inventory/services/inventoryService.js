@@ -54,6 +54,13 @@ export const getActiveAlerts = () => {
 };
 
 /**
+ * Lấy thống kê tổng quan cho dashboard.
+ */
+export const getInventoryStats = () => {
+  return apiConstInventoryService.get("/inventory/stats/summary");
+};
+
+/**
  * Xuất báo cáo tồn kho.
  * @param {object} params - { startDate, endDate, format }
  */

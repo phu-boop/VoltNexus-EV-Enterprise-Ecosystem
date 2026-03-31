@@ -139,7 +139,7 @@ public interface VehicleCatalogService {
          * @param maxPrice (MỚI) Lọc theo giá tối đa
          */
         Page<VariantDetailDto> getAllVariantsPaginated(String search, String status, Double minPrice, Double maxPrice,
-                        Long modelId, Pageable pageable);
+                        Long modelId, Pageable pageable, HttpHeaders headers);
 
         void deleteModelsBulk(List<Long> modelIds, boolean forceDelete, String deletedByEmail);
 

@@ -549,13 +549,13 @@ public class VehicleCatalogServiceImpl implements VehicleCatalogService {
      */
     @Override
     public Page<VariantDetailDto> getAllVariantsPaginated(String search, String status, Double minPrice,
-            Double maxPrice, Long modelId, Pageable pageable) {
+            Double maxPrice, Long modelId, Pageable pageable, HttpHeaders headers) {
 
         Specification<VehicleVariant> searchSpec = VehicleVariantSpecification.hasKeyword(search);
         Specification<VehicleVariant> statusSpec = null;
 
         if (status != null && !status.isBlank()) {
-            List<Long> inventoryIds = getVariantIdsFromInventory(status);
+            List<Long> inventoryIds = getVariantIdsFromInventory(status, headers);
             statusSpec = VehicleVariantSpecification.hasVariantIdIn(inventoryIds);
         }
 
@@ -613,8 +613,6 @@ public class VehicleCatalogServiceImpl implements VehicleCatalogService {
 
         ResponseEntity<ApiRespond<List<InventoryComparisonDto>>> inventoryResponse;
         try {
-            log.debug("Calling inventory-service at: {}", inventoryUrl);
-            log.debug("Request headers: {}", forwardHeaders);
             inventoryResponse = restTemplate.exchange(
                     inventoryUrl,
                     HttpMethod.POST,
@@ -1035,29 +1033,43 @@ public class VehicleCatalogServiceImpl implements VehicleCatalogService {
     /**
      * HÀM HELPER MỚI: Gọi sang inventory-service
      */
-    private List<Long> getVariantIdsFromInventory(String status) {
-        String inventoryUrl = inventoryServiceUrl + "/inventory/variants/ids-by-status?status=" + status;
+    private List<Long> getVariantIdsFromInventory(String status, HttpHeaders incomingHeaders) {
+        String inventoryUrl = String.format("%s/inventory/variants/ids-by-status", inventoryServiceUrl);
+        if (status != null) {
+            inventoryUrl += "?status=" + status;
+        }
 
-        // Tạo HttpHeaders
+        // Tạo HttpHeaders để forward
         HttpHeaders headers = new HttpHeaders();
 
-        // Lấy request hiện tại
-        try {
-            HttpServletRequest currentRequest = ((ServletRequestAttributes) RequestContextHolder
-                    .currentRequestAttributes()).getRequest();
+        // 1. Ưu tiên lấy từ tham số truyền vào (đã lấy từ Controller)
+        if (incomingHeaders != null) {
+            if (incomingHeaders.containsKey("X-User-Email"))
+                headers.set("X-User-Email", incomingHeaders.getFirst("X-User-Email"));
+            if (incomingHeaders.containsKey("X-User-Role"))
+                headers.set("X-User-Role", incomingHeaders.getFirst("X-User-Role"));
+            if (incomingHeaders.containsKey("X-User-Id"))
+                headers.set("X-User-Id", incomingHeaders.getFirst("X-User-Id"));
+            if (incomingHeaders.containsKey("X-User-ProfileId"))
+                headers.set("X-User-ProfileId", incomingHeaders.getFirst("X-User-ProfileId"));
+        }
 
-            // Sao chép các header cần thiết (Email, Role, v.v.)
-            String email = currentRequest.getHeader("X-User-Email");
-            String role = currentRequest.getHeader("X-User-Role");
+        // 2. Dự phòng: Thử lấy từ RequestContextHolder nếu bước 1 thiếu (để tương thích
+        // ngược)
+        if (headers.get("X-User-Email") == null) {
+            try {
+                HttpServletRequest currentRequest = ((ServletRequestAttributes) RequestContextHolder
+                        .currentRequestAttributes()).getRequest();
+                String email = currentRequest.getHeader("X-User-Email");
+                String role = currentRequest.getHeader("X-User-Role");
 
-            if (email != null)
-                headers.set("X-User-Email", email);
-            if (role != null)
-                headers.set("X-User-Role", role);
-
-        } catch (Exception e) {
-            log.warn("Không thể lấy HttpServletRequest để chuyển tiếp header: {}", e.getMessage());
-
+                if (email != null)
+                    headers.set("X-User-Email", email);
+                if (role != null)
+                    headers.set("X-User-Role", role);
+            } catch (Exception e) {
+                // Ignore failure to get RequestContext in non-web contexts
+            }
         }
 
         // Gói headers vào HttpEntity

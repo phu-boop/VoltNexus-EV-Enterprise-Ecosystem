@@ -301,11 +301,25 @@ public class VehicleCatalogController {
             @RequestParam(required = false) Double minPrice,
             @RequestParam(required = false) Double maxPrice,
             @RequestParam(required = false) Long modelId,
-            @PageableDefault(size = 10, sort = "variantId") Pageable pageable) {
+            @PageableDefault(size = 10, sort = "variantId") Pageable pageable,
+            @RequestHeader(value = "X-User-Email", required = false) String email,
+            @RequestHeader(value = "X-User-Role", required = false) String role,
+            @RequestHeader(value = "X-User-Id", required = false) String userId,
+            @RequestHeader(value = "X-User-ProfileId", required = false) String profileId) {
 
-        // Truyền 'status' xuống service
+        HttpHeaders headers = new HttpHeaders();
+        if (email != null)
+            headers.set("X-User-Email", email);
+        if (role != null)
+            headers.set("X-User-Role", role);
+        if (userId != null)
+            headers.set("X-User-Id", userId);
+        if (profileId != null)
+            headers.set("X-User-ProfileId", profileId);
+
+        // Truyền 'status' và 'headers' xuống service
         Page<VariantDetailDto> results = vehicleCatalogService.getAllVariantsPaginated(search, status, minPrice,
-                maxPrice, modelId, pageable);
+                maxPrice, modelId, pageable, headers);
         return ResponseEntity.ok(ApiRespond.success("Fetched paginated variants successfully", results));
     }
 
