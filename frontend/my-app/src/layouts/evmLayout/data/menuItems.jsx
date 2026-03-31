@@ -40,27 +40,22 @@ export const adminMenuItems = [
   // Quản lý sản phẩm
   {
     icon: FiPackage,
-    label: "Quản Lý Sản Phẩm",
+    label: "Sản Phẩm",
     path: "/evm/admin/products",
     submenu: [
       {
         icon: FiList,
-        label: "Danh Mục Xe",
+        label: "Danh Mục",
         path: "/evm/admin/products/catalog",
       },
-      // {
-      //   icon: FiCreditCard,
-      //   label: "Giá & Khuyến Mãi",
-      //   path: "/evm/admin/products/pricing",
-      // },
       {
         icon: FiTag,
-        label: "Phiên Bản & Màu Sắc",
+        label: "Phiên Bản",
         path: "/evm/admin/products/variants",
       },
       {
         icon: FiSliders,
-        label: "Quản Lý Tính Năng",
+        label: "Tính Năng",
         path: "/evm/admin/products/features",
       },
       {
@@ -74,7 +69,7 @@ export const adminMenuItems = [
   // Quản lý phân phối & kho
   {
     icon: FiTruck,
-    label: "Phân Phối & Kho",
+    label: "Phân Phối",
     path: "/evm/admin/distribution",
     submenu: [
       {
@@ -89,7 +84,7 @@ export const adminMenuItems = [
       },
       {
         icon: FiTruck,
-        label: "Lịch Sử Phân Phối",
+        label: "Lịch Sử Lệnh",
         path: "/evm/admin/distribution/history",
       },
     ],
@@ -97,27 +92,27 @@ export const adminMenuItems = [
 
   {
     icon: FiDollarSign,
-    label: "Đơn Hàng & Thanh Toán",
+    label: "Đơn Hàng",
     path: "/evm/admin/sales-finance",
     submenu: [
       {
         icon: FiShoppingCart,
-        label: "Đơn Hàng Đại Lý (B2B)",
+        label: "Đơn Đặt Mua",
         path: "/evm/admin/orders",
       },
       {
         icon: FiFileText,
-        label: "Quản Lý Hóa Đơn",
+        label: "Hóa Đơn",
         path: "/evm/admin/payments/invoices",
       },
       {
         icon: FiCreditCard,
-        label: "Công Nợ Đại Lý",
+        label: "Công Nợ",
         path: "/evm/admin/debt",
       },
       {
         icon: FiDollarSign,
-        label: "Lịch Sử Thanh Toán",
+        label: "Lịch SửGD",
         path: "/evm/admin/payments/cash-history",
       },
     ],
@@ -126,32 +121,32 @@ export const adminMenuItems = [
   // Quản lý đại lý
   {
     icon: FiBriefcase,
-    label: "Quản Lý Đại Lý",
+    label: "Đại Lý",
     path: "/evm/admin/dealers",
     submenu: [
       {
         icon: FiHomeAlt,
-        label: "Danh Sách Đại Lý",
+        label: "Danh Sách",
         path: "/evm/admin/dealers/list",
       },
       {
         icon: FiFileText,
-        label: "Hợp Đồng & Chỉ Tiêu",
+        label: "Hợp Đồng",
         path: "/evm/admin/dealers/contracts",
       },
       {
         icon: FiCreditCardAlt,
-        label: "Công Nợ & Thanh Toán",
+        label: "Thanh Toán",
         path: "/evm/admin/dealers/debts",
       },
       {
         icon: FiUserPlus,
-        label: "Tài Khoản Đại Lý",
+        label: "Tài Khoản",
         path: "/evm/admin/dealers/accounts",
       },
       {
         icon: FiBell,
-        label: "Thông báo từ đại lí",
+        label: "Thông Báo",
         path: "/evm/notifications",
       },
     ],
@@ -160,12 +155,12 @@ export const adminMenuItems = [
   // Báo cáo & phân tích
   {
     icon: FiBarChart2,
-    label: "Báo Cáo & Phân Tích",
+    label: "Báo Cáo",
     path: "/evm/admin/reports",
     submenu: [
       {
         icon: FiTrendingUp,
-        label: "Thông báo FireBase",
+        label: "Thông Báo",
         path: "/evm/admin/reports/notifications",
       },
       {
@@ -189,38 +184,57 @@ export const adminMenuItems = [
   // Quản trị hệ thống (chỉ dành cho evm/Admin)
   {
     icon: FiSettings,
-    label: "Quản Trị Hệ Thống",
+    label: "Hệ Thống",
     path: "/evm/admin/system",
     submenu: [
       {
         icon: FiUsers,
-        label: "Quản Lý Người Dùng",
+        label: "Người Dùng",
         path: "/evm/admin/system/users",
       },
       {
         icon: FiShield,
-        label: "Phân Quyền Truy Cập",
+        label: "Phân Quyền",
         path: "/evm/admin/system/permissions",
       },
       {
         icon: FiDatabase,
-        label: "Cấu Hình Hệ Thống",
+        label: "Cấu Hình",
         path: "/evm/admin/system/config",
       },
       {
         icon: FiRefreshCw,
-        label: "Đồng bộ Dữ liệu (Backfill)",
+        label: "Đồng Bộ",
         path: "/evm/admin/system/data-backfill",
       },
       {
         icon: FiActivity,
-        label: "Nhật Ký Hoạt Động",
+        label: "Nhật Ký",
         path: "/evm/admin/system/audit",
       },
       {
         icon: FiDollarSign,
-        label: "Quản Lý Phương Thức Thanh Toán",
+        label: "Cổng T.Toán",
         path: "/evm/admin/payments/methods",
+      },
+    ],
+  },
+
+  // Cá Nhân (Admin)
+  {
+    icon: FiUserPlus,
+    label: "Cá Nhân",
+    path: "/evm/profile-settings",
+    submenu: [
+      {
+        icon: FiUsers,
+        label: "Hồ Sơ",
+        path: "/evm/profile",
+      },
+      {
+        icon: FiSettings,
+        label: "Cài Đặt",
+        path: "/evm/settings",
       },
     ],
   },
@@ -233,24 +247,19 @@ export const evmStaffMenuItems = [
   // Quản lý sản phẩm
   {
     icon: FiPackage,
-    label: "Quản Lý Sản Phẩm",
+    label: "Sản Phẩm",
     path: "/evm/staff/products",
     submenu: [
       {
         icon: FiList,
-        label: "Danh Mục Xe",
+        label: "Danh Mục",
         path: "/evm/staff/products/catalog",
       },
       {
         icon: FiTag,
-        label: "Phiên Bản & Màu Sắc",
+        label: "Phiên Bản",
         path: "/evm/staff/products/variants",
       },
-      // {
-      //   icon: FiCreditCard,
-      //   label: "Giá Sỉ & Chiết Khấu",
-      //   path: "/evm/staff/products/pricing",
-      // },
       {
         icon: FiCreditCard,
         label: "Khuyến Mãi",
@@ -262,7 +271,7 @@ export const evmStaffMenuItems = [
   // Quản lý phân phối & kho
   {
     icon: FiTruck,
-    label: "Phân Phối & Kho",
+    label: "Phân Phối",
     path: "/evm/staff/distribution",
     submenu: [
       {
@@ -281,37 +290,27 @@ export const evmStaffMenuItems = [
   // Quản lý đại lý
   {
     icon: FiBriefcase,
-    label: "Quản Lý Đại Lý",
+    label: "Đại Lý",
     path: "/evm/staff/dealers",
     submenu: [
       {
         icon: FiHomeAlt,
-        label: "Tài Khoản Đại Lý",
+        label: "Tài Khoản",
         path: "/evm/staff/dealers/dealer-accounts",
       },
       {
         icon: FiHomeAlt,
-        label: "Danh Sách Đại Lý",
+        label: "Danh Sách",
         path: "/evm/staff/dealers/list",
       },
-      // {
-      //   icon: FiFileText,
-      //   label: "Hợp Đồng & Chỉ Tiêu",
-      //   path: "/evm/staff/dealers/contracts",
-      // },
-      // {
-      //   icon: FiCreditCardAlt,
-      //   label: "Công Nợ & Thanh Toán",
-      //   path: "/evm/staff/dealers/debts",
-      // },
       {
         icon: FiFileText,
-        label: "Hóa Đơn Đại Lý",
+        label: "Hóa Đơn",
         path: "/evm/staff/payments/dealer-invoices",
       },
       {
         icon: FiBell,
-        label: "Thông báo từ đại lí",
+        label: "Thông Báo",
         path: "/evm/notifications",
       },
     ],
@@ -320,22 +319,22 @@ export const evmStaffMenuItems = [
   // Quản lý thanh toán
   {
     icon: FiDollarSign,
-    label: "Quản Lý Thanh Toán",
+    label: "Đơn Hàng",
     path: "/evm/staff/payments",
     submenu: [
       {
         icon: FiShoppingCart,
-        label: "Quản Lý Đơn Hàng (B2B)",
+        label: "Đơn Đặt Mua",
         path: "/evm/staff/orders",
       },
       {
         icon: FiCreditCard,
-        label: "Công Nợ Đại Lý (B2B)",
+        label: "Công Nợ",
         path: "/evm/staff/debt",
       },
       {
         icon: FiDollarSign,
-        label: "Đại Lý Thanh Toán Hóa Đơn (B2B)",
+        label: "Lịch Sử GD",
         path: "/evm/staff/payments/cash-payments",
       },
     ],
@@ -344,23 +343,42 @@ export const evmStaffMenuItems = [
   // Báo cáo & phân tích
   {
     icon: FiBarChart2,
-    label: "Báo Cáo & Phân Tích",
+    label: "Báo Cáo",
     path: "/evm/staff/reports",
     submenu: [
       {
         icon: FiTrendingUp,
-        label: "Doanh Số Theo Đại Lý",
+        label: "Doanh Số",
         path: "/evm/staff/reports/sales",
       },
       {
         icon: FiPieChart,
-        label: "Tồn Kho & Tốc Độ Tiêu Thụ",
+        label: "Tồn Kho",
         path: "/evm/staff/reports/inventory",
       },
       {
         icon: FiCpu,
-        label: "Dự Báo Nhu Cầu (AI)",
+        label: "Dự Báo AI",
         path: "/evm/staff/reports/forecast",
+      },
+    ],
+  },
+
+  // Cá Nhân (Staff)
+  {
+    icon: FiUserPlus,
+    label: "Cá Nhân",
+    path: "/evm/profile-settings",
+    submenu: [
+      {
+        icon: FiUsers,
+        label: "Hồ Sơ",
+        path: "/evm/profile",
+      },
+      {
+        icon: FiSettings,
+        label: "Cài Đặt",
+        path: "/evm/settings",
       },
     ],
   },

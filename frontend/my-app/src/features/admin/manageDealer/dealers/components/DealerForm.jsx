@@ -1,4 +1,18 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
+import {
+  FiX,
+  FiPlus,
+  FiEdit3,
+  FiSave,
+  FiHash,
+  FiUser,
+  FiMapPin,
+  FiPhone,
+  FiMail,
+  FiInfo,
+  FiActivity
+} from 'react-icons/fi';
 
 const DealerForm = ({ dealer, onSubmit, onCancel, loading = false }) => {
   const [formData, setFormData] = useState({
@@ -70,256 +84,228 @@ const DealerForm = ({ dealer, onSubmit, onCancel, loading = false }) => {
     }
   };
 
-  return (
-    <>
-      <style>{`
-        @keyframes slideInRight {
-          from { transform: translateX(100%); opacity: 0; }
-          to { transform: translateX(0); opacity: 1; }
-        }
-        @keyframes fadeIn {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
-      `}</style>
+  const formContent = (
+    <div className="fixed inset-0 z-[9999] overflow-hidden flex justify-end">
+      {/* Backdrop */}
+      <div
+        className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300"
+        onClick={onCancel}
+      />
 
-      <div className="fixed inset-0 z-[100] overflow-hidden">
-        {/* Backdrop */}
-        <div
-          className="absolute inset-0 bg-slate-900/40 "
-          style={{ animation: 'fadeIn 0.3s ease-out forwards' }}
-          onClick={onCancel}
-        />
-
-        {/* Drawer Position Container */}
-        <div className="fixed inset-y-0 right-0 flex max-w-full sm:pl-16">
-          {/* Drawer Panel */}
-          <div
-            className="w-screen max-w-2xl bg-white shadow-2xl flex flex-col h-full ring-1 ring-slate-900/5 sm:rounded-l-3xl overflow-hidden"
-            style={{ animation: 'slideInRight 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards' }}
-          >
-            {/* Header */}
-            <div className="px-6 py-6 sm:px-8 border-b border-slate-100 bg-white z-10 sticky top-0">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-2xl font-bold text-slate-800">
-                    {dealer ? 'Cập nhật đại lý' : 'Thêm đại lý mới'}
-                  </h2>
-                  <p className="mt-1 text-sm text-slate-500">
-                    {dealer ? 'Chỉnh sửa thông tin đại lý hiện tại.' : 'Nhập thông tin chi tiết cho đại lý mới.'}
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={onCancel}
-                  className="rounded-full p-2 bg-slate-50 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
+      {/* Drawer Panel */}
+      <div
+        className="relative w-screen max-w-2xl bg-white shadow-2xl flex flex-col h-full overflow-hidden animate-in slide-in-from-right duration-500 ease-out sm:rounded-l-[3rem]"
+      >
+        {/* Header */}
+        <div className="px-8 py-8 border-b border-slate-100 relative">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className={`p-3 rounded-2xl ${dealer ? 'bg-amber-50 text-amber-600' : 'bg-blue-50 text-blue-600'}`}>
+                {dealer ? <FiEdit3 size={24} /> : <FiPlus size={24} />}
+              </div>
+              <div>
+                <h2 className="text-2xl font-black text-slate-900 tracking-tight">
+                  {dealer ? 'Cập nhật đại lý' : 'Thêm đại lý mới'}
+                </h2>
+                <p className="text-slate-500 font-medium text-sm mt-0.5 whitespace-nowrap">
+                  {dealer ? 'Chỉnh sửa thông số vận hành' : 'Kiến tạo mắt xích mới trong mạng lưới'}
+                </p>
               </div>
             </div>
+            <button
+              type="button"
+              onClick={onCancel}
+              className="p-3 bg-slate-50 text-slate-400 rounded-2xl hover:bg-slate-100 hover:text-slate-700 transition-all active:scale-95 shadow-sm"
+            >
+              <FiX size={20} />
+            </button>
+          </div>
+        </div>
 
-            {/* Scrollable Form Body */}
-            <div className="flex-1 overflow-y-auto px-6 py-6 sm:px-8 bg-slate-50/30">
-              <form id="dealer-form" onSubmit={handleSubmit} className="space-y-6">
+        {/* Scrollable Form Body */}
+        <div className="flex-1 overflow-y-auto px-8 py-8 bg-slate-50/30">
+          <form id="dealer-form" onSubmit={handleSubmit} className="space-y-8 pb-12">
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Mã đại lý */}
-                  <div>
-                    <label htmlFor="dealerCode" className="block text-sm font-semibold text-slate-700 mb-2">
-                      Mã đại lý <span className="text-rose-500">*</span>
-                    </label>
+            {/* Essential Info Section */}
+            <div className="space-y-6">
+              <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
+                <FiInfo className="text-blue-500" />
+                Thông số định danh
+              </h3>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-xs font-black text-slate-700 mb-2 ml-1 uppercase tracking-wider">
+                    Mã đại lý <span className="text-rose-500">*</span>
+                  </label>
+                  <div className="relative group">
+                    <FiHash className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-blue-500 transition-colors" />
                     <input
                       type="text"
-                      id="dealerCode"
                       name="dealerCode"
                       value={formData.dealerCode}
                       onChange={handleChange}
-                      className={`w-full px-4 py-2.5 bg-white border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 ${errors.dealerCode ? 'border-rose-300 ring-rose-500/20 text-rose-900 placeholder-rose-300' : 'border-slate-200 text-slate-900 hover:border-slate-300'
-                        }`}
-                      placeholder="VD: DLR-001"
-                      disabled={!!dealer} // Thường mã đại lý không cho sửa
+                      disabled={!!dealer}
+                      placeholder="VD: DLR-VN-001"
+                      className={`w-full pl-11 pr-4 py-3.5 bg-white border rounded-2xl text-sm font-bold transition-all ${errors.dealerCode ? 'border-rose-200 bg-rose-50/30 text-rose-900' : 'border-slate-100 text-slate-900 focus:ring-2 focus:ring-blue-500/10'
+                        } ${dealer ? 'opacity-60 grayscale' : ''}`}
                     />
-                    {errors.dealerCode && (
-                      <p className="mt-2 text-sm text-rose-600 flex items-center font-medium">
-                        <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                        </svg>
-                        {errors.dealerCode}
-                      </p>
-                    )}
                   </div>
+                  {errors.dealerCode && <p className="mt-2 text-[10px] font-bold text-rose-500 ml-2 uppercase italic">{errors.dealerCode}</p>}
+                </div>
 
-                  {/* Tên đại lý */}
-                  <div>
-                    <label htmlFor="dealerName" className="block text-sm font-semibold text-slate-700 mb-2">
-                      Tên đại lý <span className="text-rose-500">*</span>
-                    </label>
+                <div>
+                  <label className="block text-xs font-black text-slate-700 mb-2 ml-1 uppercase tracking-wider">
+                    Tên đại lý <span className="text-rose-500">*</span>
+                  </label>
+                  <div className="relative group">
+                    <FiUser className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-blue-500 transition-colors" />
                     <input
                       type="text"
-                      id="dealerName"
                       name="dealerName"
                       value={formData.dealerName}
                       onChange={handleChange}
-                      className={`w-full px-4 py-2.5 bg-white border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 ${errors.dealerName ? 'border-rose-300 ring-rose-500/20 text-rose-900 placeholder-rose-300' : 'border-slate-200 text-slate-900 hover:border-slate-300'
+                      placeholder="Tên pháp lý đại lý..."
+                      className={`w-full pl-11 pr-4 py-3.5 bg-white border rounded-2xl text-sm font-bold transition-all ${errors.dealerName ? 'border-rose-200 bg-rose-50/30 text-rose-900' : 'border-slate-100 text-slate-900 focus:ring-2 focus:ring-blue-500/10'
                         }`}
-                      placeholder="Nhập tên đại lý"
-                    />
-                    {errors.dealerName && (
-                      <p className="mt-2 text-sm text-rose-600 flex items-center font-medium">
-                        <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                        </svg>
-                        {errors.dealerName}
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Địa chỉ */}
-                  <div className="md:col-span-2">
-                    <label htmlFor="address" className="block text-sm font-semibold text-slate-700 mb-2">
-                      Địa chỉ chi tiết
-                    </label>
-                    <input
-                      type="text"
-                      id="address"
-                      name="address"
-                      value={formData.address}
-                      onChange={handleChange}
-                      className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 hover:border-slate-300"
-                      placeholder="Số nhà, Tên đường, Phường/Xã..."
                     />
                   </div>
+                  {errors.dealerName && <p className="mt-2 text-[10px] font-bold text-rose-500 ml-2 uppercase italic">{errors.dealerName}</p>}
+                </div>
+              </div>
+            </div>
 
-                  {/* Thành phố */}
-                  <div>
-                    <label htmlFor="city" className="block text-sm font-semibold text-slate-700 mb-2">
-                      Thỉnh/Thành phố
-                    </label>
-                    <input
-                      type="text"
-                      id="city"
-                      name="city"
-                      value={formData.city}
-                      onChange={handleChange}
-                      className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 hover:border-slate-300"
-                      placeholder="Hồ Chí Minh, Hà Nội..."
-                    />
-                  </div>
+            {/* Geography Section */}
+            <div className="space-y-6 pt-6">
+              <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
+                <FiMapPin className="text-emerald-500" />
+                Vị trí địa lý
+              </h3>
 
-                  {/* Khu vực */}
-                  <div>
-                    <label htmlFor="region" className="block text-sm font-semibold text-slate-700 mb-2">
-                      Khu vực (Vùng miền)
-                    </label>
-                    <input
-                      type="text"
-                      id="region"
-                      name="region"
-                      value={formData.region}
-                      onChange={handleChange}
-                      className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 hover:border-slate-300"
-                      placeholder="Miền Nam, Miền Bắc..."
-                    />
-                  </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="md:col-span-2">
+                  <label className="block text-xs font-black text-slate-700 mb-2 ml-1 uppercase tracking-wider">Địa chỉ giao dịch</label>
+                  <input
+                    type="text"
+                    name="address"
+                    value={formData.address}
+                    onChange={handleChange}
+                    placeholder="Số nhà, Tên đường..."
+                    className="w-full px-4 py-3.5 bg-white border border-slate-100 rounded-2xl text-sm font-bold text-slate-900 focus:ring-2 focus:ring-emerald-500/10 transition-all"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-black text-slate-700 mb-2 ml-1 uppercase tracking-wider">Thành phố/Tỉnh</label>
+                  <input
+                    type="text"
+                    name="city"
+                    value={formData.city}
+                    onChange={handleChange}
+                    placeholder="VD: TP. Hồ Chí Minh"
+                    className="w-full px-4 py-3.5 bg-white border border-slate-100 rounded-2xl text-sm font-bold text-slate-900 focus:ring-2 focus:ring-emerald-500/10 transition-all"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-black text-slate-700 mb-2 ml-1 uppercase tracking-wider">Khu vực quản lý</label>
+                  <input
+                    type="text"
+                    name="region"
+                    value={formData.region}
+                    onChange={handleChange}
+                    placeholder="VD: Miền Nam"
+                    className="w-full px-4 py-3.5 bg-white border border-slate-100 rounded-2xl text-sm font-bold text-slate-900 focus:ring-2 focus:ring-emerald-500/10 transition-all"
+                  />
+                </div>
+              </div>
+            </div>
 
-                  {/* Số điện thoại */}
-                  <div>
-                    <label htmlFor="phone" className="block text-sm font-semibold text-slate-700 mb-2">
-                      Số điện thoại liên hệ
-                    </label>
+            {/* Contact & Legal Section */}
+            <div className="space-y-6 pt-6">
+              <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
+                <FiActivity className="text-purple-500" />
+                Thông tin pháp lý & Liên hệ
+              </h3>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-xs font-black text-slate-700 mb-2 ml-1 uppercase tracking-wider">Hotline</label>
+                  <div className="relative group">
+                    <FiPhone className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-purple-500 transition-colors" />
                     <input
                       type="tel"
-                      id="phone"
                       name="phone"
                       value={formData.phone}
                       onChange={handleChange}
-                      className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 hover:border-slate-300"
-                      placeholder="0912 345 678"
+                      placeholder="028 ..."
+                      className="w-full pl-11 pr-4 py-3.5 bg-white border border-slate-100 rounded-2xl text-sm font-bold text-slate-900 focus:ring-2 focus:ring-purple-500/10 transition-all"
                     />
                   </div>
-
-                  {/* Email */}
-                  <div>
-                    <label htmlFor="email" className="block text-sm font-semibold text-slate-700 mb-2">
-                      Địa chỉ Email
-                    </label>
+                </div>
+                <div>
+                  <label className="block text-xs font-black text-slate-700 mb-2 ml-1 uppercase tracking-wider">Email định danh</label>
+                  <div className="relative group">
+                    <FiMail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-purple-500 transition-colors" />
                     <input
                       type="email"
-                      id="email"
                       name="email"
                       value={formData.email}
                       onChange={handleChange}
-                      className={`w-full px-4 py-2.5 bg-white border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 ${errors.email ? 'border-rose-300 ring-rose-500/20 text-rose-900 placeholder-rose-300' : 'border-slate-200 text-slate-900 hover:border-slate-300'
+                      placeholder="office@dealer.com"
+                      className={`w-full pl-11 pr-4 py-3.5 bg-white border rounded-2xl text-sm font-bold transition-all ${errors.email ? 'border-rose-200 bg-rose-50/30 text-rose-900' : 'border-slate-100 text-slate-900 focus:ring-2 focus:ring-purple-500/10'
                         }`}
-                      placeholder="contact@dealer.com"
                     />
-                    {errors.email && (
-                      <p className="mt-2 text-sm text-rose-600 flex items-center font-medium">
-                        <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                        </svg>
-                        {errors.email}
-                      </p>
-                    )}
                   </div>
-
-                  {/* Mã số thuế */}
-                  <div className="md:col-span-2">
-                    <label htmlFor="taxNumber" className="block text-sm font-semibold text-slate-700 mb-2">
-                      Mã số thuế
-                    </label>
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-xs font-black text-slate-700 mb-2 ml-1 uppercase tracking-wider">Mã số thuế</label>
+                  <div className="relative group">
+                    <FiHash className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-purple-500 transition-colors" />
                     <input
                       type="text"
-                      id="taxNumber"
                       name="taxNumber"
                       value={formData.taxNumber}
                       onChange={handleChange}
-                      className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 hover:border-slate-300 font-mono"
-                      placeholder="123456789-001"
+                      placeholder="Nhập MST doanh nghiệp..."
+                      className="w-full pl-11 pr-4 py-3.5 bg-white border border-slate-100 rounded-2xl text-sm font-bold text-slate-900 focus:ring-2 focus:ring-purple-500/10 transition-all font-mono tracking-tight"
                     />
                   </div>
-
                 </div>
-              </form>
+              </div>
             </div>
+          </form>
+        </div>
 
-            {/* Footer with Actions */}
-            <div className="px-6 py-5 sm:px-8 border-t border-slate-100 bg-white shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] sticky bottom-0 z-10 flex items-center justify-end gap-3">
-              <button
-                type="button"
-                onClick={onCancel}
-                className="px-6 py-2.5 text-sm font-semibold text-slate-700 bg-white border border-slate-300 rounded-xl hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-200 transition-all duration-200 shadow-sm disabled:opacity-50"
-                disabled={loading}
-              >
-                Hủy bỏ
-              </button>
-              <button
-                type="submit"
-                form="dealer-form"
-                className="px-6 py-2.5 text-sm font-semibold text-white bg-blue-600 border border-transparent rounded-xl hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 shadow-lg shadow-blue-500/30 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
-                disabled={loading}
-              >
-                {loading ? (
-                  <>
-                    <svg className="animate-spin -ml-1 mr-2.5 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Đang lưu...
-                  </>
-                ) : (
-                  dealer ? 'Lưu thay đổi' : 'Thêm đại lý mới'
-                )}
-              </button>
-            </div>
+        {/* Footer with Actions */}
+        <div className="px-8 py-6 border-t border-slate-100 bg-white">
+          <div className="flex items-center justify-end gap-3">
+            <button
+              type="button"
+              onClick={onCancel}
+              className="px-8 py-3.5 text-xs font-black text-slate-500 hover:text-slate-700 uppercase tracking-widest transition-all"
+              disabled={loading}
+            >
+              Hủy bỏ
+            </button>
+            <button
+              type="submit"
+              form="dealer-form"
+              className="px-10 py-3.5 bg-slate-900 text-white font-black text-xs rounded-2xl hover:bg-blue-600 transition-all shadow-xl shadow-slate-200 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 uppercase tracking-[0.2em]"
+              disabled={loading}
+            >
+              {loading ? (
+                <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+              ) : (
+                <FiSave size={16} />
+              )}
+              {loading ? 'Đang xử lý...' : dealer ? 'Lưu thay đổi' : 'Thêm mới'}
+            </button>
           </div>
         </div>
       </div>
-    </>
+    </div>
   );
+
+  return createPortal(formContent, document.body);
 };
 
 export default DealerForm;

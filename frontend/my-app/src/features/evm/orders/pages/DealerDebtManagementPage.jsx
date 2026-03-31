@@ -1,12 +1,19 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import paymentService from '../../../payments/services/paymentService';
 import { toast } from 'react-toastify';
-import { 
-  CurrencyDollarIcon, 
-  EyeIcon,
-  DocumentTextIcon
-} from '@heroicons/react/24/outline';
+import {
+  FiDollarSign,
+  FiEye,
+  FiFileText,
+  FiTrendingUp,
+  FiCheckCircle,
+  FiAlertCircle,
+  FiUsers,
+  FiChevronLeft,
+  FiChevronRight,
+  FiSearch
+} from 'react-icons/fi';
 
 const DealerDebtManagementPage = () => {
   const navigate = useNavigate();
@@ -33,7 +40,7 @@ const DealerDebtManagementPage = () => {
 
       const response = await paymentService.getDealerDebtSummary(params);
       const data = response.data?.data || response.data;
-      
+
       if (data) {
         setDebtSummary(data.content || []);
         setPagination(prev => ({
@@ -51,7 +58,9 @@ const DealerDebtManagementPage = () => {
   };
 
   const handlePageChange = (newPage) => {
-    setPagination(prev => ({ ...prev, currentPage: newPage }));
+    if (newPage >= 0 && newPage < pagination.totalPages) {
+      setPagination(prev => ({ ...prev, currentPage: newPage }));
+    }
   };
 
   const handleViewDetails = (dealerId) => {
@@ -59,155 +68,152 @@ const DealerDebtManagementPage = () => {
   };
 
   const formatCurrency = (amount) => {
-    if (!amount) return '0 ₫';
     return new Intl.NumberFormat('vi-VN', {
       style: 'currency',
       currency: 'VND'
-    }).format(amount);
+    }).format(amount || 0);
   };
 
   const getStatusBadge = (currentBalance) => {
     if (currentBalance <= 0) {
       return (
-        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-          Đã thanh toán đủ
+        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-100 shadow-sm whitespace-nowrap">
+          <FiCheckCircle size={12} className="text-emerald-500" />
+          Đã tất toán
         </span>
       );
     }
     return (
-      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-red-50 text-red-700 border border-red-100 shadow-sm whitespace-nowrap">
+        <FiAlertCircle size={12} className="text-red-500" />
         Còn nợ
       </span>
     );
   };
 
-  // Calculate totals
-  const totals = debtSummary.reduce((acc, item) => {
-    acc.totalOwed += parseFloat(item.totalOwed || 0);
-    acc.totalPaid += parseFloat(item.totalPaid || 0);
-    acc.currentBalance += parseFloat(item.currentBalance || 0);
-    return acc;
-  }, { totalOwed: 0, totalPaid: 0, currentBalance: 0 });
+  // Calculate totals for the visible data
+  const totals = useMemo(() => {
+    return debtSummary.reduce((acc, item) => {
+      acc.totalOwed += parseFloat(item.totalOwed || 0);
+      acc.totalPaid += parseFloat(item.totalPaid || 0);
+      acc.currentBalance += parseFloat(item.currentBalance || 0);
+      return acc;
+    }, { totalOwed: 0, totalPaid: 0, currentBalance: 0 });
+  }, [debtSummary]);
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Quản Lý Công Nợ Đại Lý</h1>
-          <p className="text-gray-600 mt-1">Tổng quan công nợ của tất cả đại lý</p>
+    <div className="min-h-screen bg-slate-50/50 -m-6 p-6 animate-in fade-in duration-500">
+
+      {/* Header Section */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
+        <div className="flex items-center gap-4">
+          <div className="p-3.5 bg-rose-600 rounded-2xl shadow-xl shadow-rose-200">
+            <FiUsers size={28} className="text-white" />
+          </div>
+          <div>
+            <h1 className="text-3xl font-black text-slate-900 tracking-tight">Công Nợ Đại Lý</h1>
+            <p className="text-slate-500 font-medium mt-0.5">Giám sát dư nợ và lịch sử quyết toán toàn hệ thống</p>
+          </div>
         </div>
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-        <div className="bg-white rounded-lg shadow-sm p-6">
-          <div className="flex items-center">
-            <div className="flex-shrink-0 bg-blue-100 rounded-lg p-3">
-              <CurrencyDollarIcon className="h-6 w-6 text-blue-600" />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Tổng nợ</p>
-              <p className="text-2xl font-bold text-gray-900">{formatCurrency(totals.totalOwed)}</p>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        {[
+          { label: 'Tổng nợ phát sinh', value: totals.totalOwed, icon: FiFileText, color: 'blue', sub: 'Tổng giá trị hóa đơn' },
+          { label: 'Tổng đã thanh toán', value: totals.totalPaid, icon: FiTrendingUp, color: 'emerald', sub: 'Tiền mặt & Chuyển khoản' },
+          { label: 'Dư nợ hiện hành', value: totals.currentBalance, icon: FiDollarSign, color: 'rose', sub: 'Nghĩa vụ chưa hoàn thành' }
+        ].map((stat, idx) => (
+          <div key={idx} className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm hover:shadow-md transition-all group overflow-hidden relative">
+            <div className={`absolute top-0 right-0 w-32 h-32 bg-${stat.color}-50 rounded-full -mr-16 -mt-16 opacity-50 group-hover:scale-110 transition-transform`} />
+            <div className="relative z-10">
+              <div className="flex items-center gap-4 mb-4">
+                <div className={`p-3 bg-${stat.color}-50 text-${stat.color}-600 rounded-2xl`}>
+                  <stat.icon size={24} />
+                </div>
+                <div>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{stat.label}</p>
+                  <p className="text-[10px] font-bold text-slate-400 mt-0.5 italic">{stat.sub}</p>
+                </div>
+              </div>
+              <p className={`text-2xl font-black text-slate-900`}>{formatCurrency(stat.value)}</p>
             </div>
           </div>
-        </div>
+        ))}
+      </div>
 
-        <div className="bg-white rounded-lg shadow-sm p-6">
-          <div className="flex items-center">
-            <div className="flex-shrink-0 bg-green-100 rounded-lg p-3">
-              <CurrencyDollarIcon className="h-6 w-6 text-green-600" />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Tổng đã trả</p>
-              <p className="text-2xl font-bold text-gray-900">{formatCurrency(totals.totalPaid)}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow-sm p-6">
-          <div className="flex items-center">
-            <div className="flex-shrink-0 bg-red-100 rounded-lg p-3">
-              <CurrencyDollarIcon className="h-6 w-6 text-red-600" />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Còn nợ</p>
-              <p className="text-2xl font-bold text-gray-900">{formatCurrency(totals.currentBalance)}</p>
-            </div>
-          </div>
+      {/* Search & Actions */}
+      <div className="bg-white p-4 rounded-3xl border border-slate-100 shadow-sm mb-6 flex flex-col md:flex-row gap-4 items-center">
+        <div className="relative flex-1 w-full">
+          <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+          <input
+            type="text"
+            placeholder="Tìm kiếm theo mã đại lý hoặc tên..."
+            className="w-full pl-11 pr-4 py-3 bg-slate-50 border-none rounded-2xl text-sm focus:ring-2 focus:ring-blue-500 transition-all font-medium"
+          />
         </div>
       </div>
 
       {/* Debt Summary Table */}
-      <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+      <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden">
         {loading ? (
-          <div className="p-8 text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600">Đang tải danh sách công nợ...</p>
+          <div className="p-20 text-center">
+            <div className="w-16 h-16 border-4 border-rose-600/20 border-t-rose-600 rounded-full animate-spin mx-auto mb-4" />
+            <p className="text-slate-500 font-bold animate-pulse tracking-widest uppercase text-xs">Đang lập báo cáo công nợ...</p>
           </div>
         ) : debtSummary.length === 0 ? (
-          <div className="p-8 text-center">
-            <DocumentTextIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-600">Không có dữ liệu công nợ</p>
+          <div className="p-20 text-center animate-in zoom-in-95 duration-500">
+            <div className="text-slate-200 text-8xl mb-6 flex justify-center">📦</div>
+            <h3 className="text-xl font-black text-slate-900">Chưa có dữ liệu</h3>
+            <p className="text-slate-400 font-medium mt-1">Không tìm thấy thông tin công nợ của đại lý nào.</p>
           </div>
         ) : (
           <>
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Mã đại lý
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Tổng nợ
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Đã trả
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Còn nợ
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Trạng thái
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Thao tác
-                    </th>
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-slate-50/50 border-b border-slate-100">
+                    <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Đại lý thụ hưởng</th>
+                    <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Tổng nợ</th>
+                    <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Đã quyết toán</th>
+                    <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Dư nợ hiện tại</th>
+                    <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Trạng thái</th>
+                    <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Hành động</th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
+                <tbody className="divide-y divide-slate-50">
                   {debtSummary.map((item) => (
-                    <tr key={item.dealerId} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">
-                          {item.dealerId ? `Đại lý ${item.dealerId.substring(0, 8)}` : '-'}
+                    <tr key={item.dealerId} className="group hover:bg-slate-50/80 transition-all duration-300">
+                      <td className="px-8 py-6">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-600 group-hover:bg-rose-600 group-hover:text-white transition-all shadow-sm font-black text-xs uppercase">
+                            DL
+                          </div>
+                          <div>
+                            <p className="text-sm font-black text-slate-900">#{item.dealerId?.substring(0, 8)}</p>
+                            <p className="text-[10px] font-bold text-slate-400 mt-0.5">Dealer ID</p>
+                          </div>
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">
-                          {formatCurrency(item.totalOwed)}
-                        </div>
+                      <td className="px-6 py-6 font-bold text-slate-700 text-sm">
+                        {formatCurrency(item.totalOwed)}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-green-600 font-medium">
-                          {formatCurrency(item.totalPaid)}
-                        </div>
+                      <td className="px-6 py-6 font-bold text-emerald-600 text-sm">
+                        {formatCurrency(item.totalPaid)}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-red-600">
-                          {formatCurrency(item.currentBalance)}
-                        </div>
+                      <td className="px-6 py-6 font-black text-rose-600 text-sm">
+                        {formatCurrency(item.currentBalance)}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-6 py-6 text-center">
                         {getStatusBadge(item.currentBalance)}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      <td className="px-6 py-6 text-right">
                         <button
                           onClick={() => handleViewDetails(item.dealerId)}
-                          className="text-blue-600 hover:text-blue-900 flex items-center gap-1"
+                          className="px-4 py-2 bg-slate-100 text-slate-600 font-bold text-xs rounded-xl hover:bg-blue-600 hover:text-white transition-all shadow-sm active:scale-95 flex items-center gap-2 ml-auto"
                         >
-                          <EyeIcon className="h-4 w-4" />
-                          Xem chi tiết
+                          <FiEye size={14} />
+                          Chi tiết
                         </button>
                       </td>
                     </tr>
@@ -218,61 +224,37 @@ const DealerDebtManagementPage = () => {
 
             {/* Pagination */}
             {pagination.totalPages > 1 && (
-              <div className="bg-gray-50 px-4 py-3 flex items-center justify-between border-t border-gray-200">
-                <div className="flex-1 flex justify-between sm:hidden">
+              <div className="px-8 py-6 bg-slate-50/50 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">
+                  Danh sách <span className="text-rose-600 font-black">{debtSummary.length}</span> / {pagination.totalElements} đại lý
+                </p>
+                <div className="flex items-center gap-2">
                   <button
                     onClick={() => handlePageChange(pagination.currentPage - 1)}
                     disabled={pagination.currentPage === 0}
-                    className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
+                    className="p-2.5 bg-white border border-slate-200 rounded-xl text-slate-400 hover:text-rose-600 disabled:opacity-30 transition-all shadow-sm active:scale-90"
                   >
-                    Trước
+                    <FiChevronLeft size={20} />
                   </button>
+                  {[...Array(pagination.totalPages)].map((_, index) => (
+                    <button
+                      key={index}
+                      onClick={() => handlePageChange(index)}
+                      className={`w-10 h-10 rounded-xl text-xs font-black transition-all ${pagination.currentPage === index
+                          ? 'bg-rose-600 text-white shadow-lg shadow-rose-200'
+                          : 'bg-white border border-slate-200 text-slate-500 hover:border-rose-300'
+                        }`}
+                    >
+                      {index + 1}
+                    </button>
+                  ))}
                   <button
                     onClick={() => handlePageChange(pagination.currentPage + 1)}
                     disabled={pagination.currentPage >= pagination.totalPages - 1}
-                    className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
+                    className="p-2.5 bg-white border border-slate-200 rounded-xl text-slate-400 hover:text-rose-600 disabled:opacity-30 transition-all shadow-sm active:scale-90"
                   >
-                    Sau
+                    <FiChevronRight size={20} />
                   </button>
-                </div>
-                <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-                  <div>
-                    <p className="text-sm text-gray-700">
-                      Hiển thị <span className="font-medium">{debtSummary.length}</span> trong tổng số{' '}
-                      <span className="font-medium">{pagination.totalElements}</span> đại lý
-                    </p>
-                  </div>
-                  <div>
-                    <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
-                      <button
-                        onClick={() => handlePageChange(pagination.currentPage - 1)}
-                        disabled={pagination.currentPage === 0}
-                        className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
-                      >
-                        Trước
-                      </button>
-                      {[...Array(pagination.totalPages)].map((_, index) => (
-                        <button
-                          key={index}
-                          onClick={() => handlePageChange(index)}
-                          className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
-                            pagination.currentPage === index
-                              ? 'z-10 bg-blue-50 border-blue-500 text-blue-600'
-                              : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
-                          }`}
-                        >
-                          {index + 1}
-                        </button>
-                      ))}
-                      <button
-                        onClick={() => handlePageChange(pagination.currentPage + 1)}
-                        disabled={pagination.currentPage >= pagination.totalPages - 1}
-                        className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
-                      >
-                        Sau
-                      </button>
-                    </nav>
-                  </div>
                 </div>
               </div>
             )}
@@ -284,4 +266,3 @@ const DealerDebtManagementPage = () => {
 };
 
 export default DealerDebtManagementPage;
-

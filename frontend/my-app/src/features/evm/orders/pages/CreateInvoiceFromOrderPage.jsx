@@ -2,7 +2,19 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import paymentService from '../../../payments/services/paymentService';
 import { toast } from 'react-toastify';
-import { ArrowLeftIcon, DocumentTextIcon } from '@heroicons/react/24/outline';
+import {
+  FiArrowLeft,
+  FiFileText,
+  FiCalendar,
+  FiDollarSign,
+  FiHash,
+  FiInfo,
+  FiCreditCard,
+  FiUser,
+  FiCheckCircle,
+  FiTruck,
+  FiEdit3
+} from 'react-icons/fi';
 
 const CreateInvoiceFromOrderPage = () => {
   const navigate = useNavigate();
@@ -22,41 +34,24 @@ const CreateInvoiceFromOrderPage = () => {
 
   useEffect(() => {
     if (!order && orderId) {
-      // Nếu không có order từ state, có thể fetch từ API
       // TODO: Fetch order details if needed
     }
   }, [order, orderId]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-    // Clear error when user types
+    setFormData(prev => ({ ...prev, [name]: value }));
     if (errors[name]) {
-      setErrors(prev => ({
-        ...prev,
-        [name]: ''
-      }));
+      setErrors(prev => ({ ...prev, [name]: '' }));
     }
   };
 
   const validate = () => {
     const newErrors = {};
-    
-    if (!formData.orderId) {
-      newErrors.orderId = 'Mã đơn hàng là bắt buộc';
-    }
-    
-    if (!formData.dealerId) {
-      newErrors.dealerId = 'Mã đại lý là bắt buộc';
-    }
-    
-    if (!formData.amount || parseFloat(formData.amount) <= 0) {
-      newErrors.amount = 'Số tiền phải lớn hơn 0';
-    }
-    
+    if (!formData.orderId) newErrors.orderId = 'Mã đơn hàng là bắt buộc';
+    if (!formData.dealerId) newErrors.dealerId = 'Mã đại lý là bắt buộc';
+    if (!formData.amount || parseFloat(formData.amount) <= 0) newErrors.amount = 'Số tiền phải lớn hơn 0';
+
     if (!formData.dueDate) {
       newErrors.dueDate = 'Hạn thanh toán là bắt buộc';
     } else {
@@ -74,10 +69,7 @@ const CreateInvoiceFromOrderPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    if (!validate()) {
-      return;
-    }
+    if (!validate()) return;
 
     setLoading(true);
     try {
@@ -90,203 +82,230 @@ const CreateInvoiceFromOrderPage = () => {
       };
 
       const response = await paymentService.createDealerInvoice(payload);
-      
-      toast.success('Hóa đơn đã được tạo thành công! Đơn hàng đã được cập nhật trạng thái thanh toán.');
-      // Redirect về trang danh sách đơn hàng để thấy cập nhật
-      navigate('/evm/staff/orders', { 
-        state: { 
-          message: 'Hóa đơn đã được tạo thành công',
-          invoiceId: response.data?.dealerInvoiceId 
-        } 
+      toast.success('Hóa đơn đã được tạo thành công!');
+      navigate('/evm/staff/orders', {
+        state: { message: 'Hóa đơn đã được tạo thành công' }
       });
     } catch (error) {
       console.error('Error creating invoice:', error);
-      const errorMessage = error.response?.data?.message || 'Không thể tạo hóa đơn';
-      toast.error(errorMessage);
+      toast.error(error.response?.data?.message || 'Không thể tạo hóa đơn');
     } finally {
       setLoading(false);
     }
   };
 
   const formatCurrency = (amount) => {
-    if (!amount) return '0 ₫';
     return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND'
-    }).format(amount);
+      style: 'currency', currency: 'VND'
+    }).format(amount || 0);
   };
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-4xl">
-      <div className="mb-6">
+    <div className="min-h-screen bg-slate-50/50 -m-6 p-6 animate-in fade-in duration-500">
+
+      {/* Header */}
+      <div className="mb-8">
         <button
           onClick={() => navigate(-1)}
-          className="flex items-center text-gray-600 hover:text-gray-900 mb-4"
+          className="group flex items-center text-slate-500 hover:text-blue-600 font-black text-xs uppercase tracking-widest transition-all mb-6"
         >
-          <ArrowLeftIcon className="h-5 w-5 mr-2" />
-          Quay lại
+          <div className="p-2 bg-white rounded-xl shadow-sm border border-slate-100 group-hover:bg-blue-50 group-hover:border-blue-100 transition-all mr-3">
+            <FiArrowLeft size={16} />
+          </div>
+          Quay lại trang trước
         </button>
-        <h1 className="text-3xl font-bold text-gray-900">Lập Hóa Đơn</h1>
-        <p className="text-gray-600 mt-1">Tạo hóa đơn từ đơn hàng B2B</p>
-      </div>
 
-      {/* Order Info */}
-      {order && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-          <h3 className="text-sm font-medium text-blue-900 mb-2">Thông tin đơn hàng</h3>
-          <div className="grid grid-cols-2 gap-4 text-sm">
-            <div>
-              <span className="text-blue-700">Mã đơn hàng:</span>
-              <span className="ml-2 font-medium">#{order.orderId?.substring(0, 8)}</span>
-            </div>
-            <div>
-              <span className="text-blue-700">Tổng tiền đơn hàng:</span>
-              <span className="ml-2 font-medium">{formatCurrency(order.totalAmount)}</span>
-            </div>
-            <div>
-              <span className="text-blue-700">Trạng thái:</span>
-              <span className="ml-2 font-medium">{order.orderStatus}</span>
-            </div>
-            <div>
-              <span className="text-blue-700">Ngày đặt:</span>
-              <span className="ml-2 font-medium">
-                {new Date(order.orderDate).toLocaleDateString('vi-VN')}
-              </span>
-            </div>
+        <div className="flex items-center gap-4">
+          <div className="p-3.5 bg-emerald-600 rounded-2xl shadow-xl shadow-emerald-200">
+            <FiCreditCard size={28} className="text-white" />
+          </div>
+          <div>
+            <h1 className="text-3xl font-black text-slate-900 tracking-tight">Quyết Toán & Lập Hóa Đơn</h1>
+            <p className="text-slate-500 font-medium mt-0.5">Khởi tạo chứng từ tài chính cho lệnh điều phối xe</p>
           </div>
         </div>
-      )}
+      </div>
 
-      {/* Invoice Form */}
-      <div className="bg-white rounded-lg shadow-sm p-6">
-        <form onSubmit={handleSubmit}>
-          <div className="space-y-6">
-            {/* Order ID */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Mã đơn hàng <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                name="orderId"
-                value={formData.orderId}
-                onChange={handleChange}
-                disabled
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500"
-              />
-              {errors.orderId && (
-                <p className="mt-1 text-sm text-red-600">{errors.orderId}</p>
-              )}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
+        {/* Left: Form */}
+        <div className="lg:col-span-2 space-y-6">
+          <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden p-8">
+            <div className="flex items-center gap-2 mb-8">
+              <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600">
+                <FiEdit3 size={18} />
+              </div>
+              <h3 className="text-sm font-black text-slate-800 uppercase tracking-widest">Thông tin chứng từ</h3>
             </div>
 
-            {/* Dealer ID */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Mã đại lý <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                name="dealerId"
-                value={formData.dealerId}
-                onChange={handleChange}
-                disabled
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500"
-              />
-              {errors.dealerId && (
-                <p className="mt-1 text-sm text-red-600">{errors.dealerId}</p>
-              )}
-            </div>
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">
+                    Mã lệnh điều phối <span className="text-red-500 font-black">*</span>
+                  </label>
+                  <div className="relative">
+                    <FiHash className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <input
+                      type="text"
+                      value={formData.orderId}
+                      disabled
+                      className="w-full pl-11 pr-4 py-3.5 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-400 cursor-not-allowed uppercase hover:ring-2 hover:ring-slate-100 transition-all"
+                    />
+                  </div>
+                </div>
 
-            {/* Amount */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Số tiền hóa đơn <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="number"
-                name="amount"
-                value={formData.amount}
-                onChange={handleChange}
-                step="0.01"
-                min="0"
-                className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                  errors.amount ? 'border-red-300' : 'border-gray-300'
-                }`}
-                placeholder="Nhập số tiền"
-              />
-              {errors.amount && (
-                <p className="mt-1 text-sm text-red-600">{errors.amount}</p>
-              )}
-            </div>
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">
+                    Mã đại lý thụ hưởng <span className="text-red-500 font-black">*</span>
+                  </label>
+                  <div className="relative">
+                    <FiUser className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <input
+                      type="text"
+                      value={formData.dealerId}
+                      disabled
+                      className="w-full pl-11 pr-4 py-3.5 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-400 cursor-not-allowed uppercase hover:ring-2 hover:ring-slate-100 transition-all"
+                    />
+                  </div>
+                </div>
 
-            {/* Due Date */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Hạn thanh toán <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="date"
-                name="dueDate"
-                value={formData.dueDate}
-                onChange={handleChange}
-                min={new Date().toISOString().split('T')[0]}
-                className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                  errors.dueDate ? 'border-red-300' : 'border-gray-300'
-                }`}
-              />
-              {errors.dueDate && (
-                <p className="mt-1 text-sm text-red-600">{errors.dueDate}</p>
-              )}
-            </div>
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">
+                    Số tiền thanh toán <span className="text-red-500 font-black">*</span>
+                  </label>
+                  <div className="relative">
+                    <FiDollarSign className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <input
+                      type="number"
+                      name="amount"
+                      value={formData.amount}
+                      onChange={handleChange}
+                      step="1000"
+                      className={`w-full pl-11 pr-4 py-3.5 bg-slate-50 border-none rounded-2xl text-sm font-black focus:ring-2 focus:ring-blue-500 transition-all ${errors.amount ? 'ring-2 ring-red-500' : ''}`}
+                      placeholder="0.00"
+                    />
+                  </div>
+                  {errors.amount && <p className="mt-2 text-[11px] font-bold text-red-500 ml-1 italic capitalize">⚠ {errors.amount}</p>}
+                </div>
 
-            {/* Notes */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Ghi chú
-              </label>
-              <textarea
-                name="notes"
-                value={formData.notes}
-                onChange={handleChange}
-                rows={4}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                placeholder="Nhập ghi chú (nếu có)"
-              />
-            </div>
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">
+                    Hạn chót quyết toán <span className="text-red-500 font-black">*</span>
+                  </label>
+                  <div className="relative">
+                    <FiCalendar className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <input
+                      type="date"
+                      name="dueDate"
+                      value={formData.dueDate}
+                      onChange={handleChange}
+                      className={`w-full pl-11 pr-10 py-3.5 bg-slate-50 border-none rounded-2xl text-sm font-black focus:ring-2 focus:ring-blue-500 transition-all ${errors.dueDate ? 'ring-2 ring-red-500' : ''}`}
+                    />
+                  </div>
+                  {errors.dueDate && <p className="mt-2 text-[11px] font-bold text-red-500 ml-1 italic capitalize">⚠ {errors.dueDate}</p>}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">
+                  Chỉ dẫn nghiệp vụ & Ghi chú
+                </label>
+                <textarea
+                  name="notes"
+                  value={formData.notes}
+                  onChange={handleChange}
+                  rows={4}
+                  className="w-full px-5 py-4 bg-slate-50 border-none rounded-3xl text-sm font-medium focus:ring-2 focus:ring-blue-500 transition-all resize-none placeholder:text-slate-300"
+                  placeholder="Nhập nội dung ghi chú đính kèm hóa đơn..."
+                />
+              </div>
+
+              <div className="flex justify-end pt-4">
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full sm:w-auto px-10 py-4 bg-slate-900 text-white font-black text-sm rounded-2xl hover:bg-slate-800 transition-all shadow-xl shadow-slate-200 active:scale-95 flex items-center justify-center gap-3"
+                >
+                  {loading ? (
+                    <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                  ) : (
+                    <FiCheckCircle size={20} />
+                  )}
+                  {loading ? 'Đang khởi tạo...' : 'Xác nhận tạo hóa đơn'}
+                </button>
+              </div>
+            </form>
           </div>
+        </div>
 
-          {/* Actions */}
-          <div className="mt-8 flex justify-end gap-4">
-            <button
-              type="button"
-              onClick={() => navigate(-1)}
-              className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
-            >
-              Hủy
-            </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-            >
-              {loading ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                  Đang tạo...
-                </>
-              ) : (
-                <>
-                  <DocumentTextIcon className="h-5 w-5" />
-                  Tạo hóa đơn
-                </>
-              )}
-            </button>
-          </div>
-        </form>
+        {/* Right: Order Preview */}
+        <div className="space-y-6">
+          {order ? (
+            <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden relative">
+              <div className="absolute top-0 left-0 right-0 h-32 bg-blue-600 opacity-[0.03] pointer-events-none" />
+              <div className="p-8 relative z-10">
+                <div className="flex items-center gap-2 mb-6">
+                  <div className="p-1.5 bg-blue-50 rounded-lg">
+                    <FiInfo className="text-blue-600" size={16} />
+                  </div>
+                  <h3 className="text-sm font-black text-slate-800 uppercase tracking-widest">Xem trước đơn hàng</h3>
+                </div>
+
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                    <div>
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Mã tham chiếu</p>
+                      <p className="text-sm font-mono font-black text-blue-600">#{order.orderId?.substring(0, 8)}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Trạng thái</p>
+                      <span className="px-3 py-1 bg-emerald-50 text-emerald-700 text-[10px] font-black rounded-lg border border-emerald-100 whitespace-nowrap">
+                        {order.orderStatus}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-3 group">
+                      <div className="w-10 h-10 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 group-hover:bg-blue-50 group-hover:text-blue-600 transition-all">
+                        <FiUser size={18} />
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Đại lý nhận hàng</p>
+                        <p className="text-sm font-bold text-slate-700">Đại lý #{order.dealerId?.substring(0, 8)}</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3 group">
+                      <div className="w-10 h-10 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 group-hover:bg-blue-50 group-hover:text-blue-600 transition-all">
+                        <FiCalendar size={18} />
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Ngày lệnh phát hành</p>
+                        <p className="text-sm font-bold text-slate-700">{new Date(order.orderDate).toLocaleDateString('vi-VN')}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="pt-6 border-t border-slate-100 mt-6">
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 text-center">Nghĩa vụ tài chính tạm tính</p>
+                    <p className="text-3xl font-black text-slate-900 text-center tracking-tighter">
+                      {formatCurrency(order.totalAmount)}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="bg-white rounded-[2.5rem] border border-dashed border-slate-200 p-12 text-center">
+              <div className="text-slate-100 text-6xl mb-4">🔍</div>
+              <p className="text-slate-400 text-sm font-bold italic tracking-wide">Đang định danh thông tin đơn hàng...</p>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
 };
 
 export default CreateInvoiceFromOrderPage;
-

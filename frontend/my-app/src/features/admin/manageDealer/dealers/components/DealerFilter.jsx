@@ -1,84 +1,124 @@
-// DealerFilter.jsx
-import React from 'react';
+import React, { useState } from 'react';
+import {
+  FiSearch,
+  FiFilter,
+  FiMap,
+  FiActivity,
+  FiChevronDown,
+  FiChevronUp,
+  FiXCircle,
+  FiMapPin
+} from 'react-icons/fi';
 
 const DealerFilter = ({ filters, onFilterChange, onClearFilters }) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+
   const statusOptions = [
     { value: '', label: 'Tất cả trạng thái' },
     { value: 'ACTIVE', label: 'Đang hoạt động' },
-    { value: 'INACTIVE', label: 'Không hoạt động' },
     { value: 'SUSPENDED', label: 'Tạm ngừng' },
+    { value: 'INACTIVE', label: 'Không hoạt động' },
   ];
 
-  return (
-    <div className="bg-white p-6 rounded-2xl shadow-lg border border-gray-100 mb-6">
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        {/* Search input */}
-        <div>
-          <label htmlFor="search" className="block text-sm font-medium text-gray-700 mb-2">
-            Tìm kiếm
-          </label>
-          <div className="relative">
-            <input
-              type="text"
-              id="search"
-              value={filters.search || ''}
-              onChange={(e) => onFilterChange('search', e.target.value)}
-              placeholder="Tìm theo tên, mã, email..."
-              className="w-full px-4 py-3 pl-10 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 hover:border-gray-400"
-            />
-            <svg className="absolute left-3 top-3.5 h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-          </div>
-        </div>
+  const hasActiveFilters = filters.search || filters.city || filters.status;
 
-        {/* City filter */}
-        <div>
-          <label htmlFor="city" className="block text-sm font-medium text-gray-700 mb-2">
-            Thành phố
-          </label>
+  return (
+    <div className="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 overflow-hidden transition-all duration-500">
+      {/* Search Bar - Header */}
+      <div className="p-4 sm:p-6 flex flex-col sm:flex-row items-center gap-4">
+        <div className="relative flex-1 w-full">
+          <FiSearch className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-hover:text-blue-500 transition-colors" size={18} />
           <input
             type="text"
-            id="city"
-            value={filters.city || ''}
-            onChange={(e) => onFilterChange('city', e.target.value)}
-            placeholder="Nhập thành phố..."
-            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 hover:border-gray-400"
+            value={filters.search || ''}
+            onChange={(e) => onFilterChange('search', e.target.value)}
+            placeholder="Tìm theo tên, mã đại lý hoặc email..."
+            className="w-full pl-14 pr-6 py-4 bg-slate-50 border-none rounded-3xl text-sm font-bold text-slate-700 placeholder:text-slate-300 focus:ring-2 focus:ring-blue-500/20 transition-all"
           />
         </div>
 
-        {/* Status filter */}
-        <div>
-          <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-2">
-            Trạng thái
-          </label>
-          <select
-            id="status"
-            value={filters.status || ''}
-            onChange={(e) => onFilterChange('status', e.target.value)}
-            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 hover:border-gray-400 appearance-none bg-white"
-          >
-            {statusOptions.map(option => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-          <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
-            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-            </svg>
-          </div>
-        </div>
-
-        {/* Clear filters button */}
-        <div className="flex items-end">
+        <div className="flex items-center gap-2 w-full sm:w-auto">
           <button
-            onClick={onClearFilters}
-            className="w-full px-4 py-3 bg-gradient-to-r from-gray-600 to-gray-700 text-white rounded-xl hover:from-gray-700 hover:to-gray-800 transition-all duration-200 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 shadow-md font-medium"
+            onClick={() => setIsExpanded(!isExpanded)}
+            className={`flex items-center justify-center gap-2 px-6 py-4 rounded-3xl font-black text-[10px] tracking-widest uppercase transition-all flex-1 sm:flex-none ${isExpanded || hasActiveFilters
+                ? 'bg-blue-600 text-white shadow-xl shadow-blue-100'
+                : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+              }`}
           >
-            Xóa bộ lọc
+            <FiFilter size={16} />
+            Bộ lọc nâng cao
+            {isExpanded ? <FiChevronUp size={16} /> : <FiChevronDown size={16} />}
           </button>
+
+          {hasActiveFilters && (
+            <button
+              onClick={onClearFilters}
+              className="p-4 bg-rose-50 text-rose-500 rounded-3xl hover:bg-rose-100 transition-all shadow-sm active:scale-90"
+              title="Xóa bộ lọc"
+            >
+              <FiXCircle size={20} />
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Advanced Filters Drawer */}
+      <div
+        className={`bg-slate-50 border-t border-slate-100 transition-all duration-500 ease-in-out px-4 sm:px-6 overflow-hidden ${isExpanded ? 'max-h-96 py-6 opacity-100' : 'max-h-0 py-0 opacity-0'
+          }`}
+      >
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl">
+          {/* City filter */}
+          <div>
+            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">
+              Thành phố / Tỉnh
+            </label>
+            <div className="relative group">
+              <FiMapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-blue-500 transition-colors" />
+              <input
+                type="text"
+                value={filters.city || ''}
+                onChange={(e) => onFilterChange('city', e.target.value)}
+                placeholder="Nhập tên địa phương..."
+                className="w-full pl-11 pr-4 py-3.5 bg-white border border-slate-200 rounded-2xl text-sm font-bold text-slate-700 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+              />
+            </div>
+          </div>
+
+          {/* Status filter */}
+          <div>
+            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">
+              Trạng thái vận hành
+            </label>
+            <div className="relative group">
+              <FiActivity className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-blue-500 transition-colors" />
+              <select
+                value={filters.status || ''}
+                onChange={(e) => onFilterChange('status', e.target.value)}
+                className="w-full pl-11 pr-10 py-3.5 bg-white border border-slate-200 rounded-2xl text-sm font-bold text-slate-700 appearance-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all cursor-pointer"
+              >
+                {statusOptions.map(option => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+              <div className="pointer-events-none absolute inset-y-0 right-4 flex items-center text-slate-400 group-focus-within:text-blue-500">
+                <FiChevronDown size={18} />
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-end">
+            <div className="p-4 bg-blue-50 rounded-2xl border border-blue-100 w-full flex items-center gap-3">
+              <div className="p-2 bg-white text-blue-600 rounded-xl shadow-sm">
+                <FiMap size={18} />
+              </div>
+              <p className="text-[10px] font-bold text-blue-700 leading-tight">
+                Hệ thống tự động đồng bộ hóa kết quả dựa trên các thay đổi tức thời.
+              </p>
+            </div>
+          </div>
         </div>
       </div>
     </div>

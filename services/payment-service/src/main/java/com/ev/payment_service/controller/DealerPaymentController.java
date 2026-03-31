@@ -81,7 +81,7 @@ public class DealerPaymentController {
      * POST /api/v1/payments/dealer/invoices/{invoiceId}/pay
      */
     @PostMapping("/invoices/{invoiceId}/pay")
-    @PreAuthorize("hasRole('DEALER_MANAGER')")
+    @PreAuthorize("hasAnyRole('DEALER_MANAGER', 'DEALER_STAFF')")
     public ResponseEntity<DealerTransactionResponse> payDealerInvoice(
             @PathVariable UUID invoiceId,
             @Valid @RequestBody PayDealerInvoiceRequest request,
@@ -121,7 +121,7 @@ public class DealerPaymentController {
      * POST /api/v1/payments/dealer/invoices/{invoiceId}/vnpay/initiate
      */
     @PostMapping("/invoices/{invoiceId}/vnpay/initiate")
-    @PreAuthorize("hasRole('DEALER_MANAGER')")
+    @PreAuthorize("hasAnyRole('DEALER_MANAGER', 'DEALER_STAFF')")
     public ResponseEntity<Map<String, String>> initiateDealerInvoiceVnpay(
             @PathVariable UUID invoiceId,
             @Valid @RequestBody DealerVnpayInitiateRequest request,
@@ -213,18 +213,20 @@ public class DealerPaymentController {
             throw new AppException(ErrorCode.BAD_REQUEST);
         }
 
-        // Authorization: Nếu là DEALER_MANAGER, chỉ được xem invoice của chính mình
-        if (principal != null && "DEALER_MANAGER".equals(principal.getRole())) {
+        // Authorization: Nếu là DEALER_MANAGER hoặc DEALER_STAFF, chỉ được xem invoice
+        // của chính mình
+        if (principal != null
+                && ("DEALER_MANAGER".equals(principal.getRole()) || "DEALER_STAFF".equals(principal.getRole()))) {
             UUID managerId = principal.getProfileId();
             if (managerId == null) {
-                log.error("[DealerPaymentController] ManagerId is null for DEALER_MANAGER");
+                log.error("[DealerPaymentController] ProfileId is null for DEALER_MANAGER/DEALER_STAFF");
                 throw new AppException(ErrorCode.BAD_REQUEST);
             }
 
             UUID principalDealerId = getDealerIdFromManagerId(managerId);
 
             if (principalDealerId == null) {
-                log.error("[DealerPaymentController] Failed to get dealerId from User Service for ManagerId: {}",
+                log.error("[DealerPaymentController] Failed to get dealerId from User Service for ProfileId: {}",
                         managerId);
                 throw new AppException(ErrorCode.DOWNSTREAM_SERVICE_UNAVAILABLE);
             }
@@ -232,12 +234,12 @@ public class DealerPaymentController {
             // Validate principal dealerId match với invoice dealerId
             if (!principalDealerId.equals(invoice.getDealerId())) {
                 log.error(
-                        "[DealerPaymentController] DealerManager can only view their own invoices - Requested Invoice DealerId: {}, Principal DealerId: {}, ManagerId: {}",
+                        "[DealerPaymentController] DealerManager/Staff can only view their own invoices - Requested Invoice DealerId: {}, Principal DealerId: {}, ProfileId: {}",
                         invoice.getDealerId(), principalDealerId, managerId);
                 throw new AppException(ErrorCode.FORBIDDEN);
             }
 
-            log.info("[DealerPaymentController] DealerManager authorized - Invoice DealerId: {}, ManagerId: {}",
+            log.info("[DealerPaymentController] Dealer authorized - Invoice DealerId: {}, ProfileId: {}",
                     invoice.getDealerId(), managerId);
         }
         // EVM_STAFF và ADMIN có thể xem tất cả invoices (không cần check)
@@ -263,13 +265,15 @@ public class DealerPaymentController {
                 principal != null ? principal.getRole() : "null",
                 principal != null ? principal.getProfileId() : "null");
 
-        // Authorization: Nếu là DEALER_MANAGER, chỉ được xem invoices của chính mình
-        if (principal != null && "DEALER_MANAGER".equals(principal.getRole())) {
-            // ProfileId của DEALER_MANAGER là managerId, không phải dealerId
-            // Cần gọi User Service để lấy dealerId từ managerId
+        // Authorization: Nếu là DEALER_MANAGER hoặc DEALER_STAFF, chỉ được xem invoices
+        // của chính mình
+        if (principal != null
+                && ("DEALER_MANAGER".equals(principal.getRole()) || "DEALER_STAFF".equals(principal.getRole()))) {
+            // ProfileId của DEALER_MANAGER/DEALER_STAFF
+            // Cần gọi User Service để lấy dealerId từ profileId
             UUID managerId = principal.getProfileId();
             if (managerId == null) {
-                log.error("[DealerPaymentController] ManagerId is null for DEALER_MANAGER");
+                log.error("[DealerPaymentController] ProfileId is null for DEALER_MANAGER/DEALER_STAFF");
                 throw new AppException(ErrorCode.BAD_REQUEST);
             }
 
@@ -277,7 +281,7 @@ public class DealerPaymentController {
 
             // Nếu không lấy được dealerId từ User Service, trả về lỗi service unavailable
             if (principalDealerId == null) {
-                log.error("[DealerPaymentController] Failed to get dealerId from User Service for ManagerId: {}",
+                log.error("[DealerPaymentController] Failed to get dealerId from User Service for ProfileId: {}",
                         managerId);
                 throw new AppException(ErrorCode.DOWNSTREAM_SERVICE_UNAVAILABLE);
             }
@@ -285,12 +289,12 @@ public class DealerPaymentController {
             // Kiểm tra dealerId có match không
             if (!principalDealerId.equals(dealerId)) {
                 log.error(
-                        "[DealerPaymentController] DealerManager can only view their own invoices - Requested: {}, Principal DealerId: {}, ManagerId: {}",
+                        "[DealerPaymentController] DealerManager/Staff can only view their own invoices - Requested: {}, Principal DealerId: {}, ProfileId: {}",
                         dealerId, principalDealerId, managerId);
                 throw new AppException(ErrorCode.FORBIDDEN);
             }
 
-            log.info("[DealerPaymentController] DealerManager authorized - DealerId: {}, ManagerId: {}",
+            log.info("[DealerPaymentController] Dealer authorized - DealerId: {}, ProfileId: {}",
                     principalDealerId, managerId);
         }
 
@@ -320,18 +324,20 @@ public class DealerPaymentController {
         // Lấy invoice
         DealerInvoiceResponse invoice = dealerPaymentService.getDealerInvoiceById(invoiceId);
 
-        // Authorization: Nếu là DEALER_MANAGER, chỉ được xem invoice của chính mình
-        if (principal != null && "DEALER_MANAGER".equals(principal.getRole())) {
+        // Authorization: Nếu là DEALER_MANAGER hoặc DEALER_STAFF, chỉ được xem invoice
+        // của chính mình
+        if (principal != null
+                && ("DEALER_MANAGER".equals(principal.getRole()) || "DEALER_STAFF".equals(principal.getRole()))) {
             UUID managerId = principal.getProfileId();
             if (managerId == null) {
-                log.error("[DealerPaymentController] ManagerId is null for DEALER_MANAGER");
+                log.error("[DealerPaymentController] ProfileId is null for DEALER_MANAGER/DEALER_STAFF");
                 throw new AppException(ErrorCode.BAD_REQUEST);
             }
 
             UUID principalDealerId = getDealerIdFromManagerId(managerId);
 
             if (principalDealerId == null) {
-                log.error("[DealerPaymentController] Failed to get dealerId from User Service for ManagerId: {}",
+                log.error("[DealerPaymentController] Failed to get dealerId from User Service for ProfileId: {}",
                         managerId);
                 throw new AppException(ErrorCode.DOWNSTREAM_SERVICE_UNAVAILABLE);
             }
@@ -339,12 +345,12 @@ public class DealerPaymentController {
             // Validate principal dealerId match với invoice dealerId
             if (!principalDealerId.equals(invoice.getDealerId())) {
                 log.error(
-                        "[DealerPaymentController] DealerManager can only view their own invoices - Requested Invoice DealerId: {}, Principal DealerId: {}, ManagerId: {}",
+                        "[DealerPaymentController] DealerManager/Staff can only view their own invoices - Requested Invoice DealerId: {}, Principal DealerId: {}, ProfileId: {}",
                         invoice.getDealerId(), principalDealerId, managerId);
                 throw new AppException(ErrorCode.FORBIDDEN);
             }
 
-            log.info("[DealerPaymentController] DealerManager authorized - Invoice DealerId: {}, ManagerId: {}",
+            log.info("[DealerPaymentController] Dealer authorized - Invoice DealerId: {}, ProfileId: {}",
                     invoice.getDealerId(), managerId);
         }
         // EVM_STAFF và ADMIN có thể xem tất cả invoices (không cần check)
