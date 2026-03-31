@@ -183,8 +183,11 @@ public class VehicleCatalogController {
     public ResponseEntity<ApiRespond<List<Long>>> searchVariants(
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) String color,
-            @RequestParam(required = false) String versionName) {
-        List<Long> variantIds = vehicleCatalogService.searchVariantIdsByCriteria(keyword, color, versionName);
+            @RequestParam(required = false) String versionName,
+            @RequestParam(required = false) Double minPrice,
+            @RequestParam(required = false) Double maxPrice) {
+        List<Long> variantIds = vehicleCatalogService.searchVariantIdsByCriteria(keyword, color, versionName, minPrice,
+                maxPrice);
         return ResponseEntity.ok(ApiRespond.success("Found variant IDs matching keyword", variantIds));
     }
 
@@ -297,11 +300,12 @@ public class VehicleCatalogController {
             // Lọc theo khoảng giá
             @RequestParam(required = false) Double minPrice,
             @RequestParam(required = false) Double maxPrice,
+            @RequestParam(required = false) Long modelId,
             @PageableDefault(size = 10, sort = "variantId") Pageable pageable) {
 
         // Truyền 'status' xuống service
         Page<VariantDetailDto> results = vehicleCatalogService.getAllVariantsPaginated(search, status, minPrice,
-                maxPrice, pageable);
+                maxPrice, modelId, pageable);
         return ResponseEntity.ok(ApiRespond.success("Fetched paginated variants successfully", results));
     }
 

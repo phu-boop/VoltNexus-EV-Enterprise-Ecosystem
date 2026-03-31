@@ -353,7 +353,7 @@ class VehicleCatalogServiceImplTest {
         void deactivateModel_ShouldSucceed() {
             when(modelRepository.findById(1L)).thenReturn(Optional.of(model));
 
-            vehicleCatalogService.deactivateModel(1L, false, "admin@test.com");
+            vehicleCatalogService.deactivateModel(1L, true, "admin@test.com");
 
             assertThat(model.getStatus()).isEqualTo(VehicleStatus.DISCONTINUED);
             verify(modelRepository).save(model);
@@ -380,7 +380,7 @@ class VehicleCatalogServiceImplTest {
             when(variantRepository.findAll(any(org.springframework.data.jpa.domain.Specification.class)))
                     .thenReturn(List.of(variant));
 
-            List<Long> result = vehicleCatalogService.searchVariantIdsByCriteria("Tesla", "Red", "Long");
+            List<Long> result = vehicleCatalogService.searchVariantIdsByCriteria("Tesla", "Red", "Long", null, null);
 
             assertThat(result).containsExactly(1L);
         }
@@ -394,7 +394,7 @@ class VehicleCatalogServiceImplTest {
                     .thenReturn(page);
 
             Page<VariantDetailDto> result = vehicleCatalogService.getAllVariantsPaginated(
-                    "Tesla", "IN_PRODUCTION", 50000.0, 100000.0, pageable);
+                    "Tesla", "IN_PRODUCTION", 50000.0, 100000.0, null, pageable);
 
             assertThat(result.getContent()).hasSize(1);
         }

@@ -77,7 +77,8 @@ public interface VehicleCatalogService {
 
         void deactivateVariant(Long variantId, String updatedByEmail);
 
-        List<Long> searchVariantIdsByCriteria(String keyword, String color, String versionName);
+        List<Long> searchVariantIdsByCriteria(String keyword, String color, String versionName, Double minPrice,
+                        Double maxPrice);
 
         // --- Methods for Features ---
         List<VehicleFeature> getAllFeatures();
@@ -138,7 +139,7 @@ public interface VehicleCatalogService {
          * @param maxPrice (MỚI) Lọc theo giá tối đa
          */
         Page<VariantDetailDto> getAllVariantsPaginated(String search, String status, Double minPrice, Double maxPrice,
-                        Pageable pageable);
+                        Long modelId, Pageable pageable);
 
         void deleteModelsBulk(List<Long> modelIds, boolean forceDelete, String deletedByEmail);
 

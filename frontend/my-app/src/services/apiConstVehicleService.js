@@ -10,12 +10,15 @@ apiConstVehicleService.interceptors.request.use((config) => {
   const token = sessionStorage.getItem("token");
   if (token) config.headers.Authorization = `Bearer ${token}`;
 
-  const userEmail = sessionStorage.getItem("email");
-  if (userEmail) {
-    config.headers["X-User-Email"] = userEmail;
-  } else {
-    console.warn("X-User-Email is missing from sessionStorage. This may cause 400 errors on protected endpoints.");
-  }
+  const email = sessionStorage.getItem("email");
+  const role = sessionStorage.getItem("roles");
+  const userId = sessionStorage.getItem("userId") || sessionStorage.getItem("id_user");
+  const profileId = sessionStorage.getItem("profileId");
+
+  if (email) config.headers["X-User-Email"] = email;
+  if (role) config.headers["X-User-Role"] = role;
+  if (userId) config.headers["X-User-Id"] = userId;
+  if (profileId) config.headers["X-User-ProfileId"] = profileId;
 
   return config;
 });

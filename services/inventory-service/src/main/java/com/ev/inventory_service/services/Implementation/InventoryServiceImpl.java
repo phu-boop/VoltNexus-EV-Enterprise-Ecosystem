@@ -46,6 +46,7 @@ import org.springframework.http.HttpHeaders;
 // Redis for cache
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Caching;
 
 // import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.beans.factory.annotation.Value;
@@ -105,6 +106,7 @@ import java.text.DecimalFormat;
 public class InventoryServiceImpl implements InventoryService {
 
     private static final String CACHE_INVENTORY_STATUS = "inventory-status";
+    private static final String CACHE_INVENTORY_IDS_BY_STATUS = "inventory-ids-by-status";
     private static final String TOPIC_INVENTORY_EVENTS = "inventory_events";
     private static final String TOPIC_DEALER_STOCK_UPDATED = "stock_events_dealerEVM";
 
@@ -176,6 +178,8 @@ public class InventoryServiceImpl implements InventoryService {
             String search,
             UUID dealerId,
             String status,
+            Double minPrice,
+            Double maxPrice,
             Pageable pageable) {
 
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -186,14 +190,25 @@ public class InventoryServiceImpl implements InventoryService {
 
         List<Specification<CentralInventory>> specs = new ArrayList<>();
 
-        // --- LOGIC TÌM KIẾM THEO TÊN XE ---
-        if (search != null && !search.isBlank()) {
+        // --- LOGIC TÌM KIẾM THEO THÔNG TIN XE (SEARCH, PRICE) ---
+        if ((search != null && !search.isBlank()) || minPrice != null || maxPrice != null) {
             // Gọi API của vehicle-catalog-service để lấy danh sách variantId
-            String searchUrl = vehicleCatalogUrl + "/vehicle-catalog/variants/search?keyword=" + search;
+            StringBuilder searchUrl = new StringBuilder(vehicleCatalogUrl)
+                    .append("/vehicle-catalog/variants/search?");
+
+            if (search != null && !search.isBlank()) {
+                searchUrl.append("keyword=").append(search).append("&");
+            }
+            if (minPrice != null) {
+                searchUrl.append("minPrice=").append(minPrice).append("&");
+            }
+            if (maxPrice != null) {
+                searchUrl.append("maxPrice=").append(maxPrice).append("&");
+            }
 
             try {
                 ResponseEntity<ApiRespond<List<Long>>> response = restTemplate.exchange(
-                        searchUrl,
+                        searchUrl.toString(),
                         HttpMethod.GET,
                         null,
                         new ParameterizedTypeReference<ApiRespond<List<Long>>>() {
@@ -235,6 +250,11 @@ public class InventoryServiceImpl implements InventoryService {
             specs.add(InventorySpecification.hasVariantIdIn(variantIdsForDealer));
         }
 
+        // --- LOGIC LỌC THEO TRẠNG THÁI ---
+        if (status != null && !status.isBlank()) {
+            specs.add(InventorySpecification.hasStatus(status));
+        }
+
         Specification<CentralInventory> finalSpec = specs.stream().reduce(Specification::and).orElse(null);
         Page<CentralInventory> inventoryPage = centralRepo.findAll(finalSpec, pageable);
 
@@ -243,6 +263,10 @@ public class InventoryServiceImpl implements InventoryService {
 
     @Override
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = CACHE_INVENTORY_STATUS, key = "#request.variantId"),
+            @CacheEvict(value = CACHE_INVENTORY_IDS_BY_STATUS, allEntries = true)
+    })
     public void executeTransaction(TransactionRequestDto request, String staffEmail, String role, String profileId) {
 
         // Xử lý logic nghiệp vụ theo từng loại giao dịch
@@ -458,6 +482,10 @@ public class InventoryServiceImpl implements InventoryService {
 
     @Override
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = CACHE_INVENTORY_STATUS, key = "#request.variantId"),
+            @CacheEvict(value = CACHE_INVENTORY_IDS_BY_STATUS, allEntries = true)
+    })
     public void updateCentralReorderLevel(UpdateReorderLevelRequest request, String updatedByEmail) {
 
         CentralInventory inventory = centralRepo.findByVariantId(request.getVariantId())
@@ -493,7 +521,10 @@ public class InventoryServiceImpl implements InventoryService {
 
     @Override
     @Transactional
-    @CacheEvict(value = CACHE_INVENTORY_STATUS, allEntries = true)
+    @Caching(evict = {
+            @CacheEvict(value = CACHE_INVENTORY_STATUS, allEntries = true),
+            @CacheEvict(value = CACHE_INVENTORY_IDS_BY_STATUS, allEntries = true)
+    })
     public void allocateStockForOrder(AllocationRequestDto request, String staffEmail) {
         for (AllocationRequestDto.AllocationItem item : request.getItems()) {
             CentralInventory central = centralRepo.findByVariantId(item.getVariantId())
@@ -527,7 +558,10 @@ public class InventoryServiceImpl implements InventoryService {
 
     @Override
     @Transactional
-    @CacheEvict(value = CACHE_INVENTORY_STATUS, allEntries = true) // Xóa cache khi giao hàng
+    @Caching(evict = {
+            @CacheEvict(value = CACHE_INVENTORY_STATUS, allEntries = true),
+            @CacheEvict(value = CACHE_INVENTORY_IDS_BY_STATUS, allEntries = true)
+    })
     public void shipAllocatedStock(ShipmentRequestDto request, String staffEmail) {
         UUID dealerId = request.getDealerId();
         UUID orderId = request.getOrderId();
@@ -738,6 +772,7 @@ public class InventoryServiceImpl implements InventoryService {
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(value = CACHE_INVENTORY_IDS_BY_STATUS, key = "#status")
     public List<Long> getVariantIdsByStatus(String status) {
         // Chuyển đổi chuỗi sang Enum
         InventoryLevelStatus statusEnum;
@@ -804,7 +839,10 @@ public class InventoryServiceImpl implements InventoryService {
 
     @Override
     @Transactional
-    @CacheEvict(value = CACHE_INVENTORY_STATUS, allEntries = true) // Xóa cache khi trả hàng
+    @Caching(evict = {
+            @CacheEvict(value = CACHE_INVENTORY_STATUS, allEntries = true),
+            @CacheEvict(value = CACHE_INVENTORY_IDS_BY_STATUS, allEntries = true)
+    })
     public void returnStockForOrder(UUID orderId, String staffEmail) {
 
         // Tìm tất cả các xe (vehicle) đã bị gán cho đơn hàng này

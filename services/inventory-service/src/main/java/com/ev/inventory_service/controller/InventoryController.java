@@ -56,9 +56,13 @@ public class InventoryController {
             @RequestParam(required = false) String search,
             @RequestParam(required = false) UUID dealerId,
             @RequestParam(required = false) String status,
+            @RequestParam(required = false) Double minPrice,
+            @RequestParam(required = false) Double maxPrice,
             Pageable pageable) {
 
-        Page<InventoryStatusDto> results = inventoryService.getAllInventory(search, dealerId, status, pageable);
+        Page<InventoryStatusDto> results = inventoryService.getAllInventory(search, dealerId, status, minPrice,
+                maxPrice,
+                pageable);
         return ResponseEntity.ok(ApiRespond.success("Fetched inventory successfully", results));
     }
 

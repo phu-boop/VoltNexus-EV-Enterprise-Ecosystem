@@ -498,7 +498,8 @@ public class VehicleCatalogServiceImpl implements VehicleCatalogService {
     }
 
     @Override
-    public List<Long> searchVariantIdsByCriteria(String keyword, String color, String versionName) {
+    public List<Long> searchVariantIdsByCriteria(String keyword, String color, String versionName, Double minPrice,
+            Double maxPrice) {
         List<Specification<VehicleVariant>> specs = new ArrayList<>();
 
         // Thêm điều kiện tìm kiếm chung theo keyword
@@ -512,6 +513,14 @@ public class VehicleCatalogServiceImpl implements VehicleCatalogService {
         }
         if (versionName != null && !versionName.isBlank()) {
             specs.add(VehicleVariantSpecification.hasVersionName(versionName));
+        }
+
+        // Thêm điều kiện lọc theo giá
+        if (minPrice != null) {
+            specs.add(VehicleVariantSpecification.isPriceGreaterThanOrEqual(minPrice));
+        }
+        if (maxPrice != null) {
+            specs.add(VehicleVariantSpecification.isPriceLessThanOrEqual(maxPrice));
         }
 
         Specification<VehicleVariant> finalSpec = specs.stream().reduce(Specification::and).orElse(null);
@@ -540,7 +549,7 @@ public class VehicleCatalogServiceImpl implements VehicleCatalogService {
      */
     @Override
     public Page<VariantDetailDto> getAllVariantsPaginated(String search, String status, Double minPrice,
-            Double maxPrice, Pageable pageable) {
+            Double maxPrice, Long modelId, Pageable pageable) {
 
         Specification<VehicleVariant> searchSpec = VehicleVariantSpecification.hasKeyword(search);
         Specification<VehicleVariant> statusSpec = null;
@@ -560,11 +569,14 @@ public class VehicleCatalogServiceImpl implements VehicleCatalogService {
             priceSpecMax = VehicleVariantSpecification.isPriceLessThanOrEqual(maxPrice);
         }
 
+        Specification<VehicleVariant> modelSpec = VehicleVariantSpecification.hasModelId(modelId);
+
         Specification<VehicleVariant> finalSpec = Specification.allOf(
                 searchSpec,
                 statusSpec,
                 priceSpecMin,
-                priceSpecMax);
+                priceSpecMax,
+                modelSpec);
 
         Page<VehicleVariant> variantPage = variantRepository.findAll(finalSpec, pageable);
         return variantPage.map(this::mapToVariantDetailDto);
