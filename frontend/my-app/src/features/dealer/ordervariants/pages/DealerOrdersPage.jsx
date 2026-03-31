@@ -1,5 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
-
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import {
   FiCheckCircle,
   FiPackage,
@@ -9,23 +8,32 @@ import {
   FiAlertTriangle,
   FiEye,
   FiX,
-} from "react-icons/fi"; // Thêm FiXCircle
+  FiCalendar,
+  FiDollarSign,
+  FiArrowRight,
+  FiPlus,
+  FiSearch,
+  FiClock
+} from "react-icons/fi";
+import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 import { toast } from "react-toastify";
 import {
   getMyB2BOrders,
   confirmDelivery,
-  cancelOrderByDealer, // Import hàm hủy
-  reportOrderIssue, // Import hàm báo cáo
+  cancelOrderByDealer,
+  reportOrderIssue,
 } from "../services/dealerSalesService";
 import { getVariantDetailsByIds } from "../services/vehicleCatalogService";
 
 import OrderDetailModal from "../components/OrderDetailModal.jsx";
 import StatusBadge from "../components/StatusBadge.jsx";
 import LoadingTruck from "../../../../components/common/loading/LoadingTruck.jsx";
+import DealerStatsGrid from "../components/DealerStatsGrid";
 
 const DealerOrdersPage = () => {
-  const [activeTab, setActiveTab] = useState("PENDING"); // Mặc định hiển thị tab "Chờ duyệt"
+  const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState("PENDING");
   const [orders, setOrders] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -39,14 +47,13 @@ const DealerOrdersPage = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
 
-  // --- Hàm tải danh sách đơn hàng ---
   const fetchOrders = useCallback(
     async (status, page = 0) => {
       setIsLoading(true);
       setError(null);
       try {
         const params = { status: status, page: page, size: pagination.size };
-        const response = await getMyB2BOrders(params); // API của Dealer
+        const response = await getMyB2BOrders(params);
         setOrders(response.data.data.content || []);
         setPagination((prev) => ({
           ...prev,
@@ -64,12 +71,10 @@ const DealerOrdersPage = () => {
     [pagination.size]
   );
 
-  // Tải lại dữ liệu khi đổi tab hoặc page thay đổi (từ pagination controls)
   useEffect(() => {
     fetchOrders(activeTab, pagination.page);
-  }, [activeTab, fetchOrders, pagination.page]); // Thêm pagination.page dependency
+  }, [activeTab, fetchOrders, pagination.page]);
 
-  // Fetch variant details when orders change
   useEffect(() => {
     if (orders.length > 0) {
       const allVariantIds = [...new Set(
@@ -93,90 +98,79 @@ const DealerOrdersPage = () => {
   const getVariantDisplayName = (variantId) => {
     const detail = variantMap.get(variantId);
     if (detail) {
-      return detail.skuCode || detail.versionName || `Variant #${variantId}`;
+      return detail.versionName || detail.skuCode || `Variant #${variantId}`;
     }
     return `Variant #${variantId}`;
   };
 
-  // Hàm đổi trang (cho component Pagination)
   const handlePageChange = (newPage) => {
-    if (
-      newPage >= 0 &&
-      newPage < pagination.totalPages &&
-      newPage !== pagination.page
-    ) {
+    if (newPage >= 0 && newPage < pagination.totalPages && newPage !== pagination.page) {
       setPagination((prev) => ({ ...prev, page: newPage }));
-      // useEffect sẽ tự động gọi fetchOrders khi page thay đổi
     }
   };
 
-  // Hàm đổi tab (reset về trang 0)
   const handleTabChange = (newTab) => {
     setActiveTab(newTab);
-    setPagination((prev) => ({ ...prev, page: 0 })); // Reset page khi đổi tab
+    setPagination((prev) => ({ ...prev, page: 0 }));
   };
 
-  // --- HÀM XỬ LÝ XÁC NHẬN NHẬN HÀNG ---
   const handleConfirmDelivery = async (orderId) => {
     const result = await Swal.fire({
       title: "Xác nhận nhận hàng?",
       text: "Bạn chắc chắn đã kiểm tra và nhận đủ hàng?",
       icon: "question",
       showCancelButton: true,
-      confirmButtonColor: "#28a745",
-      cancelButtonColor: "#3085d6",
+      confirmButtonColor: "#10b981",
+      cancelButtonColor: "#64748b",
       confirmButtonText: "Đúng, tôi đã nhận!",
-      cancelButtonText: "Chưa",
+      cancelButtonText: "Quay lại",
+      background: '#fff',
+      customClass: {
+        title: 'text-2xl font-bold text-slate-900',
+        popup: 'rounded-3xl shadow-2xl border-none'
+      }
     });
 
     if (result.isConfirmed) {
       try {
         await confirmDelivery(orderId);
         toast.success("Đã xác nhận nhận hàng thành công!");
-        fetchOrders(activeTab, pagination.page); // Tải lại trang hiện tại
+        fetchOrders(activeTab, pagination.page);
       } catch (err) {
-        Swal.fire(
-          "Lỗi!",
-          err.response?.data?.message || "Xác nhận thất bại.",
-          "error"
-        );
+        Swal.fire({
+          icon: "error",
+          title: "Lỗi!",
+          text: err.response?.data?.message || "Xác nhận thất bại.",
+          confirmButtonColor: "#0f172a"
+        });
       }
     }
   };
 
-  // --- BÁO CÁO SỰ CỐ (EXCEPTION PATH) ---
   const handleReportIssue = async (orderId) => {
     const { value: formValues } = await Swal.fire({
       title: "Báo cáo sự cố",
       html: `
-        <style>
-          .swal-label { 
-            display: block; 
-            text-align: left; 
-            margin-top: 1rem; 
-            margin-bottom: 0.25rem; 
-            font-weight: 500;
-          }
-          .swal-input, .swal-textarea {
-            width: 95%; /* Điều chỉnh để vừa vặn */
-            padding: 0.5rem;
-            margin: 0 auto;
-          }
-        </style>
-        <div>
-          <label for="swal-reason" class="swal-label">Lý do (bắt buộc)</label>
-          <input id="swal-reason" class="swal2-input swal-input" placeholder="Ví dụ: Giao thiếu hàng, Xe bị trầy xước...">
-          
-          <label for="swal-description" class="swal-label">Mô tả chi tiết</label>
-          <textarea id="swal-description" class="swal2-textarea swal-textarea" placeholder="Mô tả rõ hơn về sự cố (nếu có)..."></textarea>
+        <div class="text-left space-y-4 p-2">
+          <div>
+            <label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1 pl-1">Lý do (bắt buộc)</label>
+            <input id="swal-reason" class="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm outline-none focus:border-orange-500 transition-all font-medium" placeholder="VD: Giao thiếu hàng, Trầy xước...">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1 pl-1">Mô tả chi tiết</label>
+            <textarea id="swal-description" class="w-full h-32 p-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm outline-none focus:border-orange-500 transition-all resize-none" placeholder="Mô tả cụ thể trạng thái thực tế..."></textarea>
+          </div>
         </div>
       `,
       showCancelButton: true,
-      confirmButtonColor: "#f8981d",
+      confirmButtonColor: "#f97316",
       confirmButtonText: "Gửi Báo Cáo",
       cancelButtonText: "Hủy",
-      focusConfirm: false,
-      // Dùng preConfirm để lấy và xác thực dữ liệu
+      background: '#fff',
+      customClass: {
+        title: 'text-2xl font-bold text-slate-900',
+        popup: 'rounded-[32px] shadow-2xl border-none'
+      },
       preConfirm: () => {
         const reason = document.getElementById("swal-reason").value;
         const description = document.getElementById("swal-description").value;
@@ -184,14 +178,12 @@ const DealerOrdersPage = () => {
           Swal.showValidationMessage(`Bạn cần nhập lý do để báo cáo!`);
           return false;
         }
-        return { reason, description }; // Trả về object
+        return { reason, description };
       },
     });
 
-    // Nếu người dùng submit và preConfirm thành công
     if (formValues) {
       try {
-        // Gửi object { reason, description } đến service
         await reportOrderIssue(orderId, formValues);
         toast.success("Đã gửi báo cáo sự cố thành công.");
         fetchOrders(activeTab, pagination.page);
@@ -201,24 +193,28 @@ const DealerOrdersPage = () => {
     }
   };
 
-  // --- HÀM XỬ LÝ HỦY ĐƠN (Dealer) ---
   const handleCancelOrder = async (orderId) => {
     const result = await Swal.fire({
       title: "Hủy đơn hàng?",
       text: "Bạn chắc chắn muốn hủy đơn đặt hàng này không?",
       icon: "warning",
       showCancelButton: true,
-      confirmButtonColor: "#d33",
-      cancelButtonColor: "#3085d6",
+      confirmButtonColor: "#f43f5e",
+      cancelButtonColor: "#64748b",
       confirmButtonText: "Đúng, hủy đơn!",
-      cancelButtonText: "Không",
+      cancelButtonText: "Quay lại",
+      background: '#fff',
+      customClass: {
+        title: 'text-2xl font-bold text-slate-900',
+        popup: 'rounded-3xl shadow-2xl border-none'
+      }
     });
 
     if (result.isConfirmed) {
       try {
-        await cancelOrderByDealer(orderId); // Gọi API hủy của dealer
+        await cancelOrderByDealer(orderId);
         toast.success("Đơn hàng của bạn đã được hủy.");
-        fetchOrders(activeTab, pagination.page); // Tải lại
+        fetchOrders(activeTab, pagination.page);
       } catch (err) {
         toast.error(err.response?.data?.message || "Hủy đơn thất bại.");
       }
@@ -236,175 +232,243 @@ const DealerOrdersPage = () => {
   };
 
   const tabs = [
-    { status: "PENDING", label: "Chờ Hãng duyệt" },
-    { status: "CONFIRMED", label: "Đã duyệt" },
-    { status: "IN_TRANSIT", label: "Đang giao" },
-    { status: "DELIVERED", label: "Đã nhận" },
-    { status: "CANCELLED", label: "Đã hủy" },
-    { status: "DISPUTED", label: "Đang khiếu nại" },
+    { status: "PENDING", label: "Chờ duyệt", icon: FiClock },
+    { status: "CONFIRMED", label: "Đã duyệt", icon: FiCheckCircle },
+    { status: "IN_TRANSIT", label: "Đang giao", icon: FiTruck },
+    { status: "DELIVERED", label: "Đã nhận", icon: FiPackage },
+    { status: "CANCELLED", label: "Đã hủy", icon: FiXCircle },
+    { status: "DISPUTED", label: "Khiếu nại", icon: FiAlertTriangle },
   ];
 
-  return (
-    <div className="p-6 bg-gray-50 min-h-screen">
-      <h1 className="text-3xl font-bold text-gray-800 mb-6">
-        Đơn Hàng Của Tôi
-      </h1>
+  // Tính toán stats cho orders
+  const stats = useMemo(() => {
+    return {
+      totalUnits: orders.length, // Tạm thời, thực tế cần tổng số xe
+      lowStock: activeTab === "PENDING" ? orders.length : 0,
+      inTransit: activeTab === "IN_TRANSIT" ? orders.length : 0,
+      deliveredThisMonth: activeTab === "DELIVERED" ? orders.length : 0
+    };
+  }, [orders, activeTab]);
 
-      {/* Tabs */}
-      <div className="border-b border-gray-200 mb-6">
-        <nav className="flex flex-wrap space-x-4">
-          {tabs.map((tab) => (
-            <button
-              key={tab.status}
-              onClick={() => handleTabChange(tab.status)} // Dùng handleTabChange
-              className={`py-3 px-4 font-medium text-sm rounded-t-lg ${
-                activeTab === tab.status
-                  ? "border-b-2 border-blue-600 text-blue-600"
-                  : "text-gray-500 hover:text-gray-700"
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </nav>
+  return (
+    <div className="p-8 bg-slate-50/50 min-h-screen animate-in fade-in duration-700">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+        <div>
+          <h1 className="text-4xl font-black text-slate-900 tracking-tight mb-2 flex items-center gap-3">
+            <div className="p-2 bg-indigo-600 text-white rounded-2xl shadow-lg shadow-indigo-200">
+              <FiList size={28} />
+            </div>
+            Đơn Hàng Của Tôi
+          </h1>
+          <p className="text-slate-500 font-medium font-inter">Theo dõi trạng thái và quản lý lịch sử đặt hàng B2B</p>
+        </div>
+        <button
+          onClick={() => navigate("./new")}
+          className="flex items-center gap-2 px-8 py-4 bg-slate-900 text-white font-bold rounded-2xl shadow-xl shadow-slate-200 hover:bg-slate-800 transition-all hover:scale-105 active:scale-95 group"
+        >
+          <FiPlus size={20} className="group-hover:rotate-90 transition-transform duration-300" />
+          Tạo đơn hàng mới
+        </button>
       </div>
 
-      <div className="bg-white p-6 rounded-lg shadow-md min-h-[500px] relative">
-        {error && <p className="text-red-500 mb-4">{error}</p>}
+      {/* Stats Grid */}
+      <DealerStatsGrid stats={stats} />
+
+      {/* Tabs Layout */}
+      <div className="mb-8 overflow-x-auto no-scrollbar">
+        <div className="bg-white p-1.5 rounded-3xl shadow-sm border border-slate-100 inline-flex gap-1 min-w-full md:min-w-0">
+          {tabs.map((tab) => {
+            const Icon = tab.icon;
+            return (
+              <button
+                key={tab.status}
+                onClick={() => handleTabChange(tab.status)}
+                className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-sm font-black transition-all duration-500 whitespace-nowrap ${activeTab === tab.status
+                  ? "bg-indigo-600 text-white shadow-lg shadow-indigo-200"
+                  : "text-slate-400 hover:text-slate-600 hover:bg-slate-50"
+                  }`}
+              >
+                <Icon size={18} />
+                {tab.label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="relative min-h-[500px]">
+        {error && (
+          <div className="mb-6 p-4 bg-rose-50 border border-rose-100 rounded-2xl flex items-center gap-3 text-rose-600 font-bold animate-in bounce-in duration-500">
+            <FiAlertTriangle />
+            {error}
+          </div>
+        )}
+
         {isLoading ? (
           activeTab === "IN_TRANSIT" ? (
-            <div className="w-full h-96 flex justify-center items-center">
+            <div className="w-full h-96 flex flex-col justify-center items-center gap-6">
               <LoadingTruck />
+              <p className="font-black text-slate-400 animate-pulse uppercase tracking-widest text-xs">Đang truy vấn hành trình đơn hàng...</p>
             </div>
           ) : (
-            <p className="text-center text-gray-500 py-10">
-              Đang tải dữ liệu...
-            </p>
+            <div className="w-full h-96 flex flex-col justify-center items-center gap-4 text-slate-300">
+              <div className="w-12 h-12 border-4 border-slate-200 border-t-indigo-600 rounded-full animate-spin"></div>
+              <p className="font-bold text-sm tracking-tighter">Đang tải danh sách...</p>
+            </div>
           )
         ) : orders.length === 0 ? (
-          <p className="text-gray-500">Không có đơn hàng nào trong mục này.</p>
+          <div className="bg-white rounded-[40px] border-2 border-dashed border-slate-100 flex flex-col items-center justify-center py-32 text-slate-300 animate-in zoom-in-95 duration-500">
+            <div className="p-8 bg-slate-50 rounded-full mb-6">
+              <FiPackage size={64} className="opacity-20" />
+            </div>
+            <p className="text-xl font-black text-slate-900 tracking-tight mb-2">Chưa có đơn hàng nào</p>
+            <p className="text-sm font-medium italic mb-8">Danh sách đang trống trong mục này.</p>
+            <button
+              onClick={() => navigate("./new")}
+              className="px-8 py-3 bg-indigo-50 text-indigo-600 font-black rounded-2xl hover:bg-indigo-600 hover:text-white transition-all active:scale-95"
+            >
+              Tạo đơn đầu tiên ngay
+            </button>
+          </div>
         ) : (
-          <div className="space-y-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-in slide-in-from-bottom-6 duration-700">
             {orders.map((order) => (
               <div
                 key={order.orderId}
-                className="border border-gray-200 p-4 rounded-lg flex flex-col md:flex-row justify-between items-start gap-4"
+                className="bg-white p-8 rounded-[38px] shadow-sm border border-slate-100 flex flex-col justify-between group hover:shadow-xl hover:border-indigo-100 transition-all duration-500 relative overflow-hidden"
               >
-                {/* Thông tin đơn */}
-                <div className="flex-1">
-                  <p className="text-sm text-gray-500">
-                    Mã ĐH: {order.orderId}
-                  </p>
-                  <p className="font-semibold">
-                    Ngày đặt:{" "}
-                    {new Date(order.orderDate).toLocaleDateString("vi-VN")}
-                  </p>
-                  <p className="font-bold text-lg text-blue-700 mt-1">
-                    Tổng:{" "}
-                    {new Intl.NumberFormat("vi-VN", {
-                      style: "currency",
-                      currency: "VND",
-                    }).format(order.totalAmount)}
-                  </p>
+                <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-50/30 rounded-bl-[100px] -mr-16 -mt-16 group-hover:scale-150 transition-transform duration-700"></div>
+
+                <div className="relative z-10">
+                  <div className="flex justify-between items-start mb-6">
+                    <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] bg-slate-50 px-2.5 py-1 rounded-lg"># {order.orderId}</span>
+                        <StatusBadge status={order.orderStatus} />
+                      </div>
+                      <h3 className="text-sm font-black text-slate-900 flex items-center gap-2">
+                        <FiCalendar className="text-slate-400" />
+                        {new Date(order.orderDate).toLocaleDateString("vi-VN", { day: '2-digit', month: 'long', year: 'numeric' })}
+                      </h3>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xs font-bold text-slate-400 mb-1">Tổng giá trị</p>
+                      <p className="text-2xl font-black text-indigo-700 tracking-tighter">
+                        {new Intl.NumberFormat("vi-VN").format(order.totalAmount)}
+                        <span className="text-sm ml-1">₫</span>
+                      </p>
+                    </div>
+                  </div>
+
                   {order.orderItems && order.orderItems.length > 0 && (
-                    <ul className="list-disc list-inside text-sm text-gray-600 mt-2 pl-4">
+                    <div className="space-y-3 mb-8">
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-50 pb-2">Danh sách sản phẩm ({order.orderItems.length})</p>
                       {order.orderItems.map((item) => (
-                        <li key={item.orderItemId}>
-                          {item.quantity} x {getVariantDisplayName(item.variantId)} - Đơn
-                          giá:{" "}
-                          {new Intl.NumberFormat("vi-VN", {
-                            style: "currency",
-                            currency: "VND",
-                          }).format(item.unitPrice)}
-                        </li>
+                        <div key={item.orderItemId} className="flex justify-between items-center bg-slate-50/50 p-3 rounded-2xl border border-transparent hover:border-indigo-100 transition-colors">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-xl bg-white shadow-sm flex items-center justify-center text-indigo-600 font-black text-xs">
+                              {item.quantity}
+                            </div>
+                            <span className="text-sm font-bold text-slate-700 truncate max-w-[180px] md:max-w-[250px]">
+                              {getVariantDisplayName(item.variantId)}
+                            </span>
+                          </div>
+                          <span className="text-xs font-mono font-bold text-slate-400 italic">
+                            @{new Intl.NumberFormat("vi-VN").format(item.unitPrice)}
+                          </span>
+                        </div>
                       ))}
-                    </ul>
+                    </div>
                   )}
+
                   {order.notes && (
-                    <p className="text-sm text-gray-500 mt-2 italic">
-                      Ghi chú: {order.notes}
-                    </p>
+                    <div className="bg-amber-50/50 border border-amber-100/50 p-4 rounded-2xl mb-6">
+                      <p className="text-[9px] font-black text-amber-600 uppercase tracking-widest mb-1 opacity-60">Ghi chú đại lý</p>
+                      <p className="text-xs text-amber-700 italic font-medium leading-relaxed">"{order.notes}"</p>
+                    </div>
                   )}
                 </div>
 
-                {/* Trạng thái và Hành động */}
-                <div className="shrink-0 flex flex-col items-end space-y-2 w-full md:w-auto">
-                  <StatusBadge status={order.orderStatus} />
-
-                  {/* Nút Xem Chi Tiết (Luôn hiển thị) */}
+                <div className="flex flex-wrap gap-2 pt-4 border-t border-slate-50 relative z-10 lg:flex-nowrap">
                   <button
                     onClick={() => handleViewDetails(order)}
-                    className="flex items-center justify-center w-full md:w-auto px-3 py-1.5 bg-white border border-gray-300 text-gray-700 rounded text-sm hover:bg-gray-50 transition duration-150"
+                    className="flex-1 flex items-center justify-center gap-2 py-4 bg-slate-50 text-slate-600 font-bold rounded-2xl text-sm hover:bg-slate-100 transition-all active:scale-95"
                   >
-                    <FiEye className="mr-1" /> Xem Chi Tiết
+                    <FiEye /> Chi Tiết
                   </button>
 
-                  {/* Nút Hủy cho PENDING */}
                   {order.orderStatus === "PENDING" && (
                     <button
                       onClick={() => handleCancelOrder(order.orderId)}
-                      className="flex items-center justify-center w-full md:w-auto px-3 py-1.5 bg-yellow-500 text-white rounded text-sm hover:bg-yellow-600 transition duration-150"
-                      title="Hủy đơn hàng này"
+                      className="flex-1 flex items-center justify-center gap-2 py-4 bg-rose-50 text-rose-600 font-bold rounded-2xl text-sm hover:bg-rose-500 hover:text-white transition-all active:scale-95 shadow-sm shadow-rose-100"
                     >
-                      <FiXCircle className="mr-1" /> Hủy Đơn
+                      <FiXCircle size={18} /> Hủy Đơn
                     </button>
                   )}
 
-                  {/* Nút Xác Nhận cho IN_TRANSIT */}
-                  {/* Hai nút cho IN_TRANSIT */}
                   {order.orderStatus === "IN_TRANSIT" && (
-                    <div className="flex flex-col md:flex-row gap-2 w-full md:w-auto">
-                      {/* Nút Báo Cáo (Exception) */}
+                    <>
                       <button
                         onClick={() => handleReportIssue(order.orderId)}
-                        className="flex items-center justify-center w-full md:w-auto px-3 py-1.5 bg-orange-500 text-white rounded text-sm hover:bg-orange-600 transition duration-150"
+                        className="flex-1 flex items-center justify-center gap-2 py-4 bg-orange-50 text-orange-600 font-bold rounded-2xl text-sm hover:bg-orange-500 hover:text-white transition-all active:scale-95"
                       >
-                        <FiAlertTriangle className="mr-1" /> Báo Cáo Sự Cố
+                        <FiAlertTriangle size={18} /> Sự Cố
                       </button>
 
-                      {/* Nút Xác Nhận (Happy Path) */}
                       <button
                         onClick={() => handleConfirmDelivery(order.orderId)}
-                        className="flex items-center justify-center w-full md:w-auto px-3 py-1.5 bg-green-600 text-white rounded text-sm hover:bg-green-700 transition duration-150 shadow"
+                        className="flex-[2] flex items-center justify-center gap-2 py-4 bg-emerald-600 text-white font-bold rounded-2xl text-sm hover:bg-emerald-700 shadow-xl shadow-emerald-100 transition-all active:scale-95"
                       >
-                        <FiCheckCircle className="mr-1" /> Xác Nhận Đã Nhận
+                        <FiCheckCircle size={18} /> Đã Nhận Hàng
                       </button>
-                    </div>
+                    </>
                   )}
-                  {/* Không có nút Xóa ở đây */}
-                  {/* Có thể thêm nút Xem chi tiết */}
+
+                  {order.orderStatus === "DELIVERED" && (
+                    <button
+                      onClick={() => navigate("./new", { state: { reorderOrder: order } })}
+                      className="flex-1 flex items-center justify-center gap-2 py-4 bg-indigo-50 text-indigo-600 font-bold rounded-2xl text-sm hover:bg-indigo-600 hover:text-white transition-all active:scale-95"
+                    >
+                      <FiArrowRight /> Tái Đặt Hàng
+                    </button>
+                  )}
                 </div>
               </div>
             ))}
           </div>
         )}
 
-        {/* --- Component Phân Trang --- */}
+        {/* --- Component Phân Trang UI Premium --- */}
         {pagination.totalPages > 1 && (
-          <div className="mt-6 flex justify-center items-center space-x-2">
+          <div className="mt-12 flex justify-center items-center gap-6">
             <button
               onClick={() => handlePageChange(pagination.page - 1)}
               disabled={pagination.page === 0}
-              className="px-3 py-1 bg-gray-200 rounded disabled:opacity-50"
+              className="w-12 h-12 flex items-center justify-center bg-white border border-slate-200 rounded-2xl shadow-sm text-slate-400 hover:text-indigo-600 hover:border-indigo-200 disabled:opacity-30 disabled:pointer-events-none transition-all"
             >
-              Trước
+              <FiX className="rotate-90" />
             </button>
-            <span>
-              Trang {pagination.page + 1} / {pagination.totalPages}
-            </span>
+            <div className="bg-white px-6 py-3 rounded-2xl border border-slate-100 shadow-sm text-sm font-black text-slate-900">
+              <span className="text-indigo-600">{pagination.page + 1}</span>
+              <span className="text-slate-300 mx-2">/</span>
+              <span>{pagination.totalPages}</span>
+            </div>
             <button
               onClick={() => handlePageChange(pagination.page + 1)}
               disabled={pagination.page >= pagination.totalPages - 1}
-              className="px-3 py-1 bg-gray-200 rounded disabled:opacity-50"
+              className="w-12 h-12 flex items-center justify-center bg-white border border-slate-200 rounded-2xl shadow-sm text-slate-400 hover:text-indigo-600 hover:border-indigo-200 disabled:opacity-30 disabled:pointer-events-none transition-all"
             >
-              Sau
+              <FiArrowRight />
             </button>
           </div>
         )}
       </div>
+
       {isModalOpen && (
         <OrderDetailModal order={selectedOrder} onClose={handleCloseModal} />
       )}
+
+      <div className="h-20"></div>
     </div>
   );
 };
