@@ -83,7 +83,8 @@ const CreateInvoiceFromOrderPage = () => {
 
       const response = await paymentService.createDealerInvoice(payload);
       toast.success('Hóa đơn đã được tạo thành công!');
-      navigate('/evm/staff/orders', {
+      const prefix = location.pathname.includes('/admin/') ? '/evm/admin' : '/evm/staff';
+      navigate(`${prefix}/orders`, {
         state: { message: 'Hóa đơn đã được tạo thành công' }
       });
     } catch (error) {

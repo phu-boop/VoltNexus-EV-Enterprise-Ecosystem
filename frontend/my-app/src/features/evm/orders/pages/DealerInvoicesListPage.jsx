@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import paymentService from '../../../payments/services/paymentService';
+import dealerService from '../../../admin/manageDealer/dealers/services/dealerService';
 import { toast } from 'react-toastify';
 import {
   FiArrowLeft,
@@ -19,7 +20,9 @@ import {
 const DealerInvoicesListPage = () => {
   const { dealerId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const [invoices, setInvoices] = useState([]);
+  const [dealerName, setDealerName] = useState("");
   const [loading, setLoading] = useState(false);
   const [filters, setFilters] = useState({
     status: '',
@@ -39,6 +42,18 @@ const DealerInvoicesListPage = () => {
     const totalRemaining = invoices.reduce((acc, i) => acc + (parseFloat(i.totalAmount || 0) - parseFloat(i.amountPaid || 0)), 0);
     return { totalCount, unpaidCount, totalRemaining };
   }, [invoices]);
+
+  useEffect(() => {
+    const fetchContext = async () => {
+      try {
+        const res = await dealerService.getBasicList();
+        const dlrs = res.data?.data || res.data || [];
+        const found = dlrs.find(d => d.id === dealerId || d.dealerId === dealerId);
+        if (found) setDealerName(found.name || found.dealerName);
+      } catch (e) { }
+    };
+    if (dealerId) fetchContext();
+  }, [dealerId]);
 
   useEffect(() => {
     loadInvoices();
@@ -85,7 +100,8 @@ const DealerInvoicesListPage = () => {
   };
 
   const handleViewInvoice = (invoiceId) => {
-    navigate(`/evm/staff/debt/invoices/${invoiceId}`);
+    const prefix = location.pathname.includes('/admin/') ? '/evm/admin' : '/evm/staff';
+    navigate(`${prefix}/debt/invoices/${invoiceId}`);
   };
 
   const formatCurrency = (amount) => {
@@ -143,7 +159,7 @@ const DealerInvoicesListPage = () => {
             </div>
             <div>
               <h1 className="text-3xl font-black text-slate-900 tracking-tight">Hồ Sơ Hóa Đơn</h1>
-              <p className="text-slate-500 font-medium mt-0.5">Lịch sử tài chính - Đại lý <span className="text-blue-600 font-black">#{dealerId?.substring(0, 8)}</span></p>
+              <p className="text-slate-500 font-medium mt-0.5">Lịch sử tài chính - <span className="text-blue-600 font-black tracking-tight">{dealerName || `Đại lý #${dealerId?.substring(0, 8)}`}</span></p>
             </div>
           </div>
 
@@ -275,8 +291,8 @@ const DealerInvoicesListPage = () => {
                       key={index}
                       onClick={() => handlePageChange(index)}
                       className={`w-10 h-10 rounded-xl text-xs font-black transition-all ${pagination.currentPage === index
-                          ? 'bg-blue-600 text-white shadow-lg shadow-blue-200'
-                          : 'bg-white border border-slate-200 text-slate-500 hover:border-blue-300'
+                        ? 'bg-blue-600 text-white shadow-lg shadow-blue-200'
+                        : 'bg-white border border-slate-200 text-slate-500 hover:border-blue-300'
                         }`}
                     >
                       {index + 1}

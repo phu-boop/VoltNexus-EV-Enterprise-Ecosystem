@@ -295,19 +295,20 @@ const VariantManagementPage = () => {
         </motion.div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start mb-5">
+      <div className="flex flex-row gap-8 items-start mb-5">
         {/* Model Selection Sidebar */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="lg:col-span-4 bg-white rounded-3xl p-6 shadow-sm border border-neutral-100 ml-5 h-full"
+          className="flex-shrink-0 bg-white max-h-[1055px] rounded-3xl p-6 shadow-sm border border-neutral-100 ml-5 h-full"
+          style={{ maxWidth: '300px' }}
         >
           <div className="flex items-center gap-2 mb-6">
             <Box className="w-5 h-5 text-indigo-600" />
             <h3 className="font-black text-slate-900 tracking-tight italic uppercase text-sm">Lọc theo mẫu xe</h3>
           </div>
 
-          <div className="space-y-2 max-h-[1000px] overflow-y-auto pr-2 custom-scrollbar">
+          <div className="space-y-2 max-h-[960px] overflow-y-auto pr-2 custom-scrollbar">
             {isLoadingModels ? (
               [...Array(5)].map((_, i) => (
                 <div key={i} className="h-14 bg-neutral-50 animate-pulse rounded-2xl w-full" />
@@ -359,7 +360,7 @@ const VariantManagementPage = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="lg:col-span-8  bg-white rounded-3xl shadow-sm border border-neutral-100 overflow-hidden min-h-[500px]"
+          className="flex-1 min-w-0 bg-white rounded-3xl shadow-sm border border-neutral-100 overflow-hidden min-h-[600px]"
         >
           <div className="p-6 border-b border-neutral-100 bg-neutral-50/50 flex flex-wrap items-center justify-between gap-4">
             <h2 className="text-xl font-bold text-neutral-800">Danh sách phiên bản</h2>
@@ -449,7 +450,7 @@ const VariantManagementPage = () => {
                           exit={{ opacity: 0 }}
                           className={`group hover:bg-neutral-50/50 transition-all ${selectedIds.includes(variant.variantId) ? 'bg-indigo-50/30' : ''}`}
                         >
-                          <td className="px-8 py-5">
+                          <td className="px-5 py-5">
                             <Checkbox
                               checked={selectedIds.includes(variant.variantId)}
                               onChange={() => handleSelectItem(variant.variantId)}
@@ -474,7 +475,7 @@ const VariantManagementPage = () => {
                               {variant.skuCode}
                             </code>
                           </td>
-                          <td className="px-6 py-5">
+                          <td className="text-center py-5">
                             <span
                               className={`px-3 py-1 text-[10px] font-bold uppercase tracking-wider rounded-lg border shadow-sm ${STATUS_OPTIONS[variant.status]?.color || "bg-neutral-100 text-neutral-600"
                                 }`}

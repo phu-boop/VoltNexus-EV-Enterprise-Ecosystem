@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import paymentService from '../../../payments/services/paymentService';
+import dealerService from '../../../admin/manageDealer/dealers/services/dealerService';
 import { toast } from 'react-toastify';
 import {
   FiDollarSign,
@@ -17,7 +18,9 @@ import {
 
 const DealerDebtManagementPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [debtSummary, setDebtSummary] = useState([]);
+  const [dealers, setDealers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [pagination, setPagination] = useState({
     totalElements: 0,
@@ -25,6 +28,18 @@ const DealerDebtManagementPage = () => {
     currentPage: 0,
     size: 10
   });
+
+  useEffect(() => {
+    const fetchDealersContext = async () => {
+      try {
+        const res = await dealerService.getBasicList();
+        setDealers(res.data?.data || res.data || []);
+      } catch (err) {
+        console.warn("Could not load dealer directory", err);
+      }
+    };
+    fetchDealersContext();
+  }, []);
 
   useEffect(() => {
     loadDebtSummary();
@@ -64,7 +79,14 @@ const DealerDebtManagementPage = () => {
   };
 
   const handleViewDetails = (dealerId) => {
-    navigate(`/evm/staff/debt/${dealerId}/invoices`);
+    const prefix = location.pathname.includes('/admin/') ? '/evm/admin' : '/evm/staff';
+    navigate(`${prefix}/debt/${dealerId}/invoices`);
+  };
+
+  const getDealerDetails = (dealerId) => {
+    const dealer = dealers.find(d => d.id === dealerId || d.dealerId === dealerId);
+    if (dealer) return { name: dealer.name || dealer.dealerName, displayId: dealerId?.substring(0, 8) };
+    return { name: `Đại lý vãng lai`, displayId: dealerId?.substring(0, 8) };
   };
 
   const formatCurrency = (amount) => {
@@ -182,42 +204,45 @@ const DealerDebtManagementPage = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50">
-                  {debtSummary.map((item) => (
-                    <tr key={item.dealerId} className="group hover:bg-slate-50/80 transition-all duration-300">
-                      <td className="px-8 py-6">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-600 group-hover:bg-rose-600 group-hover:text-white transition-all shadow-sm font-black text-xs uppercase">
-                            DL
+                  {debtSummary.map((item) => {
+                    const ctx = getDealerDetails(item.dealerId);
+                    return (
+                      <tr key={item.dealerId} className="group hover:bg-slate-50/80 transition-all duration-300">
+                        <td className="px-8 py-6">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-600 group-hover:bg-rose-600 group-hover:text-white transition-all shadow-sm font-black text-xs uppercase">
+                              DL
+                            </div>
+                            <div>
+                              <p className="text-sm font-black text-slate-900 line-clamp-1">{ctx.name}</p>
+                              <p className="text-[10px] font-bold text-slate-400 mt-0.5 uppercase tracking-widest">ID: #{ctx.displayId}</p>
+                            </div>
                           </div>
-                          <div>
-                            <p className="text-sm font-black text-slate-900">#{item.dealerId?.substring(0, 8)}</p>
-                            <p className="text-[10px] font-bold text-slate-400 mt-0.5">Dealer ID</p>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-6 font-bold text-slate-700 text-sm">
-                        {formatCurrency(item.totalOwed)}
-                      </td>
-                      <td className="px-6 py-6 font-bold text-emerald-600 text-sm">
-                        {formatCurrency(item.totalPaid)}
-                      </td>
-                      <td className="px-6 py-6 font-black text-rose-600 text-sm">
-                        {formatCurrency(item.currentBalance)}
-                      </td>
-                      <td className="px-6 py-6 text-center">
-                        {getStatusBadge(item.currentBalance)}
-                      </td>
-                      <td className="px-6 py-6 text-right">
-                        <button
-                          onClick={() => handleViewDetails(item.dealerId)}
-                          className="px-4 py-2 bg-slate-100 text-slate-600 font-bold text-xs rounded-xl hover:bg-blue-600 hover:text-white transition-all shadow-sm active:scale-95 flex items-center gap-2 ml-auto"
-                        >
-                          <FiEye size={14} />
-                          Chi tiết
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
+                        </td>
+                        <td className="px-6 py-6 font-bold text-slate-700 text-sm">
+                          {formatCurrency(item.totalOwed)}
+                        </td>
+                        <td className="px-6 py-6 font-bold text-emerald-600 text-sm">
+                          {formatCurrency(item.totalPaid)}
+                        </td>
+                        <td className="px-6 py-6 font-black text-rose-600 text-sm">
+                          {formatCurrency(item.currentBalance)}
+                        </td>
+                        <td className="px-6 py-6 text-center">
+                          {getStatusBadge(item.currentBalance)}
+                        </td>
+                        <td className="px-6 py-6 text-right">
+                          <button
+                            onClick={() => handleViewDetails(item.dealerId)}
+                            className="px-4 py-2 bg-slate-100 text-slate-600 font-bold text-xs rounded-xl hover:bg-blue-600 hover:text-white transition-all shadow-sm active:scale-95 flex items-center gap-2 ml-auto"
+                          >
+                            <FiEye size={14} />
+                            Chi tiết
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -241,8 +266,8 @@ const DealerDebtManagementPage = () => {
                       key={index}
                       onClick={() => handlePageChange(index)}
                       className={`w-10 h-10 rounded-xl text-xs font-black transition-all ${pagination.currentPage === index
-                          ? 'bg-rose-600 text-white shadow-lg shadow-rose-200'
-                          : 'bg-white border border-slate-200 text-slate-500 hover:border-rose-300'
+                        ? 'bg-rose-600 text-white shadow-lg shadow-rose-200'
+                        : 'bg-white border border-slate-200 text-slate-500 hover:border-rose-300'
                         }`}
                     >
                       {index + 1}

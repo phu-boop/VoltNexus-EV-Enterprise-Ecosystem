@@ -92,13 +92,14 @@ const B2BOrdersManagementPage = () => {
   };
 
   const handleCreateInvoice = (order) => {
-    navigate(`/evm/staff/orders/${order.orderId}/create-invoice`, {
+    const prefix = location.pathname.includes('/admin/') ? '/evm/admin' : '/evm/staff';
+    navigate(`${prefix}/orders/${order.orderId}/create-invoice`, {
       state: { order }
     });
   };
 
   const handleViewOrder = (orderId) => {
-    navigate(`/evm/staff/orders/${orderId}`);
+    navigate(`/evm/b2b-orders/${orderId}`);
   };
 
   const getStatusBadge = (status) => {
@@ -308,8 +309,8 @@ const B2BOrdersManagementPage = () => {
                       key={index}
                       onClick={() => handlePageChange(index)}
                       className={`w-10 h-10 rounded-xl text-xs font-black transition-all ${pagination.currentPage === index
-                          ? 'bg-blue-600 text-white shadow-lg shadow-blue-200'
-                          : 'bg-white border border-slate-200 text-slate-500 hover:border-blue-300'
+                        ? 'bg-blue-600 text-white shadow-lg shadow-blue-200'
+                        : 'bg-white border border-slate-200 text-slate-500 hover:border-blue-300'
                         }`}
                     >
                       {index + 1}

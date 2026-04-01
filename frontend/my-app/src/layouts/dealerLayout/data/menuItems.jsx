@@ -254,7 +254,7 @@ export const dealerStaffMenuItems = [
       {
         icon: FiFileText,
         label: "Tạo Báo Giá",
-        path: "/dealer/staff/quotes/create",
+        path: "/dealer/staff/quotations",
       },
       {
         icon: FiFileText,

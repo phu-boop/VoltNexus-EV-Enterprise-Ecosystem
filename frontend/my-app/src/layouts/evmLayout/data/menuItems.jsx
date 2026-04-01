@@ -130,16 +130,6 @@ export const adminMenuItems = [
         path: "/evm/admin/dealers/list",
       },
       {
-        icon: FiFileText,
-        label: "Hợp Đồng",
-        path: "/evm/admin/dealers/contracts",
-      },
-      {
-        icon: FiCreditCardAlt,
-        label: "Thanh Toán",
-        path: "/evm/admin/dealers/debts",
-      },
-      {
         icon: FiUserPlus,
         label: "Tài Khoản",
         path: "/evm/admin/dealers/accounts",

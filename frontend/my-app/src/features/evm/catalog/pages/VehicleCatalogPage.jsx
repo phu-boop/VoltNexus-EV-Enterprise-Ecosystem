@@ -379,7 +379,7 @@ const VehicleCatalogPage = () => {
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="p-4 sm:p-8 max-w-[1600px] mx-auto min-h-screen bg-gray-50/50"
+      className="  max-w-[1600px] mx-auto min-h-screen bg-gray-50/50"
     >
       {/* Header Section */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
