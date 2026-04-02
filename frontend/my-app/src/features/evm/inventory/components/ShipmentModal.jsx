@@ -271,8 +271,8 @@ const ShipmentModal = ({ isOpen, onClose, order }) => {
                       rows={item.quantity > 5 ? 5 : item.quantity}
                       placeholder="Quét hoặc dán số VIN vào đây..."
                       className={`w-full p-3 border rounded-xl font-mono text-sm transition-all focus:ring-2 outline-none ${hasItemError
-                          ? "border-red-300 bg-red-50/30 focus:ring-red-200 focus:border-red-400"
-                          : "border-gray-300 focus:ring-blue-100 focus:border-blue-400"
+                        ? "border-red-300 bg-red-50/30 focus:ring-red-200 focus:border-red-400"
+                        : "border-gray-300 focus:ring-blue-100 focus:border-blue-400"
                         }`}
                     />
                     <div className="flex justify-between items-center mt-2 px-1">
@@ -309,8 +309,8 @@ const ShipmentModal = ({ isOpen, onClose, order }) => {
                                 handleVinTagClick(item.variantId, vin)
                               }
                               className={`px-3 py-1.5 rounded-lg text-xs font-mono font-medium border transition-all duration-200 ${isSelected
-                                  ? "bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-100 transform scale-105"
-                                  : "bg-white text-gray-600 border-gray-200 hover:border-blue-300 hover:text-blue-600"
+                                ? "bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-100 transform scale-105"
+                                : "bg-white text-gray-600 border-gray-200 hover:border-blue-300 hover:text-blue-600"
                                 }`}
                             >
                               {vin}

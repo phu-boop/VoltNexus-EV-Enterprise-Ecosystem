@@ -1,16 +1,16 @@
 import React, { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-// Giả sử bạn import AuthProvider từ vị trí đúng
 import { useAuthContext } from "../../../../auth/AuthProvider";
-import { FiSearch, FiLoader, FiAlertTriangle } from "react-icons/fi";
 import { useAvailableVehicles } from "../hooks/useAvailableVehicles";
 import { useVehicleDetails } from "../hooks/useVehicleDetails";
+import { useVehicleCompare } from "../hooks/useVehicleCompare";
 
 import AvailableVehicleCard from "../components/AvailableVehicleCard";
 import VariantDetailsModal from "../../../../../components/common/detail/VariantDetailsModal";
 import CompareTray from "../../../../../components/common/CompareTray";
 import CompareModal from "../../../../../components/common/CompareModal";
-import { useVehicleCompare } from "../hooks/useVehicleCompare";
+import VehicleFilters from "../components/VehicleFilters";
+import { FiSearch, FiLoader, FiAlertTriangle, FiGrid, FiList, FiRefreshCw, FiChevronRight } from "react-icons/fi";
 
 const VEHICLES_PER_PAGE = 10;
 
@@ -21,8 +21,15 @@ const AvailableVehicleCatalogPage = () => {
   const role = userData?.roles?.[0]?.name;
 
   // Hook lấy danh sách xe
-  const { vehicles, isLoading, error, searchQuery, setSearchQuery } =
-    useAvailableVehicles();
+  const { 
+    vehicles, 
+    isLoading, 
+    error, 
+    searchQuery, 
+    setSearchQuery,
+    filters,
+    setFilters
+  } = useAvailableVehicles();
 
   const [visibleCount, setVisibleCount] = useState(VEHICLES_PER_PAGE);
 
@@ -80,14 +87,23 @@ const AvailableVehicleCatalogPage = () => {
     openModal(variantId);
   };
 
-  // Reset số lượng hiển thị khi tìm kiếm thay đổi
-  // (Chúng ta cần đợi hook `useAvailableVehicles` chạy xong,
-  // nên logic reset sẽ dựa trên `isLoading`)
+  const handleResetFilters = () => {
+    setSearchQuery("");
+    setFilters({
+      brand: "",
+      model: "",
+      bodyType: "",
+      minPrice: null,
+      maxPrice: null,
+      color: "",
+    });
+  };
+
   useState(() => {
     if (!isLoading) {
       setVisibleCount(VEHICLES_PER_PAGE);
     }
-  }, [isLoading, searchQuery]); // Reset khi hết loading hoặc query thay đổi
+  }, [isLoading, searchQuery, filters]);
 
   const renderContent = () => {
     if (isLoading && vehicles.length === 0) {
@@ -156,32 +172,95 @@ const AvailableVehicleCatalogPage = () => {
   };
 
   return (
-    // Thêm padding-bottom để CompareTray không che mất nội dung
-    <div className="animate-in fade-in-0 duration-500 p-6 pb-32">
-      <h1 className="text-4xl font-bold text-gray-800 mb-6">
-        Xe Có Sẵn Để Bán
-      </h1>
+    <div className="min-h-screen bg-slate-50/50 p-4 md:p-8 pb-32 animate-in fade-in-0 duration-700">
+      <div className="max-w-[1600px] mx-auto">
+        {/* Breadcrumbs & Header */}
+        <div className="mb-10">
+          <nav className="flex items-center gap-2 text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">
+            <span className="hover:text-blue-500 cursor-pointer">Dealer</span>
+            <FiChevronRight size={12} />
+            <span className="hover:text-blue-500 cursor-pointer">Sales</span>
+            <FiChevronRight size={12} />
+            <span className="text-slate-800 italic underline decoration-blue-500 decoration-2 underline-offset-4">Available Vehicles</span>
+          </nav>
+          
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-slate-200 pb-8">
+            <div>
+              <h1 className="text-5xl font-black text-slate-900 tracking-tighter mb-2 italic">
+                Catalog <span className="text-blue-600 font-extralight not-italic">Xe Sẵn Có</span>
+              </h1>
+              <p className="text-slate-500 font-medium">Khám phá và tư vấn bộ sưu tập xe đang có mặt tại kho.</p>
+            </div>
+            
+            <div className="flex items-center gap-3">
+              <div className="bg-white px-4 py-2 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-3">
+                <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
+                <span className="text-xs font-bold text-slate-700 uppercase tracking-tight">
+                  {vehicles.length} sản phẩm <span className="text-slate-400 font-medium italic">đã tìm thấy</span>
+                </span>
+              </div>
+              <button 
+                onClick={() => window.location.reload()}
+                className="p-3 bg-white hover:bg-slate-50 rounded-2xl border border-slate-200 text-slate-600 transition-all hover:rotate-180 duration-500"
+              >
+                <FiRefreshCw size={20} />
+              </button>
+            </div>
+          </div>
+        </div>
 
-      {/* Thanh tìm kiếm  */}
-      <div className="mb-6">
-        <div className="relative max-w-lg">
-          <span className="absolute inset-y-0 left-0 pl-3 flex items-center">
-            <FiSearch className="h-5 w-5 text-gray-400" />
-          </span>
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Tìm theo Model, Phiên bản, Màu, hoặc SKU..."
-            className="w-full p-3 pl-10 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
+        <div className="flex flex-col lg:flex-row gap-10">
+          {/* Sidebar FILTERS */}
+          <aside className="w-full lg:w-80 shrink-0">
+            <VehicleFilters 
+              filters={filters} 
+              setFilters={setFilters} 
+              onReset={handleResetFilters} 
+            />
+          </aside>
+
+          {/* Results Area */}
+          <main className="flex-1 min-w-0">
+            {/* Toolbar */}
+            <div className="bg-white/60 backdrop-blur-md p-4 rounded-3xl border border-slate-200 shadow-sm mb-8 flex flex-col md:flex-row items-center justify-between gap-6">
+              <div className="relative w-full md:max-w-md group">
+                <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors" size={20} />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Tìm kiếm model, sku, đời xe..."
+                  className="w-full bg-slate-50 border border-slate-100 rounded-2xl py-3.5 pl-12 pr-4 text-sm font-medium focus:bg-white focus:ring-4 focus:ring-blue-100 focus:border-blue-400 transition-all outline-none"
+                />
+              </div>
+
+              <div className="flex items-center gap-4 shrink-0">
+                <div className="flex bg-slate-100 p-1.5 rounded-xl border border-slate-200">
+                  <button className="p-2 bg-white text-blue-600 rounded-lg shadow-sm">
+                    <FiGrid size={18} />
+                  </button>
+                  <button className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-lg transition-all">
+                    <FiList size={18} />
+                  </button>
+                </div>
+                
+                <select className="bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-bold text-slate-700 outline-none focus:ring-4 focus:ring-slate-100 transition-all appearance-none cursor-pointer pr-10 relative">
+                  <option>Mới nhất</option>
+                  <option>Giá: Thấp đến Cao</option>
+                  <option>Giá: Cao đến Thấp</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Main Content Render */}
+            <div className="min-h-[600px]">
+              {renderContent()}
+            </div>
+          </main>
         </div>
       </div>
 
-      {/* Lưới sản phẩm */}
-      {renderContent()}
-
-      {/* Modal xem chi tiết  */}
+      {/* Modal & Overlays */}
       <VariantDetailsModal
         isOpen={isModalOpen}
         onClose={closeModal}
@@ -189,7 +268,6 @@ const AvailableVehicleCatalogPage = () => {
         isLoading={isDetailLoading}
       />
 
-      {/* KHAY SO SÁNH */}
       <CompareTray
         items={selectedItems}
         onRemove={handleRemoveFromTray}
@@ -197,7 +275,6 @@ const AvailableVehicleCatalogPage = () => {
         isLoading={isCompareLoading}
       />
 
-      {/* MODAL SO SÁNH */}
       <CompareModal
         isOpen={isCompareModalOpen}
         onClose={handleCloseCompareModal}

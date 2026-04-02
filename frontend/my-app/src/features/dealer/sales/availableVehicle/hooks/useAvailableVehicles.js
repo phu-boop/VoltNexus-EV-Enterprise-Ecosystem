@@ -12,13 +12,24 @@ export const useAvailableVehicles = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [filters, setFilters] = useState({
+    brand: "",
+    model: "",
+    bodyType: "",
+    minPrice: null,
+    maxPrice: null,
+    color: "",
+  });
 
-  const fetchVehicles = useCallback(async (query) => {
+  const fetchVehicles = useCallback(async (query, currentFilters) => {
     setIsLoading(true);
     setError(null);
     try {
       // === BƯỚC 1: Lấy danh sách xe có sẵn (không có ảnh) ===
-      const params = { search: query };
+      const params = { 
+        search: query,
+        ...currentFilters 
+      };
       const stockRes = await getAvailableStock(params);
       const allStock = stockRes.data.data || [];
 
@@ -65,13 +76,13 @@ export const useAvailableVehicles = () => {
     }
   }, []);
 
-  // Tự động fetch khi search query thay đổi (sau 300ms)
+  // Tự động fetch khi search query hoặc filters thay đổi
   useEffect(() => {
     const handler = setTimeout(() => {
-      fetchVehicles(searchQuery);
-    }, 1000); // Debounce
+      fetchVehicles(searchQuery, filters);
+    }, 500); // Debounce nhanh hơn (500ms thay vì 1000ms)
     return () => clearTimeout(handler);
-  }, [searchQuery, fetchVehicles]);
+  }, [searchQuery, filters, fetchVehicles]);
 
   // Hàm để gọi fetch thủ công (ví dụ: refresh)
   const refreshVehicles = () => {
@@ -84,6 +95,8 @@ export const useAvailableVehicles = () => {
     error,
     searchQuery,
     setSearchQuery,
+    filters,
+    setFilters,
     refreshVehicles,
   };
 };
