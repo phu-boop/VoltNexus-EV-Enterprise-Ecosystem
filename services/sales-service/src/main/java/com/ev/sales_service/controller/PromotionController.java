@@ -33,19 +33,26 @@ public class PromotionController {
         }
 
         @PutMapping("/{id}")
-        public ResponseEntity<ApiRespond<PromotionResponse>> updatePromotion(@PathVariable UUID id,
-                        @RequestBody PromotionRequest request) {
+        public ResponseEntity<ApiRespond<PromotionResponse>> updatePromotion(
+                        @PathVariable UUID id,
+                        @RequestBody PromotionRequest request,
+                        @RequestHeader(value = "X-User-Roles", required = false) String roles,
+                        @RequestHeader(value = "X-User-DealerId", required = false) String currentUserDealerId) {
+
                 Promotion promotion = promotionMapper.toEntity(request);
-                Promotion updated = promotionService.updatePromotion(id, promotion);
+                Promotion updated = promotionService.updatePromotion(id, promotion, roles, currentUserDealerId);
                 return ResponseEntity
                                 .ok(ApiRespond.success("Promotion updated successfully",
                                                 promotionMapper.toResponse(updated)));
         }
 
-        // chuyển status sang active dành cho admin
+        // chuyển status sang active dành cho admin/evm_staff
         @PutMapping("/authentic/{id}")
-        public ResponseEntity<ApiRespond<PromotionResponse>> authenticPromotion(@PathVariable UUID id) {
-                Promotion updated = promotionService.authenticPromotion(id);
+        public ResponseEntity<ApiRespond<PromotionResponse>> authenticPromotion(
+                        @PathVariable UUID id,
+                        @RequestHeader(value = "X-User-Roles", required = false) String roles) {
+
+                Promotion updated = promotionService.authenticPromotion(id, roles);
                 return ResponseEntity
                                 .ok(ApiRespond.success("Promotion authenticated successfully",
                                                 promotionMapper.toResponse(updated)));
@@ -68,8 +75,12 @@ public class PromotionController {
         }
 
         @DeleteMapping("/{id}")
-        public ResponseEntity<ApiRespond<Void>> deletePromotion(@PathVariable UUID id) {
-                promotionService.deletePromotion(id);
+        public ResponseEntity<ApiRespond<Void>> deletePromotion(
+                        @PathVariable UUID id,
+                        @RequestHeader(value = "X-User-Roles", required = false) String roles,
+                        @RequestHeader(value = "X-User-DealerId", required = false) String currentUserDealerId) {
+
+                promotionService.deletePromotion(id, roles, currentUserDealerId);
                 return ResponseEntity.ok(ApiRespond.success("Promotion deleted successfully", null));
         }
 
@@ -87,9 +98,12 @@ public class PromotionController {
                         @RequestParam(required = false) String status,
                         @RequestParam(required = false) String modelId,
                         @RequestParam(required = false) String dealerId,
-                        @RequestParam(required = false) String searchTerm) {
+                        @RequestParam(required = false) String searchTerm,
+                        @RequestHeader(value = "X-User-Roles", required = false) String roles,
+                        @RequestHeader(value = "X-User-DealerId", required = false) String currentUserDealerId) {
 
-                List<Promotion> list = promotionService.searchPromotions(status, modelId, dealerId, searchTerm);
+                List<Promotion> list = promotionService.searchPromotions(status, modelId, dealerId, searchTerm, roles,
+                                currentUserDealerId);
                 return ResponseEntity.ok(
                                 ApiRespond.success("Promotions searched successfully",
                                                 promotionMapper.toResponseList(list)));

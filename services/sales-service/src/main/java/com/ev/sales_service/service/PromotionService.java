@@ -77,9 +77,21 @@ public class PromotionService {
         return saved;
     }
 
-    public Promotion updatePromotion(UUID id, Promotion promotion) {
+    public Promotion updatePromotion(UUID id, Promotion promotion, String roles, String currentUserDealerId) {
         Promotion existing = promotionRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Promotion not found"));
+
+        // Phân quyền: Dealer Manager chỉ được sửa DRAFT và chỉ sửa của mình
+        if (roles != null && roles.contains("DEALER_MANAGER") && !roles.contains("ADMIN")
+                && !roles.contains("EVM_STAFF")) {
+            if (existing.getStatus() != PromotionStatus.DRAFT) {
+                throw new AppException(ErrorCode.DATA_NOT_FOUND); // Hoặc tạo ErrorCode mới cho "Promotion already authenticated"
+            }
+            // Kiểm tra dealerId (nếu cần thiết, dựa trên logic dealerIdJson)
+            if (currentUserDealerId != null && !existing.getDealerIdJson().contains(currentUserDealerId)) {
+                throw new AppException(ErrorCode.UNAUTHORIZED);
+            }
+        }
 
         if (quotationRepository.existsByPromotionId(id)) {
             throw new AppException(ErrorCode.PROMOTION_IN_USE);
@@ -140,9 +152,17 @@ public class PromotionService {
     }
 
     @Transactional
-    public void deletePromotion(UUID id) {
+    public void deletePromotion(UUID id, String roles, String currentUserDealerId) {
         Promotion promotion = promotionRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.DATA_NOT_FOUND));
+
+        // Phân quyền xóa tương tự update
+        if (roles != null && roles.contains("DEALER_MANAGER") && !roles.contains("ADMIN")
+                && !roles.contains("EVM_STAFF")) {
+            if (promotion.getStatus() != PromotionStatus.DRAFT) {
+                throw new AppException(ErrorCode.DATA_NOT_FOUND);
+            }
+        }
 
         if (quotationRepository.existsByPromotionId(id)) {
             throw new AppException(ErrorCode.PROMOTION_IN_USE);
@@ -157,12 +177,30 @@ public class PromotionService {
         return promotionRepository.findByStatus(status);
     }
 
-    public List<Promotion> searchPromotions(String status, String modelId, String dealerId, String searchTerm) {
+    public List<Promotion> searchPromotions(String status, String modelId, String dealerId, String searchTerm,
+            String roles, String currentUserDealerId) {
         updatePromotionStatuses();
-        return promotionRepository.searchPromotions(status, modelId, dealerId, searchTerm);
+
+        String finalDealerId = dealerId;
+
+        // Nếu là Dealer Manager, ép buộc chỉ xem của dealer mình
+        if (roles != null && roles.contains("DEALER_MANAGER") && !roles.contains("ADMIN")
+                && !roles.contains("EVM_STAFF")) {
+            finalDealerId = currentUserDealerId;
+            if (finalDealerId == null) {
+                return List.of(); // Không có dealerId thì không thấy gì
+            }
+        }
+
+        return promotionRepository.searchPromotions(status, modelId, finalDealerId, searchTerm);
     }
 
-    public Promotion authenticPromotion(UUID id) {
+    public Promotion authenticPromotion(UUID id, String roles) {
+        // Chỉ Admin/Staff EVM mới được duyệt
+        if (roles == null || (!roles.contains("ADMIN") && !roles.contains("EVM_STAFF"))) {
+            throw new AppException(ErrorCode.UNAUTHORIZED);
+        }
+
         Promotion existing = promotionRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Promotion not found"));
         existing.setStatus(PromotionStatus.NEAR);

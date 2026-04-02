@@ -28,6 +28,7 @@ import {
 import { format, parseISO, isBefore, isAfter } from "date-fns";
 import { vi } from "date-fns/locale";
 import Swal from "sweetalert2";
+import { useAuthContext } from "../../../auth/AuthProvider";
 
 // Services
 import fetchDealer from "../services/fetchDealer";
@@ -36,6 +37,10 @@ import fetchModelVehicle from "../services/fetchModelVehicle";
 export default function PromotionListPage({ onCreate, onEdit }) {
   const navigate = useNavigate();
   const location = useLocation();
+  const { roles, dealerId } = useAuthContext();
+
+  const isEvmStaff = useMemo(() => roles.includes('ADMIN') || roles.includes('EVM_STAFF'), [roles]);
+  const isDealerManager = useMemo(() => roles.includes('DEALER_MANAGER'), [roles]);
 
   const [promotions, setPromotions] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -130,7 +135,11 @@ export default function PromotionListPage({ onCreate, onEdit }) {
     const params = {};
     if (filterStatus !== "ALL") params.status = filterStatus;
     if (filterModel) params.modelId = filterModel;
-    if (filterDealer) params.dealerId = filterDealer;
+    if (isEvmStaff) {
+      if (filterDealer) params.dealerId = filterDealer;
+    } else if (isDealerManager) {
+      params.dealerId = dealerId;
+    }
     if (searchTerm) params.searchTerm = searchTerm;
 
     promotionService
@@ -154,7 +163,7 @@ export default function PromotionListPage({ onCreate, onEdit }) {
         setError("Không thể tải danh sách khuyến mãi");
         setLoading(false);
       });
-  }, [filterStatus, filterModel, filterDealer, searchTerm, calculateAutoStatus]);
+  }, [filterStatus, filterModel, filterDealer, searchTerm, calculateAutoStatus, isEvmStaff, isDealerManager, dealerId]);
 
   useEffect(() => {
     loadAllDealers();
@@ -1017,42 +1026,44 @@ export default function PromotionListPage({ onCreate, onEdit }) {
               </div>
 
               {/* Model Filter */}
-              <div className="relative">
+              <div className="relative group min-w-[180px]">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <TruckIcon className="h-5 w-5 text-gray-400 group-hover:text-sky-500 transition-colors" />
+                </div>
                 <select
                   value={filterModel}
                   onChange={(e) => setFilterModel(e.target.value)}
-                  className="block w-full pl-3 pr-10 py-2 border border-gray-300 rounded-md leading-5 bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 text-sm appearance-none"
+                  className="block w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 text-gray-700 rounded-xl focus:ring-2 focus:ring-sky-500 focus:border-transparent outline-none transition-all appearance-none cursor-pointer"
                 >
-                  <option value="">Tất cả Model xe</option>
-                  {allModels.map((m) => (
-                    <option key={m.modelId} value={m.modelId}>
-                      {m.brand} {m.modelName}
+                  <option value="">Tất cả Model</option>
+                  {allModels.map((model) => (
+                    <option key={model.modelId} value={model.modelId}>
+                      {model.modelName}
                     </option>
                   ))}
                 </select>
-                <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                  <TruckIcon className="h-4 w-4 text-slate-400" />
-                </div>
               </div>
 
-              {/* Dealer Filter */}
-              <div className="relative">
-                <select
-                  value={filterDealer}
-                  onChange={(e) => setFilterDealer(e.target.value)}
-                  className="block w-full pl-3 pr-10 py-2 border border-gray-300 rounded-md leading-5 bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 text-sm appearance-none"
-                >
-                  <option value="">Tất cả Đại lý</option>
-                  {allDealers.map((d) => (
-                    <option key={d.dealerId} value={d.dealerId}>
-                      {d.dealerName}
-                    </option>
-                  ))}
-                </select>
-                <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                  <BuildingStorefrontIcon className="h-4 w-4 text-slate-400" />
+              {/* Dealer Filter - ONLY FOR EVM STAFF */}
+              {isEvmStaff && (
+                <div className="relative group min-w-[200px]">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <BuildingStorefrontIcon className="h-5 w-5 text-gray-400 group-hover:text-blue-500 transition-colors" />
+                  </div>
+                  <select
+                    value={filterDealer}
+                    onChange={(e) => setFilterDealer(e.target.value)}
+                    className="block w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 text-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all appearance-none cursor-pointer"
+                  >
+                    <option value="">Tất cả đại lý</option>
+                    {allDealers.map((dealer) => (
+                      <option key={dealer.dealerId} value={dealer.dealerId}>
+                        {dealer.dealerName}
+                      </option>
+                    ))}
+                  </select>
                 </div>
-              </div>
+              )}
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
@@ -1222,7 +1233,7 @@ export default function PromotionListPage({ onCreate, onEdit }) {
                         scope="col"
                         className="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider"
                       >
-                        Xem chi tiết
+                        Thao tác
                       </th>
                     </tr>
                   </thead>
@@ -1300,18 +1311,10 @@ export default function PromotionListPage({ onCreate, onEdit }) {
                               {getStatusBadge(promotion)}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                              <div className="flex items-center justify-end gap-2">
-                                <button
-                                  onClick={() => onEdit(promotion)}
-                                  className="inline-flex items-center px-3 py-1.5 border border-indigo-100 rounded-lg text-indigo-600 bg-indigo-50 hover:bg-indigo-100 transition-all"
-                                  title="Chỉnh sửa"
-                                >
-                                  <PencilIcon className="h-4 w-4 mr-1" />
-                                  Sửa
-                                </button>
+                              <div className="flex h-full items-center justify-center space-x-2">
                                 <button
                                   onClick={() => handleViewDetails(promotion)}
-                                  className="inline-flex items-center px-3 py-1.5 border border-slate-200 rounded-lg text-slate-600 bg-white hover:bg-slate-50 transition-all"
+                                  className="p-2 text-sky-600 hover:bg-sky-50 rounded-lg transition-colors"
                                   title="Xem chi tiết"
                                 >
                                   <EyeIcon className="h-4 w-4 mr-1" />
