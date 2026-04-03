@@ -304,7 +304,7 @@ public class InventoryController {
      * Sẽ ném lỗi (vd: INSUFFICIENT_STOCK) nếu thất bại.
      */
     @PostMapping("/allocate-sync")
-    public ResponseEntity<ApiRespond<Void>> allocateStockSync(@RequestBody AllocationRequestDto request) {
+    public ResponseEntity<ApiRespond<Void>> allocateStockSync(@Valid @RequestBody AllocationRequestDto request) {
 
         // Lấy email/role từ SecurityContext (giống như trong các hàm khác của bạn)
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();

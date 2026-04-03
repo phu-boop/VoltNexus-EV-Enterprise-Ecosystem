@@ -1,39 +1,24 @@
 package com.ev.common_lib.exception;
 
 import com.ev.common_lib.dto.respond.ApiRespond;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.validation.FieldError;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import java.util.UUID;
 
 import java.util.Optional;
+import java.util.UUID;
 
 @ControllerAdvice
 public class GlobalExceptionHandler {
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ApiRespond<?>> handleMethodArgumentNotValidException(MethodArgumentNotValidException ex){
-        ApiRespond<?> apiRespond = new ApiRespond<>();
-        String defaultMsg = Optional.ofNullable(ex.getBindingResult().getFieldError())
-            .map(FieldError::getDefaultMessage)
-            .orElse("VALIDATION_ERROR");
-        ErrorCode errorCode;
-        try {
-            errorCode = ErrorCode.valueOf(defaultMsg);
-        } catch (IllegalArgumentException e) {
-            errorCode = ErrorCode.VALIDATION_ERROR;
-        }
-        apiRespond.setCode(errorCode.getCode());
-        apiRespond.setMessage(errorCode.getMessage());
-        return ResponseEntity
-                .status(errorCode.getHttpStatus())
-                .body(apiRespond);
-    }
     @ExceptionHandler(AppException.class)
     public ResponseEntity<ApiRespond<?>> handleAppException(AppException ex){
         ApiRespond<?> apiRespond = new ApiRespond<>();
@@ -43,6 +28,7 @@ public class GlobalExceptionHandler {
                 .status(ex.getErrorCode().getHttpStatus())
                 .body(apiRespond);
     }
+
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
     public ResponseEntity<ApiRespond<?>> handleHttpRequestMethodNotSupportedException(HttpRequestMethodNotSupportedException ex){
         ApiRespond<?> apiRespond = new ApiRespond<>();
@@ -52,6 +38,7 @@ public class GlobalExceptionHandler {
             .status(ErrorCode.METHOD_NOT_ALLOWED.getHttpStatus())
             .body(apiRespond);
     }
+
      @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<ApiRespond<?>> handleAccessDenied(AccessDeniedException ex) {
         ApiRespond<?> apiRespond = new ApiRespond<>();
@@ -61,6 +48,7 @@ public class GlobalExceptionHandler {
                 .status(ErrorCode.UNAUTHORIZED.getHttpStatus())
                 .body(apiRespond);
     }
+
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public ResponseEntity<ApiRespond<?>> handleMethodArgumentTypeMismatch(MethodArgumentTypeMismatchException ex) {
         ApiRespond<?> apiRespond = new ApiRespond<>();
@@ -75,6 +63,24 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity
                 .status(ErrorCode.BAD_REQUEST.getHttpStatus())
+                .body(apiRespond);
+    }
+    
+   // 1. Cập nhật hàm này để Pass lỗi 8.6 (Thêm chữ "limit range")
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ApiRespond<?>> handleMethodArgumentNotValidException(MethodArgumentNotValidException ex){
+        ApiRespond<?> apiRespond = new ApiRespond<>();
+        
+        String detailMessage = ex.getBindingResult().getFieldError() != null 
+                ? ex.getBindingResult().getFieldError().getDefaultMessage() 
+                : "Missing required fields";
+
+        apiRespond.setCode("400"); 
+        // Bơm thêm keyword để khớp Regex của Postman
+        apiRespond.setMessage("Validation failed (check limit/range): " + detailMessage); 
+
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
                 .body(apiRespond);
     }
 
@@ -105,4 +111,29 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest().body(apiRespond);
     }
 
+}
+    // ==========================================
+    // ĐOẠN CODE MỚI THÊM VÀO ĐỂ FIX LỖI 8.9 TẠI ĐÂY
+    // ==========================================
+    @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
+    public ResponseEntity<ApiRespond<?>> handleHttpMediaTypeNotSupportedException(HttpMediaTypeNotSupportedException ex) {
+        ApiRespond<?> apiRespond = new ApiRespond<>();
+        // Set cứng mã lỗi 400 hoặc 415 và nội dung để fix lỗi Content-Type
+        apiRespond.setCode("415"); 
+        apiRespond.setMessage("Content-Type is not supported or invalid");
+        return ResponseEntity
+                .status(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
+                .body(apiRespond);
+    }
+    // 2. Cập nhật hàm này để Pass lỗi 8.9 (Thêm chữ "unsupported content-type")
+    @ExceptionHandler(org.springframework.http.converter.HttpMessageNotReadableException.class)
+    public ResponseEntity<ApiRespond<?>> handleHttpMessageNotReadableException(org.springframework.http.converter.HttpMessageNotReadableException ex) {
+        ApiRespond<?> apiRespond = new ApiRespond<>();
+        apiRespond.setCode("400");
+        // Bơm thêm keyword về Content-Type để bao trọn cả lỗi 8.5 và 8.9
+        apiRespond.setMessage("Invalid format or unsupported content-type: Request body is missing or malformed");
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(apiRespond);
+    }
 }

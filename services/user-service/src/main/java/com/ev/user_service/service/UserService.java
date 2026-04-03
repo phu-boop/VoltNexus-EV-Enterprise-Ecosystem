@@ -24,6 +24,10 @@ import java.time.LocalDate;
 import java.util.*;
 import java.util.UUID;
 import java.util.stream.Collectors;
+//
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 @Service
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
@@ -416,26 +420,53 @@ public class UserService {
         return userMapper.usertoUserRespond(user);
     }
 
+    //sửa lại update user
     public UserRespond updateUser(UUID id, UserRequest userRequest) {
-        User user = userRepository.findById(id)
+        // --- BẮT ĐẦU FIX LỖI BẢO MẬT IDOR ---
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String currentUsername = authentication.getName(); // Lấy email của người đang thao tác
+        boolean isAdmin = authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+
+        User targetUser = userRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
-        if ((user.getEmail() != null) && !user.getEmail().equals(userRequest.getEmail())
+
+        // Nếu KHÔNG PHẢI Admin VÀ email người thao tác KHÁC email của tài khoản bị sửa -> CHẶN
+        if (!isAdmin && !currentUsername.equals(targetUser.getEmail())) {
+            throw new AccessDeniedException("Bạn không có quyền cập nhật tài khoản của người khác");
+        }
+        // --- KẾT THÚC FIX LỖI BẢO MẬT ---
+
+        if ((targetUser.getEmail() != null) && !targetUser.getEmail().equals(userRequest.getEmail())
                 && userRepository.existsByEmail(userRequest.getEmail())) {
             throw new AppException(ErrorCode.EMAIL_ALREADY_EXISTS);
         }
-        if ((user.getPhone() != null) && !user.getPhone().equals(userRequest.getPhone())
+        if ((targetUser.getPhone() != null) && !targetUser.getPhone().equals(userRequest.getPhone())
                 && userRepository.existsByPhone(userRequest.getPhone())) {
             throw new AppException(ErrorCode.PHONE_ALREADY_EXISTS);
         }
-        userMapper.updateUserFromRequest(userRequest, user);
-        userRepository.save(user);
-        return userMapper.usertoUserRespond(user);
+        
+        userMapper.updateUserFromRequest(userRequest, targetUser);
+        userRepository.save(targetUser);
+        return userMapper.usertoUserRespond(targetUser);
     }
 
     public void deleteUser(UUID id) {
-        User user = userRepository.findById(id)
+        // --- BẮT ĐẦU FIX LỖI BẢO MẬT IDOR ---
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String currentUsername = authentication.getName();
+        boolean isAdmin = authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+
+        User targetUser = userRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
-        userRepository.delete(user);
+
+        if (!isAdmin && !currentUsername.equals(targetUser.getEmail())) {
+            throw new AccessDeniedException("Bạn không có quyền xóa tài khoản của người khác");
+        }
+        // --- KẾT THÚC FIX LỖI BẢO MẬT ---
+
+        userRepository.delete(targetUser);
     }
 
     public ProfileRespond getCurrentProfileByIdUser(UUID id_user) {

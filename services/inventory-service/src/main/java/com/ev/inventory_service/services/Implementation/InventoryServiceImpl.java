@@ -527,6 +527,10 @@ public class InventoryServiceImpl implements InventoryService {
             @CacheEvict(value = CACHE_INVENTORY_IDS_BY_STATUS, allEntries = true)
     })
     public void allocateStockForOrder(AllocationRequestDto request, String staffEmail) {
+        if (request == null || request.getItems() == null || request.getItems().isEmpty()) {
+            throw new AppException(ErrorCode.BAD_REQUEST);
+        }
+
         for (AllocationRequestDto.AllocationItem item : request.getItems()) {
             CentralInventory central = centralRepo.findByVariantId(item.getVariantId())
                     .orElseThrow(() -> new AppException(ErrorCode.INVENTORY_NOT_FOUND));
@@ -1184,7 +1188,7 @@ public class InventoryServiceImpl implements InventoryService {
     // --- Helped cho báo cáo ---
     /**
      * Tạo hình ảnh biểu đồ tròn (Pie Chart) từ dữ liệu giao dịch.
-     * 
+     *
      * @param transactions Danh sách giao dịch
      * @return Mảng byte[] của hình ảnh PNG
      */
@@ -1318,7 +1322,7 @@ public class InventoryServiceImpl implements InventoryService {
 
             // Giới hạn số lượng kết quả
             if (allocations.size() > limit) {
-                allocations = allocations.subList(0, limit);
+                    allocations = allocations.subList(0, limit);
             }
 
             // Lấy danh sách variantId để gọi Vehicle Service
@@ -1430,4 +1434,5 @@ public class InventoryServiceImpl implements InventoryService {
                 .pendingAllocations(pending)
                 .build();
     }
+}
 }

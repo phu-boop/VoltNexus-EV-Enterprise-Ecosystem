@@ -36,7 +36,7 @@ public class ProductionSecurityConfig {
         // In môi trường dev, cho phép tất cả request đi qua
 
         http
-                // .csrf(csrf -> csrf.disable())
+                .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
                         // Internal & Service endpoints
                         .requestMatchers(HttpMethod.POST, "/inventory/status-by-ids-detailed",
