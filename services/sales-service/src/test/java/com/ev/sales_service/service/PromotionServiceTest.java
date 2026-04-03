@@ -76,7 +76,7 @@ class PromotionServiceTest {
                 .status(PromotionStatus.ACTIVE)
                 .build();
 
-        Promotion updated = promotionService.updatePromotion(promotion.getPromotionId(), updateData);
+        Promotion updated = promotionService.updatePromotion(promotion.getPromotionId(), updateData, "ADMIN", null);
 
         assertThat(updated).isNotNull();
         assertThat(updated.getPromotionName()).isEqualTo("Updated Name");
@@ -106,7 +106,7 @@ class PromotionServiceTest {
     void deletePromotion_ShouldSetStatusToDeleted() {
         when(promotionRepository.findById(promotion.getPromotionId())).thenReturn(Optional.of(promotion));
 
-        promotionService.deletePromotion(promotion.getPromotionId());
+        promotionService.deletePromotion(promotion.getPromotionId(), "ADMIN", null);
 
         assertThat(promotion.getStatus()).isEqualTo(PromotionStatus.DELETED);
         verify(promotionRepository).save(promotion);

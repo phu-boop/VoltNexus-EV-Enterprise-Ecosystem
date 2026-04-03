@@ -36,7 +36,7 @@ public class ProductionSecurityConfig {
         // In môi trường dev, cho phép tất cả request đi qua
 
         http
-                // .csrf(csrf -> csrf.disable())
+                .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
                         // Internal & Service endpoints
                         .requestMatchers(HttpMethod.POST, "/inventory/status-by-ids-detailed",
@@ -70,7 +70,7 @@ public class ProductionSecurityConfig {
 
                         .requestMatchers(HttpMethod.GET, "/inventory/variants/ids-by-status",
                                 "/inventory/analytics/snapshots")
-                        .hasAnyAuthority(ROLE_EVM_STAFF, ROLE_ADMIN)
+                        .hasAnyAuthority(ROLE_EVM_STAFF, ROLE_ADMIN, ROLE_DEALER_MANAGER, ROLE_DEALER_STAFF)
 
                         .requestMatchers(HttpMethod.GET, "/inventory/report/export")
                         .hasAnyAuthority(ROLE_EVM_STAFF, ROLE_ADMIN)

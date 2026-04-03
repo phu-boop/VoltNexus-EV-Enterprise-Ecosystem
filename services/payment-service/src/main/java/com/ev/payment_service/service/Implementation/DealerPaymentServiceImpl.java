@@ -71,6 +71,12 @@ public class DealerPaymentServiceImpl implements IDealerPaymentService {
             throw new AppException(ErrorCode.BAD_REQUEST);
         }
 
+        // 1.5. Prevent duplicate invoices for the same order
+        if (hasInvoiceForOrder(request.getOrderId())) {
+            log.error("An invoice already exists for OrderId: {}", request.getOrderId());
+            throw new AppException(ErrorCode.BAD_REQUEST); // Duplicate invoice
+        }
+
         // 2. Validate order từ Sales Service: phải là B2B order
         log.info("Validating order from sales-service - OrderId: {}", request.getOrderId());
         Map<String, Object> orderData = validateB2BOrder(request.getOrderId());
@@ -264,12 +270,23 @@ public class DealerPaymentServiceImpl implements IDealerPaymentService {
             throw new AppException(ErrorCode.FORBIDDEN);
         }
 
-        // 3. Validate amount
-        BigDecimal remainingAmount = invoice.getTotalAmount().subtract(
-                invoice.getAmountPaid() != null ? invoice.getAmountPaid() : BigDecimal.ZERO);
+        // 3. Validate amount against remaining + pending amounts
+        BigDecimal amountPaid = invoice.getAmountPaid() != null ? invoice.getAmountPaid() : BigDecimal.ZERO;
+
+        // Cần tính tổng các giao dịch đang chờ duyệt để tránh vượt quá
+        List<DealerTransaction> allTransactions = dealerTransactionRepository
+                .findByDealerInvoice_DealerInvoiceId(invoiceId);
+        BigDecimal pendingAmount = allTransactions.stream()
+                .filter(t -> "PENDING_CONFIRMATION".equals(t.getStatus()))
+                .map(DealerTransaction::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal remainingAmount = invoice.getTotalAmount().subtract(amountPaid).subtract(pendingAmount);
+
         if (request.getAmount().compareTo(remainingAmount) > 0) {
-            log.error("Amount exceeds remaining amount - Request Amount: {}, Remaining Amount: {}",
-                    request.getAmount(), remainingAmount);
+            log.error(
+                    "Amount exceeds remaining unassigned amount - Request Amount: {}, Remaining: {} (Paid: {}, Pending: {})",
+                    request.getAmount(), remainingAmount, amountPaid, pendingAmount);
             throw new AppException(ErrorCode.BAD_REQUEST);
         }
 
@@ -377,9 +394,18 @@ public class DealerPaymentServiceImpl implements IDealerPaymentService {
         DealerTransaction savedTransaction = dealerTransactionRepository.save(transaction);
         log.info("DealerTransaction confirmed - TransactionId: {}", transactionId);
 
-        // 4. Update invoice
+        // 4. Update invoice (Ensure we don't overpay)
         DealerInvoice invoice = transaction.getDealerInvoice();
         BigDecimal newAmountPaid = invoice.getAmountPaid().add(transaction.getAmount());
+
+        // Bounding check to avoid exceeding total amount logically (e.g. concurrent
+        // confirm bugs)
+        if (newAmountPaid.compareTo(invoice.getTotalAmount()) > 0) {
+            log.warn(
+                    "DealerTransaction confirmed but amount exceeds total. Capping amount. Old Paid: {}, Transaction: {}, Total: {}",
+                    invoice.getAmountPaid(), transaction.getAmount(), invoice.getTotalAmount());
+            newAmountPaid = invoice.getTotalAmount();
+        }
         invoice.setAmountPaid(newAmountPaid);
 
         // Update invoice status

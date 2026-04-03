@@ -1,6 +1,5 @@
-// Dealer Payment Page (B2B Payment Flow - Dealer Manager)
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useAuthContext } from '../../../features/auth/AuthProvider';
 import paymentService from '../services/paymentService';
 import DealerInvoiceDetail from '../components/DealerInvoiceDetail';
@@ -10,6 +9,7 @@ import { toast } from 'react-toastify';
 const DealerPaymentPage = () => {
   const { invoiceId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { dealerId } = useAuthContext(); // Lấy dealerId từ AuthContext
   const [invoice, setInvoice] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -38,7 +38,8 @@ const DealerPaymentPage = () => {
 
   const handlePayInvoice = () => {
     // Navigate to payment page
-    navigate(`/dealer/manager/payments/invoices/${invoiceId}/pay`);
+    const prefix = location.pathname.includes('/manager/') ? '/dealer/manager' : '/dealer/staff';
+    navigate(`${prefix}/payments/invoices/${invoiceId}/pay`);
   };
 
   if (loading && !invoice) {
@@ -74,8 +75,8 @@ const DealerPaymentPage = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <DealerInvoiceDetail invoice={invoice} />
 
-        <DealerTransactionHistory 
-          transactions={invoice?.transactions || []} 
+        <DealerTransactionHistory
+          transactions={invoice?.transactions || []}
         />
       </div>
     </div>

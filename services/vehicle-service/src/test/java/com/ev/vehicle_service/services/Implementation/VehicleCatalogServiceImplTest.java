@@ -135,6 +135,34 @@ class VehicleCatalogServiceImplTest {
     }
 
     @Nested
+    @DisplayName("History Retrieval Tests")
+    class HistoryRetrievalTests {
+        @Test
+        @DisplayName("Should return variant price history")
+        void getVariantPriceHistory_ShouldReturnList() {
+            when(priceHistoryRepository.findByVehicleVariant_VariantIdOrderByChangeDateDesc(1L))
+                    .thenReturn(List.of(new PriceHistory()));
+
+            List<com.ev.vehicle_service.dto.response.PriceHistoryDto> result = vehicleCatalogService
+                    .getVariantPriceHistory(1L);
+
+            assertThat(result).hasSize(1);
+        }
+
+        @Test
+        @DisplayName("Should return variant audit history")
+        void getVariantAuditHistory_ShouldReturnList() {
+            when(variantHistoryRepository.findByVariantIdOrderByActionDateDesc(1L))
+                    .thenReturn(List.of(new VehicleVariantHistory()));
+
+            List<com.ev.vehicle_service.dto.response.VariantHistoryDto> result = vehicleCatalogService
+                    .getVariantAuditHistory(1L);
+
+            assertThat(result).hasSize(1);
+        }
+    }
+
+    @Nested
     @DisplayName("Model Search Tests")
     class ModelSearchTests {
         @Test
@@ -325,7 +353,7 @@ class VehicleCatalogServiceImplTest {
         void deactivateModel_ShouldSucceed() {
             when(modelRepository.findById(1L)).thenReturn(Optional.of(model));
 
-            vehicleCatalogService.deactivateModel(1L, "admin@test.com");
+            vehicleCatalogService.deactivateModel(1L, true, "admin@test.com");
 
             assertThat(model.getStatus()).isEqualTo(VehicleStatus.DISCONTINUED);
             verify(modelRepository).save(model);
@@ -352,7 +380,7 @@ class VehicleCatalogServiceImplTest {
             when(variantRepository.findAll(any(org.springframework.data.jpa.domain.Specification.class)))
                     .thenReturn(List.of(variant));
 
-            List<Long> result = vehicleCatalogService.searchVariantIdsByCriteria("Tesla", "Red", "Long");
+            List<Long> result = vehicleCatalogService.searchVariantIdsByCriteria("Tesla", "Red", "Long", null, null);
 
             assertThat(result).containsExactly(1L);
         }
@@ -366,7 +394,7 @@ class VehicleCatalogServiceImplTest {
                     .thenReturn(page);
 
             Page<VariantDetailDto> result = vehicleCatalogService.getAllVariantsPaginated(
-                    "Tesla", "IN_PRODUCTION", 50000.0, 100000.0, pageable);
+                    "Tesla", "IN_PRODUCTION", 50000.0, 100000.0, null, pageable, null);
 
             assertThat(result.getContent()).hasSize(1);
         }
@@ -520,6 +548,7 @@ class VehicleCatalogServiceImplTest {
 
         @Test
         @DisplayName("Should handle missing attributes in request context during inventory fetch")
+        @SuppressWarnings("unchecked")
         void getComparisonData_WhenNoRequest_ShouldStillWork() {
             List<Long> ids = List.of(1L);
             when(variantRepository.findAllWithDetailsByIds(ids)).thenReturn(List.of(variant));
@@ -572,6 +601,7 @@ class VehicleCatalogServiceImplTest {
 
         @Test
         @DisplayName("Should return empty list when inventory fetch fails")
+        @SuppressWarnings("unchecked")
         void getVariantIdsFromInventory_WhenFetchFails_ShouldReturnEmptyList() {
             when(restTemplate.exchange(anyString(), any(), any(), any(ParameterizedTypeReference.class)))
                     .thenThrow(new RuntimeException("Fetch Error"));

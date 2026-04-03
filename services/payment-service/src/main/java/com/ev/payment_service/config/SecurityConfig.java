@@ -32,7 +32,7 @@ public class SecurityConfig {
         log.info("[SecurityConfig] Configuring SecurityFilterChain with HeaderAuthenticationFilter");
 
         http
-                // .csrf(csrf -> csrf.disable())
+                .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
                 // XÓA BỎ HOÀN TOÀN .oauth2ResourceServer()

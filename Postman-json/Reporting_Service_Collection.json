@@ -1,0 +1,1027 @@
+{
+  "info": {
+    "_postman_id": "db118dcc-9480-4739-9355-74a0ee73547e",
+    "name": "Reporting Service API Automation Testing",
+    "description": "Postman Collection for Reporting Service - Full 14 APIs",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "51838372",
+    "_collection_link": "https://go.postman.co/collection/51838372-db118dcc-9480-4739-9355-74a0ee73547e?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "1. Admin Backfill",
+      "item": [
+        {
+          "name": "1. POST Backfill Dealers",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Kiểm tra status code hợp lệ\r",
+                  "pm.test(\"Status is 200 or 400\", function () {\r",
+                  "    pm.expect(pm.response.code, `❌ Status code: ${pm.response.code}\\nResponse: ${pm.response.text()}`).to.be.oneOf([200, 400]);\r",
+                  "});\r",
+                  "\r",
+                  "// Log chi tiết khi gặp lỗi\r",
+                  "if (![200, 400].includes(pm.response.code)) {\r",
+                  "    console.error(\"❌ Unexpected status code:\", pm.response.code);\r",
+                  "    console.error(\"Response body:\", pm.response.text());\r",
+                  "    pm.environment.set(\"last_error_response\", pm.response.text());\r",
+                  "}\r",
+                  "\r",
+                  "// Kiểm tra Content-Type\r",
+                  "const contentType = pm.response.headers.get(\"Content-Type\") || \"\";\r",
+                  "pm.test(\"Content-Type hợp lệ\", function () {\r",
+                  "    pm.expect(contentType, \"Content-Type phải là application/json hoặc text/plain\").to.match(/application\\/json|text\\/plain/);\r",
+                  "});\r",
+                  "\r",
+                  "// Kiểm tra response có phải JSON không (nếu Content-Type đúng)\r",
+                  "if (contentType.includes(\"application/json\")) {\r",
+                  "    pm.test(\"Response is JSON\", function () {\r",
+                  "        pm.response.to.have.jsonBody();\r",
+                  "    });\r",
+                  "    let jsonData;\r",
+                  "    try {\r",
+                  "        jsonData = pm.response.json();\r",
+                  "\r",
+                  "        // Kiểm tra có trường message hoặc error\r",
+                  "        pm.test(\"Response có trường 'message' hoặc 'error'\", function () {\r",
+                  "            pm.expect(jsonData).to.satisfy(obj => obj.hasOwnProperty(\"message\") || obj.hasOwnProperty(\"error\"));\r",
+                  "        });\r",
+                  "\r",
+                  "        // Kiểm tra message không rỗng nếu có\r",
+                  "        if (jsonData.message) {\r",
+                  "            pm.test(\"Message không rỗng\", function () {\r",
+                  "                pm.expect(jsonData.message).to.not.be.empty;\r",
+                  "            });\r",
+                  "        }\r",
+                  "\r",
+                  "        // Kiểm tra nếu trả về array thì không được rỗng và không có phần tử null/undefined\r",
+                  "        if (Array.isArray(jsonData)) {\r",
+                  "            pm.test(\"Array không rỗng\", function () {\r",
+                  "                pm.expect(jsonData.length, \"Array trả về bị rỗng!\").to.be.above(0);\r",
+                  "            });\r",
+                  "            pm.test(\"Array không có phần tử null/undefined\", function () {\r",
+                  "                pm.expect(jsonData.every(item => item !== null && item !== undefined)).to.be.true;\r",
+                  "            });\r",
+                  "            // Kiểm tra trùng lặp (nếu có trường id)\r",
+                  "            const ids = jsonData.map(item => item.id).filter(id => id !== undefined);\r",
+                  "            if (ids.length > 0) {\r",
+                  "                const uniqueIds = new Set(ids);\r",
+                  "                pm.test(\"Không có id trùng lặp trong array\", function () {\r",
+                  "                    pm.expect(uniqueIds.size).to.eql(ids.length);\r",
+                  "                });\r",
+                  "            }\r",
+                  "        }\r",
+                  "\r",
+                  "        // Kiểm tra các trường dữ liệu quan trọng không null/undefined, đúng format\r",
+                  "        if (typeof jsonData === \"object\" && !Array.isArray(jsonData)) {\r",
+                  "            const requiredFields = [\"id\", \"name\", \"createdAt\"]; // Thay đổi theo API của bạn\r",
+                  "            requiredFields.forEach(field => {\r",
+                  "                pm.test(`Trường '${field}' không null/undefined`, function () {\r",
+                  "                    pm.expect(jsonData[field], `Trường '${field}' bị thiếu hoặc null`).to.not.be.oneOf([null, undefined]);\r",
+                  "                });\r",
+                  "            });\r",
+                  "            // Kiểm tra format ngày/tháng nếu có\r",
+                  "            if (jsonData.createdAt) {\r",
+                  "                pm.test(\"createdAt đúng định dạng ISO\", function () {\r",
+                  "                    pm.expect(jsonData.createdAt).to.match(/^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}/);\r",
+                  "                });\r",
+                  "            }\r",
+                  "        }\r",
+                  "\r",
+                  "    } catch (e) {\r",
+                  "        pm.test(\"Response is valid JSON\", function () {\r",
+                  "            pm.expect.fail(\"Response is not valid JSON\");\r",
+                  "        });\r",
+                  "    }\r",
+                  "} else {\r",
+                  "    pm.test(\"Response không phải JSON (text/plain hoặc khác)\", function () {\r",
+                  "        pm.expect(contentType).to.not.include(\"application/json\");\r",
+                  "    });\r",
+                  "}\r",
+                  "\r",
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{url_reporting}}/api/v1/admin/backfill/dealers",
+              "host": [
+                "{{url_reporting}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "backfill",
+                "dealers"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "2. POST Backfill Vehicles",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Kiểm tra status code hợp lệ\r",
+                  "pm.test(\"Status is 200 or 400\", function(){\r",
+                  "    pm.expect(pm.response.code, `❌ Status code: ${pm.response.code}\\nResponse: ${pm.response.text()}`).to.be.oneOf([200, 400]);\r",
+                  "});\r",
+                  "\r",
+                  "// Log chi tiết khi gặp lỗi\r",
+                  "if (![200, 400].includes(pm.response.code)) {\r",
+                  "    console.error(\"❌ Unexpected status code:\", pm.response.code);\r",
+                  "    console.error(\"Response body:\", pm.response.text());\r",
+                  "    pm.environment.set(\"last_error_response\", pm.response.text());\r",
+                  "}\r",
+                  "\r",
+                  "// Kiểm tra Content-Type\r",
+                  "const contentType = pm.response.headers.get(\"Content-Type\") || \"\";\r",
+                  "pm.test(\"Content-Type hợp lệ\", function () {\r",
+                  "    pm.expect(contentType, \"Content-Type phải là application/json hoặc text/plain\").to.match(/application\\/json|text\\/plain/);\r",
+                  "});\r",
+                  "\r",
+                  "// Kiểm tra response có phải JSON không (nếu Content-Type đúng)\r",
+                  "if (contentType.includes(\"application/json\")) {\r",
+                  "    pm.test(\"Response is JSON\", function () {\r",
+                  "        pm.response.to.have.jsonBody();\r",
+                  "    });\r",
+                  "    let jsonData;\r",
+                  "    try {\r",
+                  "        jsonData = pm.response.json();\r",
+                  "\r",
+                  "        // Kiểm tra có trường message hoặc error\r",
+                  "        pm.test(\"Response có trường 'message' hoặc 'error'\", function () {\r",
+                  "            pm.expect(jsonData).to.satisfy(obj => obj.hasOwnProperty(\"message\") || obj.hasOwnProperty(\"error\"));\r",
+                  "        });\r",
+                  "\r",
+                  "        // Kiểm tra message không rỗng nếu có\r",
+                  "        if (jsonData.message) {\r",
+                  "            pm.test(\"Message không rỗng\", function () {\r",
+                  "                pm.expect(jsonData.message).to.not.be.empty;\r",
+                  "            });\r",
+                  "        }\r",
+                  "\r",
+                  "        // Kiểm tra nếu trả về số lượng xe đã backfill thì phải là số nguyên dương\r",
+                  "        if (jsonData.message && jsonData.message.match(/lấp đầy (\\d+) xe/)) {\r",
+                  "            const match = jsonData.message.match(/lấp đầy (\\d+) xe/);\r",
+                  "            const count = parseInt(match[1], 10);\r",
+                  "            pm.test(\"Số lượng xe backfill > 0\", function () {\r",
+                  "                pm.expect(count, \"Số lượng xe backfill phải lớn hơn 0\").to.be.above(0);\r",
+                  "            });\r",
+                  "        }\r",
+                  "\r",
+                  "        // Kiểm tra nếu có trường errors là mảng thì không được có phần tử null/undefined\r",
+                  "        if (Array.isArray(jsonData.errors)) {\r",
+                  "            pm.test(\"Mảng errors không có phần tử null/undefined\", function () {\r",
+                  "                pm.expect(jsonData.errors.every(item => item !== null && item !== undefined)).to.be.true;\r",
+                  "            });\r",
+                  "        }\r",
+                  "\r",
+                  "    } catch (e) {\r",
+                  "        pm.test(\"Response is valid JSON\", function () {\r",
+                  "            pm.expect.fail(\"Response is not valid JSON\");\r",
+                  "        });\r",
+                  "    }\r",
+                  "} else {\r",
+                  "    pm.test(\"Response không phải JSON (text/plain hoặc khác)\", function () {\r",
+                  "        pm.expect(contentType).to.not.include(\"application/json\");\r",
+                  "    });\r",
+                  "}\r",
+                  "\r",
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{url_reporting}}/api/v1/admin/backfill/vehicles",
+              "host": [
+                "{{url_reporting}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "backfill",
+                "vehicles"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "2. General Reports",
+      "item": [
+        {
+          "name": "1. GET Inventory Report",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Kiểm tra status code 200",
+                  "pm.test(\"Status is 200\", function(){",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "// Kiểm tra response là array",
+                  "let jsonData;",
+                  "pm.test(\"Response is array\", function() {",
+                  "    jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.be.an('array');",
+                  "});",
+                  "",
+                  "",
+                  "",
+                  "// Kiểm tra các phần tử trong array không null/undefined",
+                  "pm.test(\"Array không có phần tử null/undefined\", function() {",
+                  "    pm.expect(jsonData.every(item => item !== null && item !== undefined)).to.be.true;",
+                  "});",
+                  "",
+                  "// Kiểm tra các trường dữ liệu quan trọng trong mỗi phần tử (ví dụ: id, name)",
+                  "jsonData.forEach((item, idx) => {",
+                  "    pm.test(`Phần tử [${idx}] có trường 'id'`, function() {",
+                  "        pm.expect(item).to.have.property('id');",
+                  "    });",
+                  "    pm.test(`Phần tử [${idx}] có trường 'name'`, function() {",
+                  "        pm.expect(item).to.have.property('name');",
+                  "    });",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{url_reporting}}/reports/inventory",
+              "host": [
+                "{{url_reporting}}"
+              ],
+              "path": [
+                "reports",
+                "inventory"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "2. GET Sales Report",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Kiểm tra status code 200",
+                  "pm.test(\"Status is 200\", function(){",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "// Kiểm tra response là array",
+                  "let jsonData;",
+                  "pm.test(\"Response is array\", function() {",
+                  "    jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.be.an('array');",
+                  "});",
+                  "",
+                  "// Kiểm tra array không rỗng",
+                  "pm.test(\"Array không rỗng\", function() {",
+                  "    pm.expect(jsonData.length, \"Array trả về bị rỗng!\").to.be.above(0);",
+                  "});",
+                  "",
+                  "// Kiểm tra các phần tử trong array không null/undefined",
+                  "pm.test(\"Array không có phần tử null/undefined\", function() {",
+                  "    pm.expect(jsonData.every(item => item !== null && item !== undefined)).to.be.true;",
+                  "});",
+                  "",
+                  "// Kiểm tra các trường dữ liệu quan trọng trong mỗi phần tử (ví dụ: id, amount)",
+                  "jsonData.forEach((item, idx) => {",
+                  "    pm.test(`Phần tử [${idx}] có trường 'id'`, function() {",
+                  "        pm.expect(item).to.have.property('id');",
+                  "    });",
+                  "    pm.test(`Phần tử [${idx}] có trường 'amount'`, function() {",
+                  "        pm.expect(item).to.have.property('amount');",
+                  "    });",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{url_reporting}}/reports/sales",
+              "host": [
+                "{{url_reporting}}"
+              ],
+              "path": [
+                "reports",
+                "sales"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "3. GET Inventory Velocity",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status is 200\", function(){ pm.response.to.have.status(200); });",
+                  "pm.test(\"Verify array\", function() { pm.expect(pm.response.json()).to.be.an('array'); });"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{url_reporting}}/reports/inventory-velocity",
+              "host": [
+                "{{url_reporting}}"
+              ],
+              "path": [
+                "reports",
+                "inventory-velocity"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "4. GET Central Inventory",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status is 200\", function(){ pm.response.to.have.status(200); });",
+                  "pm.test(\"Verify array\", function() { pm.expect(pm.response.json()).to.be.an('array'); });"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{url_reporting}}/reports/central-inventory",
+              "host": [
+                "{{url_reporting}}"
+              ],
+              "path": [
+                "reports",
+                "central-inventory"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "5. GET Central Inventory Transactions",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status is 200\", function(){ pm.response.to.have.status(200); });",
+                  "pm.test(\"Verify array\", function() { pm.expect(pm.response.json()).to.be.an('array'); });"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{url_reporting}}/reports/central-inventory/transactions",
+              "host": [
+                "{{url_reporting}}"
+              ],
+              "path": [
+                "reports",
+                "central-inventory",
+                "transactions"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "3. Reporting & Sync",
+      "item": [
+        {
+          "name": "1. POST Record Sale",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Kiểm tra status code 200",
+                  "pm.test(\"Status Code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "// Kiểm tra response chứa thông báo thành công",
+                  "pm.test(\"Response contains success message\", function() {",
+                  "    pm.expect(pm.response.text()).to.include(\"Sale recorded successfully\");",
+                  "});",
+                  "",
+                  "// Kiểm tra Content-Type là JSON hoặc text",
+                  "const contentType = pm.response.headers.get(\"Content-Type\") || \"\";",
+                  "pm.test(\"Content-Type hợp lệ\", function () {",
+                  "    pm.expect(contentType).to.match(/application\\/json|text\\/plain/);",
+                  "});",
+                  "",
+                  "// Nếu là JSON, kiểm tra có trường message",
+                  "if (contentType.includes(\"application/json\")) {",
+                  "    let jsonData;",
+                  "    try {",
+                  "        jsonData = pm.response.json();",
+                  "        pm.test(\"Response có trường 'message'\", function () {",
+                  "            pm.expect(jsonData).to.have.property(\"message\");",
+                  "        });",
+                  "        pm.test(\"Message đúng nội dung\", function () {",
+                  "            pm.expect(jsonData.message).to.include(\"Sale recorded successfully\");",
+                  "        });",
+                  "    } catch (e) {",
+                  "        pm.test(\"Response is valid JSON\", function () {",
+                  "            pm.expect.fail(\"Response is not valid JSON\");",
+                  "        });",
+                  "    }",
+                  "}",
+                  "",
+                  "// Kiểm tra thời gian phản hồi < 2s",
+                  "pm.test(\"Response time < 2s\", function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"orderId \": \"550e8400-e29b-41d4-a716-446655440000\",\n    \"totalAmount\": 500000000,\n    \"dealerName\": \"Hanoi Auto\",\n    \"variantId\": 1,\n    \"modelName\": \"VF8\",\n    \"region\": \"North\"\n}"
+            },
+            "url": {
+              "raw": "{{url_reporting}}/api/reports/sales",
+              "host": [
+                "{{url_reporting}}"
+              ],
+              "path": [
+                "api",
+                "reports",
+                "sales"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "2. GET Sales Summary",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Kiểm tra status code 200",
+                  "pm.test(\"Status is 200\", function(){",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "// Kiểm tra response là array",
+                  "let jsonData;",
+                  "pm.test(\"Response is array\", function() {",
+                  "    jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.be.an('array');",
+                  "});",
+                  "",
+                  "// Kiểm tra array không rỗng (nếu bạn muốn test có data)",
+                  "pm.test(\"Array không rỗng\", function() {",
+                  "    pm.expect(jsonData.length, \"Array trả về bị rỗng!\").to.be.above(0);",
+                  "});",
+                  "",
+                  "// Kiểm tra các phần tử trong array không null/undefined",
+                  "pm.test(\"Array không có phần tử null/undefined\", function() {",
+                  "    pm.expect(jsonData.every(item => item !== null && item !== undefined)).to.be.true;",
+                  "});",
+                  "",
+                  "// Kiểm tra các trường dữ liệu quan trọng trong mỗi phần tử (ví dụ: orderId, totalAmount, dealerName)",
+                  "jsonData.forEach((item, idx) => {",
+                  "    pm.test(`Phần tử [${idx}] có trường 'orderId'`, function() {",
+                  "        pm.expect(item).to.have.property('orderId');",
+                  "    });",
+                  "    pm.test(`Phần tử [${idx}] có trường 'totalAmount'`, function() {",
+                  "        pm.expect(item).to.have.property('totalAmount');",
+                  "    });",
+                  "    pm.test(`Phần tử [${idx}] có trường 'dealerName'`, function() {",
+                  "        pm.expect(item).to.have.property('dealerName');",
+                  "    });",
+                  "});",
+                  "",
+                  "// Log chi tiết nếu có lỗi",
+                  "if (jsonData.length === 0) {",
+                  "    console.warn(\"⚠️ Array trả về rỗng, kiểm tra lại dữ liệu test hoặc logic backend.\");",
+                  "}"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{url_reporting}}/api/reports/sales/summary",
+              "host": [
+                "{{url_reporting}}"
+              ],
+              "path": [
+                "api",
+                "reports",
+                "sales",
+                "summary"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "3. POST Sync Sales Data",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Kiểm tra status code 200",
+                  "pm.test(\"Status is 200\", function(){",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "// Kiểm tra Content-Type hợp lệ",
+                  "const contentType = pm.response.headers.get(\"Content-Type\") || \"\";",
+                  "pm.test(\"Content-Type hợp lệ\", function () {",
+                  "    pm.expect(contentType, \"Content-Type phải là application/json hoặc text/plain\").to.match(/application\\/json|text\\/plain/);",
+                  "});",
+                  "",
+                  "// Kiểm tra response là JSON và có trường message",
+                  "let jsonData;",
+                  "pm.test(\"Response là JSON và có trường 'message'\", function() {",
+                  "    jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.be.an('object');",
+                  "    pm.expect(jsonData).to.have.property('message');",
+                  "    pm.expect(jsonData.message, \"Message không được rỗng\").to.not.be.empty;",
+                  "});",
+                  "",
+                  "// Kiểm tra nội dung message đúng mong đợi (nếu có)",
+                  "pm.test(\"Message đúng nội dung thành công\", function() {",
+                  "    pm.expect(jsonData.message).to.include(\"Sales data synchronization completed successfully\");",
+                  "});",
+                  "",
+                  "// Kiểm tra thời gian phản hồi < 2s",
+                  "pm.test(\"Response time < 2s\", function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+                  "});",
+                  "",
+                  "// Log chi tiết nếu có lỗi",
+                  "if (!jsonData.message || !jsonData.message.includes(\"Sales data synchronization completed successfully\")) {",
+                  "    console.warn(\"⚠️ Message trả về không đúng hoặc thiếu:\", jsonData.message);",
+                  "}"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{url_reporting}}/api/sync/sales",
+              "host": [
+                "{{url_reporting}}"
+              ],
+              "path": [
+                "api",
+                "sync",
+                "sales"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "4. POST Sync Inventory Data",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Kiểm tra status code 200",
+                  "pm.test(\"Status is 200\", function(){",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "// Kiểm tra Content-Type hợp lệ",
+                  "const contentType = pm.response.headers.get(\"Content-Type\") || \"\";",
+                  "pm.test(\"Content-Type hợp lệ\", function () {",
+                  "    pm.expect(contentType, \"Content-Type phải là application/json hoặc text/plain\").to.match(/application\\/json|text\\/plain/);",
+                  "});",
+                  "",
+                  "// Kiểm tra response là JSON và có trường message",
+                  "let jsonData;",
+                  "pm.test(\"Response là JSON và có trường 'message'\", function() {",
+                  "    jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.be.an('object');",
+                  "    pm.expect(jsonData).to.have.property('message');",
+                  "    pm.expect(jsonData.message, \"Message không được rỗng\").to.not.be.empty;",
+                  "});",
+                  "",
+                  "// Kiểm tra nội dung message đúng mong đợi (nếu có)",
+                  "pm.test(\"Message đúng nội dung thành công\", function() {",
+                  "    pm.expect(jsonData.message).to.include(\"Inventory data synchronization completed successfully\");",
+                  "});",
+                  "",
+                  "// Kiểm tra thời gian phản hồi < 2s",
+                  "pm.test(\"Response time < 2s\", function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+                  "});",
+                  "",
+                  "// Log chi tiết nếu có lỗi",
+                  "if (!jsonData.message || !jsonData.message.includes(\"Inventory data synchronization completed successfully\")) {",
+                  "    console.warn(\"⚠️ Message trả về không đúng hoặc thiếu:\", jsonData.message);",
+                  "}"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"dealerId\": {{dealerId}},\r\n  \"variantId\": \"{{variantId}}\",\r\n  \"quantity\": {{quantity}},\r\n  \"dealerName\": \"{{dealerName}}\",\r\n  \"modelName\": \"{{modelName}}\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{url_reporting}}/api/sync/inventory",
+              "host": [
+                "{{url_reporting}}"
+              ],
+              "path": [
+                "api",
+                "sync",
+                "inventory"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "5. POST Sync Metadata",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Kiểm tra status code 200",
+                  "pm.test(\"Status is 200\", function(){",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "// Kiểm tra Content-Type hợp lệ",
+                  "const contentType = pm.response.headers.get(\"Content-Type\") || \"\";",
+                  "pm.test(\"Content-Type hợp lệ\", function () {",
+                  "    pm.expect(contentType, \"Content-Type phải là application/json hoặc text/plain\").to.match(/application\\/json|text\\/plain/);",
+                  "});",
+                  "",
+                  "// Kiểm tra response là JSON và có trường message",
+                  "let jsonData;",
+                  "pm.test(\"Response là JSON và có trường 'message'\", function() {",
+                  "    jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.be.an('object');",
+                  "    pm.expect(jsonData).to.have.property('message');",
+                  "    pm.expect(jsonData.message, \"Message không được rỗng\").to.not.be.empty;",
+                  "});",
+                  "",
+                  "// Kiểm tra nội dung message đúng mong đợi",
+                  "pm.test(\"Message đúng nội dung thành công\", function() {",
+                  "    pm.expect(jsonData.message).to.include(\"Metadata synchronization (connectivity check) completed.\");",
+                  "});",
+                  "",
+                  "",
+                  "",
+                  "// Log chi tiết nếu có lỗi hoặc message không đúng",
+                  "if (!jsonData.message || !jsonData.message.includes(\"Metadata synchronization (connectivity check) completed.\")) {",
+                  "    console.warn(\"⚠️ Message trả về không đúng hoặc thiếu:\", jsonData.message);",
+                  "}"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{url_reporting}}/api/sync/metadata",
+              "host": [
+                "{{url_reporting}}"
+              ],
+              "path": [
+                "api",
+                "sync",
+                "metadata"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "4. AI Forecast",
+      "item": [
+        {
+          "name": "1. POST Demand Forecast",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Kiểm tra status code 200",
+                  "pm.test(\"Status is 200\", function(){",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "// Kiểm tra Content-Type hợp lệ",
+                  "const contentType = pm.response.headers.get(\"Content-Type\") || \"\";",
+                  "pm.test(\"Content-Type hợp lệ\", function () {",
+                  "    pm.expect(contentType, \"Content-Type phải là application/json hoặc text/plain\").to.match(/application\\/json|text\\/plain/);",
+                  "});",
+                  "",
+                  "// Kiểm tra response là JSON và có trường forecast",
+                  "let jsonData;",
+                  "pm.test(\"Response là JSON và có trường 'forecast'\", function() {",
+                  "    jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.be.an('object');",
+                  "    pm.expect(jsonData).to.have.property('forecast');",
+                  "    pm.expect(jsonData.forecast, \"Forecast không được rỗng\").to.not.be.empty;",
+                  "});",
+                  "",
+                  "// Kiểm tra thời gian phản hồi < 30s (vì AI có thể lâu)",
+                  "pm.test(\"Response time < 30s\", function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(30000);",
+                  "});",
+                  "",
+                  "// Log chi tiết nếu thiếu forecast hoặc forecast rỗng",
+                  "if (!jsonData.forecast || jsonData.forecast === \"\") {",
+                  "    console.warn(\"⚠️ Forecast trả về không đúng hoặc thiếu:\", jsonData.forecast);",
+                  "}"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"modelName\": \"{{modelName}}\",\r\n  \"region\": \"{{region}}\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{url_reporting}}/api/reports/forecast?modelName=VF8",
+              "host": [
+                "{{url_reporting}}"
+              ],
+              "path": [
+                "api",
+                "reports",
+                "forecast"
+              ],
+              "query": [
+                {
+                  "key": "modelName",
+                  "value": "VF8"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "2. GET Check Forecast Cache",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Kiểm tra status code 200",
+                  "pm.test(\"Status is 200\", function(){",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "// Kiểm tra Content-Type hợp lệ",
+                  "const contentType = pm.response.headers.get(\"Content-Type\") || \"\";",
+                  "pm.test(\"Content-Type hợp lệ\", function () {",
+                  "    pm.expect(contentType, \"Content-Type phải là application/json hoặc text/plain\").to.match(/application\\/json|text\\/plain/);",
+                  "});",
+                  "",
+                  "// Kiểm tra response là JSON và có trường exists",
+                  "let jsonData;",
+                  "pm.test(\"Response là JSON và có trường 'exists'\", function() {",
+                  "    jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.be.an('object');",
+                  "    pm.expect(jsonData).to.have.property('exists');",
+                  "    pm.expect([true, false]).to.include(jsonData.exists);",
+                  "});",
+                  "",
+                  "// Kiểm tra thời gian phản hồi < 2s",
+                  "pm.test(\"Response time < 2s\", function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+                  "});",
+                  "",
+                  "// Log chi tiết nếu thiếu trường exists hoặc giá trị không hợp lệ",
+                  "if (typeof jsonData.exists !== \"boolean\") {",
+                  "    console.warn(\"⚠️ Trường 'exists' trả về không đúng kiểu boolean:\", jsonData.exists);",
+                  "}"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{url_reporting}}/api/reports/forecast/check?modelName=VF8",
+              "host": [
+                "{{url_reporting}}"
+              ],
+              "path": [
+                "api",
+                "reports",
+                "forecast",
+                "check"
+              ],
+              "query": [
+                {
+                  "key": "modelName",
+                  "value": "VF8"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

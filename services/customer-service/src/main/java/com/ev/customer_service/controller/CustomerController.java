@@ -36,21 +36,13 @@ public class CustomerController {
 
     @GetMapping
     public ResponseEntity<ApiRespond<List<CustomerResponse>>> getAllCustomers(
-            @RequestParam(required = false) String search) {
-        log.info("GET /customers - search parameter: '{}'", search);
+            @RequestParam(required = false) String search,
+            @RequestHeader(value = "X-User-Roles", required = false) String roles,
+            @RequestHeader(value = "X-User-DealerId", required = false) String currentUserDealerId) {
+        log.info("GET /customers - search: '{}', roles: '{}', dealerId: '{}'", search, roles, currentUserDealerId);
         
         try {
-            List<CustomerResponse> customers;
-
-            if (search != null && !search.isEmpty()) {
-                log.info("Searching customers with query: {}", search);
-                customers = customerService.searchCustomers(search);
-            } else {
-                log.info("Fetching all customers");
-                customers = customerService.getAllCustomers();
-            }
-
-            log.info("Successfully retrieved {} customers", customers.size());
+            List<CustomerResponse> customers = customerService.getCustomersWithFilter(search, roles, currentUserDealerId);
             return ResponseEntity.ok(ApiRespond.success("Customers retrieved successfully", customers));
         } catch (Exception e) {
             log.error("Error in getAllCustomers: ", e);
@@ -73,8 +65,11 @@ public class CustomerController {
     }
 
     @PostMapping
-    public ResponseEntity<ApiRespond<CustomerResponse>> createCustomer(@Valid @RequestBody CustomerRequest request) {
-        CustomerResponse customer = customerService.createCustomer(request);
+    public ResponseEntity<ApiRespond<CustomerResponse>> createCustomer(
+            @Valid @RequestBody CustomerRequest request,
+            @RequestHeader(value = "X-User-Roles", required = false) String roles,
+            @RequestHeader(value = "X-User-DealerId", required = false) String currentUserDealerId) {
+        CustomerResponse customer = customerService.createCustomer(request, roles, currentUserDealerId);
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(ApiRespond.success("Customer created successfully", customer));
@@ -84,21 +79,20 @@ public class CustomerController {
     public ResponseEntity<ApiRespond<CustomerResponse>> updateCustomer(
             @PathVariable String id,
             @Valid @RequestBody CustomerRequest request,
-            @RequestHeader(value = "X-Modified-By", required = false) String modifiedBy) {
+            @RequestHeader(value = "X-User-Roles", required = false) String roles,
+            @RequestHeader(value = "X-User-DealerId", required = false) String currentUserDealerId) {
         Long customerId = Long.parseLong(id);
-        try {
-            com.ev.customer_service.util.RequestContext.setCurrentUser(modifiedBy);
-            CustomerResponse customer = customerService.updateCustomer(customerId, request);
-            return ResponseEntity.ok(ApiRespond.success("Customer updated successfully", customer));
-        } finally {
-            com.ev.customer_service.util.RequestContext.clear();
-        }
+        CustomerResponse customer = customerService.updateCustomer(customerId, request, roles, currentUserDealerId);
+        return ResponseEntity.ok(ApiRespond.success("Customer updated successfully", customer));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<ApiRespond<Void>> deleteCustomer(@PathVariable String id) {
+    public ResponseEntity<ApiRespond<Void>> deleteCustomer(
+            @PathVariable String id,
+            @RequestHeader(value = "X-User-Roles", required = false) String roles,
+            @RequestHeader(value = "X-User-DealerId", required = false) String currentUserDealerId) {
         Long customerId = Long.parseLong(id);
-        customerService.deleteCustomer(customerId);
+        customerService.deleteCustomer(customerId, roles, currentUserDealerId);
         return ResponseEntity.ok(ApiRespond.success("Customer deleted successfully", (Void) null));
     }
 

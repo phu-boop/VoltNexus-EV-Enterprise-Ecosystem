@@ -14,7 +14,6 @@
     <modules>
         <module>common-lib</module>
         <module>gateway</module>
-
         <module>services/ai-service</module>
         <module>services/customer-service</module>
         <module>services/dealer-service</module>
@@ -24,6 +23,7 @@
         <module>services/sales-service</module>
         <module>services/user-service</module>
         <module>services/vehicle-service</module>
+
     </modules>
 
     <properties>

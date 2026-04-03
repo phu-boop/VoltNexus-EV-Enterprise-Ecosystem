@@ -28,7 +28,7 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -78,7 +78,7 @@ class CustomerControllerTest {
     @Test
     @DisplayName("Get all customers - no search")
     void getAllCustomers() throws Exception {
-        Mockito.when(customerService.getAllCustomers()).thenReturn(Arrays.asList(customerResponse));
+        when(customerService.getCustomersWithFilter(any(), any(), any())).thenReturn(Arrays.asList(customerResponse));
 
         mockMvc.perform(get("/customers"))
                 .andExpect(status().isOk())
@@ -90,7 +90,7 @@ class CustomerControllerTest {
     @Test
     @DisplayName("Get all customers - with search")
     void searchCustomers() throws Exception {
-        Mockito.when(customerService.searchCustomers("John")).thenReturn(Arrays.asList(customerResponse));
+        when(customerService.getCustomersWithFilter(eq("John"), any(), any())).thenReturn(Arrays.asList(customerResponse));
 
         mockMvc.perform(get("/customers").param("search", "John"))
                 .andExpect(status().isOk())
@@ -123,7 +123,7 @@ class CustomerControllerTest {
     @Test
     @DisplayName("Create customer")
     void createCustomer() throws Exception {
-        Mockito.when(customerService.createCustomer(any(CustomerRequest.class))).thenReturn(customerResponse);
+        when(customerService.createCustomer(any(CustomerRequest.class), any(), any())).thenReturn(customerResponse);
 
         mockMvc.perform(post("/customers")
                 .with(csrf())
@@ -137,7 +137,8 @@ class CustomerControllerTest {
     @Test
     @DisplayName("Update customer")
     void updateCustomer() throws Exception {
-        Mockito.when(customerService.updateCustomer(eq(1L), any(CustomerRequest.class))).thenReturn(customerResponse);
+        when(customerService.updateCustomer(anyLong(), any(CustomerRequest.class), any(), any()))
+.thenReturn(customerResponse);
 
         mockMvc.perform(put("/customers/1")
                 .with(csrf())
@@ -152,7 +153,7 @@ class CustomerControllerTest {
     @Test
     @DisplayName("Delete customer")
     void deleteCustomer() throws Exception {
-        doNothing().when(customerService).deleteCustomer(1L);
+        doNothing().when(customerService).deleteCustomer(anyLong(), any(), any());
 
         mockMvc.perform(delete("/customers/1")
                 .with(csrf()))

@@ -1,29 +1,41 @@
 package com.ev.ai_service.loader;
 
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.document.Document;
-
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.Map;
 
 @Component
-@RequiredArgsConstructor
 @Slf4j
 public class KnowledgeBaseLoader implements CommandLineRunner {
 
+    @Nullable
     private final VectorStore vectorStore;
     private final com.ev.ai_service.client.VehicleServiceClient vehicleServiceClient;
     private final com.ev.ai_service.client.DealerServiceClient dealerServiceClient;
     private static final String METADATA_SOURCE = "source";
     private static final String STATIC_POLICY_SOURCE = "static_policy";
 
+    public KnowledgeBaseLoader(
+            @Nullable VectorStore vectorStore,
+            com.ev.ai_service.client.VehicleServiceClient vehicleServiceClient,
+            com.ev.ai_service.client.DealerServiceClient dealerServiceClient) {
+        this.vectorStore = vectorStore;
+        this.vehicleServiceClient = vehicleServiceClient;
+        this.dealerServiceClient = dealerServiceClient;
+    }
+
     @Override
     public void run(String... args) {
+        if (vectorStore == null) {
+            log.warn("VectorStore not available. Skipping Knowledge Base loading.");
+            return;
+        }
         try {
             log.info("Loading Knowledge Base into Redis Vector Store...");
 
@@ -71,7 +83,6 @@ public class KnowledgeBaseLoader implements CommandLineRunner {
                 log.warn("No vehicle variants found. Skipping vehicle data.");
                 return docs;
             }
-
             log.info("Fetched {} vehicle variants from Vehicle Service.", variants.size());
             for (var v : variants) {
                 String docContent = buildVehicleDocContent(v);
@@ -87,9 +98,7 @@ public class KnowledgeBaseLoader implements CommandLineRunner {
 
     private String buildVehicleDocContent(com.ev.ai_service.client.VehicleServiceClient.VehicleVariantInfo v) {
         StringBuilder sb = new StringBuilder();
-        sb.append("Thông số kỹ thuật xe: ").append(v.getModelName()).append(" ").append(v.getVariantName())
-                .append("\n");
-
+        sb.append("Thông số kỹ thuật xe: ").append(v.getModelName()).append(" ").append(v.getVariantName()).append("\n");
         if (v.getPrice() != null)
             sb.append("- Giá niêm yết: $").append(String.format("%,.2f", v.getPrice())).append("\n");
         if (v.getColor() != null && !v.getColor().equalsIgnoreCase("N/A"))
@@ -100,15 +109,12 @@ public class KnowledgeBaseLoader implements CommandLineRunner {
             sb.append("- Dung lượng pin: ").append(v.getBatteryCapacity()).append(" kWh\n");
         if (v.getDescription() != null && !v.getDescription().isBlank())
             sb.append("- Mô tả: ").append(v.getDescription()).append("\n");
-
         appendFeatures(sb, v);
         return sb.toString();
     }
 
     private void appendFeatures(StringBuilder sb, com.ev.ai_service.client.VehicleServiceClient.VehicleVariantInfo v) {
-        if (v.getFeatures() == null || v.getFeatures().isEmpty())
-            return;
-
+        if (v.getFeatures() == null || v.getFeatures().isEmpty()) return;
         sb.append("- Tính năng nổi bật: ");
         String featureList = v.getFeatures().stream()
                 .map(f -> f.getFeatureName() + " (" + f.getCategory() + ")")
@@ -125,7 +131,6 @@ public class KnowledgeBaseLoader implements CommandLineRunner {
                 log.warn("No dealers found. Skipping dealer data.");
                 return docs;
             }
-
             log.info("Fetched {} dealers from Dealer Service.", dealers.size());
             for (var d : dealers) {
                 if (d.getId() == null) {
@@ -148,16 +153,11 @@ public class KnowledgeBaseLoader implements CommandLineRunner {
     private String buildDealerDocContent(com.ev.ai_service.client.DealerServiceClient.DealerInfo d) {
         StringBuilder sb = new StringBuilder();
         sb.append("Thông tin đại lý: ").append(d.getDealerName()).append("\n");
-        if (d.getAddress() != null)
-            sb.append("- Địa chỉ: ").append(d.getAddress()).append("\n");
-        if (d.getCity() != null)
-            sb.append("- Thành phố: ").append(d.getCity()).append("\n");
-        if (d.getRegion() != null)
-            sb.append("- Khu vực: ").append(d.getRegion()).append("\n");
-        if (d.getPhoneNumber() != null)
-            sb.append("- Số điện thoại: ").append(d.getPhoneNumber()).append("\n");
-        if (d.getEmail() != null)
-            sb.append("- Email: ").append(d.getEmail()).append("\n");
+        if (d.getAddress() != null) sb.append("- Địa chỉ: ").append(d.getAddress()).append("\n");
+        if (d.getCity() != null) sb.append("- Thành phố: ").append(d.getCity()).append("\n");
+        if (d.getRegion() != null) sb.append("- Khu vực: ").append(d.getRegion()).append("\n");
+        if (d.getPhoneNumber() != null) sb.append("- Số điện thoại: ").append(d.getPhoneNumber()).append("\n");
+        if (d.getEmail() != null) sb.append("- Email: ").append(d.getEmail()).append("\n");
         return sb.toString();
     }
 }

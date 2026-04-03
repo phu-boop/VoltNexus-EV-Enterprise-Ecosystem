@@ -1,7 +1,8 @@
-import React, {useState, useEffect} from "react";
-import {X, Save, User, Mail, Phone, MapPin, Calendar, Eye, EyeOff, Edit} from "lucide-react";
-import {dealerService} from "../services/dealerService";
-export default function UserForm({isOpen, onClose, onSubmit, initialData, mode = "add"}) {
+import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
+import { X, Save, User, Mail, Phone, MapPin, Calendar, Eye, EyeOff, Edit } from "lucide-react";
+import { dealerService } from "../services/dealerService";
+export default function UserForm({ isOpen, onClose, onSubmit, initialData, mode = "add" }) {
     const [formData, setFormData] = useState({
         email: "",
         phone: "",
@@ -25,12 +26,12 @@ export default function UserForm({isOpen, onClose, onSubmit, initialData, mode =
         const roles = sessionStorage.getItem("roles");
 
         if (roles?.includes("ADMIN")) {
-        setAvailableRoles(["ADMIN", "EVM_STAFF", "DEALER_MANAGER"]);
+            setAvailableRoles(["ADMIN", "EVM_STAFF", "DEALER_MANAGER"]);
         } else if (roles?.includes("EVM_STAFF")) {
-        setAvailableRoles(["DEALER_MANAGER"]);
+            setAvailableRoles(["DEALER_MANAGER"]);
         } else {
-        setAvailableRoles(["DEALER_STAFF"]);
-        } 
+            setAvailableRoles(["DEALER_STAFF"]);
+        }
     }, []);
     // Thêm useEffect để fetch danh sách dealers
     useEffect(() => {
@@ -50,111 +51,111 @@ export default function UserForm({isOpen, onClose, onSubmit, initialData, mode =
         }
     }, [isOpen]);
 
-   useEffect(() => {
-    if (initialData) {
-        // Xác định role từ roles array
-        const roles = initialData.roles || [];
-        const mainRole = roles.length > 0 ? roles[0].name : '';
-        
-        // Chuẩn bị dữ liệu cơ bản
-        const baseData = {
-            ...initialData,
-            role: mainRole,
-            password: "", // Luôn để password trống khi edit
-            gender: initialData.gender || 'MALE' // Đảm bảo gender không null
-        };
+    useEffect(() => {
+        if (initialData) {
+            // Xác định role từ roles array
+            const roles = initialData.roles || [];
+            const mainRole = roles.length > 0 ? roles[0].name : '';
 
-        // Thêm dữ liệu profile-specific
-        if (initialData.dealerStaffProfile) {
-            Object.assign(baseData, initialData.dealerStaffProfile);
-        } else if (initialData.dealerManagerProfile) {
-            Object.assign(baseData, initialData.dealerManagerProfile);
-        } else if (initialData.evmStaffProfile) {
-            Object.assign(baseData, initialData.evmStaffProfile);
-        } else if (initialData.adminProfile) {
-            Object.assign(baseData, initialData.adminProfile);
+            // Chuẩn bị dữ liệu cơ bản
+            const baseData = {
+                ...initialData,
+                role: mainRole,
+                password: "", // Luôn để password trống khi edit
+                gender: initialData.gender || 'MALE' // Đảm bảo gender không null
+            };
+
+            // Thêm dữ liệu profile-specific
+            if (initialData.dealerStaffProfile) {
+                Object.assign(baseData, initialData.dealerStaffProfile);
+            } else if (initialData.dealerManagerProfile) {
+                Object.assign(baseData, initialData.dealerManagerProfile);
+            } else if (initialData.evmStaffProfile) {
+                Object.assign(baseData, initialData.evmStaffProfile);
+            } else if (initialData.adminProfile) {
+                Object.assign(baseData, initialData.adminProfile);
+            }
+
+            setFormData(baseData);
+        } else {
+            setFormData({
+                email: "",
+                phone: "",
+                name: "",
+                fullName: "",
+                password: "",
+                address: "",
+                city: "",
+                country: "",
+                birthday: "",
+                gender: "MALE", // Mặc định là MALE
+                role: "",
+                // Dealer Staff fields
+                dealerId: "",
+                position: "",
+                department: "",
+                hireDate: "",
+                salary: "",
+                commissionRate: "",
+                // Dealer Manager fields
+                managementLevel: "",
+                approvalLimit: "",
+                // EVM Staff fields
+                specialization: ""
+            });
         }
-
-        setFormData(baseData);
-    } else {
-        setFormData({
-            email: "",
-            phone: "",
-            name: "",
-            fullName: "",
-            password: "",
-            address: "",
-            city: "",
-            country: "",
-            birthday: "",
-            gender: "MALE", // Mặc định là MALE
-            role: "",
-            // Dealer Staff fields
-            dealerId: "",
-            position: "",
-            department: "",
-            hireDate: "",
-            salary: "",
-            commissionRate: "",
-            // Dealer Manager fields
-            managementLevel: "",
-            approvalLimit: "",
-            // EVM Staff fields
-            specialization: ""
-        });
-    }
-    setErrors({});
-    setIsEditing(mode === "edit");
-}, [initialData, isOpen, mode]);
+        setErrors({});
+        setIsEditing(mode === "edit");
+    }, [initialData, isOpen, mode]);
 
     if (!isOpen) return null;
 
-   const validateForm = () => {
-    const newErrors = {};
+    const validateForm = () => {
+        const newErrors = {};
 
-    if (!formData.email) newErrors.email = "Email là bắt buộc";
-    else if (!/\S+@\S+\.\S+/.test(formData.email)) newErrors.email = "Email không hợp lệ";
+        if (!formData.email) newErrors.email = "Email là bắt buộc";
+        else if (!/\S+@\S+\.\S+/.test(formData.email)) newErrors.email = "Email không hợp lệ";
 
-    if (!formData.phone) newErrors.phone = "Số điện thoại là bắt buộc";
+        if (!formData.phone) newErrors.phone = "Số điện thoại là bắt buộc";
 
-    if (!formData.name) newErrors.name = "Tên là bắt buộc";
+        if (!formData.name) newErrors.name = "Tên là bắt buộc";
 
-    if (!formData.fullName) newErrors.fullName = "Họ và tên là bắt buộc";
+        if (!formData.fullName) newErrors.fullName = "Họ và tên là bắt buộc";
 
-    if (!initialData && !formData.password) {
-        newErrors.password = "Mật khẩu là bắt buộc";
-    } else if (formData.password && formData.password.length < 6) {
-        newErrors.password = "Mật khẩu phải có ít nhất 6 ký tự";
-    }
+        if (!initialData && !formData.password) {
+            newErrors.password = "Mật khẩu là bắt buộc";
+        } else if (formData.password && formData.password.length < 6) {
+            newErrors.password = "Mật khẩu phải có ít nhất 6 ký tự";
+        }
 
-    // Đảm bảo gender không null
-    if (!formData.gender) {
-        newErrors.gender = "Giới tính là bắt buộc";
-    }
+        // Đảm bảo gender không null
+        if (!formData.gender) {
+            newErrors.gender = "Giới tính là bắt buộc";
+        }
 
-    // Role-specific validation
-    if (formData.role === "DEALER_STAFF") {
-        if (!formData.dealerId) newErrors.dealerId = "Mã đại lý là bắt buộc";
-        if (!formData.department) newErrors.department = "Phòng ban là bắt buộc";
-    }
+        // Role-specific validation
+        if (formData.role === "DEALER_STAFF") {
+            if (!formData.dealerId) newErrors.dealerId = "Mã đại lý là bắt buộc";
+            if (!formData.department) newErrors.department = "Phòng ban là bắt buộc";
+        }
 
-    if (formData.role === "DEALER_MANAGER") {
-        if (!formData.dealerId) newErrors.dealerId = "Mã đại lý là bắt buộc";
-        if (!formData.managementLevel) newErrors.managementLevel = "Cấp quản lý là bắt buộc";
-    }
+        if (formData.role === "DEALER_MANAGER") {
+            if (!formData.dealerId) newErrors.dealerId = "Mã đại lý là bắt buộc";
+            if (!formData.managementLevel) newErrors.managementLevel = "Cấp quản lý là bắt buộc";
+        }
 
-    if (formData.role === "EVM_STAFF") {
-        if (!formData.department) newErrors.department = "Phòng ban là bắt buộc";
-    }
+        if (formData.role === "EVM_STAFF") {
+            if (!formData.department) newErrors.department = "Phòng ban là bắt buộc";
+        }
 
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-};
+        setErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
+    };
 
     const handleChange = (e) => {
         if (mode === "view" && !isEditing) return; // Không cho phép chỉnh sửa ở chế độ xem khi không bật chỉnh sửa
 
-        const {name, value, type, checked} = e.target;
+        const { name, value, type, checked } = e.target;
 
         if (type === "checkbox") {
             setFormData((prev) => ({
@@ -164,12 +165,12 @@ export default function UserForm({isOpen, onClose, onSubmit, initialData, mode =
                     : prev.roles.filter((role) => role !== value),
             }));
         } else {
-            setFormData((prev) => ({...prev, [name]: value}));
+            setFormData((prev) => ({ ...prev, [name]: value }));
         }
 
         // Clear error when user starts typing
         if (errors[name]) {
-            setErrors(prev => ({...prev, [name]: ""}));
+            setErrors(prev => ({ ...prev, [name]: "" }));
         }
     };
 
@@ -200,8 +201,8 @@ export default function UserForm({isOpen, onClose, onSubmit, initialData, mode =
     const isViewMode = mode === "view";
     const isReadOnly = isViewMode && !isEditing;
 
-    return (
-        <div className="fixed inset-0 bg-black/30 flex justify-end z-50 p-4">
+    return createPortal(
+        <div className="fixed inset-0 bg-black/30 flex justify-end z-[9999] p-4">
             <div className="bg-white rounded-lg shadow-xl w-full p-2 max-w-xl max-h-[100vh] overflow-y-auto">
                 <div className="flex items-center justify-between p-6 border-b">
                     <h2 className="text-xl font-bold text-gray-800">
@@ -213,21 +214,20 @@ export default function UserForm({isOpen, onClose, onSubmit, initialData, mode =
                         {isViewMode && (
                             <button
                                 onClick={handleToggleEdit}
-                                className={`p-2 rounded-full ${
-                                    isEditing
-                                        ? "bg-blue-100 text-blue-600 hover:bg-blue-200"
-                                        : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                                } transition-colors`}
+                                className={`p-2 rounded-full ${isEditing
+                                    ? "bg-blue-100 text-blue-600 hover:bg-blue-200"
+                                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                                    } transition-colors`}
                                 title={isEditing ? "Tắt chỉnh sửa" : "Chỉnh sửa"}
                             >
-                                {isEditing ? <EyeOff size={18}/> : <Edit size={18}/>}
+                                {isEditing ? <EyeOff size={18} /> : <Edit size={18} />}
                             </button>
                         )}
                         <button
                             onClick={onClose}
                             className="text-gray-400 hover:text-gray-600 transition-colors p-1"
                         >
-                            <X size={24}/>
+                            <X size={24} />
                         </button>
                     </div>
                 </div>
@@ -238,7 +238,7 @@ export default function UserForm({isOpen, onClose, onSubmit, initialData, mode =
                             Email *
                         </label>
                         <div className="relative">
-                            <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5"/>
+                            <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
                             <input
                                 name="email"
                                 type="email"
@@ -246,9 +246,8 @@ export default function UserForm({isOpen, onClose, onSubmit, initialData, mode =
                                 value={formData.email}
                                 onChange={handleChange}
                                 readOnly={isReadOnly}
-                                className={`w-full pl-10 pr-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                                    errors.email ? "border-red-500" : "border-gray-300"
-                                } ${isReadOnly ? "bg-gray-100 cursor-not-allowed" : "bg-gray-100 cursor-not-allowed"}`}
+                                className={`w-full pl-10 pr-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.email ? "border-red-500" : "border-gray-300"
+                                    } ${isReadOnly ? "bg-gray-100 cursor-not-allowed" : "bg-gray-100 cursor-not-allowed"}`}
                             />
                         </div>
                         {errors.email && (
@@ -262,16 +261,15 @@ export default function UserForm({isOpen, onClose, onSubmit, initialData, mode =
                         </label>
                         <div className="relative">
                             <Phone
-                                className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5"/>
+                                className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
                             <input
                                 name="phone"
                                 placeholder="0912345678"
                                 value={formData.phone}
                                 onChange={handleChange}
                                 readOnly={isReadOnly}
-                                className={`w-full pl-10 pr-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                                    errors.phone ? "border-red-500" : "border-gray-300"
-                                } ${isReadOnly ? "bg-gray-100 cursor-not-allowed" : ""}`}
+                                className={`w-full pl-10 pr-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.phone ? "border-red-500" : "border-gray-300"
+                                    } ${isReadOnly ? "bg-gray-100 cursor-not-allowed" : ""}`}
                             />
                         </div>
                         {errors.phone && (
@@ -286,16 +284,15 @@ export default function UserForm({isOpen, onClose, onSubmit, initialData, mode =
                             </label>
                             <div className="relative">
                                 <User
-                                    className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5"/>
+                                    className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
                                 <input
                                     name="name"
                                     placeholder="Tên"
                                     value={formData.name}
                                     onChange={handleChange}
                                     readOnly={isReadOnly}
-                                    className={`w-full pl-10 pr-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                                        errors.name ? "border-red-500" : "border-gray-300"
-                                    } ${isReadOnly ? "bg-gray-100 cursor-not-allowed" : ""}`}
+                                    className={`w-full pl-10 pr-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.name ? "border-red-500" : "border-gray-300"
+                                        } ${isReadOnly ? "bg-gray-100 cursor-not-allowed" : ""}`}
                                 />
                             </div>
                             {errors.name && (
@@ -313,9 +310,8 @@ export default function UserForm({isOpen, onClose, onSubmit, initialData, mode =
                                 value={formData.fullName}
                                 onChange={handleChange}
                                 readOnly={isReadOnly}
-                                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                                    errors.fullName ? "border-red-500" : "border-gray-300"
-                                } ${isReadOnly ? "bg-gray-100 cursor-not-allowed" : ""}`}
+                                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.fullName ? "border-red-500" : "border-gray-300"
+                                    } ${isReadOnly ? "bg-gray-100 cursor-not-allowed" : ""}`}
                             />
                             {errors.fullName && (
                                 <p className="mt-1 text-sm text-red-600">{errors.fullName}</p>
@@ -335,9 +331,8 @@ export default function UserForm({isOpen, onClose, onSubmit, initialData, mode =
                                 value={formData.password}
                                 onChange={handleChange}
                                 readOnly={isReadOnly}
-                                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                                    errors.password ? "border-red-500" : "border-gray-300"
-                                } ${isReadOnly ? "bg-gray-100 cursor-not-allowed" : ""}`}
+                                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.password ? "border-red-500" : "border-gray-300"
+                                    } ${isReadOnly ? "bg-gray-100 cursor-not-allowed" : ""}`}
                             />
                             {errors.password && (
                                 <p className="mt-1 text-sm text-red-600">{errors.password}</p>
@@ -356,16 +351,15 @@ export default function UserForm({isOpen, onClose, onSubmit, initialData, mode =
                         </label>
                         <div className="relative">
                             <MapPin
-                                className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5"/>
+                                className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
                             <input
                                 name="address"
                                 placeholder="Địa chỉ"
                                 value={formData.address}
                                 onChange={handleChange}
                                 readOnly={isReadOnly}
-                                className={`w-full pl-10 pr-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                                    isReadOnly ? "bg-gray-100 cursor-not-allowed" : "border-gray-300"
-                                }`}
+                                className={`w-full pl-10 pr-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${isReadOnly ? "bg-gray-100 cursor-not-allowed" : "border-gray-300"
+                                    }`}
                             />
                         </div>
                     </div>
@@ -381,9 +375,8 @@ export default function UserForm({isOpen, onClose, onSubmit, initialData, mode =
                                 value={formData.city}
                                 onChange={handleChange}
                                 readOnly={isReadOnly}
-                                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                                    isReadOnly ? "bg-gray-100 cursor-not-allowed" : "border-gray-300"
-                                }`}
+                                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${isReadOnly ? "bg-gray-100 cursor-not-allowed" : "border-gray-300"
+                                    }`}
                             />
                         </div>
 
@@ -397,9 +390,8 @@ export default function UserForm({isOpen, onClose, onSubmit, initialData, mode =
                                 value={formData.country}
                                 onChange={handleChange}
                                 readOnly={isReadOnly}
-                                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                                    isReadOnly ? "bg-gray-100 cursor-not-allowed" : "border-gray-300"
-                                }`}
+                                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${isReadOnly ? "bg-gray-100 cursor-not-allowed" : "border-gray-300"
+                                    }`}
                             />
                         </div>
                     </div>
@@ -411,16 +403,15 @@ export default function UserForm({isOpen, onClose, onSubmit, initialData, mode =
                             </label>
                             <div className="relative">
                                 <Calendar
-                                    className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5"/>
+                                    className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
                                 <input
                                     name="birthday"
                                     type="date"
                                     value={formData.birthday}
                                     onChange={handleChange}
                                     readOnly={isReadOnly}
-                                    className={`w-full pl-10 pr-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                                        isReadOnly ? "bg-gray-100 cursor-not-allowed" : "border-gray-300"
-                                    }`}
+                                    className={`w-full pl-10 pr-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${isReadOnly ? "bg-gray-100 cursor-not-allowed" : "border-gray-300"
+                                        }`}
                                 />
                             </div>
                         </div>
@@ -434,9 +425,8 @@ export default function UserForm({isOpen, onClose, onSubmit, initialData, mode =
                                 value={formData.gender}
                                 onChange={handleChange}
                                 disabled={isReadOnly}
-                                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                                    isReadOnly ? "bg-gray-100 cursor-not-allowed" : "border-gray-300"
-                                }`}
+                                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${isReadOnly ? "bg-gray-100 cursor-not-allowed" : "border-gray-300"
+                                    }`}
                             >
                                 <option value="MALE">Nam</option>
                                 <option value="FEMALE">Nữ</option>
@@ -448,7 +438,6 @@ export default function UserForm({isOpen, onClose, onSubmit, initialData, mode =
 
                     <div className="">
 
-                        {/* Vai trò người dùng */}
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
                                 Vai trò *
@@ -458,20 +447,18 @@ export default function UserForm({isOpen, onClose, onSubmit, initialData, mode =
                                 value={formData.role || ""}
                                 onChange={handleChange}
                                 disabled={isReadOnly}
-                                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                                    isReadOnly ? "bg-gray-100 cursor-not-allowed" : "border-gray-300"
-                                }`}
+                                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${isReadOnly ? "bg-gray-100 cursor-not-allowed" : "border-gray-300"
+                                    }`}
                             >
-                                  <option value="">Tất cả</option>
-                                    {availableRoles.map((role) => (
+                                <option value="">Tất cả</option>
+                                {availableRoles.map((role) => (
                                     <option key={role} value={role}>
                                         {role}
                                     </option>
-                                    ))}
+                                ))}
                             </select>
                         </div>
 
-                        {/* EVM Staff */}
                         {formData.role === "EVM_STAFF" && (
                             <>
                                 <div>
@@ -504,33 +491,31 @@ export default function UserForm({isOpen, onClose, onSubmit, initialData, mode =
                             </>
                         )}
 
-                        {/* Dealer Manager */}
                         {formData.role === "DEALER_MANAGER" && (
                             <>
                                 <div className="mb-4">
-                            <label className="block text-sm font-semibold text-indigo-700 mb-2">
-                                Dealer ID <span className="text-red-500">*</span>
-                            </label>
-                            <select
-                                name="dealerId"
-                                value={formData.dealerId || ""}
-                                onChange={handleChange}
-                                disabled={isReadOnly}
-                                className={`w-full px-4 py-2 border-2 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-400 focus:border-indigo-500 transition-colors duration-200 ${
-                                    errors.dealerId ? "border-red-500 bg-red-50" : "border-gray-300 bg-white hover:bg-indigo-50"
-                                } ${isReadOnly ? "bg-gray-100 cursor-not-allowed" : ""}`}
-                            >
-                                <option value="">-- Chọn đại lý --</option>
-                                {dealers.map((dealer) => (
-                                    <option key={dealer.dealerId} value={dealer.dealerId}>
-                                        {dealer.dealerName}
-                                    </option>
-                                ))}
-                            </select>
-                            {errors.dealerId && (
-                                <p className="mt-1 text-sm text-red-600">{errors.dealerId}</p>
-                            )}
-                        </div>
+                                    <label className="block text-sm font-semibold text-indigo-700 mb-2">
+                                        Dealer ID <span className="text-red-500">*</span>
+                                    </label>
+                                    <select
+                                        name="dealerId"
+                                        value={formData.dealerId || ""}
+                                        onChange={handleChange}
+                                        disabled={isReadOnly}
+                                        className={`w-full px-4 py-2 border-2 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-400 focus:border-indigo-500 transition-colors duration-200 ${errors.dealerId ? "border-red-500 bg-red-50" : "border-gray-300 bg-white hover:bg-indigo-50"
+                                            } ${isReadOnly ? "bg-gray-100 cursor-not-allowed" : ""}`}
+                                    >
+                                        <option value="">-- Chọn đại lý --</option>
+                                        {dealers.map((dealer) => (
+                                            <option key={dealer.dealerId} value={dealer.dealerId}>
+                                                {dealer.dealerName}
+                                            </option>
+                                        ))}
+                                    </select>
+                                    {errors.dealerId && (
+                                        <p className="mt-1 text-sm text-red-600">{errors.dealerId}</p>
+                                    )}
+                                </div>
 
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -572,16 +557,15 @@ export default function UserForm({isOpen, onClose, onSubmit, initialData, mode =
                                         value={formData.approvalLimit || ""}
                                         onChange={handleChange}
                                         readOnly={isReadOnly}
-                                        className=""
+                                        className="w-full px-3 py-2 border rounded-lg border-gray-300 focus:ring-2 focus:ring-blue-500"
                                     />
                                 </div>
                                 <button>
-                                    xem 
+                                    xem
                                 </button>
                             </>
                         )}
 
-                        {/* Dealer Staff */}
                         {formData.role === "DEALER_STAFF" && (
                             <div className="space-y-6 bg-gray-50 p-6 rounded-lg border border-gray-200">
                                 <h3 className="text-lg font-semibold text-gray-800 border-b pb-2">
@@ -589,7 +573,6 @@ export default function UserForm({isOpen, onClose, onSubmit, initialData, mode =
                                 </h3>
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                    {/* Dealer ID */}
                                     <div className="space-y-2">
                                         <label className="block text-sm font-medium text-gray-700">
                                             Mã đại lý *
@@ -599,30 +582,28 @@ export default function UserForm({isOpen, onClose, onSubmit, initialData, mode =
                                             value={formData.dealerId || ""}
                                             onChange={handleChange}
                                             disabled={isReadOnly}
-                                            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200 ${
-                                                errors.dealerId ? "border-red-500" : "border-gray-300"
-                                            } ${isReadOnly ? "bg-gray-100 cursor-not-allowed" : "bg-white"}`}
+                                            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200 ${errors.dealerId ? "border-red-500" : "border-gray-300"
+                                                } ${isReadOnly ? "bg-gray-100 cursor-not-allowed" : "bg-white"}`}
                                         >
                                             <option value="">-- Chọn đại lý --</option>
                                             {sessionStorage.getItem("roles")?.includes("DEALER_MANAGER") ? (
                                                 <option
                                                     value={sessionStorage.getItem("dealerId")
-                                                }>
+                                                    }>
                                                     Đại lý của tôi
                                                 </option>
-                                            ) :   
-                                            (dealers.map((dealer) => (
-                                                <option key={dealer.dealerId} value={dealer.dealerId}>
-                                                    {dealer.dealerName}
-                                                </option>
-                                            ))) }
+                                            ) :
+                                                (dealers.map((dealer) => (
+                                                    <option key={dealer.dealerId} value={dealer.dealerId}>
+                                                        {dealer.dealerName}
+                                                    </option>
+                                                )))}
                                         </select>
                                         {errors.dealerId && (
                                             <p className="mt-1 text-sm text-red-600">{errors.dealerId}</p>
                                         )}
                                     </div>
 
-                                    {/* Department */}
                                     <div className="space-y-2">
                                         <label className="block text-sm font-medium text-gray-700">
                                             Phòng ban *
@@ -637,7 +618,6 @@ export default function UserForm({isOpen, onClose, onSubmit, initialData, mode =
                                         />
                                     </div>
 
-                                    {/* Position */}
                                     <div className="space-y-2">
                                         <label className="block text-sm font-medium text-gray-700">
                                             Vị trí công việc *
@@ -654,7 +634,6 @@ export default function UserForm({isOpen, onClose, onSubmit, initialData, mode =
                                 </div>
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    {/* Hire Date */}
                                     <div className="space-y-2">
                                         <label className="block text-sm font-medium text-gray-700">
                                             Ngày vào làm *
@@ -669,7 +648,6 @@ export default function UserForm({isOpen, onClose, onSubmit, initialData, mode =
                                         />
                                     </div>
 
-                                    {/* Salary */}
                                     <div className="space-y-2">
                                         <label className="block text-sm font-medium text-gray-700">
                                             Lương cơ bản *
@@ -687,13 +665,12 @@ export default function UserForm({isOpen, onClose, onSubmit, initialData, mode =
                                             />
                                             <span
                                                 className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500">
-                                            VND
-                                          </span>
+                                                VND
+                                            </span>
                                         </div>
                                     </div>
                                 </div>
 
-                                {/* Commission Rate */}
                                 <div className="space-y-2 max-w-md">
                                     <label className="block text-sm font-medium text-gray-700">
                                         Tỷ lệ hoa hồng *
@@ -711,7 +688,7 @@ export default function UserForm({isOpen, onClose, onSubmit, initialData, mode =
                                         />
                                         <span
                                             className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500">
-                                          %
+                                            %
                                         </span>
                                     </div>
                                 </div>
@@ -731,7 +708,7 @@ export default function UserForm({isOpen, onClose, onSubmit, initialData, mode =
                                     type="submit"
                                     className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center"
                                 >
-                                    <Save size={18} className="mr-2"/>
+                                    <Save size={18} className="mr-2" />
                                     {mode === "add" ? "Thêm mới" : "Cập nhật"}
                                 </button>
                             )}
@@ -739,6 +716,7 @@ export default function UserForm({isOpen, onClose, onSubmit, initialData, mode =
                     </div>
                 </form>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 }

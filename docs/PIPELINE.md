@@ -114,3 +114,38 @@ Job này chỉ chạy **sau khi Stage 1 thành công** và **chỉ trên nhánh 
 | **Manual Approval (Production)** | ✅ | Cổng xét duyệt thủ công trước khi đưa lên môi trường thật | GitHub Environments |
 | **Production Deployment** | ✅ | Kết nối SSH vào máy chủ, khởi động kiến trúc microservices | SSH (`appleboy/ssh-action`), Docker Compose, AWS EC2 |
 | **Monitoring** | ⚠️ | Giám sát sức khỏe hạ tầng qua API (hiện đang comment) | Prometheus / Grafana (Dự kiến) |
+
+
+no passs
+-Notify: Jira Bug on SonarCloud Quality Gate Failure
+(Dùng  và  để đảm bảo biến được điền giá trị trước khi chạy shell
+  # Dùng  và  để đảm bảo biến được điền giá trị trước khi chạy shell
+  SUMMARY="[SonarCloud] phu-boop/VoltNexus-EV-Enterprise-Ecosystem - 2 Critical Issues Found (#115)"
+  DESCRIPTION="🚨 *SonarCloud Quality Gate Failure*\n\n*Repository:* phu-boop/VoltNexus-EV-Enterprise-Ecosystem\n*Branch:* main\n*Workflow:* CI/CD Enterprise Pipeline\n*Run ID:* [23645486686](https://github.com/phu-boop/VoltNexus-EV-Enterprise-Ecosystem/actions/runs/23645486686)\n\nFound *2* issues with severity *BLOCKER* or *CRITICAL*.\n\n*SonarCloud Project:* [View Issues](https://sonarcloud.io/project/issues?id=phu-boop_VoltNexus-EV-Enterprise-Ecosystem&resolved=false&severities=BLOCKER%2CCRITICAL)"
+  
+  cat <<EOF > jira-sonar-payload.json
+  ***
+    "fields": ***
+      "project": *** "key": "$JIRA_PROJECT_KEY" ***,
+      "summary": "$SUMMARY",
+      "description": "$DESCRIPTION",
+      "issuetype": *** "name": "Bug" ***,
+      "priority": *** "name": "High" ***
+    ***
+  ***
+  EOF
+  CLEAN_URL=$(echo "$***JIRA_BASE_URL***" | sed 's:\/*$::')
+  curl -s -X POST --url "$***CLEAN_URL***/rest/api/2/issue" \
+    --user "$***JIRA_USER_EMAIL***:$***JIRA_API_TOKEN***" \
+    --header "Content-Type: application/json" \
+    --data @jira-sonar-payload.json
+  shell: /usr/bin/bash -e ***0***
+  env:
+    JAVA_HOME: /opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/21.0.10-7/x64
+    JAVA_HOME_21_X64: /opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/21.0.10-7/x64
+    JIRA_BASE_URL: ***
+    JIRA_USER_EMAIL: ***
+    JIRA_API_TOKEN: ***
+    JIRA_PROJECT_KEY: ***
+***"errorMessages":["You do not have permission to create issues in this project."],"errors":***)
+-

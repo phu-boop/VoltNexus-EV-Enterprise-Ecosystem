@@ -24,7 +24,7 @@ public class ProductionSecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 
         http
-                // .csrf(csrf -> csrf.disable())
+                .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.GET, "/vehicle-models/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/vehicle-models")
@@ -34,6 +34,7 @@ public class ProductionSecurityConfig {
                         .requestMatchers(HttpMethod.DELETE, "/vehicle-models/**")
                         .hasAnyAuthority("ROLE_EVM_STAFF", "ROLE_ADMIN")
                         .requestMatchers("/vehicle-catalog/**").permitAll()
+                        .requestMatchers("/api/vehicle/**").permitAll()
                         .anyRequest().authenticated())
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();

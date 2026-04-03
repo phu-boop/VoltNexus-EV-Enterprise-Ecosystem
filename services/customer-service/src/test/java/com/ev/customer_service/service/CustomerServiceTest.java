@@ -87,7 +87,7 @@ class CustomerServiceTest {
             when(customerRepository.count()).thenReturn(100L);
             when(customerRepository.save(any(Customer.class))).thenReturn(customer);
 
-            CustomerResponse result = customerService.createCustomer(customerRequest);
+            CustomerResponse result = customerService.createCustomer(customerRequest, "ADMIN", null);
 
             assertThat(result).isNotNull();
             verify(customerRepository).save(any(Customer.class));
@@ -97,7 +97,7 @@ class CustomerServiceTest {
         @DisplayName("Email đã tồn tại -> ném DuplicateResourceException")
         void createCustomer_duplicateEmail() {
             when(customerRepository.existsByEmail(anyString())).thenReturn(true);
-            assertThatThrownBy(() -> customerService.createCustomer(customerRequest))
+            assertThatThrownBy(() -> customerService.createCustomer(customerRequest, "ADMIN", null))
                     .isInstanceOf(DuplicateResourceException.class);
         }
 
@@ -107,7 +107,7 @@ class CustomerServiceTest {
             customerRequest.setCustomerType("INVALID");
             when(customerRepository.save(any(Customer.class))).thenAnswer(args -> args.getArgument(0));
 
-            customerService.createCustomer(customerRequest);
+            customerService.createCustomer(customerRequest, "ADMIN", null);
 
             verify(customerRepository).save(argThat(c -> c.getCustomerType() == CustomerType.INDIVIDUAL));
         }
@@ -123,7 +123,7 @@ class CustomerServiceTest {
             when(customerRepository.findById(1L)).thenReturn(Optional.of(customer));
             when(customerRepository.save(any(Customer.class))).thenAnswer(args -> args.getArgument(0));
 
-            customerService.updateCustomer(1L, customerRequest);
+            customerService.updateCustomer(1L, customerRequest, "ADMIN", null);
 
             verify(auditRepository).save(any(CustomerProfileAudit.class));
             verify(customerRepository).save(argThat(c -> c.getFirstName().equals("Johnny")));
@@ -173,7 +173,7 @@ class CustomerServiceTest {
     @DisplayName("Xóa customer thành công")
     void deleteCustomer_success() {
         when(customerRepository.existsById(1L)).thenReturn(true);
-        customerService.deleteCustomer(1L);
+        customerService.deleteCustomer(1L, "ADMIN", null);
         verify(customerRepository).deleteById(1L);
     }
 
