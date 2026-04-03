@@ -1,9 +1,11 @@
 package com.ev.user_service.repository;
 
 import com.ev.user_service.entity.User;
+import org.springframework.data.domain.Page;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -23,6 +25,15 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     @Query("SELECT u FROM User u")
     List<User> findAllWithProfilesAndRoles();
 
+    @EntityGraph(attributePaths = {
+        "roles",
+        "dealerStaffProfile",
+        "dealerManagerProfile",
+        "evmStaffProfile",
+        "adminProfile"
+    })
+    Page<User> findAll(org.springframework.data.domain.Pageable pageable);
+
 
 
 
@@ -34,6 +45,16 @@ public interface UserRepository extends JpaRepository<User, UUID> {
         "adminProfile"
     })
     Optional<User> findByEmail(String email);
+
+    @EntityGraph(attributePaths = {
+        "roles",
+        "dealerStaffProfile",
+        "dealerManagerProfile",
+        "evmStaffProfile",
+        "adminProfile"
+    })
+    @Query("SELECT u FROM User u JOIN u.roles r WHERE r.name = :roleName")
+    List<User> findByRoleName(@Param("roleName") String roleName);
 
     Boolean existsByEmail(String email);
     Boolean existsByPhone(String phone);

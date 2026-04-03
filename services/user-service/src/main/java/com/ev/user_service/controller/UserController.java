@@ -11,6 +11,7 @@ import java.util.*;
 
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -44,13 +45,8 @@ public class UserController {
             @RequestParam(defaultValue = "id") String sortField,
             @RequestParam(defaultValue = "asc") String sortOrder) {
         return ResponseEntity.ok(
-<<<<<<< HEAD
-                ApiRespond.success("Get All User Successfully", userService.getAllUser())
-        );
-=======
                 ApiRespond.success("Get All User Successfully",
                         userService.getAllUser(page, size, sortField, sortOrder)));
->>>>>>> cbd1193d (EDMS-314 Áp dụng server-side pagination để tối ưu API danh sách người dùng)
     }
 
     //  Cho EVM Staff xem tất cả Dealer Manager

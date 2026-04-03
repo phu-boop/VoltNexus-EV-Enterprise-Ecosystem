@@ -8,6 +8,10 @@ import com.ev.user_service.enums.UserStatus;
 import com.ev.user_service.repository.*;
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import com.ev.user_service.dto.respond.UserRespond;
@@ -68,15 +72,6 @@ public class UserService {
         this.evmStaffProfileRepository = evmStaffProfileRepository;
     }
 
-<<<<<<< HEAD
-    public List<UserRespond> getAllUser() {
-        return userRepository.findAll()
-                .stream()
-                .map(
-                        userMapper::usertoUserRespond
-                )
-                .collect(Collectors.toList());
-=======
     public Page<UserRespond> getAllUser(int page, int size, String sortField, String sortOrder) {
         Sort sort = Sort.by(
                 sortOrder.equalsIgnoreCase("asc") ? Sort.Direction.ASC : Sort.Direction.DESC,
@@ -84,18 +79,18 @@ public class UserService {
         Pageable pageable = PageRequest.of(page - 1, size, sort);
         return userRepository.findAll(pageable)
                 .map(userMapper::usertoUserRespond);
->>>>>>> cbd1193d (EDMS-314 Áp dụng server-side pagination để tối ưu API danh sách người dùng)
     }
 
     public List<UserRespond> getAllUserDealerManage() {
-        return userRepository.findAll().stream().filter(user -> user.getRoleToString().contains("DEALER_MANAGER")).map(userMapper::usertoUserRespond).collect(Collectors.toList());
+        return userRepository.findByRoleName(RoleName.DEALER_MANAGER.getRoleName())
+                .stream()
+                .map(userMapper::usertoUserRespond)
+                .collect(Collectors.toList());
     }
 
     public List<UserRespond> getAllUserStaffDealer(UUID dealerId) {
-        System.out.printf("pgufg",dealerId);
-        return userRepository.findAll()
+        return userRepository.findByRoleName(RoleName.DEALER_STAFF.getRoleName())
                 .stream()
-                .filter(user -> user.getRoleToString().contains("DEALER_STAFF"))
                 .filter(user -> user.getDealerStaffProfile() != null)
                 .filter(user -> dealerId == null ||
                         (user.getDealerStaffProfile().getDealerId() != null &&
