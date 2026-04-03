@@ -150,7 +150,7 @@ public class UserController {
         return ResponseEntity.ok(ApiRespond.success("Update successfully", userService.updateUserDealerStaff(request)));
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'DEALER_STAFF', 'DEALER_MANAGER', 'EVM_STAFF')")
+    @PreAuthorize("@userSecurity.isOwnerOrAdmin(authentication, #id)")
     @PutMapping("/{id}")
     public ResponseEntity<ApiRespond<UserRespond>> updateUser(
             @PathVariable UUID id,
@@ -160,7 +160,7 @@ public class UserController {
         );
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'DEALER_STAFF', 'DEALER_MANAGER', 'EVM_STAFF')")
+    @PreAuthorize("@userSecurity.isOwnerOrAdmin(authentication, #id)")
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiRespond<Void>> deleteUser(@PathVariable UUID id) {
         userService.deleteUser(id);

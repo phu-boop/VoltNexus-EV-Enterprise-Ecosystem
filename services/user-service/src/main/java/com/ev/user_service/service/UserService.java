@@ -368,10 +368,18 @@ public class UserService {
         return userMapper.usertoUserRespond(user);
     }
 
-    //sửa lại update user
     public UserRespond updateUser(UUID id, UserRequest userRequest) {
         User targetUser = userRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+
+        org.springframework.security.core.Authentication authentication = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        boolean isAdmin = authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().contains("ADMIN"));
+        
+        if (!isAdmin && !authentication.getName().equals(targetUser.getEmail())) {
+            throw new AppException(ErrorCode.USER_NOT_FOUND);
+        }
+
         if ((targetUser.getEmail() != null) && !targetUser.getEmail().equals(userRequest.getEmail())
                 && userRepository.existsByEmail(userRequest.getEmail())) {
             throw new AppException(ErrorCode.EMAIL_ALREADY_EXISTS);
@@ -388,6 +396,15 @@ public class UserService {
     public void deleteUser(UUID id) {
         User targetUser = userRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+
+        org.springframework.security.core.Authentication authentication = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        boolean isAdmin = authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().contains("ADMIN"));
+        
+        if (!isAdmin && !authentication.getName().equals(targetUser.getEmail())) {
+            throw new AppException(ErrorCode.USER_NOT_FOUND);
+        }
+
         userRepository.delete(targetUser);
     }
 
