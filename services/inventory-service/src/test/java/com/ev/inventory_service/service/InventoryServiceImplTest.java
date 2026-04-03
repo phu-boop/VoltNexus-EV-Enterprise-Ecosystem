@@ -550,7 +550,7 @@ class InventoryServiceImplTest {
 
             when(centralRepo.findAll((Specification<CentralInventory>) any(), any(Pageable.class))).thenReturn(page);
 
-            var result = inventoryService.getAllInventory(null, null, null, pageable);
+            var result = inventoryService.getAllInventory(null, null, null, null, null, pageable);
 
             assertThat(result).isNotNull();
             assertThat(result.getContent()).hasSize(1);
@@ -566,7 +566,7 @@ class InventoryServiceImplTest {
                     (ParameterizedTypeReference<Object>) any()))
                     .thenReturn(ResponseEntity.ok(apiResponse));
 
-            var result = inventoryService.getAllInventory("NoSuchCar", null, null, pageable);
+            var result = inventoryService.getAllInventory("NoSuchCar", null, null, null, null, pageable);
 
             assertThat(result.getContent()).isEmpty();
         }
@@ -584,7 +584,7 @@ class InventoryServiceImplTest {
             when(centralRepo.findAll((Specification<CentralInventory>) any(), any(Pageable.class)))
                     .thenReturn(Page.empty());
 
-            inventoryService.getAllInventory(null, dealerId, null, pageable);
+            inventoryService.getAllInventory(null, dealerId, null, null, null, pageable);
 
             verify(dealerRepo).findByDealerId(dealerId);
             verify(centralRepo).findAll((Specification<CentralInventory>) any(), any(Pageable.class));
@@ -598,7 +598,7 @@ class InventoryServiceImplTest {
                     (ParameterizedTypeReference<Object>) any()))
                     .thenThrow(new RuntimeException("API Down"));
 
-            var result = inventoryService.getAllInventory("Crash", null, null, pageable);
+            var result = inventoryService.getAllInventory("Crash", null, null, null, null, pageable);
             assertThat(result.getContent()).isEmpty();
         }
     }

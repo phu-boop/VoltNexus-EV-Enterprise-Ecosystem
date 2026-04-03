@@ -12,6 +12,7 @@ import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import java.util.UUID;
 
 import java.util.Optional;
 import java.util.UUID;
@@ -93,6 +94,24 @@ public class GlobalExceptionHandler {
                 .body(apiRespond);
     }
 
+
+    @ExceptionHandler(org.hibernate.exception.DataException.class)
+    public ResponseEntity<ApiRespond<?>> handleHibernateDataException(org.hibernate.exception.DataException ex) {
+        ApiRespond<?> apiRespond = new ApiRespond<>();
+        apiRespond.setCode(ErrorCode.BAD_REQUEST.getCode());
+
+        String message = ex.getMessage();
+
+        if (message.contains("thumbnail_url")) {
+            apiRespond.setMessage("Link ảnh đại diện quá dài.");
+        } else if (message.contains("image_url")) {
+            apiRespond.setMessage("Link ảnh phiên bản quá dài.");
+        }
+
+        return ResponseEntity.badRequest().body(apiRespond);
+    }
+
+}
     // ==========================================
     // ĐOẠN CODE MỚI THÊM VÀO ĐỂ FIX LỖI 8.9 TẠI ĐÂY
     // ==========================================

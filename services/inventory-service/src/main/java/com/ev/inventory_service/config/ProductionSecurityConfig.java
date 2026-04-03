@@ -70,7 +70,7 @@ public class ProductionSecurityConfig {
 
                         .requestMatchers(HttpMethod.GET, "/inventory/variants/ids-by-status",
                                 "/inventory/analytics/snapshots")
-                        .hasAnyAuthority(ROLE_EVM_STAFF, ROLE_ADMIN)
+                        .hasAnyAuthority(ROLE_EVM_STAFF, ROLE_ADMIN, ROLE_DEALER_MANAGER, ROLE_DEALER_STAFF)
 
                         .requestMatchers(HttpMethod.GET, "/inventory/report/export")
                         .hasAnyAuthority(ROLE_EVM_STAFF, ROLE_ADMIN)

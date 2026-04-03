@@ -240,6 +240,14 @@ export default function Login() {
                   <td className="px-6 py-3">StafffEVM@gmail.com</td>
                   <td className="px-6 py-3">123123123</td>
                 </tr>
+                <tr className="border-t border-white/30">
+                  <td className="px-6 py-3">Anhphu@gmail.com</td>
+                  <td className="px-6 py-3">123123123</td>
+                </tr>
+                <tr className="border-t border-white/30">
+                  <td className="px-6 py-3">StaffPhu@gmail.com</td>
+                  <td className="px-6 py-3">123123123</td>
+                </tr>
               </tbody>
             </table>
           </div>

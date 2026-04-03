@@ -56,9 +56,9 @@ const EvmLayout = () => {
     menuItems.forEach((item) => {
       if (item.submenu) {
         const isActiveSubmenu = item.submenu.some(
-          (sub) => sub.path === location.pathname
+          (sub) => sub.path && (location.pathname === sub.path || location.pathname.startsWith(sub.path + '/'))
         );
-        if (isActiveSubmenu) {
+        if (isActiveSubmenu || (item.path && (location.pathname === item.path || location.pathname.startsWith(item.path + '/')))) {
           newOpenSubmenus.add(item.path);
         }
       }

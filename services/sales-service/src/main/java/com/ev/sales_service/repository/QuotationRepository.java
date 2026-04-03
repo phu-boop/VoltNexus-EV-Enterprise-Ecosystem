@@ -17,35 +17,42 @@ public interface QuotationRepository extends JpaRepository<Quotation, UUID>, Jpa
 
     // Filter cơ bản
     List<Quotation> findByDealerId(UUID dealerId);
+
     List<Quotation> findByCustomerId(Long customerId);
+
     List<Quotation> findByStaffId(UUID staffId);
+
     List<Quotation> findByStatus(QuotationStatus status);
+
     List<Quotation> findByQuotationDateBetween(LocalDateTime start, LocalDateTime end);
 
     // Filter phức tạp
     @Query("SELECT q FROM Quotation q WHERE " +
-           "(:dealerId IS NULL OR q.dealerId = :dealerId) AND " +
-           "(:customerId IS NULL OR q.customerId = :customerId) AND " +
-           "(:staffId IS NULL OR q.staffId = :staffId) AND " +
-           "(:status IS NULL OR q.status = :status) AND " +
-           "(:startDate IS NULL OR q.quotationDate >= :startDate) AND " +
-           "(:endDate IS NULL OR q.quotationDate <= :endDate)")
+            "(:dealerId IS NULL OR q.dealerId = :dealerId) AND " +
+            "(:customerId IS NULL OR q.customerId = :customerId) AND " +
+            "(:staffId IS NULL OR q.staffId = :staffId) AND " +
+            "(:status IS NULL OR q.status = :status) AND " +
+            "(:startDate IS NULL OR q.quotationDate >= :startDate) AND " +
+            "(:endDate IS NULL OR q.quotationDate <= :endDate)")
     List<Quotation> findByFilters(@Param("dealerId") UUID dealerId,
-                                 @Param("customerId") Long customerId,
-                                 @Param("staffId") UUID staffId,
-                                 @Param("status") QuotationStatus status,
-                                 @Param("startDate") LocalDateTime startDate,
-                                 @Param("endDate") LocalDateTime endDate);
+            @Param("customerId") Long customerId,
+            @Param("staffId") UUID staffId,
+            @Param("status") QuotationStatus status,
+            @Param("startDate") LocalDateTime startDate,
+            @Param("endDate") LocalDateTime endDate);
 
     // Tìm quotation sắp hết hạn
     @Query("SELECT q FROM Quotation q WHERE q.status = 'SENT' AND q.validUntil BETWEEN :now AND :threshold")
     List<Quotation> findExpiringQuotations(@Param("now") LocalDateTime now,
-                                         @Param("threshold") LocalDateTime threshold);
+            @Param("threshold") LocalDateTime threshold);
 
     // Kiểm tra quotation đã accepted chưa
     boolean existsByQuotationIdAndStatus(UUID quotationId, QuotationStatus status);
 
-    Quotation save(Quotation quotation);
+    // Kiểm tra khuyến mãi có được sử dụng trong báo giá nào không
+    @Query("SELECT CASE WHEN COUNT(q) > 0 THEN true ELSE false END FROM Quotation q JOIN q.promotions p WHERE p.promotionId = :promotionId")
+    boolean existsByPromotionId(@Param("promotionId") UUID promotionId);
 
+    Quotation save(Quotation quotation);
 
 }

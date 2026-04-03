@@ -21,6 +21,8 @@ export const promotionService = {
     apiConstSaleService.get(`/promotions/status/${status}`),
   authenticPromotion: (id) =>
     apiConstSaleService.put(`/promotions/authentic/${id}`),
+  search: (params) =>
+    apiConstSaleService.get("/promotions/search", { params }),
 };
 
 export default promotionService;

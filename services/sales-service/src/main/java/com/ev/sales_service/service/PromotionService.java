@@ -8,10 +8,12 @@ import com.ev.sales_service.entity.Promotion;
 import com.ev.sales_service.enums.PromotionStatus;
 import com.ev.sales_service.repository.OutboxRepository;
 import com.ev.sales_service.repository.PromotionRepository;
+import com.ev.sales_service.repository.QuotationRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -24,6 +26,7 @@ import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class PromotionService {
 
     @Value("${user-service.base-url}")
@@ -31,6 +34,7 @@ public class PromotionService {
 
     private final PromotionRepository promotionRepository;
     private final OutboxRepository outboxRepository;
+    private final QuotationRepository quotationRepository;
     private final ObjectMapper objectMapper; // spring-boot auto-configures
 
     @Transactional
@@ -73,9 +77,26 @@ public class PromotionService {
         return saved;
     }
 
-    public Promotion updatePromotion(UUID id, Promotion promotion) {
+    public Promotion updatePromotion(UUID id, Promotion promotion, String roles, String currentUserDealerId) {
         Promotion existing = promotionRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Promotion not found"));
+
+        // Phân quyền: Dealer Manager chỉ được sửa DRAFT và chỉ sửa của mình
+        if (roles != null && roles.contains("DEALER_MANAGER") && !roles.contains("ADMIN")
+                && !roles.contains("EVM_STAFF")) {
+            if (existing.getStatus() != PromotionStatus.DRAFT) {
+                throw new AppException(ErrorCode.DATA_NOT_FOUND); // Hoặc tạo ErrorCode mới cho "Promotion already authenticated"
+            }
+            // Kiểm tra dealerId (nếu cần thiết, dựa trên logic dealerIdJson)
+            if (currentUserDealerId != null && !existing.getDealerIdJson().contains(currentUserDealerId)) {
+                throw new AppException(ErrorCode.UNAUTHORIZED);
+            }
+        }
+
+        if (quotationRepository.existsByPromotionId(id)) {
+            throw new AppException(ErrorCode.PROMOTION_IN_USE);
+        }
+
         existing.setPromotionName(promotion.getPromotionName());
         existing.setDescription(promotion.getDescription());
         existing.setDiscountRate(promotion.getDiscountRate());
@@ -94,7 +115,9 @@ public class PromotionService {
 
     public List<Promotion> getAllPromotions() {
         updatePromotionStatuses();
-        return promotionRepository.findAll();
+        return promotionRepository.findAll().stream()
+                .filter(p -> p.getStatus() != PromotionStatus.DELETED)
+                .collect(Collectors.toList());
     }
 
     private void updatePromotionStatuses() {
@@ -128,9 +151,24 @@ public class PromotionService {
         promotionRepository.saveAll(promotions);
     }
 
-    public void deletePromotion(UUID id) {
+    @Transactional
+    public void deletePromotion(UUID id, String roles, String currentUserDealerId) {
         Promotion promotion = promotionRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.DATA_NOT_FOUND));
+
+        // Phân quyền xóa tương tự update
+        if (roles != null && roles.contains("DEALER_MANAGER") && !roles.contains("ADMIN")
+                && !roles.contains("EVM_STAFF")) {
+            if (promotion.getStatus() != PromotionStatus.DRAFT) {
+                throw new AppException(ErrorCode.DATA_NOT_FOUND);
+            }
+        }
+
+        if (quotationRepository.existsByPromotionId(id)) {
+            throw new AppException(ErrorCode.PROMOTION_IN_USE);
+        }
+
+        // Thay vì hard delete, dùng soft delete để đồng bộ với logic list/filter
         promotion.setStatus(PromotionStatus.DELETED);
         promotionRepository.save(promotion);
     }
@@ -139,7 +177,30 @@ public class PromotionService {
         return promotionRepository.findByStatus(status);
     }
 
-    public Promotion authenticPromotion(UUID id) {
+    public List<Promotion> searchPromotions(String status, String modelId, String dealerId, String searchTerm,
+            String roles, String currentUserDealerId) {
+        updatePromotionStatuses();
+
+        String finalDealerId = dealerId;
+
+        // Nếu là Dealer Manager, ép buộc chỉ xem của dealer mình
+        if (roles != null && roles.contains("DEALER_MANAGER") && !roles.contains("ADMIN")
+                && !roles.contains("EVM_STAFF")) {
+            finalDealerId = currentUserDealerId;
+            if (finalDealerId == null) {
+                return List.of(); // Không có dealerId thì không thấy gì
+            }
+        }
+
+        return promotionRepository.searchPromotions(status, modelId, finalDealerId, searchTerm);
+    }
+
+    public Promotion authenticPromotion(UUID id, String roles) {
+        // Chỉ Admin/Staff EVM mới được duyệt
+        if (roles == null || (!roles.contains("ADMIN") && !roles.contains("EVM_STAFF"))) {
+            throw new AppException(ErrorCode.UNAUTHORIZED);
+        }
+
         Promotion existing = promotionRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Promotion not found"));
         existing.setStatus(PromotionStatus.NEAR);
@@ -223,6 +284,42 @@ public class PromotionService {
                         }
                     }
                     return true;
+                })
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Lấy danh sách Khuyến mãi ACTIVE và NEAR cho Dealer Staff View
+     * (Vì bạn yêu cầu không sửa API cũ và chỉ hiển thị ACTIVE/NEAR)
+     */
+    public List<Promotion> getActivePromotionsForDealerList(UUID dealerId) {
+        // 1. Lấy tất cả KM ACTIVE và NEAR (Đã được duyệt)
+        List<Promotion> promotions = promotionRepository.findByStatusIn(
+                List.of(PromotionStatus.ACTIVE, PromotionStatus.NEAR));
+
+        // 2. Lọc theo Dealer
+        return promotions.stream()
+                .filter(promo -> {
+                    // KM chung hoặc KM thuộc dealerId
+                    String dealerJson = promo.getDealerIdJson();
+
+                    if (dealerJson == null || dealerJson.isEmpty() || dealerJson.equals("[]")) {
+                        return true;
+                    }
+
+                    try {
+                        // Parse thành List<String> để chấp nhận cả DLRxxx và UUID
+                        List<String> dealerIds = objectMapper.readValue(dealerJson,
+                                new com.fasterxml.jackson.core.type.TypeReference<List<String>>() {
+                                });
+
+                        String searchId = dealerId.toString();
+                        return dealerIds != null && dealerIds.stream()
+                                .anyMatch(id -> id.equalsIgnoreCase(searchId));
+                    } catch (Exception e) {
+                        // Fallback an toàn nếu parse lỗi
+                        return dealerJson.contains(dealerId.toString());
+                    }
                 })
                 .collect(Collectors.toList());
     }

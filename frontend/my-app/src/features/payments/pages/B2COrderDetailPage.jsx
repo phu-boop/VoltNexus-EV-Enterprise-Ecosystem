@@ -1,6 +1,5 @@
-// B2C Order Detail Page (Dealer Staff)
 import React, { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { salesOrderB2CApi } from "../../dealer/sales/salesOrder/services/salesOrderService";
 import paymentService from "../services/paymentService";
 import PaymentHistory from "../components/PaymentHistory";
@@ -12,6 +11,7 @@ import { ArrowLeftIcon } from "@heroicons/react/24/outline";
 const B2COrderDetailPage = () => {
   const { orderId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const [order, setOrder] = useState(null);
   const [paymentHistory, setPaymentHistory] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -47,11 +47,11 @@ const B2COrderDetailPage = () => {
         toast.error("Không thể tải thông tin đơn hàng");
       }
       // Navigate back based on user role or previous page
-      const userRole = sessionStorage.getItem("role");
-      if (userRole === "DEALER_MANAGER") {
-        navigate("/dealer/manager/payments/b2c-cash-payments");
+      const prefix = location.pathname.includes('/manager/') ? '/dealer/manager' : '/dealer/staff';
+      if (location.pathname.includes('/manager/')) {
+        navigate(`${prefix}/payments/b2c-cash-payments`);
       } else {
-        navigate("/dealer/staff/payments/b2c-orders");
+        navigate(`${prefix}/payments/b2c-orders`);
       }
     } finally {
       setLoading(false);
@@ -103,7 +103,8 @@ const B2COrderDetailPage = () => {
   };
 
   const handlePayOrder = () => {
-    navigate(`/dealer/staff/payments/b2c-orders/${orderId}/pay`);
+    const prefix = location.pathname.includes('/manager/') ? '/dealer/manager' : '/dealer/staff';
+    navigate(`${prefix}/payments/b2c-orders/${orderId}/pay`);
   };
 
   const formatCurrency = (amount) => {
@@ -158,13 +159,13 @@ const B2COrderDetailPage = () => {
     .reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0);
   const remainingAmount = (parseFloat(order.totalAmount) || 0) - totalPaid;
 
-  // Determine back navigation based on user role
-  const userRole = sessionStorage.getItem("role");
+  // Determine back navigation based on context
   const getBackPath = () => {
-    if (userRole === "DEALER_MANAGER") {
-      return "/dealer/manager/payments/b2c-cash-payments";
+    const prefix = location.pathname.includes('/manager/') ? '/dealer/manager' : '/dealer/staff';
+    if (location.pathname.includes('/manager/')) {
+      return `${prefix}/payments/b2c-cash-payments`;
     }
-    return "/dealer/staff/payments/b2c-orders";
+    return `${prefix}/payments/b2c-orders`;
   };
 
   return (
@@ -285,13 +286,13 @@ const B2COrderDetailPage = () => {
             </h2>
             {(paymentStatus === "UNPAID" ||
               paymentStatus === "PARTIALLY_PAID") && (
-              <button
-                onClick={handlePayOrder}
-                className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors"
-              >
-                Thanh Toán
-              </button>
-            )}
+                <button
+                  onClick={handlePayOrder}
+                  className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors"
+                >
+                  Thanh Toán
+                </button>
+              )}
           </div>
           <PaymentHistory history={paymentHistory} />
         </div>

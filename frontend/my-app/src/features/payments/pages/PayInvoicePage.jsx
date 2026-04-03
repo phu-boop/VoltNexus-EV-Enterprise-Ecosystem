@@ -1,6 +1,5 @@
-// Pay Invoice Page - Form thanh toán hóa đơn
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import paymentService from '../services/paymentService';
 import DealerTransactionHistory from '../components/DealerTransactionHistory';
 import VNPayPaymentForm from '../components/VNPayPaymentForm';
@@ -10,6 +9,7 @@ import { ArrowLeftIcon, CurrencyDollarIcon, CreditCardIcon, BanknotesIcon } from
 const PayInvoicePage = () => {
   const { invoiceId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [invoice, setInvoice] = useState(null);
@@ -34,7 +34,7 @@ const PayInvoicePage = () => {
       const response = await paymentService.getDealerInvoiceByIdAlternative(invoiceId);
       const invoiceData = response.data?.data || response.data;
       setInvoice(invoiceData);
-      
+
       // Set max amount
       const remainingAmount = invoiceData.totalAmount - (invoiceData.amountPaid || 0);
       // Round to 2 decimal places to avoid precision issues
@@ -43,7 +43,8 @@ const PayInvoicePage = () => {
     } catch (error) {
       console.error('Error loading invoice:', error);
       toast.error('Không thể tải thông tin hóa đơn');
-      navigate('/dealer/manager/payments/invoices');
+      const prefix = location.pathname.includes('/manager/') ? '/dealer/manager' : '/dealer/staff';
+      navigate(`${prefix}/payments/invoices`);
     } finally {
       setLoading(false);
     }
@@ -76,7 +77,7 @@ const PayInvoicePage = () => {
 
   const validate = () => {
     const newErrors = {};
-    
+
     if (!formData.amount || parseFloat(formData.amount) <= 0) {
       newErrors.amount = 'Số tiền phải lớn hơn 0';
     } else if (invoice) {
@@ -104,7 +105,7 @@ const PayInvoicePage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!validate()) {
       return;
     }
@@ -119,17 +120,18 @@ const PayInvoicePage = () => {
       };
 
       const response = await paymentService.payDealerInvoice(invoiceId, payload);
-      
+
       const selectedMethod = paymentMethods.find(m => m.methodId === formData.paymentMethodId);
       const isCash = selectedMethod?.methodType === 'MANUAL';
-      
+
       if (isCash) {
         toast.success('Yêu cầu thanh toán đã được gửi. Vui lòng chờ EVM staff duyệt.');
       } else {
         toast.success('Thanh toán thành công!');
       }
-      
-      navigate('/dealer/manager/payments/invoices');
+
+      const prefix = location.pathname.includes('/manager/') ? '/dealer/manager' : '/dealer/staff';
+      navigate(`${prefix}/payments/invoices`);
     } catch (error) {
       console.error('Error paying invoice:', error);
       const errorMessage = error.response?.data?.message || 'Không thể thực hiện thanh toán';
@@ -147,9 +149,10 @@ const PayInvoicePage = () => {
 
     try {
       setSubmitting(true);
+      const prefix = location.pathname.includes('/manager/') ? '/dealer/manager' : '/dealer/staff';
       const payload = {
         amount,
-        returnUrl: `${window.location.origin}/dealer/manager/payments/vnpay-result`
+        returnUrl: `${window.location.origin}${prefix}/payments/vnpay-result`
       };
 
       const response = await paymentService.initiateDealerInvoiceVnpay(invoiceId, payload);
@@ -188,7 +191,10 @@ const PayInvoicePage = () => {
   return (
     <div className="container mx-auto px-4 py-8 max-w-5xl">
       <button
-        onClick={() => navigate('/dealer/manager/payments/invoices')}
+        onClick={() => {
+          const prefix = location.pathname.includes('/manager/') ? '/dealer/manager' : '/dealer/staff';
+          navigate(`${prefix}/payments/invoices`);
+        }}
         className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-6"
       >
         <ArrowLeftIcon className="h-5 w-5" />
@@ -223,22 +229,20 @@ const PayInvoicePage = () => {
           <div className="flex flex-wrap gap-4 mb-6">
             <button
               onClick={() => setActivePaymentMethod('other')}
-              className={`flex items-center gap-2 px-6 py-3 rounded-lg border-2 transition-all ${
-                activePaymentMethod === 'other'
+              className={`flex items-center gap-2 px-6 py-3 rounded-lg border-2 transition-all ${activePaymentMethod === 'other'
                   ? 'border-blue-500 bg-blue-50 text-blue-700'
                   : 'border-gray-300 bg-white text-gray-700 hover:border-blue-300'
-              }`}
+                }`}
             >
               <BanknotesIcon className="h-5 w-5" />
               Phương thức khác
             </button>
             <button
               onClick={() => setActivePaymentMethod('vnpay')}
-              className={`flex items-center gap-2 px-6 py-3 rounded-lg border-2 transition-all ${
-                activePaymentMethod === 'vnpay'
+              className={`flex items-center gap-2 px-6 py-3 rounded-lg border-2 transition-all ${activePaymentMethod === 'vnpay'
                   ? 'border-blue-500 bg-blue-50 text-blue-700'
                   : 'border-gray-300 bg-white text-gray-700 hover:border-blue-300'
-              }`}
+                }`}
             >
               <CreditCardIcon className="h-5 w-5" />
               Thanh toán VNPAY
@@ -268,9 +272,8 @@ const PayInvoicePage = () => {
                       min="1"
                       max={remainingAmount}
                       step="0.01"
-                      className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                        errors.amount ? 'border-red-500' : 'border-gray-300'
-                      }`}
+                      className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${errors.amount ? 'border-red-500' : 'border-gray-300'
+                        }`}
                       placeholder="Nhập số tiền"
                     />
                     {errors.amount && <p className="mt-1 text-sm text-red-600">{errors.amount}</p>}
@@ -285,9 +288,8 @@ const PayInvoicePage = () => {
                       name="paymentMethodId"
                       value={formData.paymentMethodId}
                       onChange={handleChange}
-                      className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                        errors.paymentMethodId ? 'border-red-500' : 'border-gray-300'
-                      }`}
+                      className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${errors.paymentMethodId ? 'border-red-500' : 'border-gray-300'
+                        }`}
                     >
                       <option value="">Chọn phương thức thanh toán</option>
                       {manualMethods.map((method) => (
@@ -332,7 +334,10 @@ const PayInvoicePage = () => {
                 <div className="flex justify-end gap-4 mt-6">
                   <button
                     type="button"
-                    onClick={() => navigate('/dealer/manager/payments/invoices')}
+                    onClick={() => {
+                      const prefix = location.pathname.includes('/manager/') ? '/dealer/manager' : '/dealer/staff';
+                      navigate(`${prefix}/payments/invoices`);
+                    }}
                     className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
                   >
                     Hủy

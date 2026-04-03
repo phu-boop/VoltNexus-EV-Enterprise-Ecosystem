@@ -1,17 +1,22 @@
 import React from 'react';
 import { FiChevronDown } from 'react-icons/fi';
 
-export const MenuItem = ({ 
-  item, 
-  activePath, 
-  isSubmenuOpen, 
-  onToggle, 
+export const MenuItem = ({
+  item,
+  activePath,
+  isSubmenuOpen,
+  onToggle,
   onNavigate,
-  isSidebarOpen 
+  isSidebarOpen
 }) => {
+  const isMatch = (path) => {
+    if (!path) return false;
+    return activePath === path || activePath.startsWith(path + '/');
+  };
+
   const hasSubmenu = item.submenu && item.submenu.length > 0;
-  const isActive = activePath === item.path || 
-    (hasSubmenu && item.submenu.some((sub) => sub.path === activePath));
+  const isActive = isMatch(item.path) ||
+    (hasSubmenu && item.submenu.some((sub) => isMatch(sub.path)));
 
   const handleItemClick = () => {
     if (hasSubmenu) {
@@ -35,22 +40,19 @@ export const MenuItem = ({
     <li className="relative">
       <button
         onClick={handleItemClick}
-        className={`flex items-center justify-between w-full px-4 py-3 rounded-xl transition-all duration-300 group hover:scale-[1.02] active:scale-[0.98] ${
-          isActive
-            ? "bg-white text-blue-700 shadow-lg shadow-blue-200/50"
-            : "text-blue-100 hover:bg-blue-700 hover:text-white hover:shadow-md"
-        }`}
+        className={`flex items-center justify-between w-full px-4 py-3 rounded-xl transition-all duration-300 group hover:scale-[1.02] active:scale-[0.98] ${isActive
+          ? "bg-white text-blue-700 shadow-lg shadow-blue-200/50"
+          : "text-blue-100 hover:bg-blue-700 hover:text-white hover:shadow-md"
+          }`}
         title={getTooltipContent()}
       >
         <div className="flex items-center">
           <item.icon
-            className={`w-5 h-5 transition-transform duration-300 ${
-              isSidebarOpen ? "mr-3" : "mx-auto"
-            } ${
-              isActive
+            className={`w-5 h-5 transition-transform duration-300 ${isSidebarOpen ? "mr-3" : "mx-auto"
+              } ${isActive
                 ? "text-blue-700 scale-110"
                 : "group-hover:text-white group-hover:scale-110"
-            }`}
+              }`}
           />
           {isSidebarOpen && (
             <span className="font-medium transition-all duration-300">
@@ -60,9 +62,8 @@ export const MenuItem = ({
         </div>
         {hasSubmenu && isSidebarOpen && (
           <FiChevronDown
-            className={`w-4 h-4 transition-all duration-300 ${
-              isSubmenuOpen ? "rotate-180 transform" : ""
-            } ${isActive ? "text-blue-700" : "group-hover:text-white"}`}
+            className={`w-4 h-4 transition-all duration-300 ${isSubmenuOpen ? "rotate-180 transform" : ""
+              } ${isActive ? "text-blue-700" : "group-hover:text-white"}`}
           />
         )}
       </button>
@@ -97,18 +98,16 @@ export const MenuItem = ({
               <li key={subIndex}>
                 <button
                   onClick={() => onNavigate(subItem.path)}
-                  className={`flex items-center w-full px-4 py-2.5 rounded-lg transition-all duration-300 group hover:translate-x-1 ${
-                    activePath === subItem.path
-                      ? "bg-blue-50 text-blue-700 border-l-4 border-blue-500 shadow-sm"
-                      : "text-blue-200 hover:bg-blue-600 hover:text-white hover:shadow-sm"
-                  }`}
+                  className={`flex items-center w-full px-4 py-2.5 rounded-lg transition-all duration-300 group hover:translate-x-1 ${isMatch(subItem.path)
+                    ? "bg-blue-50 text-blue-700 border-l-4 border-blue-500 shadow-sm"
+                    : "text-blue-200 hover:bg-blue-600 hover:text-white hover:shadow-sm"
+                    }`}
                 >
                   <subItem.icon
-                    className={`w-4 h-4 mr-3 transition-transform duration-300 ${
-                      activePath === subItem.path
-                        ? "text-blue-700 scale-110"
-                        : "group-hover:text-white group-hover:scale-110"
-                    }`}
+                    className={`w-4 h-4 mr-3 transition-transform duration-300 ${isMatch(subItem.path)
+                      ? "text-blue-700 scale-110"
+                      : "group-hover:text-white group-hover:scale-110"
+                      }`}
                   />
                   <span className="text-sm font-medium transition-all duration-300">
                     {subItem.label}

@@ -6,7 +6,15 @@ import {
   FiTrash2,
   FiXCircle,
   FiLoader,
+  FiUser,
+  FiCalendar,
+  FiDollarSign,
+  FiFileText,
+  FiArrowRight,
+  FiExternalLink,
+  FiActivity,
 } from "react-icons/fi";
+import { useNavigate, useLocation } from "react-router-dom";
 import Swal from "sweetalert2";
 import {
   getB2BOrders,
@@ -57,6 +65,10 @@ const StatusBadge = ({ status }) => {
 };
 
 const AllocationPage = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const basePath = location.pathname.includes('/admin/') ? '/evm/admin' : '/evm/staff';
+
   const [activeTab, setActiveTab] = useState("PENDING");
   const [orders, setOrders] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -65,7 +77,7 @@ const AllocationPage = () => {
     page: 0,
     size: 10,
     totalPages: 0,
-  }); // Thêm state phân trang
+  });
 
   const [isShipModalOpen, setIsShipModalOpen] = useState(false);
   const [orderToShip, setOrderToShip] = useState(null);
@@ -337,25 +349,30 @@ const AllocationPage = () => {
   ];
 
   return (
-    <div className="p-6 bg-gray-50 min-h-screen animate-in fade-in-0 duration-500">
-      <h1 className="text-3xl font-bold text-gray-800 mb-6">
-        Điều Phối Đơn Hàng B2B
-      </h1>
+    <div className="min-h-screen bg-slate-50/50 -m-6 p-6 animate-in fade-in-0 duration-500 m-10">
+      <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Điều Phối Đơn Hàng B2B</h1>
+          <p className="text-slate-500 mt-1">Quản lý và phê duyệt vận chuyển xe tới hệ thống đại lý.</p>
+        </div>
+      </div>
 
-      {/* Thanh Tabs */}
-      <div className="border-b border-gray-200 mb-6">
-        <nav className="flex flex-wrap space-x-4">
+      {/* Thanh Tabs Hiện Đại */}
+      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden mb-8">
+        <nav className="flex overflow-x-auto no-scrollbar">
           {tabs.map((tab) => (
             <button
               key={tab.status}
               onClick={() => setActiveTab(tab.status)}
-              className={`py-3 px-4 font-medium text-sm rounded-t-lg ${
-                activeTab === tab.status
-                  ? "border-b-2 border-blue-600 text-blue-600"
-                  : "text-gray-500 hover:text-gray-700"
-              }`}
+              className={`flex-1 min-w-[150px] py-4 px-6 text-sm font-semibold transition-all relative ${activeTab === tab.status
+                ? "text-blue-600 bg-blue-50/30"
+                : "text-slate-500 hover:text-slate-700 hover:bg-slate-50"
+                }`}
             >
               {tab.label}
+              {activeTab === tab.status && (
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600" />
+              )}
             </button>
           ))}
         </nav>
@@ -367,102 +384,144 @@ const AllocationPage = () => {
         {isLoading ? (
           <p className="text-gray-500">Đang tải đơn hàng...</p>
         ) : orders.length === 0 ? (
-          <p className="text-gray-500">Không có đơn hàng nào trong mục này.</p>
+          <div className="flex flex-col items-center justify-center py-20 text-center animate-in zoom-in-95 duration-500">
+            <div className="text-gray-300 text-8xl mb-6">📦</div>
+            <p className="text-slate-500 font-medium">Không có đơn hàng nào trong mục này.</p>
+          </div>
         ) : (
-          <div className="space-y-4">
+          <div className="grid grid-cols-1 gap-6">
             {orders.map((order) => (
               <div
                 key={order.orderId}
-                className="border border-gray-200 p-4 rounded-lg flex flex-col md:flex-row justify-between items-start gap-4"
+                className="group bg-white border border-slate-200 rounded-2xl p-6 shadow-sm hover:shadow-md hover:border-blue-200 transition-all"
               >
-                {/* Thông tin đơn */}
-                <div className="flex-1">
-                  <p className="text-sm text-gray-500">
-                    Mã ĐH: {order.orderId}
-                  </p>
-                  <p className="font-semibold">
-                    Đại lý: {getDealerName(order.dealerId)}
-                  </p>
-                  <p className="text-sm text-gray-600">
-                    Ngày đặt:{" "}
-                    {new Date(order.orderDate).toLocaleDateString("vi-VN")}
-                  </p>
-                  <p className="font-bold text-lg text-blue-700 mt-1">
-                    Tổng:{" "}
-                    {new Intl.NumberFormat("vi-VN", {
-                      style: "currency",
-                      currency: "VND",
-                    }).format(order.totalAmount)}
-                  </p>
-                  {order.orderItems && order.orderItems.length > 0 && (
-                    <ul className="list-disc list-inside text-sm text-gray-600 mt-2 pl-4">
-                      {order.orderItems.map((item) => (
-                        <li key={item.orderItemId}>
-                          {item.quantity} x {getVariantDisplayName(item.variantId)} - Đơn
-                          giá:{" "}
+                <div className="flex flex-col lg:flex-row gap-6">
+                  {/* Left: Basic Info */}
+                  <div className="flex-1 space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2.5 bg-slate-100 rounded-xl text-slate-500 group-hover:bg-blue-50 group-hover:text-blue-600 transition-colors">
+                          <FiFileText size={20} />
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-1">Mã đơn hàng</p>
+                          <p className="text-sm font-mono font-bold text-slate-700">{order.orderId}</p>
+                        </div>
+                      </div>
+                      <StatusBadge status={order.orderStatus} />
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="flex items-center gap-3">
+                        <FiUser className="text-slate-400" size={16} />
+                        <div>
+                          <p className="text-xs text-slate-500">Đại lý ủy quyền</p>
+                          <button
+                            onClick={() => navigate(`${basePath}/dealers/manage?dealerId=${order.dealerId}`)}
+                            className="text-sm font-bold text-slate-900 hover:text-blue-600 flex items-center gap-1 group/link"
+                          >
+                            {getDealerName(order.dealerId)}
+                            <FiExternalLink size={12} className="opacity-0 group-hover/link:opacity-100 transition-opacity" />
+                          </button>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <FiCalendar className="text-slate-400" size={16} />
+                        <div>
+                          <p className="text-xs text-slate-500">Ngày yêu cầu</p>
+                          <p className="text-sm font-bold text-slate-900">{new Date(order.orderDate).toLocaleDateString("vi-VN", { day: '2-digit', month: 'long', year: 'numeric' })}</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Order Items */}
+                    <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
+                      <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3 flex items-center gap-2">
+                        <FiList size={14} />
+                        Danh sách sản phẩm ({order.orderItems?.length || 0})
+                      </p>
+                      <div className="space-y-2">
+                        {order.orderItems?.map((item) => (
+                          <div key={item.orderItemId} className="flex items-center justify-between text-sm">
+                            <div className="flex items-center gap-2">
+                              <span className="w-6 h-6 flex items-center justify-center bg-blue-100 text-blue-700 text-[10px] font-bold rounded">
+                                {item.quantity}
+                              </span>
+                              <span className="font-medium text-slate-700">{getVariantDisplayName(item.variantId)}</span>
+                            </div>
+                            <span className="font-mono text-slate-500">
+                              {new Intl.NumberFormat("vi-VN").format(item.unitPrice)} đ
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="mt-4 pt-3 border-t border-slate-200/60 flex justify-between items-center text-blue-700 font-bold">
+                        <span className="text-xs uppercase tracking-wider">Tổng giá trị đơn</span>
+                        <span className="text-lg">
                           {new Intl.NumberFormat("vi-VN", {
                             style: "currency",
                             currency: "VND",
-                          }).format(item.unitPrice)}
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                  {order.notes && (
-                    <p className="text-sm text-gray-500 mt-2 italic">
-                      Ghi chú: {order.notes}
-                    </p>
-                  )}
-                </div>
+                          }).format(order.totalAmount)}
+                        </span>
+                      </div>
+                    </div>
 
-                {/* Trạng thái và Hành động */}
-                <div className="shrink-0 flex flex-col items-end space-y-2 w-full md:w-auto">
-                  <StatusBadge status={order.orderStatus} />
+                    {order.notes && (
+                      <div className="bg-amber-50 text-amber-700 p-3 rounded-lg text-xs italic border border-amber-100/50">
+                        <strong>Ghi chú:</strong> {order.notes}
+                      </div>
+                    )}
+                  </div>
 
-                  {order.orderStatus === "PENDING" && (
-                    <>
+                  {/* Right: Actions */}
+                  <div className="lg:w-48 flex lg:flex-col items-center justify-center gap-3 lg:border-l lg:border-slate-100 lg:pl-6">
+                    {order.orderStatus === "PENDING" && (
+                      <>
+                        <button
+                          onClick={() => handleApprove(order.orderId)}
+                          className="flex-1 lg:w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-600 text-white rounded-xl font-bold text-sm hover:bg-emerald-700 shadow-sm shadow-emerald-200 transition-all active:scale-95"
+                        >
+                          <FiCheck /> Duyệt
+                        </button>
+                        <button
+                          onClick={() => handleCancelOrder(order.orderId)}
+                          className="flex-1 lg:w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-white border border-amber-200 text-amber-600 rounded-xl font-bold text-sm hover:bg-amber-50 transition-all active:scale-95"
+                        >
+                          <FiXCircle /> Hủy bỏ
+                        </button>
+                      </>
+                    )}
+                    {order.orderStatus === "CONFIRMED" && (
                       <button
-                        onClick={() => handleApprove(order.orderId)}
-                        className="flex items-center justify-center w-full md:w-32 px-3 py-1.5 bg-green-500 text-white rounded text-sm hover:bg-green-600 transition duration-150"
+                        onClick={() => handleOpenShipModal(order)}
+                        disabled={enrichingOrderId === order.orderId}
+                        className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 text-white rounded-xl font-bold text-sm hover:bg-blue-700 shadow-lg shadow-blue-200 transition-all disabled:bg-slate-300 disabled:shadow-none active:scale-95"
                       >
-                        <FiCheck className="mr-1" /> Duyệt
+                        {enrichingOrderId === order.orderId ? (
+                          <FiLoader className="animate-spin" />
+                        ) : (
+                          <FiTruck />
+                        )}
+                        {enrichingOrderId === order.orderId ? "Đang xử lý..." : "Xuất Kho Ngay"}
                       </button>
+                    )}
+                    {order.orderStatus === "CANCELLED" && (
                       <button
-                        onClick={() => handleCancelOrder(order.orderId)}
-                        className="flex items-center justify-center w-full md:w-32 px-3 py-1.5 bg-yellow-500 text-white rounded text-sm hover:bg-yellow-600 transition duration-150"
+                        onClick={() => handleDeleteOrder(order.orderId)}
+                        className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-50 border border-slate-200 text-slate-400 rounded-xl font-bold text-sm hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-all active:scale-95"
                       >
-                        <FiXCircle className="mr-1" /> Hủy
+                        <FiTrash2 /> Xoá hồ sơ
                       </button>
-                    </>
-                  )}
-                  {order.orderStatus === "CONFIRMED" && (
-                    <button
-                      onClick={() => handleOpenShipModal(order)}
-                      // (MỚI) Thêm logic disabled
-                      disabled={enrichingOrderId === order.orderId}
-                      className="flex items-center justify-center w-full md:w-32 px-3 py-1.5 bg-blue-500 text-white rounded text-sm hover:bg-blue-600 transition duration-150 disabled:bg-gray-400 disabled:cursor-wait"
-                    >
-                      {/* (MỚI) Thêm icon loading */}
-                      {enrichingOrderId === order.orderId ? (
-                        <FiLoader className="animate-spin mr-1" />
-                      ) : (
-                        <FiTruck className="mr-1" />
-                      )}
-                      {enrichingOrderId === order.orderId
-                        ? "Đang tải..."
-                        : "Giao hàng"}
-                    </button>
-                  )}
-                  {order.orderStatus === "CANCELLED" && (
-                    <button
-                      onClick={() => handleDeleteOrder(order.orderId)}
-                      className="flex items-center justify-center w-full md:w-32 px-3 py-1.5 bg-red-500 text-white rounded text-sm hover:bg-red-600 transition duration-150"
-                      title="Xóa đơn hàng vĩnh viễn"
-                    >
-                      <FiTrash2 className="mr-1" /> Xóa
-                    </button>
-                  )}
-                  {/* Có thể thêm nút xem chi tiết ở đây nếu cần */}
+                    )}
+                    {(order.orderStatus === "IN_TRANSIT" || order.orderStatus === "DELIVERED") && (
+                      <div className="text-center">
+                        <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Vận chuyển</p>
+                        <div className="w-10 h-10 mx-auto flex items-center justify-center rounded-full bg-slate-50 text-slate-400">
+                          <FiActivity size={20} />
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             ))}

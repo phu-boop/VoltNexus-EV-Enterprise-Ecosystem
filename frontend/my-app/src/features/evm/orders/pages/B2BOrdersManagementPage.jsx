@@ -1,14 +1,21 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { getB2BOrders } from '../../inventory/services/evmSalesService';
 import { toast } from 'react-toastify';
-import { 
-  MagnifyingGlassIcon, 
-  DocumentTextIcon,
-  CheckCircleIcon,
-  XCircleIcon,
-  ClockIcon
-} from '@heroicons/react/24/outline';
+import {
+  FiFileText,
+  FiCheckCircle,
+  FiXCircle,
+  FiClock,
+  FiTrendingUp,
+  FiSearch,
+  FiFilter,
+  FiEye,
+  FiPlusCircle,
+  FiActivity,
+  FiChevronLeft,
+  FiChevronRight
+} from 'react-icons/fi';
 
 const B2BOrdersManagementPage = () => {
   const navigate = useNavigate();
@@ -26,12 +33,20 @@ const B2BOrdersManagementPage = () => {
     currentPage: 0
   });
 
+  // Calculate statistics from current data
+  const stats = useMemo(() => {
+    const total = orders.length;
+    const pending = orders.filter(o => o.orderStatus === 'PENDING').length;
+    const delivered = orders.filter(o => o.orderStatus === 'DELIVERED').length;
+    const totalValue = orders.reduce((acc, o) => acc + (o.totalAmount || 0), 0);
+
+    return { total, pending, delivered, totalValue };
+  }, [orders]);
+
   useEffect(() => {
     loadOrders();
-    // Hiển thị thông báo nếu có message từ location.state
     if (location.state?.message) {
       toast.success(location.state.message);
-      // Clear state để không hiển thị lại khi refresh
       navigate(location.pathname, { replace: true, state: {} });
     }
   }, [filters.status, filters.page, location.state]);
@@ -49,7 +64,7 @@ const B2BOrdersManagementPage = () => {
 
       const response = await getB2BOrders(params);
       const data = response.data?.data || response.data;
-      
+
       if (data) {
         setOrders(data.content || []);
         setPagination({
@@ -71,79 +86,113 @@ const B2BOrdersManagementPage = () => {
   };
 
   const handlePageChange = (newPage) => {
-    setFilters(prev => ({ ...prev, page: newPage }));
+    if (newPage >= 0 && newPage < pagination.totalPages) {
+      setFilters(prev => ({ ...prev, page: newPage }));
+    }
   };
 
   const handleCreateInvoice = (order) => {
-    navigate(`/evm/staff/orders/${order.orderId}/create-invoice`, {
+    const prefix = location.pathname.includes('/admin/') ? '/evm/admin' : '/evm/staff';
+    navigate(`${prefix}/orders/${order.orderId}/create-invoice`, {
       state: { order }
     });
   };
 
   const handleViewOrder = (orderId) => {
-    navigate(`/evm/staff/orders/${orderId}`);
+    navigate(`/evm/b2b-orders/${orderId}`);
   };
 
   const getStatusBadge = (status) => {
-    const statusConfig = {
-      PENDING: { color: 'bg-yellow-100 text-yellow-800', icon: ClockIcon, label: 'Chờ duyệt' },
-      CONFIRMED: { color: 'bg-blue-100 text-blue-800', icon: CheckCircleIcon, label: 'Đã xác nhận' },
-      IN_TRANSIT: { color: 'bg-purple-100 text-purple-800', icon: ClockIcon, label: 'Đang vận chuyển' },
-      DELIVERED: { color: 'bg-green-100 text-green-800', icon: CheckCircleIcon, label: 'Đã giao' },
-      CANCELLED: { color: 'bg-red-100 text-red-800', icon: XCircleIcon, label: 'Đã hủy' },
-      DISPUTED: { color: 'bg-orange-100 text-orange-800', icon: XCircleIcon, label: 'Có khiếu nại' }
+    const configs = {
+      PENDING: { color: "amber", text: "Chờ duyệt", icon: FiClock },
+      CONFIRMED: { color: "blue", text: "Đã xác nhận", icon: FiCheckCircle },
+      IN_TRANSIT: { color: "purple", text: "Đang vận chuyển", icon: FiTrendingUp },
+      DELIVERED: { color: "emerald", text: "Đã giao", icon: FiCheckCircle },
+      CANCELLED: { color: "red", text: "Đã hủy", icon: FiXCircle },
+      DISPUTED: { color: "orange", text: "Khiếu nại", icon: FiActivity }
     };
 
-    const config = statusConfig[status] || { color: 'bg-gray-100 text-gray-800', icon: ClockIcon, label: status };
-    const Icon = config.icon;
+    const config = configs[status] || { color: "slate", text: status, icon: FiActivity };
+    const { color, text, icon: Icon } = config;
 
     return (
-      <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${config.color}`}>
-        <Icon className="h-3 w-3" />
-        {config.label}
+      <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-${color}-50 text-${color}-700 border border-${color}-100 shadow-sm whitespace-nowrap`}>
+        <Icon size={12} className={`text-${color}-500`} />
+        {text}
       </span>
     );
   };
 
   const formatCurrency = (amount) => {
-    if (!amount) return '0 ₫';
     return new Intl.NumberFormat('vi-VN', {
       style: 'currency',
       currency: 'VND'
-    }).format(amount);
+    }).format(amount || 0);
   };
 
   const formatDate = (dateString) => {
     if (!dateString) return '-';
     return new Date(dateString).toLocaleDateString('vi-VN', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit'
+      year: 'numeric', month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit'
     });
   };
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Quản Lý Đơn Hàng B2B</h1>
-          <p className="text-gray-600 mt-1">Xem và quản lý tất cả đơn hàng từ các đại lý</p>
+    <div className="min-h-screen bg-slate-50/50 -m-6 p-6 animate-in fade-in duration-500">
+
+      {/* Header Section */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
+        <div className="flex items-center gap-4">
+          <div className="p-3.5 bg-blue-600 rounded-2xl shadow-xl shadow-blue-200">
+            <FiFileText size={28} className="text-white" />
+          </div>
+          <div>
+            <h1 className="text-3xl font-black text-slate-900 tracking-tight">Quản Lý Đơn Hàng B2B</h1>
+            <p className="text-slate-500 font-medium mt-0.5">Xử lý quyết toán và lập hóa đơn đại lý</p>
+          </div>
         </div>
       </div>
 
-      {/* Filters */}
-      <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
-        <div className="flex gap-4 items-center">
-          <div className="flex-1">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Lọc theo trạng thái
-            </label>
+      {/* Stats Dashboard */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        {[
+          { label: 'Tổng Đơn Hàng', value: pagination.totalElements, icon: FiFileText, color: 'blue' },
+          { label: 'Chờ Phê Duyệt', value: stats.pending, icon: FiClock, color: 'amber' },
+          { label: 'Đã Hoàn Tất', value: stats.delivered, icon: FiCheckCircle, color: 'emerald' },
+          { label: 'Tổng Doanh Thu', value: formatCurrency(stats.totalValue), icon: FiTrendingUp, color: 'indigo' }
+        ].map((stat, idx) => (
+          <div key={idx} className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm hover:shadow-md transition-all group">
+            <div className="flex items-center gap-4">
+              <div className={`p-3 bg-${stat.color}-50 text-${stat.color}-600 rounded-2xl group-hover:scale-110 transition-transform`}>
+                <stat.icon size={24} />
+              </div>
+              <div>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{stat.label}</p>
+                <p className="text-xl font-black text-slate-900 mt-0.5">{stat.value}</p>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Filters & Actions */}
+      <div className="bg-white p-4 rounded-3xl border border-slate-100 shadow-sm mb-6 flex flex-col md:flex-row gap-4 items-center">
+        <div className="relative flex-1 w-full">
+          <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+          <input
+            type="text"
+            placeholder="Tìm kiếm mã đơn hàng hoặc đại lý..."
+            className="w-full pl-11 pr-4 py-3 bg-slate-50 border-none rounded-2xl text-sm focus:ring-2 focus:ring-blue-500 transition-all font-medium"
+          />
+        </div>
+        <div className="flex items-center gap-3 w-full md:w-auto">
+          <div className="relative w-full md:w-64">
+            <FiFilter className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
             <select
               value={filters.status}
               onChange={handleStatusChange}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full pl-11 pr-10 py-3 bg-slate-50 border-none rounded-2xl text-sm focus:ring-2 focus:ring-blue-500 transition-all font-bold text-slate-700 appearance-none cursor-pointer"
             >
               <option value="">Tất cả trạng thái</option>
               <option value="PENDING">Chờ duyệt</option>
@@ -157,92 +206,78 @@ const B2BOrdersManagementPage = () => {
         </div>
       </div>
 
-      {/* Orders Table */}
-      <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+      {/* Main Content Table */}
+      <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden">
         {loading ? (
-          <div className="p-8 text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600">Đang tải danh sách đơn hàng...</p>
+          <div className="p-20 text-center">
+            <div className="w-16 h-16 border-4 border-blue-600/20 border-t-blue-600 rounded-full animate-spin mx-auto mb-4" />
+            <p className="text-slate-500 font-bold animate-pulse tracking-widest uppercase text-xs">Đang đồng bộ dữ liệu...</p>
           </div>
         ) : orders.length === 0 ? (
-          <div className="p-8 text-center">
-            <DocumentTextIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-600">Không có đơn hàng nào</p>
+          <div className="p-20 text-center animate-in zoom-in-95 duration-500">
+            <div className="text-slate-200 text-8xl mb-6 flex justify-center">📦</div>
+            <h3 className="text-xl font-black text-slate-900">Hệ thống trống</h3>
+            <p className="text-slate-400 font-medium mt-1">Không tìm thấy bất kỳ đơn hàng nào phù hợp.</p>
           </div>
         ) : (
           <>
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Mã đơn hàng
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Đại lý
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Ngày đặt
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Tổng tiền
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Trạng thái
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Thao tác
-                    </th>
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-slate-50/50 border-b border-slate-100">
+                    <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Đặc danh đơn hàng</th>
+                    <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Đại lý thực hiện</th>
+                    <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Trạng thái</th>
+                    <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Tổng quyết toán</th>
+                    <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Hành động</th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
+                <tbody className="divide-y divide-slate-50">
                   {orders.map((order) => (
-                    <tr key={order.orderId} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">
-                          #{order.orderId?.substring(0, 8) || '-'}
+                    <tr key={order.orderId} className="group hover:bg-slate-50/80 transition-all duration-300">
+                      <td className="px-8 py-6">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-all shadow-sm">
+                            <FiFileText size={18} />
+                          </div>
+                          <div>
+                            <p className="text-sm font-black text-slate-900">#{order.orderId?.substring(0, 8)}</p>
+                            <p className="text-[10px] font-bold text-slate-400 mt-0.5">{formatDate(order.orderDate)}</p>
+                          </div>
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">
-                          {order.dealerId ? `Đại lý ${order.dealerId.substring(0, 8)}` : '-'}
-                        </div>
+                      <td className="px-6 py-6 font-bold text-slate-700 text-sm">
+                        {order.dealerId ? `Đại lý ${order.dealerId.substring(0, 8)}` : 'Hệ thống'}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">
-                          {formatDate(order.orderDate)}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">
-                          {formatCurrency(order.totalAmount)}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-6 py-6 text-center">
                         {getStatusBadge(order.orderStatus)}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <div className="flex gap-2 items-center">
+                      <td className="px-6 py-6 text-right">
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-tight mb-0.5">Giá trị định mức</p>
+                        <p className="text-sm font-black text-blue-600">{formatCurrency(order.totalAmount)}</p>
+                      </td>
+                      <td className="px-6 py-6 text-right">
+                        <div className="flex justify-end gap-2">
                           <button
                             onClick={() => handleViewOrder(order.orderId)}
-                            className="text-blue-600 hover:text-blue-900"
+                            className="p-2.5 bg-slate-100 text-slate-600 rounded-xl hover:bg-blue-600 hover:text-white transition-all shadow-sm active:scale-90"
+                            title="Xem chi tiết"
                           >
-                            Xem chi tiết
+                            <FiEye size={16} />
                           </button>
                           {order.orderStatus === 'DELIVERED' && (
                             <>
-                              {/* Kiểm tra paymentStatus: nếu != NONE thì đã có hóa đơn */}
                               {order.paymentStatus && order.paymentStatus !== 'NONE' ? (
-                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                  <CheckCircleIcon className="h-3 w-3" />
-                                  Đã lập hóa đơn
-                                </span>
+                                <div className="p-2.5 bg-emerald-50 text-emerald-600 rounded-xl border border-emerald-100 shadow-sm" title="Đã có hóa đơn">
+                                  <FiCheckCircle size={16} />
+                                </div>
                               ) : (
                                 <button
                                   onClick={() => handleCreateInvoice(order)}
-                                  className="text-green-600 hover:text-green-900"
+                                  className="p-2.5 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-200 active:scale-90"
+                                  title="Lập hóa đơn"
                                 >
-                                  Lập hóa đơn
+                                  <FiPlusCircle size={16} />
                                 </button>
                               )}
                             </>
@@ -255,63 +290,39 @@ const B2BOrdersManagementPage = () => {
               </table>
             </div>
 
-            {/* Pagination */}
+            {/* Modern Pagination */}
             {pagination.totalPages > 1 && (
-              <div className="bg-gray-50 px-4 py-3 flex items-center justify-between border-t border-gray-200">
-                <div className="flex-1 flex justify-between sm:hidden">
+              <div className="px-8 py-6 bg-slate-50/50 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">
+                  Hiển thị <span className="text-blue-600">{orders.length}</span> / {pagination.totalElements} hồ sơ
+                </p>
+                <div className="flex items-center gap-2">
                   <button
                     onClick={() => handlePageChange(pagination.currentPage - 1)}
                     disabled={pagination.currentPage === 0}
-                    className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
+                    className="p-2.5 bg-white border border-slate-200 rounded-xl text-slate-400 hover:text-blue-600 disabled:opacity-30 transition-all shadow-sm active:scale-90"
                   >
-                    Trước
+                    <FiChevronLeft size={20} />
                   </button>
+                  {[...Array(pagination.totalPages)].map((_, index) => (
+                    <button
+                      key={index}
+                      onClick={() => handlePageChange(index)}
+                      className={`w-10 h-10 rounded-xl text-xs font-black transition-all ${pagination.currentPage === index
+                        ? 'bg-blue-600 text-white shadow-lg shadow-blue-200'
+                        : 'bg-white border border-slate-200 text-slate-500 hover:border-blue-300'
+                        }`}
+                    >
+                      {index + 1}
+                    </button>
+                  ))}
                   <button
                     onClick={() => handlePageChange(pagination.currentPage + 1)}
                     disabled={pagination.currentPage >= pagination.totalPages - 1}
-                    className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
+                    className="p-2.5 bg-white border border-slate-200 rounded-xl text-slate-400 hover:text-blue-600 disabled:opacity-30 transition-all shadow-sm active:scale-90"
                   >
-                    Sau
+                    <FiChevronRight size={20} />
                   </button>
-                </div>
-                <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-                  <div>
-                    <p className="text-sm text-gray-700">
-                      Hiển thị <span className="font-medium">{orders.length}</span> trong tổng số{' '}
-                      <span className="font-medium">{pagination.totalElements}</span> đơn hàng
-                    </p>
-                  </div>
-                  <div>
-                    <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
-                      <button
-                        onClick={() => handlePageChange(pagination.currentPage - 1)}
-                        disabled={pagination.currentPage === 0}
-                        className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
-                      >
-                        Trước
-                      </button>
-                      {[...Array(pagination.totalPages)].map((_, index) => (
-                        <button
-                          key={index}
-                          onClick={() => handlePageChange(index)}
-                          className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
-                            pagination.currentPage === index
-                              ? 'z-10 bg-blue-50 border-blue-500 text-blue-600'
-                              : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
-                          }`}
-                        >
-                          {index + 1}
-                        </button>
-                      ))}
-                      <button
-                        onClick={() => handlePageChange(pagination.currentPage + 1)}
-                        disabled={pagination.currentPage >= pagination.totalPages - 1}
-                        className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
-                      >
-                        Sau
-                      </button>
-                    </nav>
-                  </div>
                 </div>
               </div>
             )}

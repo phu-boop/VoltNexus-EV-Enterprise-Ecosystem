@@ -8,4 +8,8 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface VariantFeatureRepository extends JpaRepository<VariantFeature, VariantFeatureId> {
     boolean existsByVehicleFeature_FeatureId(Long featureId);
+
+    @org.springframework.data.jpa.repository.EntityGraph(attributePaths = { "vehicleVariant",
+            "vehicleVariant.vehicleModel" })
+    java.util.List<VariantFeature> findByVehicleFeature_FeatureId(Long featureId);
 }
