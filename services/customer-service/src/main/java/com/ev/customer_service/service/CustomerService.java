@@ -24,6 +24,30 @@ public class CustomerService {
     private final com.ev.customer_service.repository.CustomerProfileAuditRepository auditRepository;
 
     @Transactional(readOnly = true)
+    public List<CustomerResponse> getCustomersWithFilter(String search, String roles, String currentUserDealerId) {
+        Long dealerId = null;
+        if (roles != null && (roles.contains("DEALER_MANAGER") || roles.contains("DEALER_STAFF"))
+                && !roles.contains("ADMIN") && !roles.contains("EVM_STAFF")) {
+            if (currentUserDealerId != null && !currentUserDealerId.isEmpty()) {
+                dealerId = Long.parseLong(currentUserDealerId);
+            }
+        }
+
+        List<Customer> customers;
+        if (search != null && !search.isEmpty()) {
+            customers = customerRepository.searchCustomersByDealer(search, dealerId);
+        } else if (dealerId != null) {
+            customers = customerRepository.findByPreferredDealerId(dealerId);
+        } else {
+            customers = customerRepository.findAll();
+        }
+
+        return customers.stream()
+                .map(customer -> modelMapper.map(customer, CustomerResponse.class))
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
     public List<CustomerResponse> getAllCustomers() {
         return customerRepository.findAll().stream()
                 .map(customer -> modelMapper.map(customer, CustomerResponse.class))
@@ -46,17 +70,25 @@ public class CustomerService {
 
     @Transactional(readOnly = true)
     public List<CustomerResponse> searchCustomers(String keyword) {
-        return customerRepository.searchCustomers(keyword).stream()
+        return customerRepository.searchCustomersByDealer(keyword, null).stream()
                 .map(customer -> modelMapper.map(customer, CustomerResponse.class))
                 .toList();
     }
 
     @Transactional
-    public CustomerResponse createCustomer(CustomerRequest request) {
+    public CustomerResponse createCustomer(CustomerRequest request, String roles, String currentUserDealerId) {
         // Check uniqueness
         validateNewCustomerUniqueness(request);
 
         Customer customer = modelMapper.map(request, Customer.class);
+
+        // Phân quyền: Tự động set dealerId nếu là người dùng đại lý
+        if (roles != null && (roles.contains("DEALER_MANAGER") || roles.contains("DEALER_STAFF"))
+                && !roles.contains("ADMIN") && !roles.contains("EVM_STAFF")) {
+            if (currentUserDealerId != null && !currentUserDealerId.isEmpty()) {
+                customer.setPreferredDealerId(Long.parseLong(currentUserDealerId));
+            }
+        }
 
         parseEnums(customer, request);
 
@@ -112,9 +144,20 @@ public class CustomerService {
     }
 
     @Transactional
-    public CustomerResponse updateCustomer(Long id, CustomerRequest request) {
+    public CustomerResponse updateCustomer(Long id, CustomerRequest request, String roles, String currentUserDealerId) {
         Customer customer = customerRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Customer not found with id: " + id));
+
+        // Phân quyền: Kiểm tra xem có quyền sửa khách hàng này không
+        if (roles != null && (roles.contains("DEALER_MANAGER") || roles.contains("DEALER_STAFF"))
+                && !roles.contains("ADMIN") && !roles.contains("EVM_STAFF")) {
+            if (currentUserDealerId != null && !currentUserDealerId.isEmpty()) {
+                Long dealerId = Long.parseLong(currentUserDealerId);
+                if (!dealerId.equals(customer.getPreferredDealerId())) {
+                    throw new ResourceNotFoundException("Customer not found in your dealership");
+                }
+            }
+        }
 
         validateExistingCustomerUniqueness(request, customer);
 
@@ -235,10 +278,21 @@ public class CustomerService {
     }
 
     @Transactional
-    public void deleteCustomer(Long id) {
-        if (!customerRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Customer not found with id: " + id);
+    public void deleteCustomer(Long id, String roles, String currentUserDealerId) {
+        Customer customer = customerRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Customer not found with id: " + id));
+
+        // Phân quyền: Kiểm tra trước khi xóa
+        if (roles != null && (roles.contains("DEALER_MANAGER") || roles.contains("DEALER_STAFF"))
+                && !roles.contains("ADMIN") && !roles.contains("EVM_STAFF")) {
+            if (currentUserDealerId != null && !currentUserDealerId.isEmpty()) {
+                Long dealerId = Long.parseLong(currentUserDealerId);
+                if (!dealerId.equals(customer.getPreferredDealerId())) {
+                    throw new ResourceNotFoundException("Customer not found in your dealership");
+                }
+            }
         }
+
         customerRepository.deleteById(id);
     }
 
