@@ -48,7 +48,7 @@ public class DealerContractService {
         Dealer dealer = dealerRepository.findById(request.getDealerId())
                 .orElseThrow(() -> new ResourceNotFoundException("Dealer not found with id: " + request.getDealerId()));
 
-        DealerContract contract = modelMapper.map(request, DealerContract.class);
+        DealerContract contract = mapToEntity(request);
         contract.setDealer(dealer);
         DealerContract savedContract = contractRepository.save(contract);
         return mapToResponse(savedContract);
@@ -64,9 +64,28 @@ public class DealerContractService {
             throw new DuplicateResourceException("Contract with number " + request.getContractNumber() + " already exists");
         }
 
-        modelMapper.map(request, contract);
+        Dealer dealer = dealerRepository.findById(request.getDealerId())
+                .orElseThrow(() -> new ResourceNotFoundException("Dealer not found with id: " + request.getDealerId()));
+        applyRequestToEntity(request, contract);
+        contract.setDealer(dealer);
         DealerContract updatedContract = contractRepository.save(contract);
         return mapToResponse(updatedContract);
+    }
+
+    private DealerContract mapToEntity(DealerContractRequest request) {
+        DealerContract contract = new DealerContract();
+        applyRequestToEntity(request, contract);
+        return contract;
+    }
+
+    private void applyRequestToEntity(DealerContractRequest request, DealerContract contract) {
+        contract.setContractNumber(request.getContractNumber());
+        contract.setContractTerms(request.getContractTerms());
+        contract.setTargetSales(request.getTargetSales());
+        contract.setCommissionRate(request.getCommissionRate());
+        contract.setStartDate(request.getStartDate());
+        contract.setEndDate(request.getEndDate());
+        contract.setContractStatus(request.getContractStatus());
     }
 
     private DealerContractResponse mapToResponse(DealerContract contract) {
