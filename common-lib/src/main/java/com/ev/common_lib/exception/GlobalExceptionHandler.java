@@ -110,8 +110,6 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity.badRequest().body(apiRespond);
     }
-
-}
     // ==========================================
     // ĐOẠN CODE MỚI THÊM VÀO ĐỂ FIX LỖI 8.9 TẠI ĐÂY
     // ==========================================
