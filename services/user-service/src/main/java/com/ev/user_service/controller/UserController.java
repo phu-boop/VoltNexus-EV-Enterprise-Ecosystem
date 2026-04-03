@@ -37,9 +37,14 @@ public class UserController {
 
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping
-    public ResponseEntity<ApiRespond<List<UserRespond>>> getAllUser() {
+    public ResponseEntity<ApiRespond<Page<UserRespond>>> getAllUser(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "id") String sortField,
+            @RequestParam(defaultValue = "asc") String sortOrder) {
         return ResponseEntity.ok(
-                ApiRespond.success("Get All User Successfully", userService.getAllUser()));
+                ApiRespond.success("Get All User Successfully",
+                        userService.getAllUser(page, size, sortField, sortOrder)));
     }
 
     // Cho EVM Staff xem tất cả Dealer Manager
