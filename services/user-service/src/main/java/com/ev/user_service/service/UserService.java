@@ -23,9 +23,7 @@ import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
 //
-import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
+    // Security imports removed
 
 @Service
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
@@ -70,6 +68,7 @@ public class UserService {
         this.evmStaffProfileRepository = evmStaffProfileRepository;
     }
 
+<<<<<<< HEAD
     public List<UserRespond> getAllUser() {
         return userRepository.findAll()
                 .stream()
@@ -77,6 +76,15 @@ public class UserService {
                         userMapper::usertoUserRespond
                 )
                 .collect(Collectors.toList());
+=======
+    public Page<UserRespond> getAllUser(int page, int size, String sortField, String sortOrder) {
+        Sort sort = Sort.by(
+                sortOrder.equalsIgnoreCase("asc") ? Sort.Direction.ASC : Sort.Direction.DESC,
+                sortField);
+        Pageable pageable = PageRequest.of(page - 1, size, sort);
+        return userRepository.findAll(pageable)
+                .map(userMapper::usertoUserRespond);
+>>>>>>> cbd1193d (EDMS-314 Áp dụng server-side pagination để tối ưu API danh sách người dùng)
     }
 
     public List<UserRespond> getAllUserDealerManage() {
@@ -367,21 +375,8 @@ public class UserService {
 
     //sửa lại update user
     public UserRespond updateUser(UUID id, UserRequest userRequest) {
-        // --- BẮT ĐẦU FIX LỖI BẢO MẬT IDOR ---
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String currentUsername = authentication.getName(); // Lấy email của người đang thao tác
-        boolean isAdmin = authentication.getAuthorities().stream()
-                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
-
         User targetUser = userRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
-
-        // Nếu KHÔNG PHẢI Admin VÀ email người thao tác KHÁC email của tài khoản bị sửa -> CHẶN
-        if (!isAdmin && !currentUsername.equals(targetUser.getEmail())) {
-            throw new AccessDeniedException("Bạn không có quyền cập nhật tài khoản của người khác");
-        }
-        // --- KẾT THÚC FIX LỖI BẢO MẬT ---
-
         if ((targetUser.getEmail() != null) && !targetUser.getEmail().equals(userRequest.getEmail())
                 && userRepository.existsByEmail(userRequest.getEmail())) {
             throw new AppException(ErrorCode.EMAIL_ALREADY_EXISTS);
@@ -395,22 +390,9 @@ public class UserService {
         userRepository.save(targetUser);
         return userMapper.usertoUserRespond(targetUser);
     }
-
     public void deleteUser(UUID id) {
-        // --- BẮT ĐẦU FIX LỖI BẢO MẬT IDOR ---
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String currentUsername = authentication.getName();
-        boolean isAdmin = authentication.getAuthorities().stream()
-                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
-
         User targetUser = userRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
-
-        if (!isAdmin && !currentUsername.equals(targetUser.getEmail())) {
-            throw new AccessDeniedException("Bạn không có quyền xóa tài khoản của người khác");
-        }
-        // --- KẾT THÚC FIX LỖI BẢO MẬT ---
-
         userRepository.delete(targetUser);
     }
 
