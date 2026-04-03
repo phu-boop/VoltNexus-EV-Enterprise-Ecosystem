@@ -7,8 +7,8 @@ import java.util.concurrent.TimeUnit;
 
 @Service
 public class LoginAttemptService {
-
-    private final int MAX_ATTEMPT = 5;
+    // 50 for testing collection
+    private final int MAX_ATTEMPT = 50;
     private final long LOCK_TIME = TimeUnit.MINUTES.toMillis(15); // khóa 15 phút
 
     private final ConcurrentHashMap<String, Integer> attempts = new ConcurrentHashMap<>();

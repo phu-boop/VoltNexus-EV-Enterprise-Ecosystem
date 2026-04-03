@@ -8,10 +8,12 @@ import com.ev.sales_service.entity.Promotion;
 import com.ev.sales_service.enums.PromotionStatus;
 import com.ev.sales_service.repository.OutboxRepository;
 import com.ev.sales_service.repository.PromotionRepository;
+import com.ev.sales_service.repository.QuotationRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -24,6 +26,7 @@ import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class PromotionService {
 
     @Value("${user-service.base-url}")
@@ -31,6 +34,7 @@ public class PromotionService {
 
     private final PromotionRepository promotionRepository;
     private final OutboxRepository outboxRepository;
+    private final QuotationRepository quotationRepository;
     private final ObjectMapper objectMapper; // spring-boot auto-configures
 
     @Transactional
@@ -48,8 +52,7 @@ public class PromotionService {
                 saved.getDiscountRate(),
                 saved.getStartDate(),
                 saved.getEndDate(),
-                LocalDateTime.now()
-        );
+                LocalDateTime.now());
 
         try {
             String payload = objectMapper.writeValueAsString(event);
@@ -74,15 +77,33 @@ public class PromotionService {
         return saved;
     }
 
-    public Promotion updatePromotion(UUID id, Promotion promotion) {
+    public Promotion updatePromotion(UUID id, Promotion promotion, String roles, String currentUserDealerId) {
         Promotion existing = promotionRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Promotion not found"));
+
+        // Phân quyền: Dealer Manager chỉ được sửa DRAFT và chỉ sửa của mình
+        if (roles != null && roles.contains("DEALER_MANAGER") && !roles.contains("ADMIN")
+                && !roles.contains("EVM_STAFF")) {
+            if (existing.getStatus() != PromotionStatus.DRAFT) {
+                throw new AppException(ErrorCode.DATA_NOT_FOUND); // Hoặc tạo ErrorCode mới cho "Promotion already authenticated"
+            }
+            // Kiểm tra dealerId (nếu cần thiết, dựa trên logic dealerIdJson)
+            if (currentUserDealerId != null && !existing.getDealerIdJson().contains(currentUserDealerId)) {
+                throw new AppException(ErrorCode.UNAUTHORIZED);
+            }
+        }
+
+        if (quotationRepository.existsByPromotionId(id)) {
+            throw new AppException(ErrorCode.PROMOTION_IN_USE);
+        }
+
         existing.setPromotionName(promotion.getPromotionName());
         existing.setDescription(promotion.getDescription());
         existing.setDiscountRate(promotion.getDiscountRate());
         existing.setStartDate(promotion.getStartDate());
         existing.setEndDate(promotion.getEndDate());
         existing.setApplicableModelsJson(promotion.getApplicableModelsJson());
+        existing.setDealerIdJson(promotion.getDealerIdJson());
         existing.setStatus(promotion.getStatus());
         return promotionRepository.save(existing);
     }
@@ -94,19 +115,22 @@ public class PromotionService {
 
     public List<Promotion> getAllPromotions() {
         updatePromotionStatuses();
-        return promotionRepository.findAll();
+        return promotionRepository.findAll().stream()
+                .filter(p -> p.getStatus() != PromotionStatus.DELETED)
+                .collect(Collectors.toList());
     }
-
 
     private void updatePromotionStatuses() {
         LocalDateTime now = LocalDateTime.now();
         List<Promotion> promotions = promotionRepository.findAll();
 
         for (Promotion promotion : promotions) {
-            if (promotion.getStartDate() == null || promotion.getEndDate() == null) continue;
+            if (promotion.getStartDate() == null || promotion.getEndDate() == null)
+                continue;
 
             // Bỏ qua nếu đã xóa
-            if (promotion.getStatus().equals(PromotionStatus.DELETED)) continue;
+            if (promotion.getStatus().equals(PromotionStatus.DELETED))
+                continue;
 
             // Hết hạn
             if (promotion.getEndDate().isBefore(now)) {
@@ -127,10 +151,24 @@ public class PromotionService {
         promotionRepository.saveAll(promotions);
     }
 
-
-    public void deletePromotion(UUID id) {
+    @Transactional
+    public void deletePromotion(UUID id, String roles, String currentUserDealerId) {
         Promotion promotion = promotionRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.DATA_NOT_FOUND));
+
+        // Phân quyền xóa tương tự update
+        if (roles != null && roles.contains("DEALER_MANAGER") && !roles.contains("ADMIN")
+                && !roles.contains("EVM_STAFF")) {
+            if (promotion.getStatus() != PromotionStatus.DRAFT) {
+                throw new AppException(ErrorCode.DATA_NOT_FOUND);
+            }
+        }
+
+        if (quotationRepository.existsByPromotionId(id)) {
+            throw new AppException(ErrorCode.PROMOTION_IN_USE);
+        }
+
+        // Thay vì hard delete, dùng soft delete để đồng bộ với logic list/filter
         promotion.setStatus(PromotionStatus.DELETED);
         promotionRepository.save(promotion);
     }
@@ -139,7 +177,30 @@ public class PromotionService {
         return promotionRepository.findByStatus(status);
     }
 
-    public Promotion authenticPromotion(UUID id) {
+    public List<Promotion> searchPromotions(String status, String modelId, String dealerId, String searchTerm,
+            String roles, String currentUserDealerId) {
+        updatePromotionStatuses();
+
+        String finalDealerId = dealerId;
+
+        // Nếu là Dealer Manager, ép buộc chỉ xem của dealer mình
+        if (roles != null && roles.contains("DEALER_MANAGER") && !roles.contains("ADMIN")
+                && !roles.contains("EVM_STAFF")) {
+            finalDealerId = currentUserDealerId;
+            if (finalDealerId == null) {
+                return List.of(); // Không có dealerId thì không thấy gì
+            }
+        }
+
+        return promotionRepository.searchPromotions(status, modelId, finalDealerId, searchTerm);
+    }
+
+    public Promotion authenticPromotion(UUID id, String roles) {
+        // Chỉ Admin/Staff EVM mới được duyệt
+        if (roles == null || (!roles.contains("ADMIN") && !roles.contains("EVM_STAFF"))) {
+            throw new AppException(ErrorCode.UNAUTHORIZED);
+        }
+
         Promotion existing = promotionRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Promotion not found"));
         existing.setStatus(PromotionStatus.NEAR);
@@ -165,8 +226,10 @@ public class PromotionService {
                     LocalDateTime now = LocalDateTime.now();
 
                     // 2.1. Kiểm tra ngày (phòng trường hợp cron job chưa chạy)
-                    if (promo.getStartDate() != null && promo.getStartDate().isAfter(now)) return false;
-                    if (promo.getEndDate() != null && promo.getEndDate().isBefore(now)) return false;
+                    if (promo.getStartDate() != null && promo.getStartDate().isAfter(now))
+                        return false;
+                    if (promo.getEndDate() != null && promo.getEndDate().isBefore(now))
+                        return false;
 
                     // 2.2. Lọc theo Đại lý
                     boolean dealerMatch = false;
@@ -176,7 +239,8 @@ public class PromotionService {
                         dealerMatch = dealerJson.contains(dealerId.toString()); // KM riêng
                     }
 
-                    if (!dealerMatch) return false; // Nếu không khớp đại lý -> loại
+                    if (!dealerMatch)
+                        return false; // Nếu không khớp đại lý -> loại
 
                     // 2.3. Lọc theo Model (NẾU modelId được cung cấp)
                     if (modelId.isPresent()) {
@@ -206,8 +270,10 @@ public class PromotionService {
         return allActivePromotions.stream()
                 .filter(promo -> {
                     // Kiểm tra thời gian hợp lệ
-                    if (promo.getStartDate() != null && promo.getStartDate().isAfter(now)) return false;
-                    if (promo.getEndDate() != null && promo.getEndDate().isBefore(now)) return false;
+                    if (promo.getStartDate() != null && promo.getStartDate().isAfter(now))
+                        return false;
+                    if (promo.getEndDate() != null && promo.getEndDate().isBefore(now))
+                        return false;
 
                     // Nếu có modelId, lọc theo model
                     if (modelId.isPresent()) {
@@ -222,5 +288,40 @@ public class PromotionService {
                 .collect(Collectors.toList());
     }
 
-}
+    /**
+     * Lấy danh sách Khuyến mãi ACTIVE và NEAR cho Dealer Staff View
+     * (Vì bạn yêu cầu không sửa API cũ và chỉ hiển thị ACTIVE/NEAR)
+     */
+    public List<Promotion> getActivePromotionsForDealerList(UUID dealerId) {
+        // 1. Lấy tất cả KM ACTIVE và NEAR (Đã được duyệt)
+        List<Promotion> promotions = promotionRepository.findByStatusIn(
+                List.of(PromotionStatus.ACTIVE, PromotionStatus.NEAR));
 
+        // 2. Lọc theo Dealer
+        return promotions.stream()
+                .filter(promo -> {
+                    // KM chung hoặc KM thuộc dealerId
+                    String dealerJson = promo.getDealerIdJson();
+
+                    if (dealerJson == null || dealerJson.isEmpty() || dealerJson.equals("[]")) {
+                        return true;
+                    }
+
+                    try {
+                        // Parse thành List<String> để chấp nhận cả DLRxxx và UUID
+                        List<String> dealerIds = objectMapper.readValue(dealerJson,
+                                new com.fasterxml.jackson.core.type.TypeReference<List<String>>() {
+                                });
+
+                        String searchId = dealerId.toString();
+                        return dealerIds != null && dealerIds.stream()
+                                .anyMatch(id -> id.equalsIgnoreCase(searchId));
+                    } catch (Exception e) {
+                        // Fallback an toàn nếu parse lỗi
+                        return dealerJson.contains(dealerId.toString());
+                    }
+                })
+                .collect(Collectors.toList());
+    }
+
+}

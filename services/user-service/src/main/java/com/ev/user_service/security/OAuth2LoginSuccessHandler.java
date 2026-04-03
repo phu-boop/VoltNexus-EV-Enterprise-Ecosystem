@@ -6,7 +6,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.oauth2.core.user.DefaultOAuth2User;
+// import org.springframework.security.oauth2.core.user.DefaultOAuth2User; // Removed unused
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
 import com.ev.user_service.dto.respond.LoginRespond;
@@ -17,17 +17,20 @@ import com.ev.user_service.enums.RoleName;
 import com.ev.user_service.enums.UserStatus;
 import com.ev.common_lib.exception.AppException;
 import com.ev.common_lib.exception.ErrorCode;
-import com.ev.common_lib.dto.respond.ApiRespond;
+// import com.ev.common_lib.dto.respond.ApiRespond; // Removed to fix compile/unused error
 import com.ev.user_service.mapper.UserMapper;
 import com.ev.user_service.repository.RoleRepository;
 import com.ev.user_service.repository.UserRepository;
 import com.ev.user_service.repository.CustomerProfileRepository;
 import com.ev.user_service.service.CustomerProfileService;
 
+import lombok.extern.slf4j.Slf4j;
+
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 
+@Slf4j
 @Component
 public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
 
@@ -36,39 +39,46 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
     private final RoleRepository roleRepository;
     private final UserMapper userMapper;
     private final String urlFrontend;
+    private final String allowedOrigins;
     private final CustomerProfileService customerProfileService;
     private final CustomerProfileRepository customerProfileRepository;
 
-
-    OAuth2LoginSuccessHandler(JwtUtil jwtUtil, UserRepository userRepository, RoleRepository roleRepository, UserMapper userMapper, @Value("${frontend.url}") String urlFrontend, CustomerProfileService customerProfileService, CustomerProfileRepository customerProfileRepository) {
+    OAuth2LoginSuccessHandler(JwtUtil jwtUtil, UserRepository userRepository, RoleRepository roleRepository,
+            UserMapper userMapper, @Value("${frontend.url}") String urlFrontend,
+            @Value("${oauth2.allowed.origins}") String allowedOrigins, CustomerProfileService customerProfileService,
+            CustomerProfileRepository customerProfileRepository) {
         this.jwtUtil = jwtUtil;
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
         this.userMapper = userMapper;
         this.urlFrontend = urlFrontend;
+        this.allowedOrigins = allowedOrigins;
         this.customerProfileService = customerProfileService;
         this.customerProfileRepository = customerProfileRepository;
     }
 
-
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request,
-                                        HttpServletResponse response,
-                                        Authentication authentication) throws IOException, ServletException {
+            HttpServletResponse response,
+            Authentication authentication) throws IOException, ServletException {
         // Lấy thông tin user từ Google
-        var oauthUser = (DefaultOAuth2User) authentication.getPrincipal();
+        var principal = authentication.getPrincipal();
+        if (!(principal instanceof org.springframework.security.oauth2.core.user.OAuth2User oauthUser)) {
+            log.error("Authentication principal is not an OAuth2User: {}", principal.getClass().getName());
+            throw new ServletException("Invalid authentication principal");
+        }
 
         String email = oauthUser.getAttribute("email");
         String name = oauthUser.getAttribute("name");
         String givenName = oauthUser.getAttribute("given_name");
-        //String picture = oauthUser.getAttribute("picture");
+        // String picture = oauthUser.getAttribute("picture");
 
         Set<Role> roles = new HashSet<>();
         User user = userRepository.findByEmail(email).orElseGet(() -> {
             // Assign CUSTOMER role for customer-app OAuth users
             roles.add(roleRepository.findByName(RoleName.CUSTOMER.getRoleName())
                     .orElseThrow(() -> new AppException(ErrorCode.DATABASE_ERROR)));
-            
+
             User newUser = User.builder()
                     .email(email)
                     .name(givenName)
@@ -76,81 +86,120 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
                     .roles(roles)
                     .status(UserStatus.ACTIVE)
                     .build();
-            
+
             User savedUser = userRepository.save(newUser);
-            
+
             // Create customer profile with Bronze tier
             customerProfileService.saveCustomerProfile(savedUser, null);
-            
+
             return savedUser;
         });
 
-        String accessToken = jwtUtil.generateAccessToken(user.getEmail(), user.getRoleToString(), null, null);
-        String refreshToken = jwtUtil.generateRefreshToken(user.getEmail(), user.getRoleToString(), null, null);
-
-
-        // Set refresh token trong cookie HttpOnly
-        Cookie cookie = new Cookie("refreshToken", refreshToken);
-        cookie.setHttpOnly(true);
-        cookie.setSecure(false);
-        cookie.setPath("/");
-        cookie.setMaxAge(30 * 24 * 60 * 60);
-        response.addCookie(cookie);
-
         // Map user to UserRespond
         UserRespond userRespond = userMapper.usertoUserRespond(user);
-        
+        String profileIdStr = null;
+
         // Fetch customer profile and set memberId if user is a CUSTOMER
         try {
             if (user.getRoleToString().contains("CUSTOMER")) {
                 // Explicitly fetch customer profile from repository (avoid lazy loading issue)
                 var customerProfile = customerProfileRepository.findByUserId(user.getId());
                 if (customerProfile.isPresent()) {
+                    profileIdStr = customerProfile.get().getCustomerId().toString();
                     userRespond.setMemberId(customerProfile.get().getCustomerId());
-                } else {
+                }
+            } else {
+                // For non-customers, use the profileId from User entity if present
+                if (user.getProfileId() != null) {
+                    profileIdStr = user.getProfileId().toString();
                 }
             }
         } catch (Exception e) {
-            System.err.println("[OAuth2LoginSuccessHandler] ❌ Error fetching customer profile: " + e.getMessage());
+            log.error("Error fetching customer profile for user {}: {}", user.getEmail(), e.getMessage());
         }
-        
-        LoginRespond loginRespond = new LoginRespond(userRespond, accessToken);
 
-        ApiRespond<Object> apiResponse = ApiRespond.success("Login with Google success", loginRespond);
+        // Generate tokens with complete claims
+        String accessToken = jwtUtil.generateAccessToken(user.getEmail(), user.getRoleToString(),
+                user.getId().toString(),
+                profileIdStr, null);
+        String refreshToken = jwtUtil.generateRefreshToken(user.getEmail(), user.getRoleToString(),
+                user.getId().toString(),
+                profileIdStr, null);
 
-        // Lấy redirect_uri từ state parameter (format: originalState|base64(redirect_uri))
+        // Set refresh token trong cookie HttpOnly
+        Cookie cookie = new Cookie("refreshToken", refreshToken);
+        cookie.setHttpOnly(true);
+        cookie.setSecure(true); // Important: Must be true in production (requires HTTPS)
+        cookie.setPath("/");
+        cookie.setMaxAge(30 * 24 * 60 * 60);
+        response.addCookie(cookie);
+
+        // LoginRespond loginRespond = new LoginRespond(userRespond, accessToken); //
+        // Removed unused
+        // ApiRespond<Object> apiResponse = ApiRespond.success("Login with Google
+        // success", loginRespond); // Removed unused/error-prone line
+
+        // Lấy redirect_uri từ state parameter (format:
+        // originalState|base64(redirect_uri))
         String redirectUri = extractRedirectUriFromRequest(request);
-        
-        
-        if (redirectUri == null || redirectUri.isEmpty()) {
-            redirectUri = urlFrontend;
-        } else {
-        }
-        
-        response.sendRedirect(redirectUri + "/oauth-success?accessToken=" + accessToken);
 
+        // Security fix: Validate redirectUri against Whitelist (allowedOrigins)
+        if (redirectUri == null || redirectUri.isEmpty() || !isAllowedRedirectUri(redirectUri)) {
+            log.warn("Invalid or missing redirect_uri [{}]. Falling back to default: {}", redirectUri, urlFrontend);
+            redirectUri = urlFrontend;
+        }
+
+        response.sendRedirect(redirectUri + "/oauth-success?accessToken=" + accessToken);
     }
-    
+
     private String extractRedirectUriFromRequest(HttpServletRequest request) {
         try {
             // Get state parameter from request (sent back by Google OAuth)
             String state = request.getParameter("state");
-            
+
             if (state != null && state.contains("|")) {
                 // Format: originalState|base64(redirect_uri)
                 String[] parts = state.split("\\|", 2);
                 if (parts.length == 2) {
                     String encodedRedirectUri = parts[1];
                     byte[] decodedBytes = java.util.Base64.getUrlDecoder().decode(encodedRedirectUri);
-                    String redirectUri = new String(decodedBytes);
-                    return redirectUri;
+                    return new String(decodedBytes);
                 }
             }
-            
+
             return null;
         } catch (Exception e) {
-            System.err.println("[OAuth2LoginSuccessHandler] Error extracting redirect_uri: " + e.getMessage());
+            log.error("Error extracting redirect_uri from request state: {}", e.getMessage());
             return null;
         }
     }
+
+    /**
+     * Security check: Validates if the redirect_uri is within the allowed
+     * domains/origins.
+     * Prevents Open Redirect (S5146).
+     */
+    private boolean isAllowedRedirectUri(String redirectUri) {
+        if (allowedOrigins == null || allowedOrigins.isEmpty()) {
+            return false;
+        }
+
+        // Split by comma in case multiple origins are defined
+        String[] origins = allowedOrigins.split(",");
+        for (String origin : origins) {
+            String trimmedOrigin = origin.trim();
+            // Match origin (exact or prefix) to handle sub-paths
+            if (redirectUri.startsWith(trimmedOrigin)) {
+                return true;
+            }
+        }
+        return false;
+    }
 }
+
+
+
+
+
+
+

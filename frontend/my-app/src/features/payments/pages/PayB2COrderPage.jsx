@@ -1,6 +1,5 @@
-// Pay B2C Order Page (Dealer Staff)
 import React, { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { salesOrderB2CApi } from "../../dealer/sales/salesOrder/services/salesOrderService";
 import paymentService from "../services/paymentService";
 import PaymentForm from "../components/PaymentForm";
@@ -16,6 +15,7 @@ import {
 const PayB2COrderPage = () => {
   const { orderId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const [order, setOrder] = useState(null);
   const [paymentMethods, setPaymentMethods] = useState([]);
   const [paymentHistory, setPaymentHistory] = useState([]);
@@ -76,7 +76,8 @@ const PayB2COrderPage = () => {
       setOrder(data);
     } catch (error) {
       toast.error("Không thể tải thông tin đơn hàng");
-      navigate("/dealer/staff/payments/b2c-orders");
+      const prefix = location.pathname.includes('/manager/') ? '/dealer/manager' : '/dealer/staff';
+      navigate(`${prefix}/payments/b2c-orders`);
     } finally {
       setLoading(false);
     }
@@ -95,7 +96,7 @@ const PayB2COrderPage = () => {
     try {
       const response = await paymentService.getPaymentHistory(orderId);
       setPaymentHistory(response.data.data || response.data || []);
-    } catch (error) {}
+    } catch (error) { }
   };
 
   const handlePayment = async (paymentData) => {
@@ -118,10 +119,12 @@ const PayB2COrderPage = () => {
         toast.success(
           "Yêu cầu thanh toán đã được gửi. Vui lòng chờ Dealer Manager duyệt."
         );
-        setTimeout(() => navigate("/dealer/staff/payments/b2c-orders"), 2000);
+        const prefix = location.pathname.includes('/manager/') ? '/dealer/manager' : '/dealer/staff';
+        setTimeout(() => navigate(`${prefix}/payments/b2c-orders`), 2000);
       } else {
         toast.success(data.message || "Thanh toán đã được khởi tạo thành công");
-        setTimeout(() => navigate("/dealer/staff/payments/b2c-orders"), 2000);
+        const prefix = location.pathname.includes('/manager/') ? '/dealer/manager' : '/dealer/staff';
+        setTimeout(() => navigate(`${prefix}/payments/b2c-orders`), 2000);
       }
 
       loadPaymentHistory();
@@ -253,7 +256,10 @@ const PayB2COrderPage = () => {
     <div className="container mx-auto px-4 py-8">
       {/* Header */}
       <button
-        onClick={() => navigate("/dealer/staff/payments/b2c-orders")}
+        onClick={() => {
+          const prefix = location.pathname.includes('/manager/') ? '/dealer/manager' : '/dealer/staff';
+          navigate(`${prefix}/payments/b2c-orders`);
+        }}
         className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-6"
       >
         <ArrowLeftIcon className="h-5 w-5" />
@@ -302,22 +308,20 @@ const PayB2COrderPage = () => {
           <div className="flex space-x-4 mb-6">
             <button
               onClick={() => setActivePaymentMethod("other")}
-              className={`flex items-center gap-2 px-6 py-3 rounded-lg border-2 transition-all ${
-                activePaymentMethod === "other"
+              className={`flex items-center gap-2 px-6 py-3 rounded-lg border-2 transition-all ${activePaymentMethod === "other"
                   ? "border-blue-500 bg-blue-50 text-blue-700"
                   : "border-gray-300 bg-white text-gray-700 hover:border-blue-300"
-              }`}
+                }`}
             >
               <BanknotesIcon className="h-5 w-5" />
               Phương thức khác
             </button>
             <button
               onClick={() => setActivePaymentMethod("vnpay")}
-              className={`flex items-center gap-2 px-6 py-3 rounded-lg border-2 transition-all ${
-                activePaymentMethod === "vnpay"
+              className={`flex items-center gap-2 px-6 py-3 rounded-lg border-2 transition-all ${activePaymentMethod === "vnpay"
                   ? "border-blue-500 bg-blue-50 text-blue-700"
                   : "border-gray-300 bg-white text-gray-700 hover:border-blue-300"
-              }`}
+                }`}
             >
               <CreditCardIcon className="h-5 w-5" />
               Thanh toán VNPAY

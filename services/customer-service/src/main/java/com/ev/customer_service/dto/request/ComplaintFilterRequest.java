@@ -19,7 +19,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class ComplaintFilterRequest {
 
-    private Long dealerId; // Required
+    private String dealerId; // UUID format (Required)
 
     private ComplaintStatus status;
 

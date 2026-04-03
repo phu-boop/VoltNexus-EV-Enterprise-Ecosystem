@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { FiX, FiPackage, FiChevronsRight } from "react-icons/fi";
 import { shipB2BOrder } from "../services/evmSalesService";
 import { validateVins, getAvailableVins } from "../services/inventoryService";
@@ -200,26 +201,31 @@ const ShipmentModal = ({ isOpen, onClose, order }) => {
 
   if (!isOpen) return null;
 
-  return (
-    <div className="fixed inset-0 backdrop-blur-lg bg-opacity-50 z-50 flex justify-center items-center p-4">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col">
-        {/* Header (Giữ nguyên) */}
-        <div className="p-6 border-b flex justify-between items-center">
+  return createPortal(
+    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[9999] flex justify-center items-center p-4">
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col transform transition-all">
+        {/* Header - Fixed */}
+        <div className="p-6 border-b flex justify-between items-center bg-gray-50/50">
           <div>
-            <h3 className="text-xl font-bold">Xác Nhận Xuất Kho & Giao Hàng</h3>
-            <p className="text-sm text-gray-500">Đơn hàng: {order.orderId}</p>
+            <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+              <FiPackage className="text-blue-600" />
+              Xác Nhận Xuất Kho & Giao Hàng
+            </h3>
+            <p className="text-sm text-gray-500 mt-1">
+              Đơn hàng: <span className="font-mono text-gray-700">{order.orderId}</span>
+            </p>
           </div>
           <button
             type="button"
             onClick={() => onClose(false)}
-            className="p-2 hover:bg-gray-100 rounded-full"
+            className="p-2 hover:bg-gray-200 rounded-full transition-colors text-gray-400 hover:text-gray-600"
           >
-            <FiX />
+            <FiX size={24} />
           </button>
         </div>
 
-        {/* Danh sách các xe cần nhập VIN */}
-        <div className="p-6 space-y-6 overflow-y-auto">
+        {/* Danh sách các xe cần nhập VIN - Scrollable */}
+        <div className="p-6 space-y-6 overflow-y-auto flex-1">
           {order.orderItems.map((item) => {
             const itemErrors = vinErrors[item.variantId] || {};
             const hasItemError = Object.keys(itemErrors).length > 0;
@@ -229,72 +235,71 @@ const ShipmentModal = ({ isOpen, onClose, order }) => {
               .split("\n")
               .filter(Boolean);
             return (
-              <div key={item.variantId} className="border p-4 rounded-lg">
+              <div key={item.variantId} className="border border-gray-200 p-5 rounded-xl bg-white hover:border-blue-200 transition-colors shadow-sm">
                 {/* Thông tin item */}
-                <div className="flex justify-between items-center">
+                <div className="flex justify-between items-start mb-4">
                   <div>
-                    <p className="font-bold text-lg">
-                      {item.versionName || "Tên xe..."} -{" "}
-                      {item.color || "Màu..."}
+                    <p className="font-bold text-lg text-gray-800">
+                      {item.versionName || "Tên xe..."}
                     </p>
-                    <p className="text-sm text-gray-500">
-                      SKU: {item.skuCode || "..."}
-                    </p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded text-xs font-medium">
+                        {item.color || "Màu..."}
+                      </span>
+                      <span className="text-xs text-gray-400 font-mono">
+                        SKU: {item.skuCode || "..."}
+                      </span>
+                    </div>
                   </div>
                   <div className="text-right">
-                    <p className="font-bold text-xl">{item.quantity}</p>
-                    <p className="text-sm text-gray-500">Chiếc</p>
+                    <p className="font-extrabold text-2xl text-blue-600 leading-none">{item.quantity}</p>
+                    <p className="text-xs text-gray-400 uppercase tracking-wider font-semibold mt-1">Chiếc</p>
                   </div>
                 </div>
 
-                <div className="mt-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Nhập {item.quantity} số VIN (mỗi VIN một dòng):
-                  </label>
-                  <textarea
-                    value={vinInputs[item.variantId] || ""}
-                    onChange={(e) =>
-                      handleVinChange(item.variantId, e.target.value)
-                    }
-                    // --- (THÊM) Thêm onBlur ---
-                    onBlur={() => handleVinInputBlur(item.variantId)}
-                    rows={item.quantity > 5 ? 5 : item.quantity}
-                    placeholder="Quét hoặc dán số VIN vào đây..."
-                    // --- (CẬP NHẬT) Thêm className động ---
-                    className={`w-full p-2 border rounded-lg font-mono text-sm ${
-                      hasItemError
-                        ? "border-red-500 focus:ring-red-500" // Đỏ khi lỗi
-                        : "border-gray-300 focus:ring-blue-500"
-                    }`}
-                  />
-                  {/* --- (CẬP NHẬT) Hiển thị trạng thái/số lượng --- */}
-                  <div className="flex justify-between items-center mt-1">
-                    <p className="text-xs text-gray-500">
-                      Đã nhập:{" "}
-                      {vinInputs[item.variantId]?.split("\n").filter(Boolean)
-                        .length || 0}{" "}
-                      / {item.quantity}
-                    </p>
-                    {/* (THÊM) Hiển thị trạng thái đang kiểm tra */}
-                    {isItemVerifying && (
-                      <p className="text-xs text-blue-500 animate-pulse">
-                        Đang kiểm tra...
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Nhập {item.quantity} số VIN (mỗi VIN một dòng):
+                    </label>
+                    <textarea
+                      value={vinInputs[item.variantId] || ""}
+                      onChange={(e) =>
+                        handleVinChange(item.variantId, e.target.value)
+                      }
+                      onBlur={() => handleVinInputBlur(item.variantId)}
+                      rows={item.quantity > 5 ? 5 : item.quantity}
+                      placeholder="Quét hoặc dán số VIN vào đây..."
+                      className={`w-full p-3 border rounded-xl font-mono text-sm transition-all focus:ring-2 outline-none ${hasItemError
+                        ? "border-red-300 bg-red-50/30 focus:ring-red-200 focus:border-red-400"
+                        : "border-gray-300 focus:ring-blue-100 focus:border-blue-400"
+                        }`}
+                    />
+                    <div className="flex justify-between items-center mt-2 px-1">
+                      <p className={`text-xs font-medium ${enteredVins.length === item.quantity ? 'text-green-600' : 'text-gray-500'}`}>
+                        Đã nhập: <span className="font-bold">{enteredVins.length}</span> / {item.quantity}
                       </p>
-                    )}
+                      {isItemVerifying && (
+                        <div className="flex items-center gap-1.5">
+                          <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" />
+                          <p className="text-xs text-blue-500 font-medium">Đang kiểm tra...</p>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                  {/* --- (MỚI) Hiển thị VINs khả dụng --- */}
-                  <div className="mt-3">
-                    <label className="block text-xs font-medium text-gray-600 mb-1">
-                      VINs khả dụng (bấm để chọn/bỏ chọn):
+
+                  {/* VINs khả dụng */}
+                  <div className="bg-gray-50/50 p-4 rounded-xl border border-dashed border-gray-200">
+                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-3">
+                      VINs có sẵn trong kho
                     </label>
                     {availableVins.length === 0 ? (
                       <p className="text-xs text-gray-400 italic">
-                        Không tìm thấy VIN khả dụng.
+                        Không tìm thấy VIN khả dụng cho mẫu xe này.
                       </p>
                     ) : (
-                      <div className="flex flex-wrap gap-2 max-h-24 overflow-y-auto p-2 bg-gray-50 rounded">
+                      <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto custom-scrollbar pr-2">
                         {availableVins.map((vin) => {
-                          // Kiểm tra xem VIN này đã được chọn chưa
                           const isSelected = enteredVins.includes(vin);
                           return (
                             <button
@@ -303,11 +308,10 @@ const ShipmentModal = ({ isOpen, onClose, order }) => {
                               onClick={() =>
                                 handleVinTagClick(item.variantId, vin)
                               }
-                              className={`px-2 py-0.5 rounded-full text-xs font-mono border ${
-                                isSelected
-                                  ? "bg-blue-600 text-white border-blue-600"
-                                  : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
-                              }`}
+                              className={`px-3 py-1.5 rounded-lg text-xs font-mono font-medium border transition-all duration-200 ${isSelected
+                                ? "bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-100 transform scale-105"
+                                : "bg-white text-gray-600 border-gray-200 hover:border-blue-300 hover:text-blue-600"
+                                }`}
                             >
                               {vin}
                             </button>
@@ -317,46 +321,48 @@ const ShipmentModal = ({ isOpen, onClose, order }) => {
                     )}
                   </div>
 
-                  {/* --- (THÊM) Khu vực hiển thị lỗi chi tiết --- */}
+                  {/* Lỗi chi tiết */}
                   {hasItemError && (
-                    <div className="mt-2 text-sm text-red-600 bg-red-50 p-3 rounded-md">
-                      <p className="font-bold">VIN không hợp lệ:</p>
-                      <ul className="list-disc list-inside mt-1 space-y-1">
-                        {/* Chỉ hiển thị 5 lỗi đầu tiên */}
+                    <div className="text-sm text-red-600 bg-red-50/50 border border-red-100 p-4 rounded-xl">
+                      <p className="font-bold flex items-center gap-2 mb-2">
+                        <FiX className="text-red-500" />
+                        VIN không hợp lệ:
+                      </p>
+                      <ul className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-1 mt-1">
                         {Object.entries(itemErrors)
-                          .slice(0, 5)
+                          .slice(0, 10)
                           .map(([vin, msg]) => (
-                            <li key={vin}>
-                              <strong className="font-mono">{vin}:</strong>{" "}
-                              {msg}
+                            <li key={vin} className="text-xs flex items-start gap-1">
+                              <span className="font-mono font-bold text-red-700 whitespace-nowrap">{vin}:</span>
+                              <span className="text-red-600">{msg}</span>
                             </li>
                           ))}
-                        {Object.keys(itemErrors).length > 5 && (
-                          <li className="italic">
-                            ... và {Object.keys(itemErrors).length - 5} lỗi
-                            khác.
-                          </li>
-                        )}
                       </ul>
+                      {Object.keys(itemErrors).length > 10 && (
+                        <p className="text-[10px] text-red-400 italic mt-2">
+                          + {Object.keys(itemErrors).length - 10} lỗi khác...
+                        </p>
+                      )}
                     </div>
                   )}
-                  {/* ----------------------------------------------------------------- */}
                 </div>
               </div>
             );
           })}
           {error && (
-            <p className="text-red-500 text-sm p-3 bg-red-50 rounded-md">
-              {error}
-            </p>
+            <div className="p-4 bg-red-50 border border-red-200 rounded-xl flex items-center gap-3 text-red-700">
+              <FiX className="shrink-0" />
+              <p className="text-sm font-medium">{error}</p>
+            </div>
           )}
         </div>
 
-        <div className="p-4 bg-gray-50 flex justify-end gap-4 rounded-b-lg">
+        {/* Footer - Fixed */}
+        <div className="p-6 bg-gray-50 border-t flex justify-end gap-3">
           <button
             type="button"
             onClick={() => onClose(false)}
-            className="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300"
+            className="px-6 py-2.5 text-sm font-semibold text-gray-600 hover:bg-gray-200 rounded-xl transition-colors"
           >
             Hủy
           </button>
@@ -364,13 +370,19 @@ const ShipmentModal = ({ isOpen, onClose, order }) => {
             type="button"
             onClick={handleSubmitShipment}
             disabled={isLoading || hasValidationErrors || isCurrentlyVerifying}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg disabled:bg-gray-400 disabled:cursor-not-allowed"
+            className="px-8 py-2.5 bg-blue-600 text-white rounded-xl font-bold text-sm shadow-lg shadow-blue-200 hover:bg-blue-700 disabled:bg-gray-300 disabled:shadow-none disabled:cursor-not-allowed transition-all flex items-center gap-2"
           >
+            {isLoading ? (
+              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            ) : (
+              <FiChevronsRight />
+            )}
             {isLoading ? "Đang xử lý..." : "Xác Nhận Giao Hàng"}
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 

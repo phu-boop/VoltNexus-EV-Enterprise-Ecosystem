@@ -2,6 +2,7 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { useMarkAsRead } from "../hooks/useStaffNotifications";
+import { useAuthContext } from "../../../auth/AuthProvider";
 import {
   ExclamationTriangleIcon,
   CheckCircleIcon,
@@ -22,6 +23,9 @@ const getIcon = (type) => {
 const NotificationItem = ({ notification, onClosePopover }) => {
   const navigate = useNavigate();
   const markAsReadMutation = useMarkAsRead();
+  const { roles } = useAuthContext();
+
+  const isAdmin = roles?.some((role) => role.toUpperCase() === "ADMIN");
 
   const handleClick = () => {
     if (notification.unread) {
@@ -32,7 +36,8 @@ const NotificationItem = ({ notification, onClosePopover }) => {
 
     if (notification.type === "ORDER_PLACED") {
       // Đơn hàng mới -> Đi đến trang Điều phối xe
-      navigate("/evm/staff/distribution/allocation");
+      const path = isAdmin ? "/evm/admin/distribution/allocation" : "/evm/staff/distribution/allocation";
+      navigate(path);
     } else if (notification.link) {
       // Đơn hàng khiếu nại (hoặc loại khác) -> Dùng link có sẵn
       navigate(notification.link);
@@ -42,9 +47,8 @@ const NotificationItem = ({ notification, onClosePopover }) => {
   return (
     <div
       onClick={handleClick}
-      className={`flex items-start p-3 gap-3 border-b hover:bg-gray-100 cursor-pointer ${
-        notification.unread ? "bg-blue-50" : "bg-white"
-      }`}
+      className={`flex items-start p-3 gap-3 border-b hover:bg-gray-100 cursor-pointer ${notification.unread ? "bg-blue-50" : "bg-white"
+        }`}
     >
       <div className="shrink-0 mt-1">{getIcon(notification.type)}</div>
       <div className="grow">

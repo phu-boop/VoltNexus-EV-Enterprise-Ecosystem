@@ -1,5 +1,13 @@
 package com.ev.dealer_service.service;
 
+import java.util.List;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
+import org.modelmapper.ModelMapper;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.ev.dealer_service.dto.request.DealerContractRequest;
 import com.ev.dealer_service.dto.response.DealerContractResponse;
 import com.ev.dealer_service.entity.Dealer;
@@ -8,14 +16,8 @@ import com.ev.dealer_service.exception.DuplicateResourceException;
 import com.ev.dealer_service.exception.ResourceNotFoundException;
 import com.ev.dealer_service.repository.DealerContractRepository;
 import com.ev.dealer_service.repository.DealerRepository;
-import lombok.RequiredArgsConstructor;
-import org.modelmapper.ModelMapper;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-import java.util.UUID;
-import java.util.stream.Collectors;
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
@@ -89,7 +91,17 @@ public class DealerContractService {
     }
 
     private DealerContractResponse mapToResponse(DealerContract contract) {
-        DealerContractResponse response = modelMapper.map(contract, DealerContractResponse.class);
+        DealerContractResponse response = new DealerContractResponse();
+        response.setContractId(contract.getContractId());
+        response.setContractNumber(contract.getContractNumber());
+        response.setContractTerms(contract.getContractTerms());
+        response.setTargetSales(contract.getTargetSales());
+        response.setCommissionRate(contract.getCommissionRate());
+        response.setStartDate(contract.getStartDate());
+        response.setEndDate(contract.getEndDate());
+        response.setContractStatus(contract.getContractStatus());
+        response.setCreatedAt(contract.getCreatedAt());
+        response.setUpdatedAt(contract.getUpdatedAt());
         response.setDealerId(contract.getDealer().getDealerId());
         response.setDealerName(contract.getDealer().getDealerName());
         return response;

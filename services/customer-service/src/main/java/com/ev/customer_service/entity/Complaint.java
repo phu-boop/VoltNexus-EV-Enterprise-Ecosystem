@@ -36,8 +36,8 @@ public class Complaint {
     @JoinColumn(name = "customer_id", nullable = false)
     private Customer customer;
 
-    @Column(name = "dealer_id", nullable = false)
-    private Long dealerId;
+    @Column(name = "dealer_id", nullable = false, length = 36)
+    private String dealerId; // UUID format
 
     @Column(name = "order_id")
     private Long orderId;

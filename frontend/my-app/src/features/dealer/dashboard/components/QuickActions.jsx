@@ -1,5 +1,5 @@
 import React from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import {
   FiFileText,
   FiShoppingCart,
@@ -24,13 +24,15 @@ import {
  */
 const QuickActions = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const prefix = location.pathname.includes('/manager/') ? '/dealer/manager' : '/dealer/staff';
 
   const actions = [
     // Nhóm: Báo giá & Đơn hàng
     {
       icon: FiFileText,
       label: "Tạo Báo Giá",
-      path: "/dealer/manager/quotes/create",
+      path: "/quotes/create",
       color: "from-blue-500 to-cyan-500",
       bgColor: "bg-blue-50",
       description: "Tạo báo giá mới cho khách hàng",
@@ -38,7 +40,7 @@ const QuickActions = () => {
     {
       icon: FiList,
       label: "Quản Lý Báo Giá",
-      path: "/dealer/manager/quotations",
+      path: "/quotations",
       color: "from-purple-500 to-indigo-500",
       bgColor: "bg-purple-50",
       description: "Xem và quản lý tất cả báo giá",
@@ -46,7 +48,7 @@ const QuickActions = () => {
     {
       icon: FiClipboard,
       label: "Đơn Hàng Mới",
-      path: "/dealer/manager/list/quotations",
+      path: "/list/quotations",
       color: "from-violet-500 to-purple-500",
       bgColor: "bg-violet-50",
       description: "Xem đơn hàng mới cần xử lý",
@@ -75,12 +77,12 @@ const QuickActions = () => {
       bgColor: "bg-teal-50",
       description: "Theo dõi tình trạng giao xe",
     },
-    
+
     // Nhóm: Khách hàng
     {
       icon: FiUserPlus,
       label: "Thêm Khách Hàng",
-      path: "/dealer/manager/customers/create",
+      path: "/customers/create",
       color: "from-orange-500 to-amber-500",
       bgColor: "bg-orange-50",
       description: "Thêm khách hàng mới",
@@ -88,7 +90,7 @@ const QuickActions = () => {
     {
       icon: FiUsers,
       label: "Hồ Sơ Khách Hàng",
-      path: "/dealer/manager/customers/list",
+      path: "/customers/list",
       color: "from-pink-500 to-rose-500",
       bgColor: "bg-pink-50",
       description: "Quản lý hồ sơ khách hàng",
@@ -96,17 +98,17 @@ const QuickActions = () => {
     {
       icon: FiCalendar,
       label: "Lịch Hẹn Lái Thử",
-      path: "/dealer/manager/testdrives",
+      path: "/testdrives",
       color: "from-rose-500 to-pink-500",
       bgColor: "bg-rose-50",
       description: "Quản lý lịch hẹn lái thử",
     },
-    
+
     // Nhóm: Kho & Sản phẩm
     {
       icon: FiArchive,
       label: "Xe Trong Kho",
-      path: "/dealer/manager/inventory/stock",
+      path: "/inventory/stock",
       color: "from-indigo-500 to-blue-500",
       bgColor: "bg-indigo-50",
       description: "Xem xe có sẵn trong kho",
@@ -114,17 +116,17 @@ const QuickActions = () => {
     {
       icon: FiNavigation,
       label: "Đặt Xe Từ Hãng",
-      path: "/dealer/manager/inventory/order",
+      path: "/inventory/order",
       color: "from-cyan-500 to-blue-500",
       bgColor: "bg-cyan-50",
       description: "Đặt hàng xe từ hãng",
     },
-    
+
     // Nhóm: Thanh toán & Tài chính
     {
       icon: FiDollarSign,
       label: "Hóa Đơn",
-      path: "/dealer/manager/payments/invoices",
+      path: "/payments/invoices",
       color: "from-yellow-500 to-orange-500",
       bgColor: "bg-yellow-50",
       description: "Xem hóa đơn thanh toán",
@@ -132,7 +134,7 @@ const QuickActions = () => {
     {
       icon: FiCreditCard,
       label: "Thanh Toán B2C",
-      path: "/dealer/manager/payments/b2c-cash-payments",
+      path: "/payments/b2c-cash-payments",
       color: "from-amber-500 to-yellow-500",
       bgColor: "bg-amber-50",
       description: "Yêu cầu thanh toán tiền mặt B2C",
@@ -140,17 +142,17 @@ const QuickActions = () => {
     {
       icon: FiTrendingDown,
       label: "Công Nợ B2C",
-      path: "/dealer/manager/payments/b2c-debt",
+      path: "/payments/b2c-debt",
       color: "from-orange-500 to-red-500",
       bgColor: "bg-orange-50",
       description: "Xem công nợ B2C",
     },
-    
+
     // Nhóm: Báo cáo & Quản lý
     {
       icon: FiPieChart,
       label: "Báo Cáo",
-      path: "/dealer/manager/reports",
+      path: "/reports",
       color: "from-red-500 to-pink-500",
       bgColor: "bg-red-50",
       description: "Xem báo cáo doanh số",
@@ -158,7 +160,7 @@ const QuickActions = () => {
     {
       icon: FiSettings,
       label: "Quản Lý Nhân Viên",
-      path: "/dealer/manager/settings/staff",
+      path: "/settings/staff",
       color: "from-gray-500 to-slate-500",
       bgColor: "bg-gray-50",
       description: "Quản lý nhân viên đại lý",
@@ -166,7 +168,10 @@ const QuickActions = () => {
   ];
 
   const handleActionClick = (path) => {
-    navigate(path);
+    // Nếu path bắt đầu bằng /dealer thì giữ nguyên (cho các route dùng chung)
+    // Ngược lại thì nối thêm prefix
+    const finalPath = path.startsWith('/dealer') ? path : `${prefix}${path}`;
+    navigate(finalPath);
   };
 
   return (
@@ -175,7 +180,7 @@ const QuickActions = () => {
         <h2 className="text-2xl font-bold text-gray-800 mb-2">Hành Động Nhanh</h2>
         <p className="text-gray-600">Truy cập nhanh các chức năng quan trọng</p>
       </div>
-      
+
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
         {actions.map((action, index) => {
           const Icon = action.icon;
@@ -189,17 +194,17 @@ const QuickActions = () => {
               <div className={`mb-4 w-12 h-12 rounded-xl bg-gradient-to-br ${action.color} text-white flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300`}>
                 <Icon className="w-6 h-6" />
               </div>
-              
+
               {/* Label */}
               <h3 className="text-sm font-semibold text-gray-900 mb-1 group-hover:text-blue-600 transition-colors">
                 {action.label}
               </h3>
-              
+
               {/* Description */}
               <p className="text-xs text-gray-500 line-clamp-2">
                 {action.description}
               </p>
-              
+
               {/* Hover effect - arrow */}
               <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
                 <svg

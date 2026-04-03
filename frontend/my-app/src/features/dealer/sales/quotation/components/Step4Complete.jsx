@@ -1,7 +1,10 @@
 // sales/quotation/components/Step4Complete.js
 import React from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 const Step4Complete = ({ quotationDetail }) => {
+  const navigate = useNavigate();
+  const location = useLocation();
   const formatPrice = (price) => {
     return new Intl.NumberFormat('vi-VN', {
       style: 'currency',
@@ -84,7 +87,7 @@ const Step4Complete = ({ quotationDetail }) => {
                   <div className="font-mono font-semibold text-gray-900 text-sm">{quotationDetail?.quotationId}</div>
                 </div>
               </div>
-              
+
               <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
                 <div className="flex items-start gap-3">
                   <div className="flex-shrink-0 w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center mt-0.5">
@@ -219,7 +222,7 @@ const Step4Complete = ({ quotationDetail }) => {
             <div className="px-6 py-4 border-b border-gray-50 bg-gradient-to-r from-emerald-50 to-green-50">
               <h3 className="text-lg font-semibold text-gray-900 text-center">Tổng Quan Giá</h3>
             </div>
-            
+
             <div className="p-6">
               {/* Price Breakdown */}
               <div className="space-y-4 mb-6">
@@ -227,7 +230,7 @@ const Step4Complete = ({ quotationDetail }) => {
                   <span className="text-gray-600">Giá cơ sở</span>
                   <span className="font-semibold text-gray-900">{formatPrice(quotationDetail?.basePrice || 0)}</span>
                 </div>
-                
+
                 {quotationDetail?.discountAmount > 0 && (
                   <div className="bg-red-50 border border-red-200 rounded-xl p-4">
                     <div className="flex justify-between items-center text-red-700 font-semibold mb-2">
@@ -287,9 +290,12 @@ const Step4Complete = ({ quotationDetail }) => {
                   </svg>
                   In báo giá
                 </button>
-                
+
                 <button
-                  onClick={() => window.location.href = '/dealer/staff/list/quotations'}
+                  onClick={() => {
+                    const prefix = location.pathname.includes('/manager/') ? '/dealer/manager' : '/dealer/staff';
+                    navigate(`${prefix}/list/quotations`);
+                  }}
                   className="w-full py-3.5 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-medium rounded-xl hover:from-blue-600 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 flex items-center justify-center gap-2 shadow-sm hover:shadow"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -297,7 +303,7 @@ const Step4Complete = ({ quotationDetail }) => {
                   </svg>
                   Quản lý báo giá
                 </button>
-                
+
                 <button
                   onClick={() => window.location.reload()}
                   className="w-full py-3.5 bg-gradient-to-r from-emerald-500 to-green-500 text-white font-medium rounded-xl hover:from-emerald-600 hover:to-green-600 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 transition-all duration-200 flex items-center justify-center gap-2 shadow-sm hover:shadow"

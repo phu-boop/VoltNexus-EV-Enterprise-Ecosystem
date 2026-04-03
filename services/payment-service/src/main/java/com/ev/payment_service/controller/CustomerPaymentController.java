@@ -174,6 +174,7 @@ public class CustomerPaymentController {
 
                 return ResponseEntity.ok(stats);
         }
+
         /**
          * API 7: Lấy danh sách booking deposit của customer đang đăng nhập
          * Hiển thị các đơn đặt cọc trong trang "Đơn hàng của tôi"
@@ -186,52 +187,54 @@ public class CustomerPaymentController {
                 log.info("[CustomerPaymentController] GET /my-deposits - Email: {}", email);
 
                 if (email == null || email.isEmpty()) {
-                        return ResponseEntity.ok(List.of());
+                        return ResponseEntity.badRequest().build();
                 }
 
                 try {
-                        List<com.ev.payment_service.entity.PaymentRecord> records =
-                                paymentRecordRepository.findByCustomerEmail(email);
+                        List<com.ev.payment_service.entity.PaymentRecord> records = paymentRecordRepository
+                                        .findByCustomerEmail(email);
 
                         // Map to response with metadata (only deposits that have metadata)
                         List<Map<String, Object>> deposits = records.stream()
-                                .filter(r -> r.getMetadata() != null && !r.getMetadata().isEmpty())
-                                .map(r -> {
-                                        Map<String, Object> deposit = new java.util.LinkedHashMap<>();
-                                        deposit.put("recordId", r.getRecordId());
-                                        deposit.put("orderId", r.getOrderId());
-                                        deposit.put("customerId", r.getCustomerId());
-                                        deposit.put("customerName", r.getCustomerName());
-                                        deposit.put("customerPhone", r.getCustomerPhone());
-                                        deposit.put("customerEmail", r.getCustomerEmail());
-                                        deposit.put("totalAmount", r.getTotalAmount());
-                                        deposit.put("amountPaid", r.getAmountPaid());
-                                        deposit.put("remainingAmount", r.getRemainingAmount());
-                                        deposit.put("status", r.getStatus());
-                                        deposit.put("createdAt", r.getCreatedAt());
-                                        deposit.put("updatedAt", r.getUpdatedAt());
+                                        .filter(r -> r.getMetadata() != null && !r.getMetadata().isEmpty())
+                                        .map(r -> {
+                                                Map<String, Object> deposit = new java.util.LinkedHashMap<>();
+                                                deposit.put("recordId", r.getRecordId());
+                                                deposit.put("orderId", r.getOrderId());
+                                                deposit.put("customerId", r.getCustomerId());
+                                                deposit.put("customerName", r.getCustomerName());
+                                                deposit.put("customerPhone", r.getCustomerPhone());
+                                                deposit.put("customerEmail", r.getCustomerEmail());
+                                                deposit.put("totalAmount", r.getTotalAmount());
+                                                deposit.put("amountPaid", r.getAmountPaid());
+                                                deposit.put("remainingAmount", r.getRemainingAmount());
+                                                deposit.put("status", r.getStatus());
+                                                deposit.put("createdAt", r.getCreatedAt());
+                                                deposit.put("updatedAt", r.getUpdatedAt());
 
-                                        // Parse metadata JSON
-                                        try {
-                                                com.fasterxml.jackson.databind.ObjectMapper mapper =
-                                                        new com.fasterxml.jackson.databind.ObjectMapper();
-                                                Map<String, Object> metadata = mapper.readValue(r.getMetadata(),
-                                                        new com.fasterxml.jackson.core.type.TypeReference<Map<String, Object>>() {});
-                                                deposit.put("metadata", metadata);
-                                        } catch (Exception e) {
-                                                log.warn("Failed to parse metadata for record {}: {}", r.getRecordId(), e.getMessage());
-                                                deposit.put("metadata", null);
-                                        }
+                                                // Parse metadata JSON
+                                                try {
+                                                        com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+                                                        Map<String, Object> metadata = mapper.readValue(r.getMetadata(),
+                                                                        new com.fasterxml.jackson.core.type.TypeReference<Map<String, Object>>() {
+                                                                        });
+                                                        deposit.put("metadata", metadata);
+                                                } catch (Exception e) {
+                                                        log.warn("Failed to parse metadata for record {}: {}",
+                                                                        r.getRecordId(), e.getMessage());
+                                                        deposit.put("metadata", null);
+                                                }
 
-                                        return deposit;
-                                })
-                                .collect(java.util.stream.Collectors.toList());
+                                                return deposit;
+                                        })
+                                        .collect(java.util.stream.Collectors.toList());
 
                         log.info("[CustomerPaymentController] Found {} deposits for email: {}", deposits.size(), email);
                         return ResponseEntity.ok(deposits);
                 } catch (Exception e) {
-                        log.error("[CustomerPaymentController] Error fetching deposits for email {}: {}", email, e.getMessage());
-                        return ResponseEntity.ok(List.of());
+                        log.error("[CustomerPaymentController] Error fetching deposits for email {}: {}", email,
+                                        e.getMessage());
+                        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
                 }
         }
 }

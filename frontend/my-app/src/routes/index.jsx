@@ -14,6 +14,7 @@ import Login from "../pages/Login.jsx";
 // import DashboardForDealer from "../features/dashboard/pages/DashboardForDealer.jsx";
 import NotFound from "../pages/NotFound";
 import ProtectedRoute from "./ProtectedRoute";
+import ComingSoon from "../pages/ComingSoon";
 import UserManagement from "../features/dashboard/users/pages/UserManagement.jsx";
 import ProfileForm from "../features/profile/components/ProfileForm.jsx";
 import SecuritySettings from "../features/profile/components/SecuritySettings.jsx";
@@ -88,6 +89,9 @@ import BackfillPage from "../features/admin/system/pages/BackfillPage.jsx";
 // Staff Dealer
 import QuotationCreatePage from "../features/dealer/sales/quotation/pages/QuotationCreatePage.jsx";
 import QuotationListPage from "../features/dealer/sales/quotations/pages/QuotationListPage.jsx";
+import ContractListPage from "../features/dealer/sales/salesContract/pages/ContractListPage.jsx";
+import ContractDetailPage from "../features/dealer/sales/salesContract/pages/ContractDetailPage.jsx";
+import ContractEditPage from "../features/dealer/sales/salesContract/pages/ContractEditPage.jsx";
 
 //feature sale
 import SalesRoutes from "../features/dealer/sales/SalesRoutes.jsx";
@@ -223,6 +227,18 @@ export default function AppRoutes() {
                 path="admin/dealers/accounts"
                 element={<UserManagement />}
               />
+              <Route
+                path="admin/dealers/contracts"
+                element={<ContractListPage />}
+              />
+              <Route
+                path="admin/dealers/contracts/:contractId"
+                element={<ContractDetailPage />}
+              />
+              <Route
+                path="admin/dealers/contracts/:contractId/edit"
+                element={<ContractEditPage />}
+              />
               {/* 5. BÁO CÁO */}
               <Route path="admin/reports/sales" element={<SalesReportPage />} />
               <Route
@@ -252,9 +268,10 @@ export default function AppRoutes() {
                 path="admin/system/data-backfill"
                 element={<BackfillPage />}
               />
-              {/* <Route path="admin/system/permissions" ... /> */}
-              {/* <Route path="admin/system/config" ... /> */}
-              {/* <Route path="admin/system/audit" ... /> */}
+              <Route path="admin/system/permissions" element={<ComingSoon />} />
+              <Route path="admin/system/config" element={<ComingSoon />} />
+              <Route path="admin/system/audit" element={<ComingSoon />} />
+              <Route path="admin/dealers/debts" element={<DealerDebtManagementPage />} />
             </Route>
 
             {/* --- STAFF ONLY ROUTES --- */}
@@ -443,7 +460,7 @@ export default function AppRoutes() {
               />
 
               {/* --------------------------------Cai dar dai ly-------------------------------------------------- */}
-
+              <Route path="manager/settings/config" element={<ComingSoon />} />
               <Route
                 path="manager/settings/staff/*"
                 element={<UserManagement />}
@@ -592,6 +609,9 @@ export default function AppRoutes() {
                 path="staff/promotions"
                 element={<CustomerPromotionView />}
               />
+              {/* Other Staff Features */}
+              <Route path="staff/inventory/order" element={<ComingSoon />} />
+              <Route path="staff/reports/personal" element={<ComingSoon />} />
 
               {/* Payment Management (Dealer Staff) */}
               <Route

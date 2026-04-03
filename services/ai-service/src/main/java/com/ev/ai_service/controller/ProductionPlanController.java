@@ -22,6 +22,7 @@ import java.util.List;
 public class ProductionPlanController {
 
     private final ProductionPlanService productionPlanService;
+    private static final String ERROR_CODE = "ERROR";
 
     /**
      * Tạo kế hoạch sản xuất cho tháng
@@ -40,7 +41,7 @@ public class ProductionPlanController {
         } catch (Exception e) {
             log.error("Error generating production plan: {}", e.getMessage(), e);
             return ResponseEntity.badRequest().body(
-                    ApiRespond.error("ERROR", e.getMessage(), null));
+                    ApiRespond.error(ERROR_CODE, e.getMessage(), null));
         }
     }
 
@@ -61,7 +62,7 @@ public class ProductionPlanController {
         } catch (Exception e) {
             log.error("Error getting production plans: {}", e.getMessage(), e);
             return ResponseEntity.badRequest().body(
-                    ApiRespond.error("ERROR", e.getMessage(), null));
+                    ApiRespond.error(ERROR_CODE, e.getMessage(), null));
         }
     }
 
@@ -81,7 +82,7 @@ public class ProductionPlanController {
         } catch (Exception e) {
             log.error("Error approving production plan: {}", e.getMessage(), e);
             return ResponseEntity.badRequest().body(
-                    ApiRespond.error("ERROR", e.getMessage(), null));
+                    ApiRespond.error(ERROR_CODE, e.getMessage(), null));
         }
     }
 }
