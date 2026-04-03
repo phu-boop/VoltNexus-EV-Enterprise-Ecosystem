@@ -74,6 +74,13 @@ public class DealerContractService {
         return mapToResponse(updatedContract);
     }
 
+    @Transactional
+    public void deleteContract(Long id) {
+        DealerContract contract = contractRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Contract not found with id: " + id));
+        contractRepository.delete(contract);
+    }
+
     private DealerContract mapToEntity(DealerContractRequest request) {
         DealerContract contract = new DealerContract();
         applyRequestToEntity(request, contract);

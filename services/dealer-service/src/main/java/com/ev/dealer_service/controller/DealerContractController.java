@@ -50,4 +50,10 @@ public class DealerContractController {
         DealerContractResponse contract = contractService.updateContract(id, request);
         return ResponseEntity.ok(ApiResponse.success("Contract updated successfully", contract));
     }
+
+    @DeleteMapping("/contracts/{id}")
+    public ResponseEntity<ApiResponse<Void>> deleteContract(@PathVariable Long id) {
+        contractService.deleteContract(id);
+        return ResponseEntity.ok(ApiResponse.success("Contract deleted successfully", null));
+    }
 }
