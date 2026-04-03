@@ -12,13 +12,17 @@ apiConstCustomerService.interceptors.request.use((config) => {
 
   const email = sessionStorage.getItem("email");
   const role = sessionStorage.getItem("roles");
+  const roles = sessionStorage.getItem("roles");
   const userId = sessionStorage.getItem("userId") || sessionStorage.getItem("id_user");
   const profileId = sessionStorage.getItem("profileId");
+  const dealerId = sessionStorage.getItem("dealerId");
 
   if (email) config.headers["X-User-Email"] = email;
   if (role) config.headers["X-User-Role"] = role;
+  if (roles) config.headers["X-User-Roles"] = roles;
   if (userId) config.headers["X-User-Id"] = userId;
   if (profileId) config.headers["X-User-ProfileId"] = profileId;
+  if (dealerId) config.headers["X-User-DealerId"] = dealerId;
 
   return config;
 });
