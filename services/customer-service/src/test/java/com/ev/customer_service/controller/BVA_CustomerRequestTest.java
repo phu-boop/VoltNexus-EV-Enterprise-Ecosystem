@@ -4,7 +4,6 @@ import com.ev.customer_service.dto.request.CustomerRequest;
 import com.ev.customer_service.dto.response.CustomerResponse;
 import com.ev.customer_service.service.CustomerService;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -45,14 +44,32 @@ public class BVA_CustomerRequestTest {
     }
 
     private String createString(int length) {
-        return RandomStringUtils.randomAlphanumeric(length);
+        StringBuilder sb = new StringBuilder(length);
+        for (int i = 0; i < length; i++) {
+            sb.append('a');
+        }
+        return sb.toString();
     }
     
     private String createEmail(int length) {
-        String domain = "@test.com"; // 9 chars
-        int localPartLength = length - domain.length();
-        if (localPartLength <= 0) return "a" + domain; // fallback
-        return RandomStringUtils.randomAlphanumeric(localPartLength) + domain;
+        StringBuilder sb = new StringBuilder();
+        int localLen = Math.min(60, length - 5);
+        for(int i = 0; i < localLen; i++) sb.append('a');
+        sb.append('@');
+        int remaining = length - localLen - 1;
+        
+        while(remaining > 10) {
+            for(int i = 0; i < 9; i++) sb.append('b');
+            sb.append('.');
+            remaining -= 10;
+        }
+        if (remaining >= 4) {
+            for(int i=0; i<remaining-4; i++) sb.append('c');
+            sb.append(".com");
+        } else {
+            for(int i=0; i<remaining; i++) sb.append('c');
+        }
+        return sb.toString();
     }
 
     // --- firstName (@Size(max = 100)) ---
