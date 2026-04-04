@@ -8,6 +8,7 @@ import com.ev.user_service.service.RecaptchaService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import java.time.LocalDate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -46,7 +47,8 @@ public class BVA_CustomerRegistrationTest {
         request = new CustomerRegistrationRequest();
         request.setEmail("valid.email@example.com");
         request.setName("John Doe");
-        // password to be explicitly tested
+        // password, phone, birthday to be explicitly tested
+        request.setPassword("12345678"); // default valid
     }
 
     @Test
@@ -81,5 +83,83 @@ public class BVA_CustomerRegistrationTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated());
+    }
+
+    // --- Phone BVA (^pattern [0-9]{10,12}$) ---
+    @Test
+    void testPhone_Length_9_ReturnsBadRequest() throws Exception {
+        request.setPhone("123456789"); // 9 chars, below min
+        mockMvc.perform(post("/auth/register/customer")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void testPhone_Length_10_ReturnsCreated() throws Exception {
+        request.setPhone("1234567890"); // 10 chars, at min
+        when(authService.registerCustomer(any())).thenReturn(new UserRespond());
+        mockMvc.perform(post("/auth/register/customer")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated());
+    }
+
+    @Test
+    void testPhone_Length_11_ReturnsCreated() throws Exception {
+        request.setPhone("12345678901"); // 11 chars
+        when(authService.registerCustomer(any())).thenReturn(new UserRespond());
+        mockMvc.perform(post("/auth/register/customer")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated());
+    }
+
+    @Test
+    void testPhone_Length_12_ReturnsCreated() throws Exception {
+        request.setPhone("123456789012"); // 12 chars, at max
+        when(authService.registerCustomer(any())).thenReturn(new UserRespond());
+        mockMvc.perform(post("/auth/register/customer")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated());
+    }
+
+    @Test
+    void testPhone_Length_13_ReturnsBadRequest() throws Exception {
+        request.setPhone("1234567890123"); // 13 chars, above max
+        mockMvc.perform(post("/auth/register/customer")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest());
+    }
+
+    // --- Birthday BVA (@Past) ---
+    @Test
+    void testBirthday_Yesterday_ReturnsCreated() throws Exception {
+        request.setBirthday(LocalDate.now().minusDays(1)); // past date
+        when(authService.registerCustomer(any())).thenReturn(new UserRespond());
+        mockMvc.perform(post("/auth/register/customer")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated());
+    }
+
+    @Test
+    void testBirthday_Today_ReturnsBadRequest() throws Exception {
+        request.setBirthday(LocalDate.now()); // today (violates @Past)
+        mockMvc.perform(post("/auth/register/customer")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void testBirthday_Tomorrow_ReturnsBadRequest() throws Exception {
+        request.setBirthday(LocalDate.now().plusDays(1)); // future date
+        mockMvc.perform(post("/auth/register/customer")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest());
     }
 }
