@@ -72,7 +72,9 @@ public class VehicleVariant {
     private String description;
 
     // Color images stored as JSON array
-    // Format: [{"color":"Red","colorCode":"#FF0000","imageUrl":"http://...","isPrimary":true}, ...]
+    // Format:
+    // [{"color":"Red","colorCode":"#FF0000","imageUrl":"http://...","isPrimary":true},
+    // ...]
     @Column(name = "color_images", columnDefinition = "TEXT")
     private String colorImages;
 
@@ -102,7 +104,7 @@ public class VehicleVariant {
     @Column(name = "created_date", updatable = false)
     private LocalDateTime createdDate;
 
-    @Column(name = "image_url")
+    @Column(name = "image_url", columnDefinition = "TEXT")
     private String imageUrl;
 
     // ... updatedBy, updatedDate ...

@@ -23,11 +23,13 @@ public class StaffAssignmentService {
 
     private final CustomerRepository customerRepository;
 
+    private static final String CUSTOMER_NOT_FOUND_PREFIX = "Customer not found with id: ";
+
     /**
      * Phân công nhân viên cho khách hàng
      * 
      * @param customerId ID của khách hàng
-     * @param request Request chứa staffId và note
+     * @param request    Request chứa staffId và note
      * @return AssignmentResponse
      */
     @Transactional
@@ -36,7 +38,7 @@ public class StaffAssignmentService {
 
         // 1. Kiểm tra customer tồn tại
         Customer customer = customerRepository.findById(customerId)
-                .orElseThrow(() -> new ResourceNotFoundException("Customer not found with id: " + customerId));
+                .orElseThrow(() -> new ResourceNotFoundException(CUSTOMER_NOT_FOUND_PREFIX + customerId));
 
         // 2. Validate UUID format của staffId
         try {
@@ -44,16 +46,15 @@ public class StaffAssignmentService {
         } catch (IllegalArgumentException e) {
             log.error("Invalid staff ID format: {}", request.getStaffId());
             throw new IllegalArgumentException(
-                "Invalid staff ID format. Please select a valid staff member from the dropdown. " +
-                "Received: '" + request.getStaffId() + "'. " +
-                "Expected: UUID format (e.g., '123e4567-e89b-12d3-a456-426614174000')"
-            );
+                    "Invalid staff ID format. Please select a valid staff member from the dropdown. " +
+                            "Received: '" + request.getStaffId() + "'. " +
+                            "Expected: UUID format (e.g., '123e4567-e89b-12d3-a456-426614174000')");
         }
 
         // 3. LƯU GHI CHÚ: Không validate staff với User Service vì cần ADMIN role
         // Frontend đã validate khi chọn từ dropdown (chỉ ACTIVE staff)
         // Backend chỉ lưu UUID vào database
-        
+
         // 4. Cập nhật phân công
         customer.setAssignedStaffId(request.getStaffId());
         Customer updatedCustomer = customerRepository.save(customer);
@@ -90,7 +91,7 @@ public class StaffAssignmentService {
 
         // 1. Kiểm tra customer tồn tại
         Customer customer = customerRepository.findById(customerId)
-                .orElseThrow(() -> new ResourceNotFoundException("Customer not found with id: " + customerId));
+                .orElseThrow(() -> new ResourceNotFoundException(CUSTOMER_NOT_FOUND_PREFIX + customerId));
 
         // 2. Kiểm tra xem customer có được phân công nhân viên không
         if (customer.getAssignedStaffId() == null) {
@@ -119,7 +120,8 @@ public class StaffAssignmentService {
 
     /**
      * Lấy thông tin nhân viên được phân công cho khách hàng
-     * CHÚ Ý: Chỉ trả về assignedStaffId (UUID), frontend tự lấy thông tin staff từ User Service
+     * CHÚ Ý: Chỉ trả về assignedStaffId (UUID), frontend tự lấy thông tin staff từ
+     * User Service
      * 
      * @param customerId ID của khách hàng
      * @return StaffDTO với chỉ ID, hoặc null nếu chưa được phân công
@@ -129,7 +131,7 @@ public class StaffAssignmentService {
         log.info("Getting assigned staff ID for customer {}", customerId);
 
         Customer customer = customerRepository.findById(customerId)
-                .orElseThrow(() -> new ResourceNotFoundException("Customer not found with id: " + customerId));
+                .orElseThrow(() -> new ResourceNotFoundException(CUSTOMER_NOT_FOUND_PREFIX + customerId));
 
         if (customer.getAssignedStaffId() == null) {
             return null;

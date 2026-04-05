@@ -23,12 +23,19 @@ public class PasswordConstraintValidator implements ConstraintValidator<Password
 
     @Override
     public boolean isValid(String password, ConstraintValidatorContext context) {
-        if (password == null) return false;
-        if (password.length() < minLength) return false;
-        if (hasUppercase && !password.matches(".*[A-Z].*")) return false;
-        if (hasLowercase && !password.matches(".*[a-z].*")) return false;
-        if (hasNumber && !password.matches(".*\\d.*")) return false;
-        if (hasSpecialChar && !password.matches(".*[!@#$%^&*()_+\\-=\\[\\]{};':\"\\\\|,.<>/?].*")) return false;
+        if (password == null)
+            return false;
+        if (password.length() < minLength)
+            return false;
+        if (hasUppercase && !java.util.regex.Pattern.compile("[A-Z]").matcher(password).find())
+            return false;
+        if (hasLowercase && !java.util.regex.Pattern.compile("[a-z]").matcher(password).find())
+            return false;
+        if (hasNumber && !java.util.regex.Pattern.compile("\\d").matcher(password).find())
+            return false;
+        if (hasSpecialChar && !java.util.regex.Pattern.compile("[!@#$%^&*()_+\\-=\\[\\]{};':\"\\\\|,.<>/?]")
+                .matcher(password).find())
+            return false;
         return true;
     }
 }

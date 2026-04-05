@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { mngUserService } from "../services/mngUserService.js";
 import UserForm from "../components/UserForm.jsx";
 import UserTable from "../components/UserTable.jsx";
@@ -7,13 +8,14 @@ import UserPagination from "../components/UserPagination.jsx";
 import UserProfileDetail from "../components/UserProfileDetail.jsx";
 import UserStatistics from "../components/UserStatistics.jsx";
 import BulkActions from "../components/BulkActions.jsx";
+import { Plus, Search, Filter, Download, Trash2, X, Users, Shield, CheckCircle } from "lucide-react";
 import Swal from "sweetalert2";
-import { X } from "lucide-react";
 import { formatUserDataForUpdate } from "../helpers/userDataHelper.jsx";
 
 export default function UserManagement() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [totalItems, setTotalItems] = useState(0);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
   const [viewingUser, setViewingUser] = useState(null);
@@ -30,7 +32,7 @@ export default function UserManagement() {
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
+  const [itemsPerPage] = useState(10);
 
   const showMessage = (msg) => {
     setMessage(msg);
@@ -38,32 +40,42 @@ export default function UserManagement() {
   };
 
   const fetchUsers = async () => {
-    const dealerId = sessionStorage.getItem("dealerId");
+    const roles = sessionStorage.getItem("roles");
+    const sessionDealerId = sessionStorage.getItem("dealerId");
+
     try {
       setLoading(true);
-      if (sessionStorage.getItem("roles").includes("EVM_STAFF")) {
-        const response = await mngUserService.getAllDealerManager();
-        if (response.data.code === "1000") {
-          setUsers(response.data.data);
-        } else {
-          showMessage("Lỗi khi tải danh sách user");
+
+      const params = {
+        searchText: searchText,
+        role: filterRole,
+        page: currentPage,
+        size: itemsPerPage,
+        sortField: sortField,
+        sortOrder: sortOrder
+      };
+
+      // RBAC filtering logic for search parameters
+      if (roles.includes("DEALER_MANAGER")) {
+        params.dealerId = sessionDealerId;
+        // Nếu không chọn role, mặc định search DEALER_STAFF cho Dealer Manager
+        if (!filterRole) {
+          params.role = "DEALER_STAFF";
         }
-      } else if (sessionStorage.getItem("roles").includes("DEALER_MANAGER")) {
-        const response = await mngUserService.getAllDealerStaff({
-          dealerId: dealerId,
-        });
-        if (response.data.code === "1000") {
-          setUsers(response.data.data);
-        } else {
-          showMessage("Lỗi khi tải danh sách user");
+      } else if (roles.includes("EVM_STAFF")) {
+        // Nếu không chọn role, mặc định search DEALER_MANAGER cho EVM Staff (giống logic cũ)
+        if (!filterRole) {
+          params.role = "DEALER_MANAGER";
         }
+      }
+
+      const response = await mngUserService.search(params);
+
+      if (response.data.code === "1000") {
+        setUsers(response.data.data.content);
+        setTotalItems(response.data.data.totalElements);
       } else {
-        const response = await mngUserService.getAll();
-        if (response.data.code === "1000") {
-          setUsers(response.data.data);
-        } else {
-          showMessage("Lỗi khi tải danh sách user");
-        }
+        showMessage("Lỗi khi tải danh sách user");
       }
     } catch (error) {
       console.error("Error fetching users:", error);
@@ -85,7 +97,14 @@ export default function UserManagement() {
   };
 
   useEffect(() => {
+    setCurrentPage(1);
+  }, [searchText, filterRole]);
+
+  useEffect(() => {
     fetchUsers();
+  }, [currentPage, searchText, filterRole, sortField, sortOrder]);
+
+  useEffect(() => {
     fetchStatistics();
   }, []);
 
@@ -386,41 +405,8 @@ export default function UserManagement() {
     }
   };
 
-  // Filter + Search + Sort
-  const filteredUsers = users
-    .filter((user) => {
-      const textMatch =
-        user.email.toLowerCase().includes(searchText.toLowerCase()) ||
-        user.fullName?.toLowerCase().includes(searchText.toLowerCase()) ||
-        user.name?.toLowerCase().includes(searchText.toLowerCase()) ||
-        user.phone?.includes(searchText);
-
-      const roleMatch =
-        !filterRole || user.roles.some((role) => role.name === filterRole);
-
-      return textMatch && roleMatch;
-    })
-    .sort((a, b) => {
-      let aValue = a[sortField];
-      let bValue = b[sortField];
-
-      if (sortField === "createdAt" && aValue) {
-        aValue = new Date(aValue);
-        bValue = new Date(bValue);
-      }
-
-      if (aValue < bValue) return sortOrder === "asc" ? -1 : 1;
-      if (aValue > bValue) return sortOrder === "asc" ? 1 : -1;
-      return 0;
-    });
-
-  // Pagination
-  const totalItems = filteredUsers.length;
+  // Server-side filtering, so we just use the users from state
   const totalPages = Math.ceil(totalItems / itemsPerPage);
-  const paginatedUsers = filteredUsers.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
 
   return (
     <div>
@@ -466,7 +452,7 @@ export default function UserManagement() {
 
       {/* Table */}
       <UserTable
-        users={paginatedUsers}
+        users={users}
         onEdit={handleEditUser}
         onView={handleViewUser}
         onDelete={handleDeleteUser}
@@ -486,24 +472,27 @@ export default function UserManagement() {
 
       {/* Form Modal */}
       {mode === "view" && viewingUser ? (
-        <div className="fixed inset-0 bg-black/30 flex justify-end z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between p-6 border-b">
-              <h2 className="text-xl font-bold text-gray-800">
-                Chi tiết người dùng
-              </h2>
-              <button
-                onClick={() => setMode("null")}
-                className="text-gray-400 hover:text-gray-600 transition-colors p-1"
-              >
-                <X size={24} />
-              </button>
+        createPortal(
+          <div className="fixed inset-0 bg-black/30 flex justify-end z-[9999] p-4">
+            <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+              <div className="flex items-center justify-between p-6 border-b">
+                <h2 className="text-xl font-bold text-gray-800">
+                  Chi tiết người dùng
+                </h2>
+                <button
+                  onClick={() => setMode("null")}
+                  className="text-gray-400 hover:text-gray-600 transition-colors p-1"
+                >
+                  <X size={24} />
+                </button>
+              </div>
+              <div className="p-6">
+                <UserProfileDetail userProfile={viewingUser} mode="view" />
+              </div>
             </div>
-            <div className="p-6">
-              <UserProfileDetail userProfile={viewingUser} mode="view" />
-            </div>
-          </div>
-        </div>
+          </div>,
+          document.body
+        )
       ) : (
         <UserForm
           isOpen={modalOpen}

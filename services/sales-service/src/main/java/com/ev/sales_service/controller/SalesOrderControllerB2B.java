@@ -42,7 +42,7 @@ public class SalesOrderControllerB2B {
     // API Tạo Đơn Hàng (Do Đại Lý Thực Hiện)
     // POST /sales-orders/b2b
     @PostMapping("/b2b")
-    @PreAuthorize("hasRole('DEALER_MANAGER')") // Chỉ quản lý đại lý được đặt hàng
+    @PreAuthorize("hasAnyRole('DEALER_MANAGER', 'DEALER_STAFF')") // Cho phép Quản lý và Nhân viên đại lý
     public ResponseEntity<ApiRespond<SalesOrderDtoB2B>> createB2BOrder(
             @Valid @RequestBody CreateB2BOrderRequest request,
             @RequestHeader("X-User-Email") String email,
@@ -53,8 +53,7 @@ public class SalesOrderControllerB2B {
 
         return new ResponseEntity<>(
                 ApiRespond.success("B2B order created", responseDto),
-                HttpStatus.CREATED
-        );
+                HttpStatus.CREATED);
     }
 
     // Chỉ dành cho Staff, Admin tạo đơn hàng HỘ đại lý
@@ -75,8 +74,7 @@ public class SalesOrderControllerB2B {
 
         return new ResponseEntity<>(
                 ApiRespond.success("B2B order placed by staff successfully", responseDto),
-                HttpStatus.CREATED
-        );
+                HttpStatus.CREATED);
     }
 
     // API Lấy Danh Sách Đơn Hàng (Do Hãng/EVM Staff Thực Hiện)
@@ -153,7 +151,7 @@ public class SalesOrderControllerB2B {
 
     // API Cập nhật nhận hàng từ đại lí
     @PutMapping("/{orderId}/deliver")
-    @PreAuthorize("hasRole('DEALER_MANAGER')") // Chỉ quản lý đại lý được xác nhận
+    @PreAuthorize("hasAnyRole('DEALER_MANAGER', 'DEALER_STAFF')") // Quản lý và Nhân viên đại lý có thể xác nhận
     public ResponseEntity<ApiRespond<Void>> deliverOrder(
             @PathVariable UUID orderId,
             @RequestHeader("X-User-Email") String email,
@@ -165,7 +163,7 @@ public class SalesOrderControllerB2B {
 
     // API ĐẠI LÝ BÁO CÁO SỰ CỐ
     @PutMapping("/{orderId}/report-issue")
-    @PreAuthorize("hasRole('DEALER_MANAGER')")
+    @PreAuthorize("hasAnyRole('DEALER_MANAGER', 'DEALER_STAFF')")
     public ResponseEntity<ApiRespond<Void>> reportIssue(
             @PathVariable UUID orderId,
             @Valid @RequestBody ReportIssueRequest request,
@@ -207,7 +205,7 @@ public class SalesOrderControllerB2B {
 
     // --- API HỦY ĐƠN CHO DEALER ---
     @PutMapping("/{orderId}/cancel-by-dealer")
-    @PreAuthorize("hasRole('DEALER_MANAGER')") // Chỉ Dealer Manager
+    @PreAuthorize("hasAnyRole('DEALER_MANAGER', 'DEALER_STAFF')") // Quản lý và Nhân viên đại lý
     public ResponseEntity<ApiRespond<Void>> cancelOrderByDealer(
             @PathVariable UUID orderId,
             @RequestHeader("X-User-Email") String email,
@@ -248,7 +246,7 @@ public class SalesOrderControllerB2B {
         return ResponseEntity.ok(ApiRespond.success("Lấy dữ liệu báo cáo thành công", orders));
     }
 
-    //API GIẢI QUYẾT KHIẾU NẠI
+    // API GIẢI QUYẾT KHIẾU NẠI
     @PutMapping("/{orderId}/resolve-dispute")
     @PreAuthorize("hasAnyRole('ADMIN', 'EVM_STAFF')")
     public ResponseEntity<ApiRespond<SalesOrderDtoB2B>> resolveDispute(
@@ -270,9 +268,9 @@ public class SalesOrderControllerB2B {
             @RequestParam String status) {
 
         try {
-            com.ev.sales_service.enums.PaymentStatus paymentStatus = 
-                com.ev.sales_service.enums.PaymentStatus.valueOf(status.toUpperCase());
-            
+            com.ev.sales_service.enums.PaymentStatus paymentStatus = com.ev.sales_service.enums.PaymentStatus
+                    .valueOf(status.toUpperCase());
+
             salesOrderServiceB2B.updatePaymentStatus(orderId, paymentStatus);
             return ResponseEntity.ok(ApiRespond.success("Cập nhật trạng thái thanh toán thành công", null));
         } catch (IllegalArgumentException e) {

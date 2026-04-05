@@ -339,7 +339,7 @@ const QuotationCreatePage = () => {
         theme="light"
       />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl">
         {/* Header Section */}
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold text-gray-900 mb-3">
@@ -373,11 +373,10 @@ const QuotationCreatePage = () => {
                 className="flex flex-col items-center relative z-10"
               >
                 <div
-                  className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all duration-300 ${
-                    currentStep >= step
+                  className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all duration-300 ${currentStep >= step
                       ? "bg-gradient-to-br from-blue-500 to-cyan-500 border-blue-500 text-white shadow-lg shadow-blue-200"
                       : "bg-white border-gray-300 text-gray-400"
-                  }`}
+                    }`}
                 >
                   {currentStep > step ? (
                     <svg
@@ -398,9 +397,8 @@ const QuotationCreatePage = () => {
                   )}
                 </div>
                 <span
-                  className={`text-sm font-medium mt-3 transition-colors duration-300 ${
-                    currentStep >= step ? "text-gray-900" : "text-gray-500"
-                  }`}
+                  className={`text-sm font-medium mt-3 transition-colors duration-300 ${currentStep >= step ? "text-gray-900" : "text-gray-500"
+                    }`}
                 >
                   {step === 1 && "Thông tin"}
                   {step === 2 && "Tính toán"}

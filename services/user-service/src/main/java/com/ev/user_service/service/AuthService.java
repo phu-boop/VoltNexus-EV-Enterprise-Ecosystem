@@ -35,7 +35,6 @@ import java.util.UUID;
 
 import java.security.SecureRandom;
 
-
 @Service
 public class AuthService {
     private final UserRepository userRepository;
@@ -52,16 +51,16 @@ public class AuthService {
     private final RoleRepository roleRepository;
 
     public AuthService(UserRepository userRepository,
-                       PasswordEncoder passwordEncoder,
-                       JwtUtil jwtUtil,
-                       UserMapper userMapper,
-                       RedisService redisService,
-                       EmailService emailService,
-                       DealerManagerProfileRepository managerProfileRepository,
-                       DealerStaffProfileRepository staffProfileRepository,
-                       CustomerProfileService customerProfileService,
-                       CustomerProfileRepository customerProfileRepository,
-                       RoleRepository roleRepository) {
+            PasswordEncoder passwordEncoder,
+            JwtUtil jwtUtil,
+            UserMapper userMapper,
+            RedisService redisService,
+            EmailService emailService,
+            DealerManagerProfileRepository managerProfileRepository,
+            DealerStaffProfileRepository staffProfileRepository,
+            CustomerProfileService customerProfileService,
+            CustomerProfileRepository customerProfileRepository,
+            RoleRepository roleRepository) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtUtil = jwtUtil;
@@ -76,7 +75,6 @@ public class AuthService {
         this.roleRepository = roleRepository;
     }
 
-
     public LoginRespond login(String email, String password) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
@@ -86,12 +84,12 @@ public class AuthService {
             // Lấy thông tin cơ bản
             String role = user.getRoleToString();
             UUID profileId = user.getProfileId(); // Đây là staffId hoặc managerId
-            
+
             if (profileId == null) {
                 // Profile chưa được tạo hoặc lỗi dữ liệu
-                throw new AppException(ErrorCode.DATA_NOT_FOUND); 
+                throw new AppException(ErrorCode.DATA_NOT_FOUND);
             }
-            
+
             UUID userId = user.getId();
             UUID dealerId = null; // Biến để lưu dealerId
 
@@ -111,7 +109,8 @@ public class AuthService {
             }
             // === KẾT THÚC LOGIC MỚI ===
             // === KẾT THÚC LOGIC MỚI ===
-            String token = jwtUtil.generateAccessToken(user.getEmail(), user.getRoleToString(), profileId.toString(), dealerId != null ? dealerId.toString() : null);
+            String token = jwtUtil.generateAccessToken(user.getEmail(), user.getRoleToString(), user.getId().toString(),
+                    profileId.toString(), dealerId != null ? dealerId.toString() : null);
             UserRespond userRespond = userMapper.usertoUserRespond(user);
             userRespond.setMemberId(user.getProfileId());
             userRespond.setUrl(user.getUrl());
@@ -134,18 +133,16 @@ public class AuthService {
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
 
         UserRespond userRespond = userMapper.usertoUserRespond(user);
-        
-        // Fetch customer profile and set memberId if user is a CUSTOMER (matches OAuth handler logic)
+
+        // Fetch customer profile and set memberId if user is a CUSTOMER (matches OAuth
+        // handler logic)
         try {
             if (user.getRoleToString().contains("CUSTOMER")) {
                 var customerProfile = customerProfileRepository.findByUserId(user.getId());
-                if (customerProfile.isPresent()) {
-                    userRespond.setMemberId(customerProfile.get().getCustomerId());
-                } else {
-                }
             }
         } catch (Exception e) {
-            System.err.println("[AuthService.getCurrentUser] ❌ Error fetching customer profile: " + e.getMessage());
+            // log.error("[AuthService.getCurrentUser] Error fetching customer profile: {}",
+            // e.getMessage());
         }
 
         return new LoginRespond(userRespond, null);
@@ -154,7 +151,8 @@ public class AuthService {
     public String generateRefreshToken(String email) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
-        return jwtUtil.generateRefreshToken(user.getEmail(), user.getRoleToString(), user.getProfileId().toString(), null);
+        return jwtUtil.generateRefreshToken(user.getEmail(), user.getRoleToString(), user.getId().toString(),
+                user.getProfileId().toString(), null);
     }
 
     public TokenPair newRefreshTokenAndAccessToken(HttpServletRequest request) {
@@ -169,15 +167,15 @@ public class AuthService {
         String newAccessToken = jwtUtil.generateAccessToken(
                 jwtUtil.extractEmail(refreshToken),
                 jwtUtil.extractRole(refreshToken),
+                jwtUtil.extractUserId(refreshToken),
                 jwtUtil.extractProfileId(refreshToken),
-                jwtUtil.extractDealerId(refreshToken)
-        );
+                jwtUtil.extractDealerId(refreshToken));
         String newRefreshToken = jwtUtil.generateRefreshToken(
                 jwtUtil.extractEmail(refreshToken),
                 jwtUtil.extractRole(refreshToken),
+                jwtUtil.extractUserId(refreshToken),
                 jwtUtil.extractProfileId(refreshToken),
-                jwtUtil.extractDealerId(refreshToken)
-        );
+                jwtUtil.extractDealerId(refreshToken));
         return new TokenPair(newAccessToken, newRefreshToken);
     }
 
@@ -199,7 +197,6 @@ public class AuthService {
 
     }
 
-
     public boolean sendOtp(String email) {
         userRepository.findByEmail(email)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
@@ -213,7 +210,8 @@ public class AuthService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
         boolean validOtp = redisService.validateOtp(email, otp);
-        if (!validOtp) return false;
+        if (!validOtp)
+            return false;
 
         user.setPassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);
@@ -271,7 +269,8 @@ public class AuthService {
         }
 
         // Check if phone already exists (if provided)
-        if (request.getPhone() != null && !request.getPhone().isEmpty() && userRepository.existsByPhone(request.getPhone())) {
+        if (request.getPhone() != null && !request.getPhone().isEmpty()
+                && userRepository.existsByPhone(request.getPhone())) {
             throw new AppException(ErrorCode.PHONE_ALREADY_EXISTS);
         }
 

@@ -9,25 +9,32 @@ import org.springframework.data.repository.query.Param;
 import java.util.List;
 
 @Repository
-public interface VehicleVariantRepository extends JpaRepository<VehicleVariant, Long>, JpaSpecificationExecutor<VehicleVariant> {
-    
+public interface VehicleVariantRepository
+        extends JpaRepository<VehicleVariant, Long>, JpaSpecificationExecutor<VehicleVariant> {
+
     // Tìm kiếm variantId theo keyword
     @Query("SELECT v.variantId FROM VehicleVariant v WHERE v.vehicleModel.modelName LIKE %:keyword% OR v.versionName LIKE %:keyword% OR v.color LIKE %:keyword%")
     List<Long> findVariantIdsByKeyword(@Param("keyword") String keyword);
 
     @Query("SELECT v FROM VehicleVariant v " +
-           "LEFT JOIN FETCH v.vehicleModel " +
-           "LEFT JOIN FETCH v.features " + 
-           "WHERE v.variantId IN :variantIds")
+            "LEFT JOIN FETCH v.vehicleModel " +
+            "LEFT JOIN FETCH v.features " +
+            "WHERE v.variantId IN :variantIds")
     List<VehicleVariant> findAllWithDetailsByIds(List<Long> variantIds);
-    
+
     List<VehicleVariant> findByVehicleModel_ModelId(Long modelId);
+
+    boolean existsBySkuCode(String skuCode);
+
+    java.util.Optional<VehicleVariant> findBySkuCode(String skuCode);
 
     @Query("SELECT v.variantId FROM VehicleVariant v")
     List<Long> findAllVariantIds();
 
     @Override
-    @org.springframework.data.jpa.repository.EntityGraph(attributePaths = {"vehicleModel"})
-    org.springframework.data.domain.Page<VehicleVariant> findAll(org.springframework.data.jpa.domain.Specification<VehicleVariant> spec, org.springframework.data.domain.Pageable pageable);
+    @org.springframework.data.jpa.repository.EntityGraph(attributePaths = { "vehicleModel" })
+    org.springframework.data.domain.Page<VehicleVariant> findAll(
+            org.springframework.data.jpa.domain.Specification<VehicleVariant> spec,
+            org.springframework.data.domain.Pageable pageable);
 
 }

@@ -12,6 +12,8 @@ import com.ev.vehicle_service.dto.request.UpdateModelRequest;
 import com.ev.vehicle_service.dto.request.UpdateVariantRequest;
 import com.ev.vehicle_service.dto.response.ModelDetailDto;
 import com.ev.vehicle_service.dto.response.ModelSummaryDto;
+import com.ev.vehicle_service.dto.response.PriceHistoryDto;
+import com.ev.vehicle_service.dto.response.VariantHistoryDto;
 import com.ev.vehicle_service.model.VehicleFeature;
 import com.ev.vehicle_service.model.VehicleModel;
 import com.ev.vehicle_service.model.VehicleVariant;
@@ -124,9 +126,20 @@ public class VehicleCatalogController {
     @PreAuthorize("hasAnyRole('ADMIN', 'EVM_STAFF')")
     public ResponseEntity<ApiRespond<Void>> deleteModel(
             @PathVariable Long modelId,
+            @RequestParam(defaultValue = "false") boolean force,
             @RequestHeader("X-User-Email") String email) {
-        vehicleCatalogService.deactivateModel(modelId, email);
+        vehicleCatalogService.deactivateModel(modelId, force, email);
         return ResponseEntity.ok(ApiRespond.success("Model deleted successfully", null));
+    }
+
+    @DeleteMapping("/models/bulk")
+    @PreAuthorize("hasAnyRole('ADMIN')")
+    public ResponseEntity<ApiRespond<Void>> deleteModelsBulk(
+            @RequestBody List<Long> modelIds,
+            @RequestParam(defaultValue = "false") boolean force,
+            @RequestHeader("X-User-Email") String email) {
+        vehicleCatalogService.deleteModelsBulk(modelIds, force, email);
+        return ResponseEntity.ok(ApiRespond.success("Models deleted successfully", null));
     }
 
     // ==========================================================
@@ -170,8 +183,11 @@ public class VehicleCatalogController {
     public ResponseEntity<ApiRespond<List<Long>>> searchVariants(
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) String color,
-            @RequestParam(required = false) String versionName) {
-        List<Long> variantIds = vehicleCatalogService.searchVariantIdsByCriteria(keyword, color, versionName);
+            @RequestParam(required = false) String versionName,
+            @RequestParam(required = false) Double minPrice,
+            @RequestParam(required = false) Double maxPrice) {
+        List<Long> variantIds = vehicleCatalogService.searchVariantIdsByCriteria(keyword, color, versionName, minPrice,
+                maxPrice);
         return ResponseEntity.ok(ApiRespond.success("Found variant IDs matching keyword", variantIds));
     }
 
@@ -208,6 +224,15 @@ public class VehicleCatalogController {
             @RequestHeader("X-User-Email") String email) {
         vehicleCatalogService.deactivateVariant(variantId, email);
         return ResponseEntity.ok(ApiRespond.success("Variant has been discontinued", null));
+    }
+
+    @DeleteMapping("/variants/bulk")
+    @PreAuthorize("hasAnyRole('ADMIN')")
+    public ResponseEntity<ApiRespond<Void>> deleteVariantsBulk(
+            @RequestBody List<Long> variantIds,
+            @RequestHeader("X-User-Email") String email) {
+        vehicleCatalogService.deleteVariantsBulk(variantIds, email);
+        return ResponseEntity.ok(ApiRespond.success("Variants deleted successfully", null));
     }
 
     /**
@@ -257,7 +282,7 @@ public class VehicleCatalogController {
     @PostMapping("/public/compare")
     public ResponseEntity<ApiRespond<List<ComparisonDto>>> getPublicComparisonDetails(
             @RequestBody List<Long> variantIds) {
-        
+
         // For public comparison, we don't need dealer-specific inventory data
         // Just return the vehicle details without inventory information
         List<ComparisonDto> results = vehicleCatalogService.getComparisonData(variantIds, null, new HttpHeaders());
@@ -275,11 +300,26 @@ public class VehicleCatalogController {
             // Lọc theo khoảng giá
             @RequestParam(required = false) Double minPrice,
             @RequestParam(required = false) Double maxPrice,
-            @PageableDefault(size = 10, sort = "variantId") Pageable pageable) {
+            @RequestParam(required = false) Long modelId,
+            @PageableDefault(size = 10, sort = "variantId") Pageable pageable,
+            @RequestHeader(value = "X-User-Email", required = false) String email,
+            @RequestHeader(value = "X-User-Role", required = false) String role,
+            @RequestHeader(value = "X-User-Id", required = false) String userId,
+            @RequestHeader(value = "X-User-ProfileId", required = false) String profileId) {
 
-        // Truyền 'status' xuống service
+        HttpHeaders headers = new HttpHeaders();
+        if (email != null)
+            headers.set("X-User-Email", email);
+        if (role != null)
+            headers.set("X-User-Role", role);
+        if (userId != null)
+            headers.set("X-User-Id", userId);
+        if (profileId != null)
+            headers.set("X-User-ProfileId", profileId);
+
+        // Truyền 'status' và 'headers' xuống service
         Page<VariantDetailDto> results = vehicleCatalogService.getAllVariantsPaginated(search, status, minPrice,
-                maxPrice, pageable);
+                maxPrice, modelId, pageable, headers);
         return ResponseEntity.ok(ApiRespond.success("Fetched paginated variants successfully", results));
     }
 
@@ -314,6 +354,17 @@ public class VehicleCatalogController {
     public ResponseEntity<ApiRespond<List<VehicleFeature>>> getAllFeatures() {
         List<VehicleFeature> features = vehicleCatalogService.getAllFeatures();
         return ResponseEntity.ok(ApiRespond.success("Fetched all features successfully", features));
+    }
+
+    /**
+     * Lấy danh sách tính năng có phân trang và tìm kiếm.
+     */
+    @GetMapping("/features/paginated")
+    public ResponseEntity<ApiRespond<Page<VehicleFeature>>> getFeaturesPaginated(
+            @RequestParam(required = false) String search,
+            @PageableDefault(size = 10, sort = "featureId") Pageable pageable) {
+        Page<VehicleFeature> results = vehicleCatalogService.getAllFeaturesPaginated(search, pageable);
+        return ResponseEntity.ok(ApiRespond.success("Fetched paginated features successfully", results));
     }
 
     /**
@@ -383,5 +434,43 @@ public class VehicleCatalogController {
 
         vehicleCatalogService.deleteFeature(featureId, email);
         return ResponseEntity.ok(ApiRespond.success("Feature deleted successfully", null));
+    }
+
+    @DeleteMapping("/features/bulk")
+    @PreAuthorize("hasAnyRole('ADMIN')")
+    public ResponseEntity<ApiRespond<Void>> deleteFeaturesBulk(
+            @RequestBody List<Long> featureIds,
+            @RequestHeader("X-User-Email") String email) {
+        vehicleCatalogService.deleteFeaturesBulk(featureIds, email);
+        return ResponseEntity.ok(ApiRespond.success("Features deleted successfully", null));
+    }
+
+    /**
+     * Lấy danh sách biến thể có gán tính năng cụ thể.
+     */
+    @GetMapping("/features/{featureId}/variants")
+    public ResponseEntity<ApiRespond<List<com.ev.vehicle_service.dto.response.FeatureVariantDto>>> getVariantsByFeatureId(
+            @PathVariable Long featureId) {
+        List<com.ev.vehicle_service.dto.response.FeatureVariantDto> variants = vehicleCatalogService
+                .getVariantsByFeatureId(featureId);
+        return ResponseEntity.ok(ApiRespond.success("Fetched variants for feature successfully", variants));
+    }
+
+    /**
+     * Lấy lịch sử giá của một phiên bản xe.
+     */
+    @GetMapping("/variants/{variantId}/price-history")
+    public ResponseEntity<ApiRespond<List<PriceHistoryDto>>> getVariantPriceHistory(@PathVariable Long variantId) {
+        List<PriceHistoryDto> history = vehicleCatalogService.getVariantPriceHistory(variantId);
+        return ResponseEntity.ok(ApiRespond.success("Fetched price history successfully", history));
+    }
+
+    /**
+     * Lấy nhật ký thay đổi (audit log) của một phiên bản xe.
+     */
+    @GetMapping("/variants/{variantId}/history")
+    public ResponseEntity<ApiRespond<List<VariantHistoryDto>>> getVariantAuditHistory(@PathVariable Long variantId) {
+        List<VariantHistoryDto> history = vehicleCatalogService.getVariantAuditHistory(variantId);
+        return ResponseEntity.ok(ApiRespond.success("Fetched audit history successfully", history));
     }
 }

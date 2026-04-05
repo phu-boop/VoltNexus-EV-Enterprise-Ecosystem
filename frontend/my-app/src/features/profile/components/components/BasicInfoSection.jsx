@@ -5,10 +5,11 @@ import { User, Mail } from 'lucide-react';
 export const BasicInfoSection = ({ formData, errors, handleChange }) => {
     return (
         <div className="space-y-6">
-            <h3 className="text-lg font-semibold text-slate-800 border-b border-slate-200 pb-2">
+            <h3 className="text-sm font-black text-slate-800 flex items-center uppercase tracking-widest italic">
+                <User className="h-4 w-4 text-indigo-600 mr-2" />
                 Thông tin cơ bản
             </h3>
-            <div className="flex flex-col lg:flex-row gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <InputField
                     label="Tên hiển thị"
                     name="name"

@@ -50,7 +50,7 @@ export default function PromotionCreatePage({ onBack }) {
       <div className="flex items-center mb-6">
         <button
           onClick={onBack}
-          className="mr-4 text-gray-500 hover:text-gray-700"
+          className="mr-4 m-10 text-gray-500 hover:text-gray-700"
         >
           <svg
             className="w-6 h-6"

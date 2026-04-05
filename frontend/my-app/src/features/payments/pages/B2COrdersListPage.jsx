@@ -1,12 +1,11 @@
-// B2C Orders List Page (Dealer Staff)
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuthContext } from '../../../features/auth/AuthProvider';
 import { salesOrderB2CApi } from '../../dealer/sales/salesOrder/services/salesOrderService';
 import paymentService from '../services/paymentService';
 import { toast } from 'react-toastify';
-import { 
-  EyeIcon, 
+import {
+  EyeIcon,
   CurrencyDollarIcon,
   MagnifyingGlassIcon,
   CheckCircleIcon,
@@ -16,6 +15,7 @@ import {
 
 const B2COrdersListPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { dealerId } = useAuthContext();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -38,15 +38,15 @@ const B2COrdersListPage = () => {
       setLoading(true);
       const response = await salesOrderB2CApi.getByDealer(dealerId);
       const data = response.data?.data || response.data || [];
-      
+
       // Process orders: use backend paymentStatus if available, otherwise calculate from payment history
       let ordersWithPaymentStatus = Array.isArray(data) ? data : [];
-      
+
       // Only load payment history for orders that don't have a valid paymentStatus from backend
       const ordersNeedingHistory = ordersWithPaymentStatus.filter(
         order => !order.paymentStatus || order.paymentStatus === 'NONE'
       );
-      
+
       // Load payment history only for orders that need it
       const historyMap = new Map();
       if (ordersNeedingHistory.length > 0) {
@@ -55,21 +55,21 @@ const B2COrdersListPage = () => {
             try {
               const historyResponse = await paymentService.getPaymentHistory(order.orderId);
               const history = historyResponse.data?.data || historyResponse.data || [];
-              
+
               // Calculate payment status from history
               const totalPaid = history
                 .filter(t => t.status === 'SUCCESS' || t.status === 'CONFIRMED')
                 .reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0);
-              
+
               const totalAmount = parseFloat(order.totalAmount) || 0;
               let calculatedPaymentStatus = 'UNPAID';
-              
+
               if (totalPaid >= totalAmount && totalAmount > 0) {
                 calculatedPaymentStatus = 'PAID';
               } else if (totalPaid > 0) {
                 calculatedPaymentStatus = 'PARTIALLY_PAID';
               }
-              
+
               historyMap.set(order.orderId, calculatedPaymentStatus);
             } catch (error) {
               console.error(`Error loading payment history for order ${order.orderId}:`, error);
@@ -78,20 +78,20 @@ const B2COrdersListPage = () => {
           })
         );
       }
-      
+
       // Merge backend status with calculated status
       const ordersWithStatus = ordersWithPaymentStatus.map(order => {
         // Use backend status if available and not NONE, otherwise use calculated status
         const paymentStatus = order.paymentStatus && order.paymentStatus !== 'NONE'
           ? order.paymentStatus
           : (historyMap.get(order.orderId) || 'UNPAID');
-        
+
         return {
           ...order,
           paymentStatus
         };
       });
-      
+
       // Filter by payment status if needed
       let filteredOrders = ordersWithStatus;
       if (filters.paymentStatus) {
@@ -100,7 +100,7 @@ const B2COrdersListPage = () => {
           return paymentStatus === filters.paymentStatus;
         });
       }
-      
+
       setOrders(filteredOrders);
     } catch (error) {
       console.error('Error loading B2C orders:', error);
@@ -112,11 +112,13 @@ const B2COrdersListPage = () => {
 
 
   const handleViewOrder = (orderId) => {
-    navigate(`/dealer/staff/payments/b2c-orders/${orderId}`);
+    const prefix = location.pathname.includes('/manager/') ? '/dealer/manager' : '/dealer/staff';
+    navigate(`${prefix}/payments/b2c-orders/${orderId}`);
   };
 
   const handlePayOrder = (orderId) => {
-    navigate(`/dealer/staff/payments/b2c-orders/${orderId}/pay`);
+    const prefix = location.pathname.includes('/manager/') ? '/dealer/manager' : '/dealer/staff';
+    navigate(`${prefix}/payments/b2c-orders/${orderId}/pay`);
   };
 
   const formatCurrency = (amount) => {
@@ -222,7 +224,7 @@ const B2COrdersListPage = () => {
                   if (paymentStatus === 'NONE') {
                     paymentStatus = 'UNPAID';
                   }
-                  
+
                   return (
                     <tr key={order.orderId} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap">

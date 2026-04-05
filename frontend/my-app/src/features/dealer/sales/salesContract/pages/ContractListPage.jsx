@@ -1,20 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { PageContainer } from '@ant-design/pro-components';
-import { 
-  Button, 
-  Space, 
-  Alert, 
-  message, 
+import {
+  Button,
+  Space,
+  Alert,
+  message,
   Modal,
   Row,
   Col
 } from 'antd';
-import { 
-  PlusOutlined, 
+import {
+  PlusOutlined,
   FileExcelOutlined,
   ReloadOutlined
 } from '@ant-design/icons';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useSalesContracts } from '../hooks/useSalesContracts';
 import ContractFilters from '../components/ContractFilters';
 import ContractList from '../components/ContractList';
@@ -23,9 +23,12 @@ import ContractSignModal from '../components/ContractSignModal';
 
 const ContractListPage = () => {
   const navigate = useNavigate();
-  const { 
-    contracts, 
-    loading, 
+  const location = useLocation();
+  const isAdmin = location.pathname.includes('/admin/');
+  const prefix = isAdmin ? '/evm/admin/dealers' : '/dealer';
+  const {
+    contracts,
+    loading,
     error,
     fetchAllContracts,
     searchContracts,
@@ -106,11 +109,11 @@ const ContractListPage = () => {
   };
 
   const handleView = (contract) => {
-    navigate(`/dealer/contracts/${contract.contractId}`);
+    navigate(`${prefix}/contracts/${contract.contractId}`);
   };
 
   const handleEdit = (contract) => {
-    navigate(`/dealer/contracts/${contract.contractId}/edit`);
+    navigate(`${prefix}/contracts/${contract.contractId}/edit`);
   };
 
   return (
@@ -119,32 +122,32 @@ const ContractListPage = () => {
         title: 'Quản lý hợp đồng bán hàng',
         breadcrumb: {
           items: [
-            { title: 'Bán hàng' },
+            { title: isAdmin ? 'Đại Lý' : 'Bán hàng' },
             { title: 'Hợp đồng' },
           ],
         },
       }}
       extra={[
-        <Button 
-          key="refresh" 
+        <Button
+          key="refresh"
           icon={<ReloadOutlined />}
           onClick={fetchAllContracts}
           loading={loading}
         >
           Làm mới
         </Button>,
-        <Button 
-          key="export" 
+        <Button
+          key="export"
           icon={<FileExcelOutlined />}
           onClick={handleExport}
         >
           Xuất Excel
         </Button>,
-        <Button 
-          key="create" 
-          type="primary" 
+        <Button
+          key="create"
+          type="primary"
           icon={<PlusOutlined />}
-          onClick={() => navigate('/dealer/contracts/create')}
+          onClick={() => navigate(`${prefix}/contracts/create`)}
         >
           Tạo hợp đồng
         </Button>,
@@ -173,7 +176,7 @@ const ContractListPage = () => {
       )}
 
       {/* Filters */}
-      <ContractFilters 
+      <ContractFilters
         onSearch={handleSearch}
         onReset={handleReset}
         onExport={handleExport}
@@ -181,13 +184,13 @@ const ContractListPage = () => {
       />
 
       {/* Contract List */}
-      <div style={{ 
-        background: '#fff', 
+      <div style={{
+        background: '#fff',
         borderRadius: '12px',
         boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
         overflow: 'hidden'
       }}>
-        <ContractList 
+        <ContractList
           contracts={contracts}
           loading={loading}
           onDelete={handleDelete}

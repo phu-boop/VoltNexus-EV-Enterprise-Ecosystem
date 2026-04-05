@@ -1,7 +1,7 @@
 // src/pages/contract/ContractCreatePage.jsx
 import React, { useMemo } from 'react';
 import { PageContainer } from '@ant-design/pro-components';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useSalesContracts } from '../hooks/useSalesContracts';
 import { useSalesOrders } from '../../salesOrder/hooks/useSalesOrders';
 import ContractForm from '../components/ContractForm';
@@ -10,6 +10,7 @@ import { Spin } from 'antd';
 const ContractCreatePage = () => {
   const { orderId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { createContract, loading: contractLoading } = useSalesContracts();
   const { orders, loading: ordersLoading } = useSalesOrders();
 
@@ -46,32 +47,35 @@ const ContractCreatePage = () => {
       header={{
         title: "Tạo hợp đồng bán hàng",
         breadcrumb: {
-          render: () => (
-            <div className="flex items-center gap-2 text-sm">
-              <span
-                className="cursor-pointer text-blue-600 hover:underline"
-                onClick={() => navigate("/dealer/staff")}
-              >
-                Bán hàng
-              </span>
-              <span>/</span>
-              <span
-                className="cursor-pointer text-blue-600 hover:underline"
-                onClick={() => navigate("/dealer/staff/orders")}
-              >
-                Đơn hàng
-              </span>
-              <span>/</span>
-              <span
-                className="cursor-pointer text-blue-600 hover:underline"
-                onClick={() => navigate(`/dealer/staff/orders/${orderId}`)}
-              >
-                Đơn hàng #{orderId}
-              </span>
-              <span>/</span>
-              <span className="text-gray-500">Tạo hợp đồng</span>
-            </div>
-          ),
+          render: () => {
+            const prefix = location.pathname.includes('/manager/') ? '/dealer/manager' : '/dealer/staff';
+            return (
+              <div className="flex items-center gap-2 text-sm">
+                <span
+                  className="cursor-pointer text-blue-600 hover:underline"
+                  onClick={() => navigate(prefix)}
+                >
+                  Bán hàng
+                </span>
+                <span>/</span>
+                <span
+                  className="cursor-pointer text-blue-600 hover:underline"
+                  onClick={() => navigate(`${prefix}/orders`)}
+                >
+                  Đơn hàng
+                </span>
+                <span>/</span>
+                <span
+                  className="cursor-pointer text-blue-600 hover:underline"
+                  onClick={() => navigate(`${prefix}/orders/${orderId}`)}
+                >
+                  Đơn hàng #{orderId}
+                </span>
+                <span>/</span>
+                <span className="text-gray-500">Tạo hợp đồng</span>
+              </div>
+            );
+          },
           items: [], // để trống items khi custom render
         },
       }}

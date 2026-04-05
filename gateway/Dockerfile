@@ -35,7 +35,7 @@ FROM eclipse-temurin:21-jdk-alpine
 WORKDIR /app/gateway
 
 # Copy JAR from builder stage
-COPY --from=gateway-builder /app/gateway/target/gateway-0.0.1-SNAPSHOT.jar app.jar
+COPY --from=gateway-builder /app/gateway/target/gateway-1.0.0.jar app.jar
 
 # Expose gateway port
 EXPOSE 8080

@@ -1,55 +1,63 @@
 // Dealer Invoice List Component
 import React from 'react';
 import DealerInvoiceCard from './DealerInvoiceCard';
+import { FiInbox, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 
 const DealerInvoiceList = ({ invoices, loading, filters, pagination, onFilterChange, onViewInvoice, onPayInvoice, onRefresh }) => {
   if (loading && invoices.length === 0) {
     return (
-      <div className="flex justify-center items-center py-12">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <div className="flex flex-col justify-center items-center py-20 bg-white rounded-[2rem] border border-slate-100 shadow-sm">
+        <div className="w-12 h-12 border-4 border-blue-600/20 border-t-blue-600 rounded-full animate-spin mb-4" />
+        <p className="text-slate-500 font-bold animate-pulse tracking-widest uppercase text-[10px]">Đang truy xuất hồ sơ...</p>
       </div>
     );
   }
 
   if (!invoices || invoices.length === 0) {
     return (
-      <div className="text-center py-12">
-        <p className="text-gray-500 text-lg">Chưa có hóa đơn nào</p>
+      <div className="bg-white rounded-[2.5rem] border border-dashed border-slate-200 p-16 text-center animate-in zoom-in-95 duration-500">
+        <div className="text-slate-100 text-6xl mb-6 flex justify-center"><FiInbox /></div>
+        <h3 className="text-xl font-black text-slate-900 tracking-tight">Hồ sơ trống</h3>
+        <p className="text-slate-400 font-medium mt-1.5 max-w-xs mx-auto">Đại lý này hiện chưa có phát sinh giao dịch nào được ghi nhận.</p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-4">
-      {invoices.map((invoice) => (
-        <DealerInvoiceCard
-          key={invoice.dealerInvoiceId}
-          invoice={invoice}
-          onView={() => onViewInvoice(invoice.dealerInvoiceId)}
-          onPay={onPayInvoice}
-        />
-      ))}
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 gap-6">
+        {invoices.map((invoice) => (
+          <DealerInvoiceCard
+            key={invoice.dealerInvoiceId}
+            invoice={invoice}
+            onView={() => onViewInvoice(invoice.dealerInvoiceId)}
+            onPay={onPayInvoice}
+          />
+        ))}
+      </div>
 
-      {/* Pagination */}
+      {/* Modern Pagination */}
       {pagination && pagination.totalPages > 1 && (
-        <div className="flex justify-center items-center gap-4 mt-6">
-          <button
-            onClick={() => onFilterChange(prev => ({ ...prev, page: prev.page - 1 }))}
-            disabled={pagination.currentPage === 0}
-            className="px-4 py-2 border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
-          >
-            Trước
-          </button>
-          <span className="text-gray-600">
-            Trang {pagination.currentPage + 1} / {pagination.totalPages}
-          </span>
-          <button
-            onClick={() => onFilterChange(prev => ({ ...prev, page: prev.page + 1 }))}
-            disabled={pagination.currentPage >= pagination.totalPages - 1}
-            className="px-4 py-2 border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
-          >
-            Sau
-          </button>
+        <div className="px-8 py-6 bg-white rounded-3xl border border-slate-100 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4 mt-8">
+          <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">
+            Trang <span className="text-blue-600 font-black">{pagination.currentPage + 1}</span> / {pagination.totalPages}
+          </p>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => onFilterChange(prev => ({ ...prev, page: prev.page - 1 }))}
+              disabled={pagination.currentPage === 0}
+              className="p-2.5 bg-white border border-slate-200 rounded-xl text-slate-400 hover:text-blue-600 disabled:opacity-30 transition-all shadow-sm active:scale-90"
+            >
+              <FiChevronLeft size={20} />
+            </button>
+            <button
+              onClick={() => onFilterChange(prev => ({ ...prev, page: prev.page + 1 }))}
+              disabled={pagination.currentPage >= pagination.totalPages - 1}
+              className="p-2.5 bg-white border border-slate-200 rounded-xl text-slate-400 hover:text-blue-600 disabled:opacity-30 transition-all shadow-sm active:scale-90"
+            >
+              <FiChevronRight size={20} />
+            </button>
+          </div>
         </div>
       )}
     </div>

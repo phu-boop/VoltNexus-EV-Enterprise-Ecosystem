@@ -66,4 +66,14 @@ public class VehicleVariantSpecification {
         return (root, query, cb) -> cb.lessThanOrEqualTo(root.get("price"), maxPrice);
     }
 
+    /**
+     * Specification để lọc theo Model ID.
+     */
+    public static Specification<VehicleVariant> hasModelId(Long modelId) {
+        if (modelId == null) {
+            return null;
+        }
+        return (root, query, cb) -> cb.equal(root.get("vehicleModel").get("modelId"), modelId);
+    }
+
 }

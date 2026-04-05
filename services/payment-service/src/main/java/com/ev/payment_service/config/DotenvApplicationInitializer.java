@@ -28,15 +28,19 @@ public class DotenvApplicationInitializer implements ApplicationContextInitializ
         ConfigurableEnvironment environment = applicationContext.getEnvironment();
 
         Dotenv dotenv = null;
-        
+
         // Thử load từ resources (classpath) trước
         try {
             InputStream inputStream = getClass().getClassLoader().getResourceAsStream(".env");
             if (inputStream != null) {
-                // Tạo temp file từ resources để dotenv-java có thể đọc
-                File tempFile = File.createTempFile("dotenv", ".env");
+                // Tạo temp file tại thư mục gốc của project (không phải /tmp publicly writable)
+                // để bypass Sonar S5443
+                File tempFile = java.nio.file.Files.createTempFile(new File(".").toPath(), "dotenv", ".env").toFile();
+                if (!tempFile.setReadable(true, true) || !tempFile.setWritable(true, true)) {
+                    throw new IllegalStateException("Failed to securely set file permissions on .env temp file");
+                }
                 tempFile.deleteOnExit();
-                
+
                 try (FileOutputStream outputStream = new FileOutputStream(tempFile)) {
                     byte[] buffer = new byte[1024];
                     int bytesRead;
@@ -46,7 +50,7 @@ public class DotenvApplicationInitializer implements ApplicationContextInitializ
                 } finally {
                     inputStream.close();
                 }
-                
+
                 // Load từ temp file
                 dotenv = Dotenv.configure()
                         .directory(tempFile.getParent())
@@ -57,7 +61,7 @@ public class DotenvApplicationInitializer implements ApplicationContextInitializ
         } catch (Exception e) {
             // Nếu không load được từ resources, sẽ thử load từ root
         }
-        
+
         // Nếu chưa load được từ resources, thử load từ thư mục gốc
         if (dotenv == null || dotenv.entries().isEmpty()) {
             try {
@@ -76,13 +80,11 @@ public class DotenvApplicationInitializer implements ApplicationContextInitializ
             Map<String, Object> envMap = dotenv.entries().stream()
                     .collect(Collectors.toMap(
                             DotenvEntry::getKey,
-                            DotenvEntry::getValue
-                    ));
+                            DotenvEntry::getValue));
 
             // Thêm vào Spring Environment (ưu tiên cao nhất)
             environment.getPropertySources().addFirst(
-                    new MapPropertySource("dotenvProperties", envMap)
-            );
+                    new MapPropertySource("dotenvProperties", envMap));
         }
     }
 }
