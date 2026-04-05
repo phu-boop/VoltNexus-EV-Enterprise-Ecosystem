@@ -32,10 +32,11 @@ public interface CustomerRepository extends JpaRepository<Customer, Long> {
 
     boolean existsByPhone(String phone);
 
-    @Query("SELECT c FROM Customer c WHERE LOWER(c.firstName) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
+    @Query("SELECT c FROM Customer c WHERE (c.preferredDealerId = :dealerId OR :dealerId IS NULL) AND (" +
+           "LOWER(c.firstName) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
            "OR LOWER(c.lastName) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
            "OR LOWER(c.email) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
            "OR LOWER(c.phone) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
-           "OR LOWER(c.address) LIKE LOWER(CONCAT('%', :keyword, '%'))")
-    List<Customer> searchCustomers(@Param("keyword") String keyword);
+           "OR LOWER(c.address) LIKE LOWER(CONCAT('%', :keyword, '%')))")
+    List<Customer> searchCustomersByDealer(@Param("keyword") String keyword, @Param("dealerId") Long dealerId);
 }

@@ -79,14 +79,15 @@ public class UserService {
     }
 
     public List<UserRespond> getAllUserDealerManage() {
-        return userRepository.findAll().stream().filter(user -> user.getRoleToString().contains("DEALER_MANAGER"))
-                .map(userMapper::usertoUserRespond).collect(Collectors.toList());
+        return userRepository.findByRoleName(RoleName.DEALER_MANAGER.getRoleName())
+                .stream()
+                .map(userMapper::usertoUserRespond)
+                .collect(Collectors.toList());
     }
 
     public List<UserRespond> getAllUserStaffDealer(UUID dealerId) {
-        return userRepository.findAll()
+        return userRepository.findByRoleName(RoleName.DEALER_STAFF.getRoleName())
                 .stream()
-                .filter(user -> user.getRoleToString().contains("DEALER_STAFF"))
                 .filter(user -> user.getDealerStaffProfile() != null)
                 .filter(user -> dealerId == null ||
                         (user.getDealerStaffProfile().getDealerId() != null &&
@@ -419,10 +420,18 @@ public class UserService {
         return userMapper.usertoUserRespond(user);
     }
 
-    //sửa lại update user
     public UserRespond updateUser(UUID id, UserRequest userRequest) {
         User targetUser = userRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+
+        org.springframework.security.core.Authentication authentication = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        boolean isAdmin = authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().contains("ADMIN"));
+        
+        if (!isAdmin && !authentication.getName().equals(targetUser.getEmail())) {
+            throw new AppException(ErrorCode.USER_NOT_FOUND);
+        }
+
         if ((targetUser.getEmail() != null) && !targetUser.getEmail().equals(userRequest.getEmail())
                 && userRepository.existsByEmail(userRequest.getEmail())) {
             throw new AppException(ErrorCode.EMAIL_ALREADY_EXISTS);
@@ -439,6 +448,15 @@ public class UserService {
     public void deleteUser(UUID id) {
         User targetUser = userRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+
+        org.springframework.security.core.Authentication authentication = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        boolean isAdmin = authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().contains("ADMIN"));
+        
+        if (!isAdmin && !authentication.getName().equals(targetUser.getEmail())) {
+            throw new AppException(ErrorCode.USER_NOT_FOUND);
+        }
+
         userRepository.delete(targetUser);
     }
 

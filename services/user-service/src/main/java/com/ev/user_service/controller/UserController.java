@@ -11,6 +11,7 @@ import java.util.*;
 
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -152,7 +153,7 @@ public class UserController {
         return ResponseEntity.ok(ApiRespond.success("Update successfully", userService.updateUserDealerStaff(request)));
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'DEALER_STAFF', 'DEALER_MANAGER', 'EVM_STAFF')")
+    @PreAuthorize("@userSecurity.isOwnerOrAdmin(authentication, #id)")
     @PutMapping("/{id}")
     public ResponseEntity<ApiRespond<UserRespond>> updateUser(
             @PathVariable UUID id,
@@ -161,7 +162,7 @@ public class UserController {
                 ApiRespond.success("Update User Successfully", userService.updateUser(id, userRequest)));
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'DEALER_STAFF', 'DEALER_MANAGER', 'EVM_STAFF')")
+    @PreAuthorize("@userSecurity.isOwnerOrAdmin(authentication, #id)")
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiRespond<Void>> deleteUser(@PathVariable UUID id) {
         userService.deleteUser(id);
