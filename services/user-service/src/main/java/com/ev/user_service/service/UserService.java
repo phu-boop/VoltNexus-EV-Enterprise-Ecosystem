@@ -25,9 +25,7 @@ import java.util.*;
 import java.util.UUID;
 import java.util.stream.Collectors;
 //
-import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
+    // Security imports removed
 
 @Service
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
@@ -71,23 +69,25 @@ public class UserService {
         this.evmStaffProfileRepository = evmStaffProfileRepository;
     }
 
-    public List<UserRespond> getAllUser() {
-        return userRepository.findAll()
-                .stream()
-                .map(
-                        userMapper::usertoUserRespond)
-                .collect(Collectors.toList());
+    public Page<UserRespond> getAllUser(int page, int size, String sortField, String sortOrder) {
+        Sort sort = Sort.by(
+                sortOrder.equalsIgnoreCase("asc") ? Sort.Direction.ASC : Sort.Direction.DESC,
+                sortField);
+        Pageable pageable = PageRequest.of(page - 1, size, sort);
+        return userRepository.findAll(pageable)
+                .map(userMapper::usertoUserRespond);
     }
 
     public List<UserRespond> getAllUserDealerManage() {
-        return userRepository.findAll().stream().filter(user -> user.getRoleToString().contains("DEALER_MANAGER"))
-                .map(userMapper::usertoUserRespond).collect(Collectors.toList());
+        return userRepository.findByRoleName(RoleName.DEALER_MANAGER.getRoleName())
+                .stream()
+                .map(userMapper::usertoUserRespond)
+                .collect(Collectors.toList());
     }
 
     public List<UserRespond> getAllUserStaffDealer(UUID dealerId) {
-        return userRepository.findAll()
+        return userRepository.findByRoleName(RoleName.DEALER_STAFF.getRoleName())
                 .stream()
-                .filter(user -> user.getRoleToString().contains("DEALER_STAFF"))
                 .filter(user -> user.getDealerStaffProfile() != null)
                 .filter(user -> dealerId == null ||
                         (user.getDealerStaffProfile().getDealerId() != null &&
@@ -420,22 +420,17 @@ public class UserService {
         return userMapper.usertoUserRespond(user);
     }
 
-    //sửa lại update user
     public UserRespond updateUser(UUID id, UserRequest userRequest) {
-        // --- BẮT ĐẦU FIX LỖI BẢO MẬT IDOR ---
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String currentUsername = authentication.getName(); // Lấy email của người đang thao tác
-        boolean isAdmin = authentication.getAuthorities().stream()
-                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
-
         User targetUser = userRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
 
-        // Nếu KHÔNG PHẢI Admin VÀ email người thao tác KHÁC email của tài khoản bị sửa -> CHẶN
-        if (!isAdmin && !currentUsername.equals(targetUser.getEmail())) {
-            throw new AccessDeniedException("Bạn không có quyền cập nhật tài khoản của người khác");
+        org.springframework.security.core.Authentication authentication = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        boolean isAdmin = authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().contains("ADMIN"));
+        
+        if (!isAdmin && !authentication.getName().equals(targetUser.getEmail())) {
+            throw new AppException(ErrorCode.USER_NOT_FOUND);
         }
-        // --- KẾT THÚC FIX LỖI BẢO MẬT ---
 
         if ((targetUser.getEmail() != null) && !targetUser.getEmail().equals(userRequest.getEmail())
                 && userRepository.existsByEmail(userRequest.getEmail())) {
@@ -450,21 +445,17 @@ public class UserService {
         userRepository.save(targetUser);
         return userMapper.usertoUserRespond(targetUser);
     }
-
     public void deleteUser(UUID id) {
-        // --- BẮT ĐẦU FIX LỖI BẢO MẬT IDOR ---
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String currentUsername = authentication.getName();
-        boolean isAdmin = authentication.getAuthorities().stream()
-                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
-
         User targetUser = userRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
 
-        if (!isAdmin && !currentUsername.equals(targetUser.getEmail())) {
-            throw new AccessDeniedException("Bạn không có quyền xóa tài khoản của người khác");
+        org.springframework.security.core.Authentication authentication = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        boolean isAdmin = authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().contains("ADMIN"));
+        
+        if (!isAdmin && !authentication.getName().equals(targetUser.getEmail())) {
+            throw new AppException(ErrorCode.USER_NOT_FOUND);
         }
-        // --- KẾT THÚC FIX LỖI BẢO MẬT ---
 
         userRepository.delete(targetUser);
     }
