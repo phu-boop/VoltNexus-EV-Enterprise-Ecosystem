@@ -556,7 +556,8 @@ public class SalesOrderServiceB2BImpl implements SalesOrderServiceB2B {
                 eventPayload);
 
         log.info("Đại lý (email: {}) đã báo cáo sự cố cho Đơn hàng ID {} với lý do: {}",
-                email, orderId, request.getReason());
+                email.replaceAll("[\n\r]", "_"), orderId,
+                request.getReason() != null ? request.getReason().replaceAll("[\n\r]", "_") : "null");
     }
 
     @Override

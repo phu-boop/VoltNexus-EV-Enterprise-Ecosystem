@@ -6,8 +6,10 @@
 
     <groupId>com.ev</groupId>
     <artifactId>voltnexus-parent</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>1.0.0</version>
     <packaging>pom</packaging>
+
+
 
     <modules>
         <module>common-lib</module>
@@ -21,6 +23,7 @@
         <module>services/sales-service</module>
         <module>services/user-service</module>
         <module>services/vehicle-service</module>
+
     </modules>
 
     <properties>
@@ -30,10 +33,10 @@
         <sonar.projectKey>phu-boop_VoltNexus-EV-Enterprise-Ecosystem</sonar.projectKey>
         <sonar.organization>phu-boop</sonar.organization>
         <sonar.host.url>https://sonarcloud.io</sonar.host.url>
-        <!-- SonarCloud: đường dẫn file JaCoCo XML report cho từng module -->
-        <sonar.coverage.jacoco.xmlReportPaths>
-            ${project.basedir}/target/site/jacoco/jacoco.xml
-        </sonar.coverage.jacoco.xmlReportPaths>
+        <!-- SonarCloud: đường dẫn file JaCoCo XML report cho từng module (tương đối) -->
+        <sonar.coverage.jacoco.xmlReportPaths>target/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
+        <sonar.tests>src/test/java</sonar.tests>
+        <sonar.java.binaries>target/classes</sonar.java.binaries>
     </properties>
 
     <build>
@@ -58,6 +61,11 @@
                             </goals>
                         </execution>
                     </executions>
+                </plugin>
+                <plugin>
+                    <groupId>org.sonarsource.scanner.maven</groupId>
+                    <artifactId>sonar-maven-plugin</artifactId>
+                    <version>4.0.0.4121</version>
                 </plugin>
             </plugins>
         </pluginManagement>

@@ -61,28 +61,34 @@ public class PaymentMethodController {
     @PreAuthorize("hasAnyRole('ADMIN', 'EVM_STAFF')") // << BẢO MẬT: Chỉ ADMIN
     public ResponseEntity<List<PaymentMethodResponse>> getAllPaymentMethods(
             @AuthenticationPrincipal UserPrincipal principal) {
-        
+
         log.info("[PaymentMethodController] ===== CONTROLLER CALLED ===== GET /methods");
-        
+
         // Debug logging
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        log.info("[PaymentMethodController] GET /methods - Authentication: {}", auth != null ? auth.getName() : "null");
-        
+        log.info("[PaymentMethodController] GET /methods - Authentication: {}",
+                auth != null ? auth.getName().replaceAll("[\n\r]", "_") : "null");
+
         if (auth != null) {
-            log.info("[PaymentMethodController] Principal: {}", auth.getPrincipal());
-            log.info("[PaymentMethodController] Authorities: {}", 
+            log.info("[PaymentMethodController] Principal: {}",
+                    auth.getPrincipal() != null ? auth.getPrincipal().toString().replaceAll("[\n\r]", "_") : "null");
+            log.info("[PaymentMethodController] Authorities: {}",
                     auth.getAuthorities().stream()
                             .map(GrantedAuthority::getAuthority)
+                            .map(r -> r.replaceAll("[\n\r]", "_"))
                             .collect(Collectors.toList()));
         }
-        
+
         if (principal != null) {
-            log.info("[PaymentMethodController] UserPrincipal - Email: {}, Role: {}, ProfileId: {}", 
-                    principal.getEmail(), principal.getRole(), principal.getProfileId());
+            log.info("[PaymentMethodController] UserPrincipal - Email: {}, Role: {}, ProfileId: {}",
+                    principal.getEmail().replaceAll("[\n\r]", "_"),
+                    principal.getRole().replaceAll("[\n\r]", "_"),
+                    principal.getProfileId() != null ? principal.getProfileId().toString().replaceAll("[\n\r]", "_")
+                            : "null");
         } else {
             log.warn("[PaymentMethodController] UserPrincipal is NULL!");
         }
-        
+
         return ResponseEntity.ok(paymentMethodService.getAllPaymentMethods());
     }
 

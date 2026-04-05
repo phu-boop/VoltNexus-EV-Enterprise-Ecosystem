@@ -13,7 +13,7 @@
 //     delete: (id) => apiConst.delete(`/users/${id}`),
 //     getProfile: () => apiConst.post(`/users/profile`, {id_user: sessionStorage.getItem("id_user")}),
 //     updateProfile: (profileData) => apiConst.put(`/users/profile`, profileData),
-    
+
 //     // New functions for enhanced management
 //     bulkUpdate: (userIds, updateData) => apiConst.put('/users/bulk-update', { userIds, updateData }),
 //     changeStatus: (userId, status) => apiConst.patch(`/users/${userId}/status`, { status }),
@@ -39,6 +39,9 @@ export const mngUserService = {
     getAllDealerManager: () => apiConst.get('/users/dealer-managers'),
     getAllDealerStaff: (params) => apiConst.get('/users/dealer-staffs', { params }),
 
+    // 🔹 NEW: Search & Page (đã fix backend)
+    search: (params) => apiConst.get('/users/search', { params }),
+
     getById: (id) => apiConst.get(`/users/${id}`),
 
     // ----- CREATE -----
@@ -50,7 +53,7 @@ export const mngUserService = {
     // ----- UPDATE -----
     update: (id, userData) => apiConst.put(`/users/${id}`, userData),
 
-     // 🔹 NEW: update riêng từng loại user — ❗ bỏ tham số id vì không dùng
+    // 🔹 NEW: update riêng từng loại user — ❗ bỏ tham số id vì không dùng
     updateEvmStaff: (userData) => apiConst.put(`/users/update/evmStaff`, userData, {
         headers: { 'Content-Type': 'application/json' }
     }),

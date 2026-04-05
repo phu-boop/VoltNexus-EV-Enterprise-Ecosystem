@@ -21,4 +21,6 @@ public interface StockAlertRepository extends JpaRepository<StockAlert, Long> {
      * Tìm CẢNH BÁO ĐẦU TIÊN (bất kỳ) có trạng thái "NEW" (đang hoạt động).
      */
     Optional<StockAlert> findFirstByVariantIdAndStatus(Long variantId, String status);
+
+    long countByStatus(String status);
 }

@@ -6,7 +6,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.oauth2.core.user.DefaultOAuth2User;
+// import org.springframework.security.oauth2.core.user.DefaultOAuth2User; // Removed unused
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
 import com.ev.user_service.dto.respond.LoginRespond;
@@ -17,7 +17,7 @@ import com.ev.user_service.enums.RoleName;
 import com.ev.user_service.enums.UserStatus;
 import com.ev.common_lib.exception.AppException;
 import com.ev.common_lib.exception.ErrorCode;
-import com.ev.common_lib.dto.respond.ApiRespond;
+// import com.ev.common_lib.dto.respond.ApiRespond; // Removed to fix compile/unused error
 import com.ev.user_service.mapper.UserMapper;
 import com.ev.user_service.repository.RoleRepository;
 import com.ev.user_service.repository.UserRepository;
@@ -62,7 +62,11 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
             HttpServletResponse response,
             Authentication authentication) throws IOException, ServletException {
         // Lấy thông tin user từ Google
-        var oauthUser = (DefaultOAuth2User) authentication.getPrincipal();
+        var principal = authentication.getPrincipal();
+        if (!(principal instanceof org.springframework.security.oauth2.core.user.OAuth2User oauthUser)) {
+            log.error("Authentication principal is not an OAuth2User: {}", principal.getClass().getName());
+            throw new ServletException("Invalid authentication principal");
+        }
 
         String email = oauthUser.getAttribute("email");
         String name = oauthUser.getAttribute("name");
@@ -125,13 +129,15 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
         // Set refresh token trong cookie HttpOnly
         Cookie cookie = new Cookie("refreshToken", refreshToken);
         cookie.setHttpOnly(true);
-        cookie.setSecure(false);
+        cookie.setSecure(true); // Important: Must be true in production (requires HTTPS)
         cookie.setPath("/");
         cookie.setMaxAge(30 * 24 * 60 * 60);
         response.addCookie(cookie);
 
-        LoginRespond loginRespond = new LoginRespond(userRespond, accessToken);
-        ApiRespond<Object> apiResponse = ApiRespond.success("Login with Google success", loginRespond);
+        // LoginRespond loginRespond = new LoginRespond(userRespond, accessToken); //
+        // Removed unused
+        // ApiRespond<Object> apiResponse = ApiRespond.success("Login with Google
+        // success", loginRespond); // Removed unused/error-prone line
 
         // Lấy redirect_uri từ state parameter (format:
         // originalState|base64(redirect_uri))
@@ -190,3 +196,10 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
         return false;
     }
 }
+
+
+
+
+
+
+

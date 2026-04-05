@@ -163,5 +163,48 @@ class VehicleReviewServiceTest {
             assertThat(review.getHelpfulCount()).isEqualTo(6);
             verify(reviewRepository).save(review);
         }
+
+        @Test
+        @DisplayName("Lấy reviews đã duyệt theo model")
+        void getApprovedReviewsByModel_success() {
+            when(reviewRepository.findByModelIdAndStatusOrderByCreatedAtDesc(101L, "APPROVED"))
+                    .thenReturn(List.of(review));
+
+            var result = vehicleReviewService.getApprovedReviewsByModel(101L);
+
+            assertThat(result).hasSize(1);
+        }
+
+        @Test
+        @DisplayName("Lấy reviews theo customer")
+        void getCustomerReviews_success() {
+            when(reviewRepository.findByCustomerCustomerIdOrderByCreatedAtDesc(1L))
+                    .thenReturn(List.of(review));
+
+            var result = vehicleReviewService.getCustomerReviews(1L);
+
+            assertThat(result).hasSize(1);
+        }
+
+        @Test
+        @DisplayName("Lấy tất cả reviews")
+        void getAllReviews_success() {
+            when(reviewRepository.findAll()).thenReturn(List.of(review));
+
+            var result = vehicleReviewService.getAllReviews();
+
+            assertThat(result).hasSize(1);
+        }
+
+        @Test
+        @DisplayName("Lấy reviews theo status")
+        void getReviewsByStatus_success() {
+            when(reviewRepository.findByStatusOrderByCreatedAtAsc("PENDING"))
+                    .thenReturn(List.of(review));
+
+            var result = vehicleReviewService.getReviewsByStatus("PENDING");
+
+            assertThat(result).hasSize(1);
+        }
     }
 }

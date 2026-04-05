@@ -50,11 +50,13 @@ jobs:
           # Running unit tests for all services and generating coverage reports
           mvn test -DskipITs
 
-      # - name: "CI: Frontend Test"
-      #   run: |
-      #     echo "Running Frontend Tests..."
-      #     # Placeholder for frontend tests if package scripts are missing
-      #     # cd frontend/customer-app && npm install && npm test -- --watchAll=false || true
+      - name: "CI: Frontend Test"
+        run: |
+          echo "Running Frontend Tests..."
+          # Run tests for customer-app
+          cd frontend/customer-app && npm install && npm test -- --watchAll=false
+          # Run tests for my-app
+          cd ../my-app && npm install && npm test -- --watchAll=false
 
       - name: "CI: Static Analysis & Quality Gate"
         env:
@@ -197,7 +199,7 @@ jobs:
           # Create Firebase secret
           mkdir -p services/user-service/src/main/resources
           echo "$FIREBASE_SERVICE_ACCOUNT_JSON" > services/user-service/src/main/resources/firebase-service-account.json
-
+          
           # Apply Base K8s
           kubectl apply -f k8s/namespace.yaml || true
           kubectl apply -f k8s/configmap.yaml || true
@@ -323,11 +325,26 @@ jobs:
           echo "Approved by: ${{ github.actor }}"
 
       - name: "Deploy Production"
-        run: |
-          echo "Deploying to Production Kubernetes Cluster..."
-          # Final production configuration mapping and deployment
-          # kubectl config use-context prod-cluster
-          # kubectl apply -Rf k8s/
+        uses: appleboy/ssh-action@v1.0.3
+        env:
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          envs: DOCKER_USERNAME,DOCKER_PASSWORD
+          script: |
+            echo "--- Kết nối máy chủ EC2 thành công ---"
+            echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+            cd /home/ubuntu
+            docker compose down
+            echo "Kéo image cập nhật mới nhất từ Docker Hub..."
+            docker compose pull
+            echo "Tái khởi động kiến trúc microservices mới..."
+            docker compose up -d
+            echo "Clear cache rác Docker..."
+            docker image prune -af
 
       - name: "Monitoring"
         run: |

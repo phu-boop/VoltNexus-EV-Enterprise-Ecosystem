@@ -6,6 +6,7 @@ import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
+import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -16,10 +17,11 @@ import java.util.stream.Collectors;
 public class RagChatService {
 
     private final ChatClient chatClient;
+
+    @Nullable
     private final VectorStore vectorStore;
 
-    // Using compatible constructor for consistency with GeminiAIService
-    public RagChatService(ChatModel chatModel, VectorStore vectorStore) {
+    public RagChatService(ChatModel chatModel, @Nullable VectorStore vectorStore) {
         this.chatClient = ChatClient.create(chatModel);
         this.vectorStore = vectorStore;
     }
@@ -28,22 +30,22 @@ public class RagChatService {
         log.info("Processing RAG chat query: {}", userQuery);
 
         // Step 1: Retrieve context from Vector Store
-        List<Document> similarDocuments = vectorStore.similaritySearch(
-                SearchRequest.builder()
-                        .query(userQuery)
-                        .topK(30)
-                        .build()
-        );
-
-        String context = similarDocuments.stream()
-                .map(Document::getText)
-                .collect(Collectors.joining("\n\n"));
-        
-        log.debug("Retrieved Context: {}", context);
-
-        if (context.isEmpty()) {
-            context = "No internal data found.";
+        String context = "No internal data found.";
+        if (vectorStore != null) {
+            List<Document> similarDocuments = vectorStore.similaritySearch(
+                    SearchRequest.builder()
+                            .query(userQuery)
+                            .topK(30)
+                            .build()
+            );
+            if (!similarDocuments.isEmpty()) {
+                context = similarDocuments.stream()
+                        .map(Document::getText)
+                        .collect(Collectors.joining("\n\n"));
+            }
         }
+
+        log.debug("Retrieved Context: {}", context);
 
         // Step 2: Build System Prompt
         String systemPrompt = """

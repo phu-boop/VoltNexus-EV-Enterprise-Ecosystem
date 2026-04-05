@@ -17,14 +17,26 @@ export const useCustomerPromotions = () => {
     try {
       // Load promotions, dealers, và models song song
       const [promotionsRes, dealersRes, modelsRes] = await Promise.all([
-        customerPromotionService.getAllPromotions(),
+        customerPromotionService.getDealerActivePromotions(),
         customerPromotionService.getAllDealers(),
         customerPromotionService.getAllModels(),
       ]);
 
-      setPromotions(promotionsRes.data);
-      setDealers(dealersRes.data.data);
-      setModels(modelsRes.data.data);
+      // Load promotions
+      const promoData = promotionsRes.data;
+      const promoList = Array.isArray(promoData) ? promoData : (promoData?.data || promoData?.content || []);
+      setPromotions(promoList);
+
+      // Load dealers
+      const dealersData = dealersRes.data?.data || dealersRes.data || [];
+      const dealersList = Array.isArray(dealersData) ? dealersData : (dealersData?.content ?? []);
+      setDealers(dealersList);
+
+      // Load models
+      const modelsData = modelsRes.data?.data || modelsRes.data || [];
+      const modelsList = Array.isArray(modelsData) ? modelsData : (modelsData?.content ?? []);
+      setModels(modelsList);
+
       setLastUpdated(new Date());
     } catch (err) {
       const errorMessage =
@@ -52,12 +64,13 @@ export const useCustomerPromotions = () => {
 
   // Get dealer information by IDs
   const getDealersByIds = useCallback(
-    (dealerIdsJson) => {
-      if (
-        !dealerIdsJson ||
-        dealerIdsJson === "null" ||
-        dealerIdsJson === "[]"
-      ) {
+    (dealerIds) => {
+      if (!dealerIds) return [];
+
+      try {
+        const ids = Array.isArray(dealerIds) ? dealerIds : JSON.parse(dealerIds);
+        return dealers.filter((dealer) => ids.includes(dealer.dealerId));
+      } catch (error) {
         return [];
       }
       try {
@@ -73,8 +86,12 @@ export const useCustomerPromotions = () => {
 
   // Get model information by IDs
   const getModelsByIds = useCallback(
-    (modelIdsJson) => {
-      if (!modelIdsJson || modelIdsJson === "[]") {
+    (modelIds) => {
+      if (!modelIds) return [];
+      try {
+        const ids = Array.isArray(modelIds) ? modelIds : JSON.parse(modelIds);
+        return models.filter((model) => ids.includes(model.modelId));
+      } catch (error) {
         return [];
       }
       try {

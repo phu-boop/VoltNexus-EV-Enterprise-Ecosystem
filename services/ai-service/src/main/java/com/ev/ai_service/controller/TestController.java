@@ -14,7 +14,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
+import java.security.SecureRandom;
 import java.util.UUID;
 
 /**
@@ -28,7 +28,7 @@ public class TestController {
 
         private final SalesHistoryRepository salesHistoryRepository;
         private final InventorySnapshotRepository inventorySnapshotRepository;
-        private final Random random = new Random();
+        private final SecureRandom random = new SecureRandom();
 
         /**
          * Health check endpoint
@@ -233,7 +233,7 @@ public class TestController {
 
         @lombok.Data
         @lombok.Builder
-        private static class DataStatus {
+        static class DataStatus {
                 private long salesHistoryCount;
                 private long inventorySnapshotCount;
                 private boolean hasData;

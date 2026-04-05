@@ -16,10 +16,10 @@ public class DevSecurityConfig {
         // In môi trường dev, cho phép tất cả request đi qua
 
         http
-            .csrf(csrf -> csrf.disable())
-            .authorizeHttpRequests(auth -> auth
-                .anyRequest().permitAll()
-            );
+                .csrf(csrf -> csrf.disable())
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/api/vehicle/**").permitAll()
+                        .anyRequest().permitAll());
         return http.build();
     }
 }

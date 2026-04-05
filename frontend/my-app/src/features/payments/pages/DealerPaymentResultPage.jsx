@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useSearchParams, useNavigate, Link } from "react-router-dom";
+import { useSearchParams, useNavigate, useLocation, Link } from "react-router-dom";
 import {
   CheckCircleIcon,
   XCircleIcon,
@@ -12,6 +12,7 @@ const API_VNPAY_GATEWAY_URL = `${API_BASE_URL}/payments/api/v1/payments/gateway`
 const DealerPaymentResultPage = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const [paymentResult, setPaymentResult] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -100,7 +101,8 @@ const DealerPaymentResultPage = () => {
     paymentResult?.invoiceId ||
     extractInvoiceIdFromOrderInfo(searchParams.get("vnp_OrderInfo") || "") ||
     "";
-  const invoicesListPath = "/dealer/manager/payments/invoices";
+  const prefix = location.pathname.includes('/manager/') ? '/dealer/manager' : '/dealer/staff';
+  const invoicesListPath = `${prefix}/payments/invoices`;
   const invoiceDetailPath = invoiceId
     ? `${invoicesListPath}/${invoiceId}`
     : null;
@@ -118,9 +120,8 @@ const DealerPaymentResultPage = () => {
 
         <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
           <div
-            className={`p-8 text-center ${
-              isSuccess ? "bg-green-50" : "bg-red-50"
-            }`}
+            className={`p-8 text-center ${isSuccess ? "bg-green-50" : "bg-red-50"
+              }`}
           >
             <div className="flex justify-center mb-4">
               {isSuccess ? (
@@ -131,18 +132,16 @@ const DealerPaymentResultPage = () => {
             </div>
 
             <h1
-              className={`text-3xl font-bold mb-2 ${
-                isSuccess ? "text-green-800" : "text-red-800"
-              }`}
+              className={`text-3xl font-bold mb-2 ${isSuccess ? "text-green-800" : "text-red-800"
+                }`}
             >
               {isSuccess
                 ? "Thanh toán hóa đơn thành công"
                 : "Thanh toán hóa đơn thất bại"}
             </h1>
             <p
-              className={`text-lg ${
-                isSuccess ? "text-green-600" : "text-red-600"
-              }`}
+              className={`text-lg ${isSuccess ? "text-green-600" : "text-red-600"
+                }`}
             >
               {paymentResult?.message ||
                 (isSuccess

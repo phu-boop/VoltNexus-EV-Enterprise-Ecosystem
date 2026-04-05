@@ -1,5 +1,17 @@
 import React, { useState } from "react";
 import {
+  FiDownload,
+  FiSettings,
+  FiFileText,
+  FiDatabase,
+  FiArrowRight,
+  FiCheckCircle,
+  FiCalendar,
+  FiLayout,
+  FiActivity,
+  FiLoader
+} from "react-icons/fi";
+import {
   exportInventoryReport,
   updateCentralReorderLevel,
 } from "../services/inventoryService";
@@ -84,82 +96,156 @@ const InventoryReportsTab = () => {
   };
 
   return (
-    <div className="space-y-8">
-      {/* Form Xuất Báo Cáo */}
-      <div className="bg-white p-6 rounded-lg shadow">
-        <h3 className="text-xl font-bold mb-4">Xuất Báo Cáo Tồn Kho</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <input
-            type="date"
-            value={reportParams.startDate}
-            onChange={(e) =>
-              setReportParams({ ...reportParams, startDate: e.target.value })
-            }
-            className="p-2 border rounded-lg"
-          />
-          <input
-            type="date"
-            value={reportParams.endDate}
-            onChange={(e) =>
-              setReportParams({ ...reportParams, endDate: e.target.value })
-            }
-            className="p-2 border rounded-lg"
-          />
-          <select
-            value={reportParams.format}
-            onChange={(e) =>
-              setReportParams({ ...reportParams, format: e.target.value })
-            }
-            className="p-2 border rounded-lg"
-          >
-            <option value="xlsx">Excel (.xlsx)</option>
-            <option value="pdf">PDF (.pdf)</option>
-          </select>
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+      {/* Cột 1: Xuất Báo Cáo */}
+      <div className="flex flex-col h-full">
+        <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden flex-1 flex flex-col">
+          <div className="p-6 bg-slate-50/50 border-b border-slate-100">
+            <div className="flex items-center gap-3 mb-1">
+              <div className="p-2 bg-emerald-50 text-emerald-600 rounded-lg">
+                <FiFileText size={20} />
+              </div>
+              <h3 className="text-lg font-bold text-slate-900">Chiết Xuất Báo Cáo</h3>
+            </div>
+            <p className="text-sm text-slate-500">Kết xuất dữ liệu tồn kho định kỳ phục vụ kiểm kê.</p>
+          </div>
+
+          <div className="p-6 space-y-6 flex-1">
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Khoảng thời gian</label>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="relative">
+                    <FiCalendar className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
+                    <input
+                      type="date"
+                      value={reportParams.startDate}
+                      onChange={(e) => setReportParams({ ...reportParams, startDate: e.target.value })}
+                      className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all"
+                    />
+                  </div>
+                  <div className="relative">
+                    <FiCalendar className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
+                    <input
+                      type="date"
+                      value={reportParams.endDate}
+                      onChange={(e) => setReportParams({ ...reportParams, endDate: e.target.value })}
+                      className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Định dạng tệp tin</label>
+                <div className="flex gap-3">
+                  {['xlsx', 'pdf'].map(fmt => (
+                    <button
+                      key={fmt}
+                      onClick={() => setReportParams({ ...reportParams, format: fmt })}
+                      className={`flex-1 py-3 px-4 rounded-xl border-2 font-bold text-sm transition-all flex items-center justify-center gap-2 ${reportParams.format === fmt
+                        ? "border-emerald-600 bg-emerald-50 text-emerald-700"
+                        : "border-slate-100 bg-slate-50 text-slate-400 hover:border-slate-200 hover:bg-slate-100"
+                        }`}
+                    >
+                      <FiLayout size={16} />
+                      {fmt.toUpperCase()}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-emerald-50/50 p-4 rounded-xl border border-emerald-100">
+              <ul className="text-xs text-emerald-800 space-y-2">
+                <li className="flex items-center gap-2">
+                  <FiCheckCircle className="text-emerald-500 shrink-0" />
+                  Bao gồm chi tiết SKU, số VIN khả dụng
+                </li>
+                <li className="flex items-center gap-2">
+                  <FiCheckCircle className="text-emerald-500 shrink-0" />
+                  Thống kê xuất/nhập trong kỳ
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          <div className="p-6 pt-0 mt-auto">
+            <button
+              onClick={handleExport}
+              disabled={isExporting}
+              className="w-full py-4 bg-emerald-600 text-white rounded-xl font-bold text-sm hover:bg-emerald-700 shadow-lg shadow-emerald-200 transition-all flex items-center justify-center gap-2 active:scale-[0.98] disabled:bg-slate-300 disabled:shadow-none"
+            >
+              {isExporting ? <FiLoader className="animate-spin" /> : <FiDownload />}
+              {isExporting ? "Đang chuẩn bị file..." : "Xác nhận & Tải Báo Cáo"}
+            </button>
+          </div>
         </div>
-        <button
-          onClick={handleExport}
-          disabled={isExporting}
-          className="mt-4 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-400"
-        >
-          {isExporting ? "Đang xuất..." : "Xuất File"}
-        </button>
       </div>
-      {/* Form Cập nhật ngưỡng tồn kho */}
-      <div className="bg-white p-6 rounded-lg shadow">
-        <h3 className="text-xl font-bold mb-4">
-          Cài Đặt Ngưỡng Tồn Kho Trung Tâm
-        </h3>
-        <form onSubmit={handleUpdateReorder} className="flex items-end gap-4">
-          <input
-            type="number"
-            value={reorderParams.variantId}
-            onChange={(e) =>
-              setReorderParams({ ...reorderParams, variantId: e.target.value })
-            }
-            placeholder="ID Phiên bản (Variant ID)"
-            required
-            className="p-2 border rounded-lg grow"
-          />
-          <input
-            type="number"
-            value={reorderParams.reorderLevel}
-            onChange={(e) =>
-              setReorderParams({
-                ...reorderParams,
-                reorderLevel: e.target.value,
-              })
-            }
-            placeholder="Ngưỡng đặt lại"
-            required
-            className="p-2 border rounded-lg"
-          />
-          <button
-            type="submit"
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-          >
-            Cập Nhật
-          </button>
-        </form>
+
+      {/* Cột 2: Cài Đặt Ngưỡng */}
+      <div className="flex flex-col h-full text-slate-900">
+        <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden flex-1 flex flex-col">
+          <div className="p-6 bg-slate-50/50 border-b border-slate-100">
+            <div className="flex items-center gap-3 mb-1">
+              <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
+                <FiSettings size={20} />
+              </div>
+              <h3 className="text-lg font-bold text-slate-900">Quản Trị Ngưỡng Kho</h3>
+            </div>
+            <p className="text-sm text-slate-500">Thiết lập giới hạn an toàn cho từng phiên bản sản phẩm.</p>
+          </div>
+
+          <div className="p-6 space-y-6 flex-1">
+            <form onSubmit={handleUpdateReorder} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 font-black">ID Phiên bản (Variant ID)</label>
+                <div className="relative">
+                  <FiDatabase className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
+                  <input
+                    type="number"
+                    value={reorderParams.variantId}
+                    onChange={(e) => setReorderParams({ ...reorderParams, variantId: e.target.value })}
+                    placeholder="VD: 104"
+                    required
+                    className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 outline-none transition-all font-mono"
+                  />
+                </div>
+                <p className="text-[10px] text-slate-400 mt-1 italic">Bạn có thể tìm thấy ID này trong Tab Trạng Thái Kho.</p>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 font-black">Ngưỡng đặt lại (Reorder Level)</label>
+                <div className="relative">
+                  <FiActivity className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
+                  <input
+                    type="number"
+                    value={reorderParams.reorderLevel}
+                    onChange={(e) => setReorderParams({ ...reorderParams, reorderLevel: e.target.value })}
+                    placeholder="Số lượng tối thiểu"
+                    required
+                    className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 outline-none transition-all"
+                  />
+                </div>
+              </div>
+
+              <div className="p-4 bg-blue-50 rounded-xl border border-blue-100 flex items-start gap-3">
+                <FiActivity className="text-blue-500 mt-0.5 shrink-0" size={16} />
+                <p className="text-xs text-blue-700 leading-relaxed">
+                  Hệ thống sẽ tự động tạo cảnh báo đỏ khi số lượng <strong>khả dụng</strong> chạm ngưỡng này. Hãy cân nhắc tốc độ bán hàng tại đại lý.
+                </p>
+              </div>
+
+              <button
+                type="submit"
+                className="w-full py-4 mt-6 bg-slate-900 text-white rounded-xl font-bold text-sm hover:bg-slate-800 shadow-lg shadow-slate-200 transition-all flex items-center justify-center gap-2 active:scale-[0.98]"
+              >
+                Cập Nhật Ngưỡng Kho
+                <FiArrowRight />
+              </button>
+            </form>
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -5,10 +5,13 @@ import { MapPin } from 'lucide-react';
 export const AddressInfoSection = ({ formData, handleChange }) => {
     return (
         <div className="space-y-6">
-            <h3 className="text-lg font-semibold text-slate-800 border-b border-slate-200 pb-2">
+            <h3 className="text-lg font-bold text-slate-900 flex items-center">
+                <div className="p-2 bg-indigo-50 rounded-lg mr-3">
+                    <MapPin className="h-5 w-5 text-indigo-600" />
+                </div>
                 Thông tin địa chỉ
             </h3>
-            <div className="flex flex-col lg:flex-row gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <InputField
                     label="Địa chỉ"
                     name="address"

@@ -75,7 +75,7 @@ public class EmailConfirmationService {
             log.info("✅ Sent confirmation email to {} for appointment ID: {}",
                     customerEmail, appointment.getAppointmentId());
 
-        } catch (MessagingException e) {
+        } catch (Exception e) {
             log.error("❌ Failed to send confirmation email to {}", customerEmail, e);
             throw new RuntimeException("Failed to send confirmation email", e);
         }
@@ -101,7 +101,7 @@ public class EmailConfirmationService {
             log.info("✅ Sent first reminder email to {} for appointment ID: {}",
                     customerEmail, appointment.getAppointmentId());
 
-        } catch (MessagingException e) {
+        } catch (Exception e) {
             log.error("❌ Failed to send first reminder email to {}", customerEmail, e);
         }
     }
@@ -126,7 +126,7 @@ public class EmailConfirmationService {
             log.info("✅ Sent second reminder email to {} for appointment ID: {}",
                     customerEmail, appointment.getAppointmentId());
 
-        } catch (MessagingException e) {
+        } catch (Exception e) {
             log.error("❌ Failed to send second reminder email to {}", customerEmail, e);
         }
     }
@@ -151,7 +151,7 @@ public class EmailConfirmationService {
             log.info("✅ Sent expiration email to {} for appointment ID: {}",
                     customerEmail, appointment.getAppointmentId());
 
-        } catch (MessagingException e) {
+        } catch (Exception e) {
             log.error("❌ Failed to send expiration email to {}", customerEmail, e);
         }
     }

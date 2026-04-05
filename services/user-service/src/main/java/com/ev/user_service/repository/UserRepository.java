@@ -16,21 +16,21 @@ import java.util.UUID;
 public interface UserRepository extends JpaRepository<User, UUID> {
 
     @EntityGraph(attributePaths = {
-        "roles",
-        "dealerStaffProfile",
-        "dealerManagerProfile",
-        "evmStaffProfile",
-        "adminProfile"
+            "roles",
+            "dealerStaffProfile",
+            "dealerManagerProfile",
+            "evmStaffProfile",
+            "adminProfile"
     })
     @Query("SELECT u FROM User u")
     List<User> findAllWithProfilesAndRoles();
 
     @EntityGraph(attributePaths = {
-        "roles",
-        "dealerStaffProfile",
-        "dealerManagerProfile",
-        "evmStaffProfile",
-        "adminProfile"
+            "roles",
+            "dealerStaffProfile",
+            "dealerManagerProfile",
+            "evmStaffProfile",
+            "adminProfile"
     })
     Page<User> findAll(org.springframework.data.domain.Pageable pageable);
 
@@ -57,5 +57,6 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     List<User> findByRoleName(@Param("roleName") String roleName);
 
     Boolean existsByEmail(String email);
+
     Boolean existsByPhone(String phone);
 }

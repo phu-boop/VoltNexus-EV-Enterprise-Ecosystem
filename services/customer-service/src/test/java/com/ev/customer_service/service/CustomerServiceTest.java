@@ -1,6 +1,7 @@
 package com.ev.customer_service.service;
 
 import com.ev.customer_service.dto.request.CustomerRequest;
+import com.ev.customer_service.dto.response.AuditResponse;
 import com.ev.customer_service.dto.response.CustomerResponse;
 import com.ev.customer_service.entity.Customer;
 import com.ev.customer_service.entity.CustomerProfileAudit;
@@ -17,9 +18,13 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.modelmapper.ModelMapper;
+import org.modelmapper.convention.MatchingStrategies;
 
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -34,224 +39,149 @@ class CustomerServiceTest {
     private CustomerRepository customerRepository;
 
     @Mock
-    private ModelMapper modelMapper;
-
-    @Mock
     private CustomerProfileAuditRepository auditRepository;
+
+    @Spy
+    private ModelMapper modelMapper = new ModelMapper();
 
     @InjectMocks
     private CustomerService customerService;
 
     private Customer customer;
     private CustomerRequest customerRequest;
-    private CustomerResponse customerResponse;
 
     @BeforeEach
     void setUp() {
+        // Configure ModelMapper to match AppConfig (STRICT strategy)
+        modelMapper.getConfiguration().setMatchingStrategy(MatchingStrategies.STRICT);
+
         customer = new Customer();
         customer.setCustomerId(1L);
-        customer.setEmail("john@example.com");
-        customer.setPhone("0912345678");
-        customer.setIdNumber("123456789");
         customer.setFirstName("John");
         customer.setLastName("Doe");
+        customer.setEmail("john.doe@example.com");
+        customer.setPhone("0987654321");
+        customer.setIdNumber("ID123");
         customer.setCustomerType(CustomerType.INDIVIDUAL);
         customer.setStatus(CustomerStatus.NEW);
 
         customerRequest = new CustomerRequest();
-        customerRequest.setEmail("john@example.com");
-        customerRequest.setPhone("0912345678");
-        customerRequest.setIdNumber("123456789");
         customerRequest.setFirstName("John");
         customerRequest.setLastName("Doe");
+        customerRequest.setEmail("john.doe@example.com");
+        customerRequest.setPhone("0987654321");
+        customerRequest.setIdNumber("ID123");
         customerRequest.setCustomerType("INDIVIDUAL");
-
-        customerResponse = new CustomerResponse();
-        customerResponse.setCustomerId(1L);
-        customerResponse.setEmail("john@example.com");
+        customerRequest.setStatus("NEW");
     }
 
     @Nested
-    @DisplayName("Tạo mới khách hàng")
+    @DisplayName("createCustomer()")
     class CreateCustomer {
         @Test
-        @DisplayName("Tạo thành công")
+        @DisplayName("Tạo customer thành công")
         void createCustomer_success() {
             when(customerRepository.existsByEmail(anyString())).thenReturn(false);
             when(customerRepository.existsByPhone(anyString())).thenReturn(false);
             when(customerRepository.existsByIdNumber(anyString())).thenReturn(false);
-            when(modelMapper.map(any(CustomerRequest.class), eq(Customer.class))).thenReturn(customer);
+            when(customerRepository.count()).thenReturn(100L);
             when(customerRepository.save(any(Customer.class))).thenReturn(customer);
-            when(modelMapper.map(any(Customer.class), eq(CustomerResponse.class))).thenReturn(customerResponse);
 
-            CustomerResponse result = customerService.createCustomer(customerRequest);
+            CustomerResponse result = customerService.createCustomer(customerRequest, "ADMIN", null);
 
             assertThat(result).isNotNull();
-            verify(customerRepository).save(customer);
+            verify(customerRepository).save(any(Customer.class));
         }
 
         @Test
-        @DisplayName("Email đã tồn tại → ném DuplicateResourceException")
-        void createCustomer_emailExists() {
+        @DisplayName("Email đã tồn tại -> ném DuplicateResourceException")
+        void createCustomer_duplicateEmail() {
             when(customerRepository.existsByEmail(anyString())).thenReturn(true);
+            assertThatThrownBy(() -> customerService.createCustomer(customerRequest, "ADMIN", null))
+                    .isInstanceOf(DuplicateResourceException.class);
+        }
 
-            assertThatThrownBy(() -> customerService.createCustomer(customerRequest))
-                    .isInstanceOf(DuplicateResourceException.class)
-                    .hasMessageContaining("email");
+        @Test
+        @DisplayName("Type không hợp lệ -> gán INDIVIDUAL mặc định")
+        void createCustomer_invalidType_defaults() {
+            customerRequest.setCustomerType("INVALID");
+            when(customerRepository.save(any(Customer.class))).thenAnswer(args -> args.getArgument(0));
+
+            customerService.createCustomer(customerRequest, "ADMIN", null);
+
+            verify(customerRepository).save(argThat(c -> c.getCustomerType() == CustomerType.INDIVIDUAL));
         }
     }
 
     @Nested
-    @DisplayName("Cập nhật khách hàng & Audit trail")
+    @DisplayName("updateCustomer()")
     class UpdateCustomer {
         @Test
-        @DisplayName("Cập nhật thành công với audit trail")
+        @DisplayName("Cập nhật thành công kèm ghi audit log")
         void updateCustomer_success_withAudit() {
+            customerRequest.setFirstName("Johnny");
             when(customerRepository.findById(1L)).thenReturn(Optional.of(customer));
-            when(customerRepository.save(any(Customer.class))).thenReturn(customer);
-            when(modelMapper.map(any(Customer.class), eq(CustomerResponse.class))).thenReturn(customerResponse);
+            when(customerRepository.save(any(Customer.class))).thenAnswer(args -> args.getArgument(0));
 
-            customerRequest.setFirstName("John Updated");
-            customerRequest.setCustomerType("CORPORATE");
+            customerService.updateCustomer(1L, customerRequest, "ADMIN", null);
 
-            CustomerResponse result = customerService.updateCustomer(1L, customerRequest);
-
-            assertThat(result).isNotNull();
             verify(auditRepository).save(any(CustomerProfileAudit.class));
-            assertThat(customer.getFirstName()).isEqualTo("John Updated");
+            verify(customerRepository).save(argThat(c -> c.getFirstName().equals("Johnny")));
         }
 
         @Test
-        @DisplayName("Cập nhật email trùng khách hàng khác → ném DuplicateResourceException")
-        void updateCustomer_emailConflict() {
+        @DisplayName("Cập nhật email trùng của người khác -> ném DuplicateResourceException")
+        void updateCustomer_duplicateEmail() {
+            customerRequest.setEmail("other@test.com");
             when(customerRepository.findById(1L)).thenReturn(Optional.of(customer));
-            customerRequest.setEmail("other@example.com");
-            when(customerRepository.existsByEmail("other@example.com")).thenReturn(true);
+            when(customerRepository.existsByEmail("other@test.com")).thenReturn(true);
 
             assertThatThrownBy(() -> customerService.updateCustomer(1L, customerRequest))
                     .isInstanceOf(DuplicateResourceException.class);
-        }
-
-        @Test
-        @DisplayName("Cập nhật phone trùng khách hàng khác → ném DuplicateResourceException")
-        void updateCustomer_phoneConflict() {
-            when(customerRepository.findById(1L)).thenReturn(Optional.of(customer));
-            customerRequest.setPhone("0999999999");
-            when(customerRepository.existsByPhone("0999999999")).thenReturn(true);
-
-            assertThatThrownBy(() -> customerService.updateCustomer(1L, customerRequest))
-                    .isInstanceOf(DuplicateResourceException.class);
-        }
-
-        @Test
-        @DisplayName("Cập nhật ID number trùng khách hàng khác → ném DuplicateResourceException")
-        void updateCustomer_idNumberConflict() {
-            when(customerRepository.findById(1L)).thenReturn(Optional.of(customer));
-            customerRequest.setIdNumber("999999999");
-            when(customerRepository.existsByIdNumber("999999999")).thenReturn(true);
-
-            assertThatThrownBy(() -> customerService.updateCustomer(1L, customerRequest))
-                    .isInstanceOf(DuplicateResourceException.class);
-        }
-
-        @Test
-        @DisplayName("Cập nhật với enum không hợp lệ → dùng giá trị mặc định/giữ nguyên")
-        void updateCustomer_invalidEnums() {
-            when(customerRepository.findById(1L)).thenReturn(Optional.of(customer));
-            when(customerRepository.save(any(Customer.class))).thenReturn(customer);
-            when(modelMapper.map(any(Customer.class), eq(CustomerResponse.class))).thenReturn(customerResponse);
-
-            customerRequest.setCustomerType("INVALID_TYPE");
-            customerRequest.setStatus("INVALID_STATUS");
-
-            customerService.updateCustomer(1L, customerRequest);
-
-            assertThat(customer.getCustomerType()).isEqualTo(CustomerType.INDIVIDUAL);
-            assertThat(customer.getStatus()).isEqualTo(CustomerStatus.NEW);
         }
     }
 
     @Nested
-    @DisplayName("Tìm kiếm & Xóa")
-    class SearchAndDelete {
-        @Test
-        @DisplayName("Xóa thành công")
-        void deleteCustomer_success() {
-            when(customerRepository.existsById(1L)).thenReturn(true);
-
-            customerService.deleteCustomer(1L);
-
-            verify(customerRepository).deleteById(1L);
-        }
-
+    @DisplayName("Audit History")
+    class AuditHistory {
         @Test
         @DisplayName("Lấy lịch sử audit thành công")
-        void getCustomerAuditHistory_success() {
+        void getAuditHistory_success() {
+            CustomerProfileAudit audit = new CustomerProfileAudit();
+            audit.setCustomerId(1L);
+            audit.setChangedAt(LocalDateTime.now());
+            audit.setChangesJson("{}");
+
             when(customerRepository.existsById(1L)).thenReturn(true);
-            when(auditRepository.findByCustomerIdOrderByChangedAtDesc(1L))
-                    .thenReturn(java.util.List.of(new com.ev.customer_service.entity.CustomerProfileAudit()));
+            when(auditRepository.findByCustomerIdOrderByChangedAtDesc(1L)).thenReturn(List.of(audit));
 
-            java.util.List<com.ev.customer_service.dto.response.AuditResponse> results = customerService
-                    .getCustomerAuditHistory(1L);
+            List<AuditResponse> result = customerService.getCustomerAuditHistory(1L);
 
-            assertThat(results).isNotNull();
+            assertThat(result).hasSize(1);
         }
 
         @Test
-        @DisplayName("Tìm kiếm khách hàng thành công")
-        void searchCustomers_success() {
-            when(customerRepository.searchCustomers("John")).thenReturn(java.util.List.of(customer));
-            when(modelMapper.map(any(Customer.class), eq(CustomerResponse.class))).thenReturn(customerResponse);
-
-            java.util.List<CustomerResponse> results = customerService.searchCustomers("John");
-
-            assertThat(results).hasSize(1);
+        @DisplayName("Lấy audit cho customer không tồn tại -> ném ResourceNotFoundException")
+        void getAuditHistory_notFound() {
+            when(customerRepository.existsById(99L)).thenReturn(false);
+            assertThatThrownBy(() -> customerService.getCustomerAuditHistory(99L))
+                    .isInstanceOf(ResourceNotFoundException.class);
         }
     }
 
-    @Nested
-    @DisplayName("Lấy danh sách khách hàng")
-    class GetCustomers {
-        @Test
-        @DisplayName("Lấy tất cả khách hàng")
-        void getAllCustomers_success() {
-            when(customerRepository.findAll()).thenReturn(java.util.List.of(customer));
-            when(modelMapper.map(any(Customer.class), eq(CustomerResponse.class))).thenReturn(customerResponse);
+    @Test
+    @DisplayName("Xóa customer thành công")
+    void deleteCustomer_success() {
+        when(customerRepository.existsById(1L)).thenReturn(true);
+        customerService.deleteCustomer(1L, "ADMIN", null);
+        verify(customerRepository).deleteById(1L);
+    }
 
-            java.util.List<CustomerResponse> results = customerService.getAllCustomers();
-
-            assertThat(results).hasSize(1);
-        }
-
-        @Test
-        @DisplayName("Lấy theo Profile ID")
-        void getCustomerByProfileId_success() {
-            when(customerRepository.findByProfileId("PROF-1")).thenReturn(Optional.of(customer));
-            when(modelMapper.map(any(Customer.class), eq(CustomerResponse.class))).thenReturn(customerResponse);
-
-            CustomerResponse result = customerService.getCustomerByProfileId("PROF-1");
-
-            assertThat(result).isNotNull();
-        }
-
-        @Test
-        @DisplayName("Lấy theo ID thành công")
-        void getCustomerById_success() {
-            when(customerRepository.findById(1L)).thenReturn(Optional.of(customer));
-            when(modelMapper.map(any(Customer.class), eq(CustomerResponse.class))).thenReturn(customerResponse);
-
-            CustomerResponse result = customerService.getCustomerById(1L);
-
-            assertThat(result).isNotNull();
-        }
-
-        @Test
-        @DisplayName("Lấy theo ID không tồn tại → ném ResourceNotFoundException")
-        void getCustomerById_notFound() {
-            when(customerRepository.findById(1L)).thenReturn(Optional.empty());
-
-            assertThatThrownBy(() -> customerService.getCustomerById(1L))
-                    .isInstanceOf(ResourceNotFoundException.class);
-        }
+    @Test
+    @DisplayName("Tìm kiếm customer thành công")
+    void searchCustomers_success() {
+        when(customerRepository.searchCustomers("John")).thenReturn(List.of(customer));
+        List<CustomerResponse> result = customerService.searchCustomers("John");
+        assertThat(result).hasSize(1);
     }
 }

@@ -14,7 +14,7 @@
 
     <groupId>com.ev</groupId>
     <artifactId>sales-service</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+    <version>1.0.0</version>
     <name>sales-service</name>
     <description>Sales Service for EV Project</description>
 

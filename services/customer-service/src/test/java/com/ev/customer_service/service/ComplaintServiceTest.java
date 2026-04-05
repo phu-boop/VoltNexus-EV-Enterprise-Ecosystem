@@ -2,15 +2,17 @@ package com.ev.customer_service.service;
 
 import com.ev.customer_service.dto.request.*;
 import com.ev.customer_service.dto.response.ComplaintResponse;
-import com.ev.customer_service.dto.response.ComplaintStatisticsResponse;
 import com.ev.customer_service.entity.Complaint;
 import com.ev.customer_service.entity.Customer;
 import com.ev.customer_service.enums.ComplaintSeverity;
 import com.ev.customer_service.enums.ComplaintStatus;
+import com.ev.customer_service.enums.ComplaintType;
 import com.ev.customer_service.exception.ResourceNotFoundException;
 import com.ev.customer_service.repository.ComplaintRepository;
 import com.ev.customer_service.repository.CustomerRepository;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import jakarta.mail.internet.MimeMessage;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -19,16 +21,22 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.mail.javamail.JavaMailSender;
 
 import java.time.LocalDateTime;
-import java.util.Collections;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -41,123 +49,203 @@ class ComplaintServiceTest {
     private CustomerRepository customerRepository;
 
     @Mock
-    private ObjectMapper objectMapper;
-
-    @Mock
     private JavaMailSender mailSender;
+
+    @Spy
+    private ObjectMapper objectMapper = new ObjectMapper();
 
     @InjectMocks
     private ComplaintService complaintService;
 
     private Customer customer;
     private Complaint complaint;
-    private CreateComplaintRequest createRequest;
 
     @BeforeEach
     void setUp() {
+        objectMapper.registerModule(new JavaTimeModule());
+
         customer = new Customer();
         customer.setCustomerId(1L);
         customer.setFirstName("John");
         customer.setLastName("Doe");
-        customer.setEmail("john@example.com");
+        customer.setEmail("john.doe@example.com");
 
         complaint = new Complaint();
         complaint.setComplaintId(1L);
-        complaint.setComplaintCode("FB-20240324-0001");
+        complaint.setComplaintCode("FB-20231027-0001");
         complaint.setCustomer(customer);
-        complaint.setComplaintType(com.ev.customer_service.enums.ComplaintType.SERVICE_ATTITUDE);
-        complaint.setSeverity(ComplaintSeverity.MEDIUM);
         complaint.setStatus(ComplaintStatus.NEW);
+        complaint.setComplaintType(ComplaintType.VEHICLE_QUALITY);
+        complaint.setSeverity(ComplaintSeverity.MEDIUM);
         complaint.setCreatedAt(LocalDateTime.now());
-
-        createRequest = new CreateComplaintRequest();
-        createRequest.setCustomerId(1L);
-        createRequest.setComplaintType(com.ev.customer_service.enums.ComplaintType.SERVICE_ATTITUDE);
-        createRequest.setSeverity(ComplaintSeverity.MEDIUM);
-        createRequest.setDescription("Test description");
     }
 
     @Nested
-    @DisplayName("Tạo mới khiếu nại")
+    @DisplayName("createComplaint()")
     class CreateComplaint {
         @Test
-        @DisplayName("Tạo thành công")
+        @DisplayName("Tạo khiếu nại thành công")
         void createComplaint_success() {
+            CreateComplaintRequest request = new CreateComplaintRequest();
+            request.setCustomerId(1L);
+            request.setDealerId("DEALER1");
+            request.setComplaintType(ComplaintType.SERVICE_ATTITUDE);
+            request.setSeverity(ComplaintSeverity.HIGH);
+
             when(customerRepository.findById(1L)).thenReturn(Optional.of(customer));
             when(complaintRepository.save(any(Complaint.class))).thenReturn(complaint);
 
-            ComplaintResponse response = complaintService.createComplaint(createRequest);
+            ComplaintResponse result = complaintService.createComplaint(request);
 
-            assertThat(response).isNotNull();
-            assertThat(response.getComplaintCode()).isEqualTo("FB-20240324-0001");
+            assertThat(result).isNotNull();
+            assertThat(result.getComplaintCode()).isEqualTo("FB-20231027-0001");
             verify(complaintRepository).save(any(Complaint.class));
         }
 
         @Test
-        @DisplayName("Customer không tồn tại → ném ResourceNotFoundException")
+        @DisplayName("Customer không tồn tại -> ném ResourceNotFoundException")
         void createComplaint_customerNotFound() {
-            when(customerRepository.findById(1L)).thenReturn(Optional.empty());
+            CreateComplaintRequest request = new CreateComplaintRequest();
+            request.setCustomerId(99L);
+            when(customerRepository.findById(99L)).thenReturn(Optional.empty());
 
-            assertThatThrownBy(() -> complaintService.createComplaint(createRequest))
+            assertThatThrownBy(() -> complaintService.createComplaint(request))
                     .isInstanceOf(ResourceNotFoundException.class);
         }
     }
 
     @Nested
-    @DisplayName("Phân công khiếu nại")
+    @DisplayName("assignComplaint()")
     class AssignComplaint {
         @Test
         @DisplayName("Phân công thành công")
         void assignComplaint_success() {
-            AssignComplaintRequest assignRequest = new AssignComplaintRequest();
-            assignRequest.setAssignedStaffId("STAFF-1");
-            assignRequest.setAssignedStaffName("Staff A");
+            AssignComplaintRequest request = new AssignComplaintRequest();
+            request.setAssignedStaffId("STAFF1");
+            request.setAssignedStaffName("Staff A");
 
             when(complaintRepository.findById(1L)).thenReturn(Optional.of(complaint));
             when(complaintRepository.save(any(Complaint.class))).thenReturn(complaint);
 
-            ComplaintResponse response = complaintService.assignComplaint(1L, assignRequest);
+            complaintService.assignComplaint(1L, request);
 
-            assertThat(response).isNotNull();
-            verify(complaintRepository).save(complaint);
+            assertThat(complaint.getAssignedStaffId()).isEqualTo("STAFF1");
             assertThat(complaint.getStatus()).isEqualTo(ComplaintStatus.IN_PROGRESS);
+            assertThat(complaint.getFirstResponseAt()).isNotNull();
+            verify(complaintRepository).save(complaint);
+        }
+
+        @Test
+        @DisplayName("Phân công khi đã có firstResponseAt -> không cập nhật lại thời gian")
+        void assignComplaint_alreadyHasFirstResponse() {
+            LocalDateTime firstResponse = LocalDateTime.now().minusDays(1);
+            complaint.setFirstResponseAt(firstResponse);
+            AssignComplaintRequest request = new AssignComplaintRequest();
+            request.setAssignedStaffId("STAFF2");
+
+            when(complaintRepository.findById(1L)).thenReturn(Optional.of(complaint));
+            when(complaintRepository.save(any(Complaint.class))).thenReturn(complaint);
+
+            complaintService.assignComplaint(1L, request);
+
+            assertThat(complaint.getFirstResponseAt()).isEqualTo(firstResponse);
         }
     }
 
     @Nested
-    @DisplayName("Giải quyết & Đóng khiếu nại")
-    class ResolveAndClose {
+    @DisplayName("addProgressUpdate()")
+    class AddProgressUpdate {
         @Test
-        @DisplayName("Giải quyết thành công")
-        void resolveComplaint_success() {
-            ResolveComplaintRequest resolveRequest = new ResolveComplaintRequest();
-            resolveRequest.setCustomerMessage("Resolved!");
-            resolveRequest.setSendNotification(false);
+        @DisplayName("Thêm cập nhật tiến độ thành công")
+        void addProgressUpdate_success() throws JsonProcessingException {
+            ComplaintProgressUpdate update = new ComplaintProgressUpdate();
+            update.setUpdateNote("Investigating issue");
+            update.setUpdatedByStaffId("STAFF1");
 
             when(complaintRepository.findById(1L)).thenReturn(Optional.of(complaint));
             when(complaintRepository.save(any(Complaint.class))).thenReturn(complaint);
 
-            ComplaintResponse response = complaintService.resolveComplaint(1L, resolveRequest);
+            complaintService.addProgressUpdate(1L, update);
 
-            assertThat(response).isNotNull();
-            assertThat(complaint.getStatus()).isEqualTo(ComplaintStatus.RESOLVED);
+            assertThat(complaint.getProgressUpdates()).contains("Investigating issue");
+            verify(complaintRepository).save(complaint);
         }
 
         @Test
-        @DisplayName("Đóng khiếu nại thành công")
+        @DisplayName("Lỗi parse JSON khi lấy progress cũ -> trả về list trống và vẫn add mới được")
+        void addProgressUpdate_jsonError_startsFresh() {
+            complaint.setProgressUpdates("invalid-json");
+            ComplaintProgressUpdate update = new ComplaintProgressUpdate();
+            update.setUpdateNote("Note");
+
+            when(complaintRepository.findById(1L)).thenReturn(Optional.of(complaint));
+            when(complaintRepository.save(any(Complaint.class))).thenReturn(complaint);
+
+            complaintService.addProgressUpdate(1L, update);
+
+            assertThat(complaint.getProgressUpdates()).contains("Note");
+        }
+    }
+
+    @Nested
+    @DisplayName("resolveComplaint()")
+    class ResolveComplaint {
+        @Test
+        @DisplayName("Giải quyết thành công kèm gửi email")
+        void resolveComplaint_withNotification_success() {
+            ResolveComplaintRequest request = new ResolveComplaintRequest();
+            request.setInternalResolution("Fixed software bug");
+            request.setCustomerMessage("Your issue is fixed");
+            request.setSendNotification(true);
+
+            when(complaintRepository.findById(1L)).thenReturn(Optional.of(complaint));
+            when(complaintRepository.save(any(Complaint.class))).thenReturn(complaint);
+            when(mailSender.createMimeMessage()).thenReturn(mock(MimeMessage.class));
+
+            complaintService.resolveComplaint(1L, request);
+
+            assertThat(complaint.getStatus()).isEqualTo(ComplaintStatus.RESOLVED);
+            assertThat(complaint.getResolvedDate()).isNotNull();
+            verify(mailSender).send(any(MimeMessage.class));
+            verify(complaintRepository, times(2)).save(complaint); // save in resolve + save in notification update
+        }
+
+        @Test
+        @DisplayName("Gửi notification thất bại -> ném RuntimeException")
+        void resolveComplaint_notificationFailure() {
+            ResolveComplaintRequest request = new ResolveComplaintRequest();
+            request.setSendNotification(true);
+            request.setCustomerMessage("Fix");
+
+            when(complaintRepository.findById(1L)).thenReturn(Optional.of(complaint));
+            when(complaintRepository.save(any(Complaint.class))).thenReturn(complaint);
+            when(mailSender.createMimeMessage()).thenReturn(mock(MimeMessage.class));
+            doThrow(new RuntimeException("SMTP Error")).when(mailSender).send(any(MimeMessage.class));
+
+            assertThatThrownBy(() -> complaintService.resolveComplaint(1L, request))
+                    .isInstanceOf(RuntimeException.class)
+                    .hasMessageContaining("Không thể gửi email");
+        }
+    }
+
+    @Nested
+    @DisplayName("closeComplaint()")
+    class CloseComplaint {
+        @Test
+        @DisplayName("Đóng thành công khi đã RESOLVED")
         void closeComplaint_success() {
             complaint.setStatus(ComplaintStatus.RESOLVED);
             when(complaintRepository.findById(1L)).thenReturn(Optional.of(complaint));
             when(complaintRepository.save(any(Complaint.class))).thenReturn(complaint);
 
-            ComplaintResponse response = complaintService.closeComplaint(1L);
+            complaintService.closeComplaint(1L);
 
-            assertThat(response.getStatus()).isEqualTo(ComplaintStatus.CLOSED);
+            assertThat(complaint.getStatus()).isEqualTo(ComplaintStatus.CLOSED);
         }
 
         @Test
-        @DisplayName("Đóng khiếu nại chưa giải quyết → ném IllegalStateException")
-        void closeComplaint_notResolved() {
+        @DisplayName("Đóng khi chưa RESOLVED -> ném IllegalStateException")
+        void closeComplaint_notResolved_throwsException() {
             complaint.setStatus(ComplaintStatus.IN_PROGRESS);
             when(complaintRepository.findById(1L)).thenReturn(Optional.of(complaint));
 
@@ -167,123 +255,141 @@ class ComplaintServiceTest {
     }
 
     @Nested
-    @DisplayName("Thống kê khiếu nại")
-    class Statistics {
+    @DisplayName("getComplaintById()")
+    class GetComplaintById {
         @Test
-        @DisplayName("Lấy thống kê thành công")
-        void getStatistics_success() {
-            LocalDateTime now = LocalDateTime.now();
-            when(complaintRepository.countByDealerIdAndDateRange(anyString(), any(), any())).thenReturn(10L);
-            when(complaintRepository.countByDealerIdAndStatusAndDateRange(anyString(), any(), any(), any()))
-                    .thenReturn(2L);
-            when(complaintRepository.countByDealerIdAndSeverityAndDateRange(anyString(), any(), any(), any()))
-                    .thenReturn(1L);
-            when(complaintRepository.countByComplaintTypeAndDateRange(anyString(), any(), any()))
-                    .thenReturn(Collections.singletonList(new Object[] { "SERVICE_ATTITUDE", 5L }));
-            when(complaintRepository.countByAssignedStaffAndDateRange(anyString(), any(), any()))
-                    .thenReturn(Collections.singletonList(new Object[] { "STAFF-1", 3L }));
-
-            // Overdue counts
-            when(complaintRepository.countOverdueComplaintsWithDateRange(anyString(), any(), any(), any(), any()))
-                    .thenReturn(0L);
-
-            ComplaintStatisticsResponse stats = complaintService.getStatistics("DEALER-1", now.minusDays(1), now);
-
-            assertThat(stats).isNotNull();
-            assertThat(stats.getTotalComplaints()).isEqualTo(10L);
-            assertThat(stats.getByStatus().get("NEW")).isEqualTo(2L);
-        }
-    }
-
-    @Nested
-    @DisplayName("Gửi thông báo")
-    class Notifications {
-        @Test
-        @DisplayName("Gửi thông báo cho khách (Email)")
-        void sendNotificationToCustomer_success() throws Exception {
-            complaint.setResolution("Fixed item");
-            complaint.setResolvedDate(LocalDateTime.now());
-
-            when(complaintRepository.findById(1L)).thenReturn(Optional.of(complaint));
-            MimeMessage mockMessage = mock(MimeMessage.class);
-            when(mailSender.createMimeMessage()).thenReturn(mockMessage);
-
-            complaintService.sendNotificationToCustomer(1L);
-
-            verify(mailSender).send(any(MimeMessage.class));
-            verify(complaintRepository).save(complaint);
-            assertThat(complaint.getNotificationSent()).isTrue();
-        }
-
-        @Test
-        @DisplayName("Gửi thông báo khi chưa có kết quả → ném IllegalStateException")
-        void sendNotificationToCustomer_noResolution() {
-            complaint.setResolution(null);
-            complaint.setCustomerMessage(null);
-            when(complaintRepository.findById(1L)).thenReturn(Optional.of(complaint));
-
-            assertThatThrownBy(() -> complaintService.sendNotificationToCustomer(1L))
-                    .isInstanceOf(IllegalStateException.class);
-        }
-    }
-
-    @Nested
-    @DisplayName("Cập nhật tiến độ & Lấy thông tin")
-    class UpdatesAndRetrieval {
-        @Test
-        @DisplayName("Thêm cập nhật tiến độ thành công")
-        void addProgressUpdate_success() throws Exception {
-            ComplaintProgressUpdate update = new ComplaintProgressUpdate();
-            update.setUpdateNote("Investigating");
-            update.setUpdatedByStaffId("STAFF-1");
-
-            when(complaintRepository.findById(1L)).thenReturn(Optional.of(complaint));
-            when(objectMapper.readValue(anyString(), any(com.fasterxml.jackson.core.type.TypeReference.class)))
-                    .thenReturn(new java.util.ArrayList<>());
-            when(objectMapper.writeValueAsString(any())).thenReturn("[]");
-            when(complaintRepository.save(any(Complaint.class))).thenReturn(complaint);
-
-            ComplaintResponse response = complaintService.addProgressUpdate(1L, update);
-
-            assertThat(response).isNotNull();
-            verify(complaintRepository).save(complaint);
-        }
-
-        @Test
-        @DisplayName("Lấy khiếu nại theo ID thành công")
+        @DisplayName("Lấy chi tiết khiếu nại thành công")
         void getComplaintById_success() {
             when(complaintRepository.findById(1L)).thenReturn(Optional.of(complaint));
-            ComplaintResponse response = complaintService.getComplaintById(1L);
-            assertThat(response.getComplaintId()).isEqualTo(1L);
+
+            ComplaintResponse result = complaintService.getComplaintById(1L);
+
+            assertThat(result).isNotNull();
+            assertThat(result.getComplaintId()).isEqualTo(1L);
         }
 
         @Test
-        @DisplayName("Lấy danh sách theo dealer thành công")
-        void getComplaintsByDealer_success() {
-            when(complaintRepository.findByDealerId("DEALER-1")).thenReturn(java.util.List.of(complaint));
-            java.util.List<ComplaintResponse> responses = complaintService.getComplaintsByDealer("DEALER-1");
-            assertThat(responses).hasSize(1);
-        }
+        @DisplayName("Lấy chi tiết khiếu nại không tồn tại -> ném ResourceNotFoundException")
+        void getComplaintById_notFound() {
+            when(complaintRepository.findById(99L)).thenReturn(Optional.empty());
 
+            assertThatThrownBy(() -> complaintService.getComplaintById(99L))
+                    .isInstanceOf(ResourceNotFoundException.class);
+        }
+    }
+
+    @Nested
+    @DisplayName("Statistics and Filtering")
+    class StatisticsAndFiltering {
         @Test
-        @DisplayName("Lọc khiếu nại (Filter) thành công")
+        @DisplayName("Lọc khiếu nại thành công")
         void filterComplaints_success() {
             ComplaintFilterRequest filter = new ComplaintFilterRequest();
-            filter.setDealerId("DEALER-1");
             filter.setPage(0);
             filter.setSize(10);
             filter.setSortBy("createdAt");
             filter.setSortDirection("DESC");
 
-            org.springframework.data.domain.Page<Complaint> page = new org.springframework.data.domain.PageImpl<>(
-                    java.util.List.of(complaint));
-            when(complaintRepository.findAll(any(org.springframework.data.jpa.domain.Specification.class),
-                    any(org.springframework.data.domain.Pageable.class)))
+            Page<Complaint> page = new PageImpl<>(List.of(complaint));
+            when(complaintRepository.findAll(any(Specification.class), any(PageRequest.class)))
                     .thenReturn(page);
 
-            org.springframework.data.domain.Page<ComplaintResponse> result = complaintService.filterComplaints(filter);
+            var result = complaintService.filterComplaints(filter);
 
             assertThat(result.getContent()).hasSize(1);
+        }
+
+        @Test
+        @DisplayName("Lọc khiếu nại với đầy đủ filter")
+        void filterComplaints_withAllFilters_success() {
+            ComplaintFilterRequest filter = new ComplaintFilterRequest();
+            filter.setDealerId("DEALER1");
+            filter.setStatus(ComplaintStatus.NEW);
+            filter.setComplaintType(ComplaintType.VEHICLE_QUALITY);
+            filter.setSeverity(ComplaintSeverity.HIGH);
+            filter.setAssignedStaffId("STAFF1");
+            filter.setCustomerId(1L);
+            filter.setStartDate(LocalDateTime.now().minusDays(30));
+            filter.setEndDate(LocalDateTime.now());
+            filter.setPage(0);
+            filter.setSize(10);
+            filter.setSortBy("createdAt");
+            filter.setSortDirection("ASC");
+
+            Page<Complaint> page = new PageImpl<>(List.of(complaint));
+            when(complaintRepository.findAll(any(Specification.class), any(PageRequest.class)))
+                    .thenReturn(page);
+
+            var result = complaintService.filterComplaints(filter);
+
+            assertThat(result.getContent()).hasSize(1);
+        }
+
+        @Test
+        @DisplayName("Lấy danh sách khiếu nại theo dealer thành công")
+        void getComplaintsByDealer_success() {
+            when(complaintRepository.findByDealerId("DEALER1")).thenReturn(List.of(complaint));
+
+            List<ComplaintResponse> result = complaintService.getComplaintsByDealer("DEALER1");
+
+            assertThat(result).hasSize(1);
+        }
+
+        @Test
+        @DisplayName("Lấy thống kê thành công")
+        void getStatistics_success() {
+            LocalDateTime start = LocalDateTime.now().minusDays(30);
+            LocalDateTime end = LocalDateTime.now();
+            String dealerId = "DEALER1";
+
+            when(complaintRepository.countByDealerIdAndDateRange(eq(dealerId), any(), any())).thenReturn(10L);
+            when(complaintRepository.countByDealerIdAndStatusAndDateRange(anyString(), any(), any(), any()))
+                    .thenReturn(2L);
+            when(complaintRepository.countByDealerIdAndSeverityAndDateRange(anyString(), any(), any(), any()))
+                    .thenReturn(1L);
+            List<Object[]> typeStats = new ArrayList<>();
+            typeStats.add(new Object[] { "VEHICLE_QUALITY", 5L });
+            when(complaintRepository.countByComplaintTypeAndDateRange(anyString(), any(), any())).thenReturn(typeStats);
+
+            List<Object[]> staffStats = new ArrayList<>();
+            staffStats.add(new Object[] { "STAFF1", 3L });
+            when(complaintRepository.countByAssignedStaffAndDateRange(anyString(), any(), any()))
+                    .thenReturn(staffStats);
+            when(complaintRepository.countOverdueComplaintsWithDateRange(anyString(), any(), any(), any(), any()))
+                    .thenReturn(1L);
+
+            var stats = complaintService.getStatistics(dealerId, start, end);
+
+            assertThat(stats.getTotalComplaints()).isEqualTo(10L);
+            assertThat(stats.getByType()).containsKey("VEHICLE_QUALITY");
+            assertThat(stats.getByStaff()).containsKey("STAFF1");
+        }
+    }
+
+    @Nested
+    @DisplayName("Notifications")
+    class Notifications {
+        @Test
+        @DisplayName("Gửi notification thủ công thành công")
+        void sendNotificationToCustomer_manual_success() {
+            complaint.setCustomerMessage("Ready");
+            when(complaintRepository.findById(1L)).thenReturn(Optional.of(complaint));
+            when(mailSender.createMimeMessage()).thenReturn(mock(MimeMessage.class));
+
+            complaintService.sendNotificationToCustomer(1L);
+
+            verify(mailSender).send(any(MimeMessage.class));
+        }
+
+        @Test
+        @DisplayName("Gửi notification thủ công khi chưa có message -> ném IllegalStateException")
+        void sendNotificationToCustomer_noMessage_throwsException() {
+            complaint.setCustomerMessage(null);
+            complaint.setResolution(null);
+            when(complaintRepository.findById(1L)).thenReturn(Optional.of(complaint));
+
+            assertThatThrownBy(() -> complaintService.sendNotificationToCustomer(1L))
+                    .isInstanceOf(IllegalStateException.class);
         }
     }
 }
