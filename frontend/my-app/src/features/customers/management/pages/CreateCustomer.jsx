@@ -35,7 +35,7 @@ const CreateCustomer = () => {
     registrationDate: "",
     assignedStaffId: "", // Thêm field phân công nhân viên
     // status không cần thiết khi tạo mới - backend tự động set = NEW
-    preferredDealerId: null,
+    preferredDealerId: (roles?.includes("DEALER_MANAGER") || roles?.includes("DEALER_STAFF")) ? (sessionStorage.getItem("dealerId") || sessionStorage.getItem("profileId")) : null,
   });
 
   const [errors, setErrors] = useState({});

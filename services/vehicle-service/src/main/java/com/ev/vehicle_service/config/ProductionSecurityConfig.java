@@ -34,6 +34,7 @@ public class ProductionSecurityConfig {
                         .requestMatchers(HttpMethod.DELETE, "/vehicle-models/**")
                         .hasAnyAuthority("ROLE_EVM_STAFF", "ROLE_ADMIN")
                         .requestMatchers("/vehicle-catalog/**").permitAll()
+                        .requestMatchers("/api/vehicle/**").permitAll()
                         .anyRequest().authenticated())
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();

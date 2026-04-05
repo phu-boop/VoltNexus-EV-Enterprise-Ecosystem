@@ -10,7 +10,7 @@
 	</parent>
 	<groupId>com.ev</groupId>
 	<artifactId>inventory-service</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>1.0.0</version>
 	<name>inventory-service</name>
 	<description>Inventory Service</description>
 	<url/>
@@ -136,6 +136,13 @@
             <artifactId>jfreechart</artifactId>
             <version>1.5.3</version> 
         </dependency>
+
+        <!-- H2 Database for Unit Testing -->
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>test</scope>
+        </dependency>
         
         </dependencies>
 
@@ -169,6 +176,26 @@
                         </exclude>
                     </excludes>
                 </configuration>
+            </plugin>
+        
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>0.8.12</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>report</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
 	</build>

@@ -13,18 +13,16 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            // 1. Tắt CSRF (vì chúng ta dùng JWT, không dùng session)
-            .csrf(csrf -> csrf.disable())
-            
-            // 2. Tắt CORS (Gateway của bạn sẽ xử lý CORS)
-            // Hoặc bạn có thể cấu hình CORS tại đây nếu muốn
-            .cors(cors -> cors.disable()) 
-            
-            // 3. VÔ HIỆU HÓA trang đăng nhập
-            // Cho phép tất cả mọi request đi qua
-            .authorizeHttpRequests(auth -> auth
-                .anyRequest().permitAll() // <-- Tạm thời cho phép tất cả
-            );
+                // 1. Tắt CSRF (vì chúng ta dùng JWT, không dùng session)
+                .csrf(csrf -> csrf.disable())
+
+                // 2. Tắt CORS (Gateway của bạn sẽ xử lý CORS)
+                .cors(cors -> cors.disable())
+
+                // 3. Cho phép tất cả mọi request đi qua
+                .authorizeHttpRequests(auth -> auth
+                        .anyRequest().permitAll()
+                );
 
         return http.build();
     }

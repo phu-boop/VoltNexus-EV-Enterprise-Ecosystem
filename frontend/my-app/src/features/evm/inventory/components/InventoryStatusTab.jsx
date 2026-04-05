@@ -2,14 +2,18 @@ import React, { useState, useEffect, useCallback } from "react";
 import {
   FiSearch,
   FiSliders,
-  FiPlusCircle, // Dùng cho Nhập kho
-  FiEdit, // Dùng cho Sửa ngưỡng
+  FiPlusCircle,
+  FiEdit,
   FiChevronDown,
-  FiNavigation, // Dùng cho Điều chuyển
+  FiNavigation,
   FiFilter,
   FiLoader,
   FiEye,
+  FiArrowRight,
+  FiExternalLink,
+  FiCopy,
 } from "react-icons/fi";
+import { useNavigate, useLocation } from "react-router-dom";
 
 import {
   getInventoryStatusByIds,
@@ -55,6 +59,10 @@ const StatusBadge = ({ status }) => {
 };
 
 const InventoryStatusTab = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const basePath = location.pathname.includes('/admin/') ? '/evm/admin' : '/evm/staff';
+
   const [mergedData, setMergedData] = useState({
     content: [],
     totalPages: 0,
@@ -308,106 +316,81 @@ const InventoryStatusTab = () => {
 
   return (
     <div>
-      {/* Thanh tìm kiếm và bộ lọc */}
-      <div className="flex flex-col gap-4 mb-6">
-        {/* Hàng 1: Tìm kiếm  */}
-        <div className="flex justify-between items-center">
-          <div className="relative w-full max-w-md">
-            <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-            <input
-              name="search"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Tìm theo tên xe, SKU..."
-              className="p-2 pl-10 border rounded-lg w-full"
-            />
+      {/* Thanh tìm kiếm và bộ lọc cải tiến */}
+      <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm mb-6">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-end">
+          {/* Tìm kiếm chính */}
+          <div className="lg:col-span-4">
+            <label className="block text-xs font-semibold text-slate-500 uppercase mb-2 tracking-wider">Tìm kiếm sản phẩm</label>
+            <div className="relative">
+              <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+              <input
+                name="search"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Tên xe, SKU, màu sắc..."
+                className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none text-sm"
+              />
+            </div>
           </div>
-        </div>
 
-        {/* Hàng 2: Các bộ lọc chi tiết */}
-        <div className="flex flex-wrap items-end gap-4 p-4 bg-gray-50 rounded-lg border">
-          <FiFilter className="text-gray-600 text-lg" />
-
-          {/* Lọc Trạng thái  */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Trạng thái
-            </label>
+          {/* Trạng thái */}
+          <div className="lg:col-span-2">
+            <label className="block text-xs font-semibold text-slate-500 uppercase mb-2 tracking-wider">Trạng thái</label>
             <select
               name="status"
               value={filters.status}
               onChange={handleFilterChange}
-              className="p-2 border rounded-lg bg-white"
+              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none text-sm"
             >
-              <option value="">Tất cả trạng thái</option>
+              <option value="">Tất cả</option>
               <option value="IN_STOCK">Còn hàng</option>
               <option value="LOW_STOCK">Tồn kho thấp</option>
               <option value="OUT_OF_STOCK">Hết hàng</option>
             </select>
           </div>
 
-          {/* Lọc Giá Tối Thiểu */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Giá từ
-            </label>
-            <input
-              name="minPrice" // Phải khớp với state 'filters'
-              type="number"
-              placeholder="VD: 50000"
-              value={filters.minPrice} // Lấy từ state 'filters'
-              onChange={handleFilterChange} // Dùng chung hàm
-              className="p-2 border rounded-lg w-full"
-            />
-          </div>
-
-          {/* Lọc Giá Tối Đa */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Đến giá
-            </label>
-            <input
-              name="maxPrice" // Phải khớp với state 'filters'
-              type="number"
-              placeholder="VD: 100000"
-              value={filters.maxPrice} // Lấy từ state 'filters'
-              onChange={handleFilterChange} // Dùng chung hàm
-              className="p-2 border rounded-lg w-full"
-            />
+          {/* Lọc giá */}
+          <div className="lg:col-span-3 flex gap-2">
+            <div className="flex-1">
+              <label className="block text-xs font-semibold text-slate-500 uppercase mb-2 tracking-wider">Giá từ</label>
+              <input
+                name="minPrice"
+                type="number"
+                value={filters.minPrice}
+                onChange={handleFilterChange}
+                placeholder="Min"
+                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none text-sm"
+              />
+            </div>
+            <div className="flex-1">
+              <label className="block text-xs font-semibold text-slate-500 uppercase mb-2 tracking-wider">Đến</label>
+              <input
+                name="maxPrice"
+                type="number"
+                value={filters.maxPrice}
+                onChange={handleFilterChange}
+                placeholder="Max"
+                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none text-sm"
+              />
+            </div>
           </div>
 
           {/* Sắp xếp */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Sắp xếp
-            </label>
+          <div className="lg:col-span-3">
+            <label className="block text-xs font-semibold text-slate-500 uppercase mb-2 tracking-wider">Sắp xếp</label>
             <select
               name="sort"
               value={filters.sort}
               onChange={handleFilterChange}
-              className="p-2 border rounded-lg bg-white"
+              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none text-sm"
             >
-              <option value="vehicleModel.modelName,asc">
-                Tên sản phẩm (A-Z)
-              </option>
-              <option value="vehicleModel.modelName,desc">
-                Tên sản phẩm (Z-A)
-              </option>
+              <option value="vehicleModel.modelName,asc">Tên sản phẩm (A-Z)</option>
+              <option value="vehicleModel.modelName,desc">Tên sản phẩm (Z-A)</option>
               <option value="price,asc">Giá: Thấp đến Cao</option>
               <option value="price,desc">Giá: Cao đến Thấp</option>
-
-              <option value="availableQuantity,desc">
-                Tồn kho: Cao đến Thấp
-              </option>
-              <option value="availableQuantity,asc">
-                Tồn kho: Thấp đến Cao
-              </option>
-              <option value="totalQuantity,desc">
-                Tổng số lượng: Cao đến Thấp
-              </option>
-              <option value="totalQuantity,asc">
-                Tổng số lượng: Thấp đến Cao
-              </option>
+              <option value="availableQuantity,desc">Tồn kho: Cao đến Thấp</option>
+              <option value="availableQuantity,asc">Tồn kho: Thấp đến Cao</option>
             </select>
           </div>
         </div>
@@ -419,16 +402,16 @@ const InventoryStatusTab = () => {
       ) : (
         <div className="bg-white rounded-lg shadow overflow-x-auto">
           <table className="w-full">
-            <thead>
-              <tr className="bg-gray-50 border-b text-sm text-gray-600 uppercase">
-                <th className="p-3 w-12"></th>
-                <th className="p-3 text-left">Sản phẩm</th>
-                <th className="p-3 text-center">Kho TT khả dụng</th>
-                <th className="p-3 text-center">Đang chờ xuất</th>
-                <th className="p-3 text-center">Tổng số lượng</th>
-                <th className="p-3 text-center">Ngưỡng (TT)</th>
-                <th className="p-3">Trạng thái</th>
-                <th className="p-3 text-right">Hành động</th>
+            <thead className="bg-slate-50/80 border-b border-slate-200">
+              <tr className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                <th className="px-4 py-4 w-12"></th>
+                <th className="px-4 py-4 text-left">Phiên Bản Sản Phẩm</th>
+                <th className="px-4 py-4 text-center">Khả dụng</th>
+                <th className="px-4 py-4 text-center">Chờ xuất</th>
+                <th className="px-4 py-4 text-center">Tổng số</th>
+                <th className="px-4 py-4 text-center">Ngưỡng</th>
+                <th className="px-4 py-4 text-left">Trạng thái</th>
+                <th className="px-4 py-4 text-right">Thao tác</th>
               </tr>
             </thead>
             <tbody>
@@ -437,126 +420,142 @@ const InventoryStatusTab = () => {
                   item // Tự động dùng dữ liệu đã gộp
                 ) => (
                   <React.Fragment key={item.variantId}>
-                    <tr className="border-b hover:bg-gray-50">
+                    <tr className="group border-b border-slate-100 hover:bg-blue-50/30 transition-colors">
                       <td
-                        className="p-3 text-center cursor-pointer"
+                        className="px-4 py-4 text-center cursor-pointer text-slate-400 group-hover:text-blue-600 transition-colors"
                         onClick={() => toggleRow(item.variantId)}
                       >
                         <FiChevronDown
-                          className={`transition-transform ${
-                            expandedRows.has(item.variantId) ? "rotate-180" : ""
-                          }`}
+                          size={20}
+                          className={`mx-auto transition-transform duration-300 ${expandedRows.has(item.variantId) ? "rotate-180" : ""
+                            }`}
                         />
                       </td>
 
-                      <td className="p-3">
-                        <p className="font-semibold text-gray-800">
-                          {item.modelName} - {item.versionName} - {item.color}
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          SKU: {item.skuCode} | Brand: {item.brand}
-                        </p>
+                      <td className="px-4 py-4">
+                        <div className="flex flex-col">
+                          <button
+                            onClick={() => navigate(`${basePath}/products/catalog?modelId=${item.modelId}`)}
+                            className="font-bold text-slate-900 group-hover:text-blue-600 transition-colors text-left flex items-center gap-1"
+                          >
+                            {item.modelName} - {item.versionName}
+                            <FiExternalLink size={12} className="opacity-0 group-hover:opacity-100 transition-opacity" />
+                          </button>
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className="text-[10px] font-bold bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded uppercase tracking-wider">
+                              SKU: {item.skuCode}
+                            </span>
+                            <span className="text-[10px] font-bold bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded uppercase tracking-wider">
+                              Màu: {item.color}
+                            </span>
+                          </div>
+                        </div>
                       </td>
 
-                      <td className="p-3 text-center text-lg font-bold text-green-600">
+                      <td className="px-4 py-4 text-center font-mono font-bold text-emerald-600 text-lg">
                         {item.availableQuantity}
                       </td>
-                      <td className="p-3 text-center text-gray-600">
+                      <td className="px-4 py-4 text-center text-slate-500 font-mono">
                         {item.allocatedQuantity}
                       </td>
-                      <td className="p-3 text-center font-semibold text-blue-600">
+                      <td className="px-4 py-4 text-center font-mono font-bold text-blue-600">
                         {item.totalQuantity}
                       </td>
-                      <td className="p-3 text-center text-yellow-700 font-medium">
+                      <td className="px-4 py-4 text-center text-amber-600 font-mono font-semibold">
                         {item.reorderLevel}
                       </td>
-                      <td className="p-3">
+                      <td className="px-4 py-4">
                         <StatusBadge status={item.status} />
                       </td>
-                      <td className="p-3 text-right space-x-2">
-                        {/* Nút nhập kho */}
-                        <button
-                          onClick={() => openRestockModal(item.variantId)}
-                          className="p-2 text-blue-600 hover:bg-blue-100 rounded-full"
-                          title="Nhập kho (Restock)"
-                        >
-                          <FiPlusCircle />
-                        </button>
-                        {/* Nút điều chuyển */}
-                        <button
-                          onClick={() => openTransferModal(item.variantId)}
-                          className="p-2 text-purple-600 hover:bg-purple-100 rounded-full"
-                          title="Tạo Yêu Cầu Điều Chuyển"
-                        >
-                          <FiNavigation />
-                        </button>
-                        {/* Nút sửa ngưỡng */}
-                        <button
-                          onClick={() => openReorderModal(item.variantId)}
-                          className="p-2 text-yellow-600 hover:bg-yellow-100 rounded-full"
-                          title="Cập nhật ngưỡng"
-                        >
-                          <FiEdit />
-                        </button>
-                        {/* Nút xem chi tiết */}
-                        <button
-                          onClick={() => openDetailModal(item.variantId)}
-                          className="p-2 text-gray-600 hover:bg-gray-100 rounded-full"
-                          title="Xem chi tiết phiên bản"
-                        >
-                          <FiEye />
-                        </button>
+                      <td className="px-4 py-4 text-right">
+                        <div className="flex items-center justify-end gap-1">
+                          <button
+                            onClick={() => openRestockModal(item.variantId)}
+                            className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
+                            title="Nhập kho hàng loạt"
+                          >
+                            <FiPlusCircle size={18} />
+                          </button>
+                          <button
+                            onClick={() => openTransferModal(item.variantId)}
+                            className="p-2 text-indigo-600 hover:bg-indigo-100 rounded-lg transition-colors"
+                            title="Tạo lệnh điều chuyển"
+                          >
+                            <FiNavigation size={18} />
+                          </button>
+                          <button
+                            onClick={() => openReorderModal(item.variantId)}
+                            className="p-2 text-amber-600 hover:bg-amber-100 rounded-lg transition-colors"
+                            title="Cấu hình ngưỡng an toàn"
+                          >
+                            <FiEdit size={18} />
+                          </button>
+                          <button
+                            onClick={() => openDetailModal(item.variantId)}
+                            className="p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-900 rounded-lg transition-colors"
+                            title="Xem chi tiết"
+                          >
+                            <FiEye size={18} />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                     {expandedRows.has(item.variantId) && (
                       <tr className="bg-gray-50 border-b">
                         <td colSpan="8" className="p-4">
-                          <div className="p-4 bg-white rounded shadow-inner border">
-                            <h4 className="font-semibold mb-2 text-gray-800">
-                              Các số VIN khả dụng (Kho Trung tâm):
-                            </h4>
+                          <div className="p-6 bg-slate-50/50 rounded-xl border border-slate-100 shadow-inner">
+                            <div className="flex items-center justify-between mb-4">
+                              <h4 className="font-bold text-slate-800 flex items-center gap-2">
+                                <div className="w-1 h-4 bg-blue-600 rounded-full" />
+                                Danh sách VIN khả dụng (Kho Trung tâm)
+                              </h4>
+                              <button
+                                onClick={() => navigate(`${basePath}/distribution/allocation`)}
+                                className="text-xs font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-1 group/btn"
+                              >
+                                Tới phân bổ lô hàng
+                                <FiArrowRight className="group-hover/btn:translate-x-1 transition-transform" />
+                              </button>
+                            </div>
 
-                            {/* Trạng thái đang tải VINs */}
                             {loadingVins === item.variantId && (
-                              <div className="flex items-center text-gray-500">
-                                <FiLoader className="animate-spin mr-2" />
-                                Đang tải VINs...
+                              <div className="flex items-center justify-center py-8 text-slate-400">
+                                <FiLoader className="animate-spin mr-2" size={20} />
+                                <span className="text-sm font-medium">Đang truy vấn dữ liệu theo thời gian thực...</span>
                               </div>
                             )}
 
-                            {/* Trạng thái đã tải xong (hoặc chưa tải) */}
                             {loadingVins !== item.variantId &&
                               (() => {
                                 const vins = vinsMap.get(item.variantId);
+                                if (!vins) return <div className="h-20" />;
 
-                                // Chưa có dữ liệu (chưa kịp tải)
-                                if (!vins) {
-                                  return (
-                                    <p className="text-sm text-gray-500">
-                                      Đang chờ tải...
-                                    </p>
-                                  );
-                                }
-
-                                // Không tìm thấy VIN
                                 if (vins.length === 0) {
                                   return (
-                                    <p className="text-sm text-gray-500">
-                                      Không tìm thấy VIN nào khả dụng.
-                                    </p>
+                                    <div className="py-8 text-center text-slate-400 bg-white rounded-lg border border-dashed border-slate-200">
+                                      <p className="text-sm">Không tìm thấy mã định danh (VIN) nào đang khả dụng tại kho trung tâm.</p>
+                                    </div>
                                   );
                                 }
 
-                                // Hiển thị danh sách VINs
                                 return (
-                                  <div className="flex flex-wrap gap-2">
+                                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
                                     {vins.map((vin) => (
-                                      <span
+                                      <div
                                         key={vin}
-                                        className="px-3 py-1 bg-blue-100 text-blue-800 text-xs font-mono rounded-full border border-blue-200"
+                                        className="group/vin flex items-center justify-between px-3 py-2 bg-white border border-slate-200 text-[11px] font-mono font-bold text-slate-700 rounded-lg hover:border-blue-300 hover:shadow-sm transition-all"
                                       >
-                                        {vin}
-                                      </span>
+                                        <span>{vin}</span>
+                                        <button
+                                          onClick={() => {
+                                            navigator.clipboard.writeText(vin);
+                                            // Optional: Show toast
+                                          }}
+                                          className="text-slate-300 hover:text-blue-500 transition-colors opacity-0 group-hover/vin:opacity-100"
+                                        >
+                                          <FiCopy size={12} />
+                                        </button>
+                                      </div>
                                     ))}
                                   </div>
                                 );

@@ -1,7 +1,7 @@
 // export default ContractDetailPage;
 import React, { useState, useEffect } from "react";
 import { PageContainer, ProCard } from "@ant-design/pro-components";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { Button, Space, Alert, Spin } from "antd";
 import {
   ArrowLeftOutlined,
@@ -14,6 +14,9 @@ import ContractSignModal from "../components/ContractSignModal";
 const ContractDetailPage = () => {
   const { contractId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  const isAdmin = location.pathname.includes('/admin/');
+  const prefix = isAdmin ? '/evm/admin/dealers' : '/dealer';
   const {
     contract,
     loading,
@@ -53,7 +56,7 @@ const ContractDetailPage = () => {
   };
 
   const handleEdit = () => {
-    navigate(`/dealer/contracts/${contractId}/edit`);
+    navigate(`${prefix}/contracts/${contractId}/edit`);
   };
 
   const handleDownload = () => {
@@ -120,7 +123,7 @@ const ContractDetailPage = () => {
           type="warning"
           showIcon
           action={
-            <Button size="small" onClick={() => navigate("/dealer/contracts")}>
+            <Button size="small" onClick={() => navigate(`${prefix}/contracts`)}>
               Quay lại danh sách
             </Button>
           }
@@ -135,12 +138,11 @@ const ContractDetailPage = () => {
         title: `Hợp đồng #${contract.contractNumber || contract.contractId}`,
         breadcrumb: {
           items: [
-            { title: "Bán hàng" },
-            { title: "Hợp đồng", path: "/dealer/contracts" },
+            { title: isAdmin ? "Đại Lý" : "Bán hàng" },
+            { title: "Hợp đồng", path: `${prefix}/contracts` },
             {
-              title: `Hợp đồng #${
-                contract.contractNumber || contract.contractId
-              }`,
+              title: `Hợp đồng #${contract.contractNumber || contract.contractId
+                }`,
             },
           ],
         },
@@ -149,7 +151,7 @@ const ContractDetailPage = () => {
         <Button
           key="back"
           icon={<ArrowLeftOutlined />}
-          onClick={() => navigate("/dealer/contracts")}
+          onClick={() => navigate(`${prefix}/contracts`)}
         >
           Quay lại
         </Button>,

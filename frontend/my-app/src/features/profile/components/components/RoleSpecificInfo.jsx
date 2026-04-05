@@ -5,17 +5,20 @@ import { Building, Briefcase, Target, Shield, Lock } from 'lucide-react';
 export const RoleSpecificInfo = ({ userProfile, formatDate, formatCurrency }) => {
     const renderReadOnlyRoleInfo = () => {
         const role = userProfile.roleToString;
-        
+
         switch (role) {
             case 'DEALER_STAFF':
                 return userProfile.dealerStaffProfile && (
-                    <div className="bg-slate-50 rounded-xl p-6 border border-slate-200">
-                        <div className="flex items-center justify-between mb-4">
+                    <div className="bg-slate-50/80 rounded-[2rem] p-8 border border-slate-100 shadow-inner">
+                        <div className="flex items-center justify-between mb-8">
                             <div className="flex items-center">
-                                <Building className="h-5 w-5 text-blue-600 mr-2"/>
-                                <h3 className="text-lg font-semibold text-slate-800">Thông tin Nhân viên Đại lý</h3>
+                                <Building className="h-4 w-4 text-indigo-600 mr-2" />
+                                <h3 className="text-sm font-black text-slate-800 uppercase tracking-widest italic">Thông tin Nhân viên Đại lý</h3>
                             </div>
-                            <Lock className="h-4 w-4 text-slate-500" />
+                            <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-200/50 text-[10px] font-black uppercase text-slate-500 tracking-tighter">
+                                <Lock size={10} />
+                                Read Only
+                            </div>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                             <InfoField label="Mã nhân viên" value={userProfile.dealerStaffProfile.staffId} />
@@ -30,13 +33,16 @@ export const RoleSpecificInfo = ({ userProfile, formatDate, formatCurrency }) =>
 
             case 'DEALER_MANAGER':
                 return userProfile.dealerManagerProfile && (
-                    <div className="bg-slate-50 rounded-xl p-6 border border-slate-200">
-                        <div className="flex items-center justify-between mb-4">
+                    <div className="bg-slate-50/80 rounded-[2rem] p-8 border border-slate-100 shadow-inner">
+                        <div className="flex items-center justify-between mb-8">
                             <div className="flex items-center">
-                                <Briefcase className="h-5 w-5 text-green-600 mr-2"/>
-                                <h3 className="text-lg font-semibold text-slate-800">Thông tin Quản lý Đại lý</h3>
+                                <Briefcase className="h-4 w-4 text-indigo-600 mr-2" />
+                                <h3 className="text-sm font-black text-slate-800 uppercase tracking-widest italic">Thông tin Quản lý Đại lý</h3>
                             </div>
-                            <Lock className="h-4 w-4 text-slate-500" />
+                            <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-200/50 text-[10px] font-black uppercase text-slate-500 tracking-tighter">
+                                <Lock size={10} />
+                                Read Only
+                            </div>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                             <InfoField label="Mã quản lý" value={userProfile.dealerManagerProfile.managerId} />
@@ -49,13 +55,16 @@ export const RoleSpecificInfo = ({ userProfile, formatDate, formatCurrency }) =>
 
             case 'EVM_STAFF':
                 return userProfile.evmStaffProfile && (
-                    <div className="bg-slate-50 rounded-xl p-6 border border-slate-200">
-                        <div className="flex items-center justify-between mb-4">
+                    <div className="bg-slate-50/80 rounded-[2rem] p-8 border border-slate-100 shadow-inner">
+                        <div className="flex items-center justify-between mb-8">
                             <div className="flex items-center">
-                                <Target className="h-5 w-5 text-purple-600 mr-2"/>
-                                <h3 className="text-lg font-semibold text-slate-800">Thông tin Nhân viên EVM</h3>
+                                <Target className="h-4 w-4 text-indigo-600 mr-2" />
+                                <h3 className="text-sm font-black text-slate-800 uppercase tracking-widest italic">Thông tin Nhân viên EVM</h3>
                             </div>
-                            <Lock className="h-4 w-4 text-slate-500" />
+                            <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-200/50 text-[10px] font-black uppercase text-slate-500 tracking-tighter">
+                                <Lock size={10} />
+                                Read Only
+                            </div>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <InfoField label="Mã nhân viên" value={userProfile.evmStaffProfile.evmStaffId} />
@@ -67,13 +76,16 @@ export const RoleSpecificInfo = ({ userProfile, formatDate, formatCurrency }) =>
 
             case 'ADMIN':
                 return userProfile.adminProfile && (
-                    <div className="bg-slate-50 rounded-xl p-6 border border-slate-200">
-                        <div className="flex items-center justify-between mb-4">
+                    <div className="bg-slate-50/80 rounded-[2rem] p-8 border border-slate-100 shadow-inner">
+                        <div className="flex items-center justify-between mb-8">
                             <div className="flex items-center">
-                                <Shield className="h-5 w-5 text-red-600 mr-2"/>
-                                <h3 className="text-lg font-semibold text-slate-800">Thông tin Quản trị viên</h3>
+                                <Shield className="h-4 w-4 text-indigo-600 mr-2" />
+                                <h3 className="text-sm font-black text-slate-800 uppercase tracking-widest italic">Thông tin Quản trị viên</h3>
                             </div>
-                            <Lock className="h-4 w-4 text-slate-500" />
+                            <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-200/50 text-[10px] font-black uppercase text-slate-500 tracking-tighter">
+                                <Lock size={10} />
+                                Read Only
+                            </div>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                             <InfoField label="Mã quản trị" value={userProfile.adminProfile.admin_id} />

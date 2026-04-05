@@ -61,8 +61,8 @@ export const PromotionEditPage = ({ promotion, onBack }) => {
           />
         )}
 
-        <PromotionForm 
-          onSubmit={handleSubmit} 
+        <PromotionForm
+          onSubmit={handleSubmit}
           onCancel={onBack}
           initialData={promotion}
           isEdit={true}

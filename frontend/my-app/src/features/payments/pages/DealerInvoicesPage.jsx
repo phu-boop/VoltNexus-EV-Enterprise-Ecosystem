@@ -4,10 +4,11 @@ import { useAuthContext } from '../../../features/auth/AuthProvider';
 import paymentService from '../services/paymentService';
 import DealerInvoiceList from '../components/DealerInvoiceList';
 import { toast } from 'react-toastify';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 const DealerInvoicesPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { dealerId } = useAuthContext(); // Lấy dealerId từ AuthContext
   const [invoices, setInvoices] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -43,7 +44,7 @@ const DealerInvoicesPage = () => {
 
       const response = await paymentService.getDealerInvoices(dealerId, params);
       const data = response.data.data || response.data;
-      
+
       if (data.content) {
         // Pageable response
         setInvoices(data.content);
@@ -65,11 +66,13 @@ const DealerInvoicesPage = () => {
   };
 
   const handleViewInvoice = (invoiceId) => {
-    navigate(`/dealer/manager/payments/invoices/${invoiceId}`);
+    const prefix = location.pathname.includes('/manager/') ? '/dealer/manager' : '/dealer/staff';
+    navigate(`${prefix}/payments/invoices/${invoiceId}`);
   };
 
   const handlePayInvoice = (invoiceId) => {
-    navigate(`/dealer/manager/payments/invoices/${invoiceId}/pay`);
+    const prefix = location.pathname.includes('/manager/') ? '/dealer/manager' : '/dealer/staff';
+    navigate(`${prefix}/payments/invoices/${invoiceId}/pay`);
   };
 
   return (

@@ -20,6 +20,8 @@ public class UpdateVariantRequest {
     @Min(value = 0, message = "Price must be non-negative")
     private BigDecimal price;
 
+    private String skuCode;
+
     private String imageUrl;
 
     @NotNull(message = "Status is required")
@@ -39,7 +41,7 @@ public class UpdateVariantRequest {
     private Integer weight; // kg
     private Integer warrantyYears;
     private String description;
-    
+
     private String colorImages; // JSON string
     private String exteriorImages; // JSON array of exterior image URLs
     private String interiorImages; // JSON array of interior image URLs

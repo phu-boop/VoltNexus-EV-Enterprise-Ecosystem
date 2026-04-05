@@ -361,6 +361,7 @@ export default function PromotionForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-8">
+      <div classname="flex">
       {/* Basic Information */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
         <div className="flex items-center mb-6">
@@ -414,7 +415,8 @@ export default function PromotionForm({
           </div>
         </div>
       </div>
-
+      
+      </div>
       <div className="flex gap-8">
         {/* Dealer Selection */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 flex-1">

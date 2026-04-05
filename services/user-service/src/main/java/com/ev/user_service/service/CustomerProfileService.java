@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.util.UUID;
+import java.security.SecureRandom;
 
 @Service
 public class CustomerProfileService {
@@ -34,9 +35,11 @@ public class CustomerProfileService {
         return customerProfileRepository.save(customerProfile);
     }
 
+    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
+
     private String generateCustomerCode() {
         String datePrefix = LocalDate.now().toString().replace("-", "");
-        String randomSuffix = String.format("%04d", (int) (Math.random() * 10000));
+        String randomSuffix = String.format("%04d", SECURE_RANDOM.nextInt(10000));
         return "CUST-" + datePrefix + "-" + randomSuffix;
     }
 }

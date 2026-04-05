@@ -22,17 +22,17 @@ public class JwtUtil {
     public JwtUtil(
             @Value("${jwt.secret-key}") String secretKey,
             @Value("${jwt.access-expiration-ms}") long accessExpirationMs,
-            @Value("${jwt.refresh-expiration-ms}") long refreshExpirationMs
-    ) {
+            @Value("${jwt.refresh-expiration-ms}") long refreshExpirationMs) {
         this.SECRET_KEY = secretKey;
         this.ACCESS_EXPIRATION_MS = accessExpirationMs;
         this.REFRESH_EXPIRATION_MS = refreshExpirationMs;
     }
 
     // Generate Access Token
-    public String generateAccessToken(String email, String role, String profileId, String dealerId) {
+    public String generateAccessToken(String email, String role, String userId, String profileId, String dealerId) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("role", role);
+        claims.put("userId", userId);
         claims.put("profileId", profileId);
         if (dealerId != null) {
             claims.put("dealerId", dealerId);
@@ -47,9 +47,10 @@ public class JwtUtil {
     }
 
     // Generate Refresh Token
-    public String generateRefreshToken(String email, String role, String profileId, String dealerId) {
+    public String generateRefreshToken(String email, String role, String userId, String profileId, String dealerId) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("role", role);
+        claims.put("userId", userId);
         claims.put("profileId", profileId);
         if (dealerId != null) {
             claims.put("dealerId", dealerId);
@@ -80,6 +81,10 @@ public class JwtUtil {
     // Extract role
     public String extractRole(String token) {
         return extractClaims(token).get("role", String.class);
+    }
+
+    public String extractUserId(String token) {
+        return extractClaims(token).get("userId", String.class);
     }
 
     // Extract role

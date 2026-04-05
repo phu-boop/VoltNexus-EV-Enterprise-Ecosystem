@@ -55,11 +55,10 @@ const ProductCard = ({
         <button
           onClick={handleCompareClick}
           title="Thêm vào so sánh"
-          className={`py-2 px-3 rounded ${
-            isSelected
+          className={`py-2 px-3 rounded ${isSelected
               ? "bg-blue-600 text-white hover:bg-blue-700"
               : "bg-blue-100 text-blue-700 hover:bg-blue-200"
-          }`}
+            }`}
         >
           {isSelected ? <FiCheckSquare size={18} /> : <FiSquare size={18} />}
         </button>

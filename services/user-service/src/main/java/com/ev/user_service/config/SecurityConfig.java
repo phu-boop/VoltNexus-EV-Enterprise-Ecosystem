@@ -26,7 +26,7 @@ import com.ev.user_service.security.OAuth2LoginSuccessHandler;
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
-public class    SecurityConfig {
+public class SecurityConfig {
     private final OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
     private final String urlFrontend;
     private final RateLimitFilter rateLimitFilter;
@@ -47,6 +47,7 @@ public class    SecurityConfig {
     }
 
     @Bean
+    @SuppressWarnings("java:S4502") // Disable CSRF check for stateless AI service APIs
     public SecurityFilterChain securityFilterChain(HttpSecurity http, JwtAuthenticationFilter jwtAuthenticationFilter)
             throws Exception {
         http

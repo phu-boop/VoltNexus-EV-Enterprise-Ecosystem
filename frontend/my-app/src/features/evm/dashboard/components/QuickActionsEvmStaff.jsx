@@ -1,5 +1,5 @@
 import React from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import {
   FiShoppingCart,
   FiArchive,
@@ -21,13 +21,15 @@ import {
  */
 const QuickActionsEvmStaff = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const prefix = location.pathname.includes('/admin/') ? '/evm/admin' : '/evm/staff';
 
   const actions = [
     // Nhóm: Đơn hàng & Thanh toán
     {
       icon: FiShoppingCart,
       label: "Quản Lý Đơn Hàng B2B",
-      path: "/evm/staff/orders",
+      path: "/orders",
       color: "from-blue-500 to-cyan-500",
       bgColor: "bg-blue-50",
       description: "Xử lý và duyệt đơn hàng B2B",
@@ -35,7 +37,7 @@ const QuickActionsEvmStaff = () => {
     {
       icon: FiDollarSign,
       label: "Công Nợ Đại Lý",
-      path: "/evm/staff/debt",
+      path: "/debt",
       color: "from-red-500 to-pink-500",
       bgColor: "bg-red-50",
       description: "Theo dõi công nợ đại lý",
@@ -43,7 +45,7 @@ const QuickActionsEvmStaff = () => {
     {
       icon: FiCreditCard,
       label: "Thanh Toán Tiền Mặt",
-      path: "/evm/staff/payments/cash-payments",
+      path: "/payments/cash-payments",
       color: "from-green-500 to-emerald-500",
       bgColor: "bg-green-50",
       description: "Xử lý thanh toán tiền mặt",
@@ -51,7 +53,7 @@ const QuickActionsEvmStaff = () => {
     {
       icon: FiFileText,
       label: "Hóa Đơn Đại Lý",
-      path: "/evm/staff/payments/dealer-invoices",
+      path: "/payments/dealer-invoices",
       color: "from-purple-500 to-indigo-500",
       bgColor: "bg-purple-50",
       description: "Quản lý hóa đơn đại lý",
@@ -61,7 +63,7 @@ const QuickActionsEvmStaff = () => {
     {
       icon: FiArchive,
       label: "Kho Trung Tâm",
-      path: "/evm/staff/distribution/inventory/central",
+      path: "/distribution/inventory/central",
       color: "from-orange-500 to-amber-500",
       bgColor: "bg-orange-50",
       description: "Quản lý tồn kho trung tâm",
@@ -69,7 +71,7 @@ const QuickActionsEvmStaff = () => {
     {
       icon: FiNavigation,
       label: "Điều Phối Xe",
-      path: "/evm/staff/distribution/allocation",
+      path: "/distribution/allocation",
       color: "from-teal-500 to-cyan-500",
       bgColor: "bg-teal-50",
       description: "Điều phối xe đến đại lý",
@@ -77,7 +79,7 @@ const QuickActionsEvmStaff = () => {
     {
       icon: FiTruck,
       label: "Vận Chuyển",
-      path: "/evm/staff/distribution/allocation",
+      path: "/distribution/allocation",
       color: "from-indigo-500 to-blue-500",
       bgColor: "bg-indigo-50",
       description: "Theo dõi vận chuyển",
@@ -87,7 +89,7 @@ const QuickActionsEvmStaff = () => {
     {
       icon: FiUsers,
       label: "Danh Sách Đại Lý",
-      path: "/evm/staff/dealers/list",
+      path: "/dealers/list",
       color: "from-violet-500 to-purple-500",
       bgColor: "bg-violet-50",
       description: "Xem danh sách đại lý",
@@ -95,7 +97,7 @@ const QuickActionsEvmStaff = () => {
     {
       icon: FiUsers,
       label: "Tài Khoản Đại Lý",
-      path: "/evm/staff/dealers/dealer-accounts",
+      path: "/dealers/dealer-accounts",
       color: "from-pink-500 to-rose-500",
       bgColor: "bg-pink-50",
       description: "Quản lý tài khoản đại lý",
@@ -105,7 +107,7 @@ const QuickActionsEvmStaff = () => {
     {
       icon: FiPackage,
       label: "Danh Mục Xe",
-      path: "/evm/staff/products/catalog",
+      path: "/products/catalog",
       color: "from-cyan-500 to-blue-500",
       bgColor: "bg-cyan-50",
       description: "Quản lý danh mục xe",
@@ -113,7 +115,7 @@ const QuickActionsEvmStaff = () => {
     {
       icon: FiTag,
       label: "Phiên Bản & Màu Sắc",
-      path: "/evm/staff/products/variants",
+      path: "/products/variants",
       color: "from-emerald-500 to-green-500",
       bgColor: "bg-emerald-50",
       description: "Quản lý phiên bản xe",
@@ -131,7 +133,7 @@ const QuickActionsEvmStaff = () => {
     {
       icon: FiTrendingUp,
       label: "Báo Cáo Doanh Số",
-      path: "/evm/staff/reports/sales",
+      path: "/reports/sales",
       color: "from-slate-500 to-gray-500",
       bgColor: "bg-slate-50",
       description: "Xem báo cáo doanh số",
@@ -149,7 +151,10 @@ const QuickActionsEvmStaff = () => {
         {actions.map((action, index) => (
           <button
             key={index}
-            onClick={() => navigate(action.path)}
+            onClick={() => {
+              const finalPath = action.path.startsWith('/evm') ? action.path : `${prefix}${action.path}`;
+              navigate(finalPath);
+            }}
             className={`${action.bgColor} rounded-xl p-5 border border-gray-200 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 group`}
           >
             <div className="flex flex-col items-center text-center space-y-3">

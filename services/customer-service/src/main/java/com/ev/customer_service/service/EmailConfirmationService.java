@@ -37,6 +37,22 @@ public class EmailConfirmationService {
     private String frontendUrl;
 
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+    private static final String CHARSET_UTF8 = "UTF-8";
+    private static final String API_TEST_DRIVES = "/customers/api/test-drives/";
+    private static final String CONFIRM_TOKEN_PATH = "/confirm-by-token?token=";
+    private static final String CANCEL_TOKEN_PATH = "/cancel-by-token?token=";
+    private static final String PLATFORM_NAME = "EV Dealer Management Platform";
+    private static final String CONTACT_INFO = "Hotline: 1900-xxxx | Email: support@evdealer.com";
+    private static final String CSS_FONT_FAMILY = "Arial, sans-serif";
+    private static final String CSS_COLOR_MAIN = "#667eea";
+    private static final String CSS_COLOR_DANGER = "#dc3545";
+    private static final String CSS_BG_CONTENT = "#f9f9f9";
+    private static final String CSS_BORDER_RADIUS_TOP = "10px 10px 0 0";
+    private static final String CSS_BORDER_RADIUS_BOTTOM = "0 0 10px 10px";
+    private static final String CSS_MAX_WIDTH = "600px";
+    private static final String CSS_BORDER_STD = "1px solid #ddd";
+    private static final String CSS_COLOR_TEXT = "#333";
+    private static final String MODEL_PREFIX = "Model #";
 
     /**
      * Gửi email xác nhận lịch hẹn lần đầu
@@ -45,7 +61,7 @@ public class EmailConfirmationService {
             String vehicleModel, String vehicleVariant, String staffName) {
         try {
             MimeMessage message = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, CHARSET_UTF8);
 
             helper.setFrom(fromEmail);
             helper.setTo(customerEmail);
@@ -59,7 +75,7 @@ public class EmailConfirmationService {
             log.info("✅ Sent confirmation email to {} for appointment ID: {}",
                     customerEmail, appointment.getAppointmentId());
 
-        } catch (MessagingException e) {
+        } catch (Exception e) {
             log.error("❌ Failed to send confirmation email to {}", customerEmail, e);
             throw new RuntimeException("Failed to send confirmation email", e);
         }
@@ -72,7 +88,7 @@ public class EmailConfirmationService {
             String vehicleModel, String vehicleVariant) {
         try {
             MimeMessage message = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, CHARSET_UTF8);
 
             helper.setFrom(fromEmail);
             helper.setTo(customerEmail);
@@ -85,7 +101,7 @@ public class EmailConfirmationService {
             log.info("✅ Sent first reminder email to {} for appointment ID: {}",
                     customerEmail, appointment.getAppointmentId());
 
-        } catch (MessagingException e) {
+        } catch (Exception e) {
             log.error("❌ Failed to send first reminder email to {}", customerEmail, e);
         }
     }
@@ -97,7 +113,7 @@ public class EmailConfirmationService {
             String vehicleModel, String vehicleVariant) {
         try {
             MimeMessage message = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, CHARSET_UTF8);
 
             helper.setFrom(fromEmail);
             helper.setTo(customerEmail);
@@ -110,7 +126,7 @@ public class EmailConfirmationService {
             log.info("✅ Sent second reminder email to {} for appointment ID: {}",
                     customerEmail, appointment.getAppointmentId());
 
-        } catch (MessagingException e) {
+        } catch (Exception e) {
             log.error("❌ Failed to send second reminder email to {}", customerEmail, e);
         }
     }
@@ -122,7 +138,7 @@ public class EmailConfirmationService {
             String vehicleModel, String vehicleVariant) {
         try {
             MimeMessage message = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, CHARSET_UTF8);
 
             helper.setFrom(fromEmail);
             helper.setTo(customerEmail);
@@ -135,7 +151,7 @@ public class EmailConfirmationService {
             log.info("✅ Sent expiration email to {} for appointment ID: {}",
                     customerEmail, appointment.getAppointmentId());
 
-        } catch (MessagingException e) {
+        } catch (Exception e) {
             log.error("❌ Failed to send expiration email to {}", customerEmail, e);
         }
     }
@@ -145,19 +161,21 @@ public class EmailConfirmationService {
      */
     private String buildConfirmationEmailHtml(TestDriveAppointment appointment, String customerName,
             String vehicleModel, String vehicleVariant, String staffName) {
-        String confirmUrl = baseUrl + "/customers/api/test-drives/" + appointment.getAppointmentId() +
-                "/confirm-by-token?token=" + appointment.getConfirmationToken();
-        String cancelUrl = baseUrl + "/customers/api/test-drives/" + appointment.getAppointmentId() +
-                "/cancel-by-token?token=" + appointment.getConfirmationToken();
-
-        // URL để xem chi tiết trên frontend
-        String viewUrl = frontendUrl + "/test-drives/" + appointment.getAppointmentId();
+        String confirmUrl = baseUrl + API_TEST_DRIVES + appointment.getAppointmentId() +
+                CONFIRM_TOKEN_PATH + appointment.getConfirmationToken();
+        String cancelUrl = baseUrl + API_TEST_DRIVES + appointment.getAppointmentId() +
+                CANCEL_TOKEN_PATH + appointment.getConfirmationToken();
 
         // Format vehicle info
-        String vehicleInfo = (vehicleModel != null && vehicleVariant != null)
-                ? vehicleModel + " - " + vehicleVariant
-                : "Model #" + appointment.getModelId() + " - Variant #"
-                        + (appointment.getVariantId() != null ? appointment.getVariantId() : "N/A");
+        String vehicleInfo;
+        if (vehicleModel != null && vehicleVariant != null) {
+            vehicleInfo = vehicleModel + " - " + vehicleVariant;
+        } else {
+            String variantPart = (appointment.getVariantId() != null)
+                    ? " - Variant #" + appointment.getVariantId()
+                    : " - Variant #N/A";
+            vehicleInfo = MODEL_PREFIX + appointment.getModelId() + variantPart;
+        }
 
         // Format staff info
         String staffInfo = (staffName != null && !staffName.isEmpty())
@@ -171,31 +189,31 @@ public class EmailConfirmationService {
                     <meta charset="UTF-8">
                     <style>
                         body {
-                            font-family: Arial, sans-serif;
+                            font-family: %s;
                             line-height: 1.6;
-                            color: #333;
-                            max-width: 600px;
+                            color: %s;
+                            max-width: %s;
                             margin: 0 auto;
                             padding: 20px;
                         }
                         .header {
-                            background: linear-gradient(135deg, #667eea 0%%, #764ba2 100%%);
+                            background: linear-gradient(135deg, %s 0%%, #764ba2 100%%);
                             color: white;
                             padding: 30px;
-                            border-radius: 10px 10px 0 0;
+                            border-radius: %s;
                             text-align: center;
                         }
                         .content {
-                            background: #f9f9f9;
+                            background: %s;
                             padding: 30px;
-                            border: 1px solid #ddd;
+                            border: %s;
                         }
                         .info-box {
                             background: white;
                             padding: 20px;
                             border-radius: 8px;
                             margin: 20px 0;
-                            border-left: 4px solid #667eea;
+                            border-left: 4px solid %s;
                         }
                         .info-row {
                             padding: 10px 0;
@@ -206,7 +224,7 @@ public class EmailConfirmationService {
                         }
                         .label {
                             font-weight: bold;
-                            color: #667eea;
+                            color: %s;
                             display: inline-block;
                             width: 140px;
                         }
@@ -228,7 +246,7 @@ public class EmailConfirmationService {
                             color: white;
                         }
                         .btn-cancel {
-                            background: #dc3545;
+                            background: %s;
                             color: white;
                         }
                         .btn-view {
@@ -247,7 +265,7 @@ public class EmailConfirmationService {
                             background: #f1f1f1;
                             padding: 20px;
                             text-align: center;
-                            border-radius: 0 0 10px 10px;
+                            border-radius: %s;
                             font-size: 12px;
                             color: #666;
                         }
@@ -264,7 +282,7 @@ public class EmailConfirmationService {
                         <p>Cảm ơn bạn đã đăng ký lịch hẹn lái thử xe tại <strong>EV Dealer Platform</strong>!</p>
 
                         <div class="info-box">
-                            <h3 style="margin-top: 0; color: #667eea;">📋 Thông tin lịch hẹn</h3>
+                            <h3 style="margin-top: 0; color: %s;">📋 Thông tin lịch hẹn</h3>
                             <div class="info-row">
                                 <span class="label">📅 Thời gian:</span>
                                 <span>%s</span>
@@ -305,8 +323,8 @@ public class EmailConfirmationService {
                     </div>
 
                     <div class="footer">
-                        <p><strong>EV Dealer Management Platform</strong></p>
-                        <p>Hotline: 1900-xxxx | Email: support@evdealer.com</p>
+                        <p><strong>%s</strong></p>
+                        <p>%s</p>
                         <p style="color: #999; font-size: 11px;">
                             Email này được gửi tự động, vui lòng không trả lời.
                         </p>
@@ -314,7 +332,11 @@ public class EmailConfirmationService {
                 </body>
                 </html>
                 """,
+                CSS_FONT_FAMILY, CSS_COLOR_TEXT, CSS_MAX_WIDTH, CSS_COLOR_MAIN, CSS_BORDER_RADIUS_TOP,
+                CSS_BG_CONTENT, CSS_BORDER_STD, CSS_COLOR_MAIN, CSS_COLOR_MAIN,
+                CSS_COLOR_DANGER, CSS_BORDER_RADIUS_BOTTOM,
                 customerName,
+                CSS_COLOR_MAIN,
                 appointment.getAppointmentDate().format(DATE_FORMATTER),
                 appointment.getDurationMinutes(),
                 appointment.getTestDriveLocation(),
@@ -322,7 +344,9 @@ public class EmailConfirmationService {
                 staffInfo,
                 appointment.getConfirmationExpiresAt().format(DATE_FORMATTER),
                 confirmUrl,
-                cancelUrl);
+                cancelUrl,
+                PLATFORM_NAME,
+                CONTACT_INFO);
     }
 
     /**
@@ -330,10 +354,10 @@ public class EmailConfirmationService {
      */
     private String buildReminderEmailHtml(TestDriveAppointment appointment, String customerName, int reminderNumber,
             String vehicleModel, String vehicleVariant) {
-        String confirmUrl = baseUrl + "/customers/api/test-drives/" + appointment.getAppointmentId() +
-                "/confirm-by-token?token=" + appointment.getConfirmationToken();
-        String cancelUrl = baseUrl + "/customers/api/test-drives/" + appointment.getAppointmentId() +
-                "/cancel-by-token?token=" + appointment.getConfirmationToken();
+        String confirmUrl = baseUrl + API_TEST_DRIVES + appointment.getAppointmentId() +
+                CONFIRM_TOKEN_PATH + appointment.getConfirmationToken();
+        String cancelUrl = baseUrl + API_TEST_DRIVES + appointment.getAppointmentId() +
+                CANCEL_TOKEN_PATH + appointment.getConfirmationToken();
 
         String urgencyMessage = reminderNumber == 1
                 ? "Bạn chưa xác nhận lịch hẹn lái thử xe."
@@ -342,7 +366,7 @@ public class EmailConfirmationService {
         // Format vehicle info
         String vehicleInfo = (vehicleModel != null && vehicleVariant != null)
                 ? vehicleModel + " - " + vehicleVariant
-                : "Model #" + appointment.getModelId();
+                : MODEL_PREFIX + appointment.getModelId();
 
         return String.format("""
                 <!DOCTYPE html>
@@ -351,10 +375,10 @@ public class EmailConfirmationService {
                     <meta charset="UTF-8">
                     <style>
                         body {
-                            font-family: Arial, sans-serif;
+                            font-family: %s;
                             line-height: 1.6;
-                            color: #333;
-                            max-width: 600px;
+                            color: %s;
+                            max-width: %s;
                             margin: 0 auto;
                             padding: 20px;
                         }
@@ -362,13 +386,13 @@ public class EmailConfirmationService {
                             background: linear-gradient(135deg, #f093fb 0%%, #f5576c 100%%);
                             color: white;
                             padding: 30px;
-                            border-radius: 10px 10px 0 0;
+                            border-radius: %s;
                             text-align: center;
                         }
                         .content {
-                            background: #f9f9f9;
+                            background: %s;
                             padding: 30px;
-                            border: 1px solid #ddd;
+                            border: %s;
                         }
                         .urgent-box {
                             background: #fff3cd;
@@ -406,14 +430,14 @@ public class EmailConfirmationService {
                             color: white;
                         }
                         .btn-cancel {
-                            background: #dc3545;
+                            background: %s;
                             color: white;
                         }
                         .footer {
                             background: #f1f1f1;
                             padding: 20px;
                             text-align: center;
-                            border-radius: 0 0 10px 10px;
+                            border-radius: %s;
                             font-size: 12px;
                             color: #666;
                         }
@@ -428,7 +452,7 @@ public class EmailConfirmationService {
                         <p>Kính gửi <strong>%s</strong>,</p>
 
                         <div class="urgent-box">
-                            <h2 style="color: #dc3545; margin: 0;">%s</h2>
+                            <h2 style="color: %s; margin: 0;">%s</h2>
                         </div>
 
                         <p>Lịch hẹn lái thử xe của bạn:</p>
@@ -448,7 +472,7 @@ public class EmailConfirmationService {
                             </div>
                             <div class="info-row" style="border-bottom: none;">
                                 <span class="label">⏰ Hết hạn xác nhận:</span>
-                                <span style="color: #dc3545; font-weight: bold;">%s</span>
+                                <span style="color: %s; font-weight: bold;">%s</span>
                             </div>
                         </div>
 
@@ -463,20 +487,24 @@ public class EmailConfirmationService {
                     </div>
 
                     <div class="footer">
-                        <p><strong>EV Dealer Management Platform</strong></p>
-                        <p>Hotline: 1900-xxxx | Email: support@evdealer.com</p>
+                        <p><strong>%s</strong></p>
+                        <p>%s</p>
                     </div>
                 </body>
                 </html>
                 """,
+                CSS_FONT_FAMILY, CSS_COLOR_TEXT, CSS_MAX_WIDTH, CSS_BORDER_RADIUS_TOP,
+                CSS_BG_CONTENT, CSS_BORDER_STD, CSS_COLOR_DANGER, CSS_BORDER_RADIUS_BOTTOM,
                 customerName,
-                urgencyMessage,
+                CSS_COLOR_DANGER, urgencyMessage,
                 appointment.getAppointmentDate().format(DATE_FORMATTER),
                 appointment.getTestDriveLocation(),
                 vehicleInfo,
-                appointment.getConfirmationExpiresAt().format(DATE_FORMATTER),
+                CSS_COLOR_DANGER, appointment.getConfirmationExpiresAt().format(DATE_FORMATTER),
                 confirmUrl,
-                cancelUrl);
+                cancelUrl,
+                PLATFORM_NAME,
+                CONTACT_INFO);
     }
 
     /**
@@ -487,7 +515,7 @@ public class EmailConfirmationService {
         // Format vehicle info
         String vehicleInfo = (vehicleModel != null && vehicleVariant != null)
                 ? vehicleModel + " - " + vehicleVariant
-                : "Model #" + appointment.getModelId();
+                : MODEL_PREFIX + appointment.getModelId();
         return String.format("""
                 <!DOCTYPE html>
                 <html>
@@ -495,10 +523,10 @@ public class EmailConfirmationService {
                     <meta charset="UTF-8">
                     <style>
                         body {
-                            font-family: Arial, sans-serif;
+                            font-family: %s;
                             line-height: 1.6;
-                            color: #333;
-                            max-width: 600px;
+                            color: %s;
+                            max-width: %s;
                             margin: 0 auto;
                             padding: 20px;
                         }
@@ -506,17 +534,17 @@ public class EmailConfirmationService {
                             background: linear-gradient(135deg, #868f96 0%%, #596164 100%%);
                             color: white;
                             padding: 30px;
-                            border-radius: 10px 10px 0 0;
+                            border-radius: %s;
                             text-align: center;
                         }
                         .content {
-                            background: #f9f9f9;
+                            background: %s;
                             padding: 30px;
-                            border: 1px solid #ddd;
+                            border: %s;
                         }
                         .expired-box {
                             background: #f8d7da;
-                            border: 2px solid #dc3545;
+                            border: 2px solid %s;
                             padding: 20px;
                             border-radius: 8px;
                             margin: 20px 0;
@@ -526,7 +554,7 @@ public class EmailConfirmationService {
                             background: #f1f1f1;
                             padding: 20px;
                             text-align: center;
-                            border-radius: 0 0 10px 10px;
+                            border-radius: %s;
                             font-size: 12px;
                             color: #666;
                         }
@@ -548,7 +576,7 @@ public class EmailConfirmationService {
                         <p>Kính gửi <strong>%s</strong>,</p>
 
                         <div class="expired-box">
-                            <h2 style="color: #dc3545; margin: 0;">Lịch hẹn của bạn đã hết hạn</h2>
+                            <h2 style="color: %s; margin: 0;">Lịch hẹn của bạn đã hết hạn</h2>
                             <p style="margin: 10px 0 0 0;">Do không xác nhận trong thời hạn quy định</p>
                         </div>
 
@@ -571,15 +599,20 @@ public class EmailConfirmationService {
                     </div>
 
                     <div class="footer">
-                        <p><strong>EV Dealer Management Platform</strong></p>
-                        <p>Hotline: 1900-xxxx | Email: support@evdealer.com</p>
+                        <p><strong>%s</strong></p>
+                        <p>%s</p>
                     </div>
                 </body>
                 </html>
                 """,
+                CSS_FONT_FAMILY, CSS_COLOR_TEXT, CSS_MAX_WIDTH, CSS_BORDER_RADIUS_TOP,
+                CSS_BG_CONTENT, CSS_BORDER_STD, CSS_COLOR_DANGER, CSS_BORDER_RADIUS_BOTTOM,
                 customerName,
+                CSS_COLOR_DANGER,
                 vehicleInfo,
                 appointment.getAppointmentDate().format(DATE_FORMATTER),
-                appointment.getTestDriveLocation());
+                appointment.getTestDriveLocation(),
+                PLATFORM_NAME,
+                CONTACT_INFO);
     }
 }

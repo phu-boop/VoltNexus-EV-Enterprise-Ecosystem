@@ -38,14 +38,14 @@ const PromotionCreatePage = ({ onBack }) => {
   };
 
   return (
-    <div className="mx-auto">
+    <div className="m-10">
       <div className="bg-white rounded-lg p-6">
         <div className="flex items-center mb-6">
           <button
             onClick={onBack}
             className="mr-4 text-gray-500 hover:text-gray-700 p-2 hover:bg-gray-100 rounded-lg transition-colors"
           >
-             <FaArrowLeft />
+            <FaArrowLeft />
           </button>
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Tạo Khuyến mãi Mới</h1>
@@ -62,8 +62,8 @@ const PromotionCreatePage = ({ onBack }) => {
           />
         )}
 
-        <PromotionForm 
-          onSubmit={handleSubmit} 
+        <PromotionForm
+          onSubmit={handleSubmit}
           onCancel={onBack}
         />
       </div>

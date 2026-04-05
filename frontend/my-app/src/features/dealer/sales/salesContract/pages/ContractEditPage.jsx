@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { PageContainer } from '@ant-design/pro-components';
 import { Alert, Spin, Button, message, Modal } from 'antd';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { ArrowLeftOutlined, ExclamationCircleOutlined, SaveOutlined, CloseOutlined } from '@ant-design/icons';
 import { useSalesContracts } from '../hooks/useSalesContracts';
 import ContractForm from '../components/ContractForm';
@@ -10,6 +10,9 @@ import dayjs from 'dayjs';
 const ContractEditPage = () => {
   const { contractId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  const isAdmin = location.pathname.includes('/admin/');
+  const prefix = isAdmin ? '/evm/admin/dealers' : '/dealer';
   const { contract, loading, error, fetchContractById, updateContract } = useSalesContracts();
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState(null);
@@ -24,14 +27,14 @@ const ContractEditPage = () => {
   const handleSubmit = async (values) => {
     setSubmitting(true);
     setSubmitError(null);
-    
+
     try {
       await updateContract(contractId, values);
       message.success('Cập nhật hợp đồng thành công!');
       setFormChanged(false);
-      navigate(`/dealer/contracts/${contractId}`, {
+      navigate(`${prefix}/contracts/${contractId}`, {
         replace: true,
-        state: { 
+        state: {
           updated: true,
           timestamp: new Date().getTime()
         }
@@ -41,7 +44,7 @@ const ContractEditPage = () => {
       const errorMessage = error.response?.data?.message || error.message || 'Có lỗi xảy ra khi cập nhật hợp đồng';
       setSubmitError(errorMessage);
       message.error('Cập nhật hợp đồng thất bại!');
-      
+
       // Scroll to top to show error
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } finally {
@@ -58,10 +61,10 @@ const ContractEditPage = () => {
         cancelText: 'Ở lại',
         okButtonProps: { danger: true },
         icon: <ExclamationCircleOutlined />,
-        onOk: () => navigate(`/dealer/contracts/${contractId}`)
+        onOk: () => navigate(`${prefix}/contracts/${contractId}`)
       });
     } else {
-      navigate(`/dealer/contracts/${contractId}`);
+      navigate(`${prefix}/contracts/${contractId}`);
     }
   };
 
@@ -77,7 +80,7 @@ const ContractEditPage = () => {
   const handleSaveAndContinue = async (values) => {
     setSubmitting(true);
     setSubmitError(null);
-    
+
     try {
       await updateContract(contractId, values);
       message.success('Cập nhật hợp đồng thành công!');
@@ -124,9 +127,9 @@ const ContractEditPage = () => {
           }
         />
         <div style={{ marginTop: 16, textAlign: 'center' }}>
-          <Button 
-            icon={<ArrowLeftOutlined />} 
-            onClick={() => navigate('/dealer/contracts')}
+          <Button
+            icon={<ArrowLeftOutlined />}
+            onClick={() => navigate(`${prefix}/contracts`)}
           >
             Quay lại danh sách
           </Button>
@@ -146,9 +149,9 @@ const ContractEditPage = () => {
           showIcon
         />
         <div style={{ marginTop: 16, textAlign: 'center' }}>
-          <Button 
-            icon={<ArrowLeftOutlined />} 
-            onClick={() => navigate('/dealer/contracts')}
+          <Button
+            icon={<ArrowLeftOutlined />}
+            onClick={() => navigate(`${prefix}/contracts`)}
           >
             Quay lại danh sách hợp đồng
           </Button>
@@ -166,15 +169,15 @@ const ContractEditPage = () => {
         title: `Chỉnh sửa hợp đồng #${contract.contractNumber || contract.contractId}`,
         breadcrumb: {
           items: [
-            { title: 'Bán hàng' },
-            { title: 'Hợp đồng', path: '' },
-            { title: `Hợp đồng #${contract.contractNumber || contract.contractId}`, path: `` },
+            { title: isAdmin ? 'Đại Lý' : 'Bán hàng' },
+            { title: 'Hợp đồng', path: `${prefix}/contracts` },
+            { title: `Hợp đồng #${contract.contractNumber || contract.contractId}`, path: `${prefix}/contracts/${contractId}` },
             { title: 'Chỉnh sửa' },
           ],
         },
       }}
       extra={[
-        <Button 
+        <Button
           key="cancel"
           icon={<CloseOutlined />}
           onClick={handleBack}
@@ -182,10 +185,10 @@ const ContractEditPage = () => {
         >
           Hủy
         </Button>,
-        <Button 
-          key="back" 
-          icon={<ArrowLeftOutlined />} 
-          onClick={() => navigate('/dealer/contracts')}
+        <Button
+          key="back"
+          icon={<ArrowLeftOutlined />}
+          onClick={() => navigate(`${prefix}/contracts`)}
           disabled={submitting}
         >
           Danh sách hợp đồng
@@ -230,7 +233,7 @@ const ContractEditPage = () => {
       )}
 
       {canEdit ? (
-        <ContractForm 
+        <ContractForm
           initialValues={{
             ...contract,
             contractDate: contract.contractDate ? dayjs(contract.contractDate) : null,

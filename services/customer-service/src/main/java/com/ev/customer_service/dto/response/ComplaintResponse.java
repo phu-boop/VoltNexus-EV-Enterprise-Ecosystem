@@ -31,7 +31,7 @@ public class ComplaintResponse {
     private String customerPhone;
     private String customerEmail;
 
-    private Long dealerId;
+    private String dealerId; // UUID format
     private Long orderId;
 
     private ComplaintType complaintType;

@@ -38,7 +38,7 @@ services:
     image: redis/redis-stack-server:latest
     container_name: voltnexus-redis-db
     ports:
-      - "6379:6379"
+      - "6380:6379"
       - "8001:8001" # Port cho UI RedisInsight tích hợp sẵn (tùy chọn)
     restart: always
     networks:
