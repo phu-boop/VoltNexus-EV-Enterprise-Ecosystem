@@ -21,6 +21,8 @@ public class UserRequest {
     private String email;
 
     @NotBlank(groups = {OnCreate.class, OnCreateDealerManager.class, OnCreateDealerStaff.class, OnCreateEvmStaff.class})
+    @Size(min = 8, max = 32, message = "PASSWORD_OUT_OF_RANGE_LIMIT", 
+          groups = {OnCreate.class, OnCreateDealerManager.class, OnCreateDealerStaff.class, OnCreateEvmStaff.class})
     @PasswordConstraint(
             minLength = 8, hasUppercase = true, hasLowercase = true,
             hasNumber = true, hasSpecialChar = true,
