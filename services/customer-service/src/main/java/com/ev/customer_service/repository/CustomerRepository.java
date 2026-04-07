@@ -8,6 +8,7 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @Repository
 public interface CustomerRepository extends JpaRepository<Customer, Long> {
@@ -24,7 +25,7 @@ public interface CustomerRepository extends JpaRepository<Customer, Long> {
 
     List<Customer> findByCustomerType(String customerType);
 
-    List<Customer> findByPreferredDealerId(Long preferredDealerId);
+    List<Customer> findByPreferredDealerId(UUID preferredDealerId);
 
     boolean existsByEmail(String email);
 
@@ -38,5 +39,5 @@ public interface CustomerRepository extends JpaRepository<Customer, Long> {
            "OR LOWER(c.email) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
            "OR LOWER(c.phone) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
            "OR LOWER(c.address) LIKE LOWER(CONCAT('%', :keyword, '%')))")
-    List<Customer> searchCustomersByDealer(@Param("keyword") String keyword, @Param("dealerId") Long dealerId);
+    List<Customer> searchCustomersByDealer(@Param("keyword") String keyword, @Param("dealerId") UUID dealerId);
 }

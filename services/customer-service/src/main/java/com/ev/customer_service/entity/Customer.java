@@ -8,10 +8,12 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
+import com.ev.customer_service.util.UuidStringConverter;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 @Entity
 @Table(name = "customers")
@@ -60,8 +62,9 @@ public class Customer {
     @Column(name = "status", length = 20, nullable = false)
     private CustomerStatus status; // NEW, POTENTIAL, PURCHASED, INACTIVE
 
-    @Column(name = "preferred_dealer_id")
-    private Long preferredDealerId;
+    @Convert(converter = UuidStringConverter.class)
+    @Column(name = "preferred_dealer_id", columnDefinition = "VARCHAR(255)")
+    private UUID preferredDealerId;
 
     @Column(name = "assigned_staff_id", length = 36)
     private String assignedStaffId; // UUID của nhân viên được phân công (từ User Service)

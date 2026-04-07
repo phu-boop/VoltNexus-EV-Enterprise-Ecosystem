@@ -26,14 +26,8 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     @Query("SELECT u FROM User u")
     List<User> findAllWithProfilesAndRoles();
 
-    @EntityGraph(attributePaths = {
-            "roles",
-            "dealerStaffProfile",
-            "dealerManagerProfile",
-            "evmStaffProfile",
-            "adminProfile"
-    })
-    Optional<User> findByEmail(String email);
+
+
 
     @EntityGraph(attributePaths = {
             "roles",
@@ -42,7 +36,32 @@ public interface UserRepository extends JpaRepository<User, UUID> {
             "evmStaffProfile",
             "adminProfile"
     })
-    @Query("SELECT DISTINCT u FROM User u LEFT JOIN u.roles r " +
+    Page<User> findAll(org.springframework.data.domain.Pageable pageable);
+
+
+
+
+    @EntityGraph(attributePaths = {
+        "roles",
+        "dealerStaffProfile",
+        "dealerManagerProfile",
+        "evmStaffProfile",
+        "adminProfile"
+    })
+    Optional<User> findByEmail(String email);
+
+    @EntityGraph(attributePaths = {
+        "roles",
+        "dealerStaffProfile",
+        "dealerManagerProfile",
+        "evmStaffProfile",
+        "adminProfile"
+    })
+    @Query("SELECT u FROM User u JOIN u.roles r WHERE r.name = :roleName")
+    List<User> findByRoleName(@Param("roleName") String roleName);
+
+
+     @Query("SELECT DISTINCT u FROM User u LEFT JOIN u.roles r " +
             "LEFT JOIN u.dealerStaffProfile dsp " +
             "LEFT JOIN u.dealerManagerProfile dmp " +
             "WHERE (:roleName IS NULL OR r.name = :roleName) " +

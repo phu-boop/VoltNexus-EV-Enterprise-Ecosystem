@@ -50,17 +50,7 @@ public class DealerContractService {
         Dealer dealer = dealerRepository.findById(request.getDealerId())
                 .orElseThrow(() -> new ResourceNotFoundException("Dealer not found with id: " + request.getDealerId()));
 
-       // DealerContract contract = modelMapper.map(request, DealerContract.class);
-       //dòng 53 code cũ gây crash
-       DealerContract contract = new DealerContract();
-
-contract.setContractNumber(request.getContractNumber());
-contract.setContractTerms(request.getContractTerms());
-contract.setTargetSales(request.getTargetSales());
-contract.setCommissionRate(request.getCommissionRate());
-contract.setStartDate(request.getStartDate());
-contract.setEndDate(request.getEndDate());
-contract.setContractStatus(request.getContractStatus());
+        DealerContract contract = mapToEntity(request);
         contract.setDealer(dealer);
         DealerContract savedContract = contractRepository.save(contract);
         return mapToResponse(savedContract);
@@ -76,40 +66,49 @@ contract.setContractStatus(request.getContractStatus());
             throw new DuplicateResourceException("Contract with number " + request.getContractNumber() + " already exists");
         }
 
-        //modelMapper.map(request, contract);
-        //dòng 79 gây lỗi ở put trong folder Contracts cần mapping thủ công 
-        contract.setContractNumber(request.getContractNumber());
-contract.setContractTerms(request.getContractTerms());
-contract.setTargetSales(request.getTargetSales());
-contract.setCommissionRate(request.getCommissionRate());
-contract.setStartDate(request.getStartDate());
-contract.setEndDate(request.getEndDate());
-contract.setContractStatus(request.getContractStatus());
-
-Dealer dealer = dealerRepository.findById(request.getDealerId())
-        .orElseThrow(() -> new ResourceNotFoundException("Dealer not found"));
-
-contract.setDealer(dealer);
+        Dealer dealer = dealerRepository.findById(request.getDealerId())
+                .orElseThrow(() -> new ResourceNotFoundException("Dealer not found with id: " + request.getDealerId()));
+        applyRequestToEntity(request, contract);
+        contract.setDealer(dealer);
         DealerContract updatedContract = contractRepository.save(contract);
         return mapToResponse(updatedContract);
     }
 
+    @Transactional
+    public void deleteContract(Long id) {
+        DealerContract contract = contractRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Contract not found with id: " + id));
+        contractRepository.delete(contract);
+    }
+
+    private DealerContract mapToEntity(DealerContractRequest request) {
+        DealerContract contract = new DealerContract();
+        applyRequestToEntity(request, contract);
+        return contract;
+    }
+
+    private void applyRequestToEntity(DealerContractRequest request, DealerContract contract) {
+        contract.setContractNumber(request.getContractNumber());
+        contract.setContractTerms(request.getContractTerms());
+        contract.setTargetSales(request.getTargetSales());
+        contract.setCommissionRate(request.getCommissionRate());
+        contract.setStartDate(request.getStartDate());
+        contract.setEndDate(request.getEndDate());
+        contract.setContractStatus(request.getContractStatus());
+    }
+
     private DealerContractResponse mapToResponse(DealerContract contract) {
-        //dòng gây crash 74
-        //DealerContractResponse response = modelMapper.map(contract, DealerContractResponse.class); 
-        //Về sửa lại ngay đây và thêm code
-        //bổ sung commit 233 logbug trên jira nhầm mã 
         DealerContractResponse response = new DealerContractResponse();
         response.setContractId(contract.getContractId());
         response.setContractNumber(contract.getContractNumber());
-response.setContractTerms(contract.getContractTerms());
-response.setTargetSales(contract.getTargetSales());
-response.setCommissionRate(contract.getCommissionRate());
-response.setStartDate(contract.getStartDate());
-response.setEndDate(contract.getEndDate());
-response.setContractStatus(contract.getContractStatus());
-response.setCreatedAt(contract.getCreatedAt());
-response.setUpdatedAt(contract.getUpdatedAt());
+        response.setContractTerms(contract.getContractTerms());
+        response.setTargetSales(contract.getTargetSales());
+        response.setCommissionRate(contract.getCommissionRate());
+        response.setStartDate(contract.getStartDate());
+        response.setEndDate(contract.getEndDate());
+        response.setContractStatus(contract.getContractStatus());
+        response.setCreatedAt(contract.getCreatedAt());
+        response.setUpdatedAt(contract.getUpdatedAt());
         response.setDealerId(contract.getDealer().getDealerId());
         response.setDealerName(contract.getDealer().getDealerName());
         return response;

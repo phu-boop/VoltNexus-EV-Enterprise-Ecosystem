@@ -1,7 +1,5 @@
 package com.ev.user_service.config;
 
-import com.ev.user_service.security.JwtUtil;
-import com.ev.user_service.service.RedisService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -19,9 +17,12 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.client.RestTemplate;
+
 import com.ev.user_service.filter.RateLimitFilter;
 import com.ev.user_service.security.JwtAuthenticationFilter;
+import com.ev.user_service.security.JwtUtil;
 import com.ev.user_service.security.OAuth2LoginSuccessHandler;
+import com.ev.user_service.service.RedisService;
 
 @Configuration
 @EnableWebSecurity
@@ -47,7 +48,6 @@ public class SecurityConfig {
     }
 
     @Bean
-    @SuppressWarnings("java:S4502") // Disable CSRF check for stateless AI service APIs
     public SecurityFilterChain securityFilterChain(HttpSecurity http, JwtAuthenticationFilter jwtAuthenticationFilter)
             throws Exception {
         http
