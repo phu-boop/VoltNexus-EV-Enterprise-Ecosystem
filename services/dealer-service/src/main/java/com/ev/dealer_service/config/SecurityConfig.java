@@ -15,7 +15,8 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        .anyRequest().permitAll());
+                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/dealers/**").hasRole("ADMIN")
+                        .anyRequest().authenticated());
         return http.build();
     }
 }
