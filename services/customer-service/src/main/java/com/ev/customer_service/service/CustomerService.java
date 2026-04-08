@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -25,11 +26,11 @@ public class CustomerService {
 
     @Transactional(readOnly = true)
     public List<CustomerResponse> getCustomersWithFilter(String search, String roles, String currentUserDealerId) {
-        Long dealerId = null;
+        UUID dealerId = null;
         if (roles != null && (roles.contains("DEALER_MANAGER") || roles.contains("DEALER_STAFF"))
                 && !roles.contains("ADMIN") && !roles.contains("EVM_STAFF")) {
             if (currentUserDealerId != null && !currentUserDealerId.isEmpty()) {
-                dealerId = Long.parseLong(currentUserDealerId);
+                dealerId = UUID.fromString(currentUserDealerId);
             }
         }
 
@@ -86,7 +87,7 @@ public class CustomerService {
         if (roles != null && (roles.contains("DEALER_MANAGER") || roles.contains("DEALER_STAFF"))
                 && !roles.contains("ADMIN") && !roles.contains("EVM_STAFF")) {
             if (currentUserDealerId != null && !currentUserDealerId.isEmpty()) {
-                customer.setPreferredDealerId(Long.parseLong(currentUserDealerId));
+                customer.setPreferredDealerId(UUID.fromString(currentUserDealerId));
             }
         }
 
@@ -152,7 +153,7 @@ public class CustomerService {
         if (roles != null && (roles.contains("DEALER_MANAGER") || roles.contains("DEALER_STAFF"))
                 && !roles.contains("ADMIN") && !roles.contains("EVM_STAFF")) {
             if (currentUserDealerId != null && !currentUserDealerId.isEmpty()) {
-                Long dealerId = Long.parseLong(currentUserDealerId);
+                UUID dealerId = UUID.fromString(currentUserDealerId);
                 if (!dealerId.equals(customer.getPreferredDealerId())) {
                     throw new ResourceNotFoundException("Customer not found in your dealership");
                 }
@@ -286,7 +287,7 @@ public class CustomerService {
         if (roles != null && (roles.contains("DEALER_MANAGER") || roles.contains("DEALER_STAFF"))
                 && !roles.contains("ADMIN") && !roles.contains("EVM_STAFF")) {
             if (currentUserDealerId != null && !currentUserDealerId.isEmpty()) {
-                Long dealerId = Long.parseLong(currentUserDealerId);
+                UUID dealerId = UUID.fromString(currentUserDealerId);
                 if (!dealerId.equals(customer.getPreferredDealerId())) {
                     throw new ResourceNotFoundException("Customer not found in your dealership");
                 }

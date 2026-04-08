@@ -10,6 +10,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
+import java.util.UUID;
 
 @Data
 @NoArgsConstructor
@@ -46,7 +47,7 @@ public class CustomerRequest {
     // CustomerStatus: NEW, POTENTIAL, PURCHASED, INACTIVE (optional, mặc định = NEW khi tạo)
     private String status;
 
-    private Long preferredDealerId;
+    private UUID preferredDealerId;
 
     // UUID của nhân viên được phân công (từ User Service)
     private String assignedStaffId;
