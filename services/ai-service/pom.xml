@@ -9,7 +9,7 @@
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>com.ev</groupId>
-    <artifactId>user-service</artifactId>
+    <artifactId>ai-service</artifactId>
     <version>1.0.0</version>
     <name>ai-service</name>
     <description>AI service for forecasting and analytics</description>

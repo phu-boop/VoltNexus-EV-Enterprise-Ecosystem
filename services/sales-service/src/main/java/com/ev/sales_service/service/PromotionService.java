@@ -17,8 +17,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import java.util.stream.Collectors;
-
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -28,6 +26,13 @@ import java.util.Optional;
 @RequiredArgsConstructor
 @Slf4j
 public class PromotionService {
+
+    // S1192: Extract duplicate string literals into constants
+    private static final String PROMOTION_NOT_FOUND = "Promotion not found";
+    private static final String ROLE_ADMIN = "ADMIN";
+    private static final String ROLE_DEALER_MANAGER = "DEALER_MANAGER";
+    private static final String ROLE_EVM_STAFF = "EVM_STAFF";
+    private static final String EMPTY_JSON_ARRAY = "[]";
 
     @Value("${user-service.base-url}")
     private String userServiceBaseUrl;
@@ -79,11 +84,10 @@ public class PromotionService {
 
     public Promotion updatePromotion(UUID id, Promotion promotion, String roles, String currentUserDealerId) {
         Promotion existing = promotionRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Promotion not found"));
+                .orElseThrow(() -> new EntityNotFoundException(PROMOTION_NOT_FOUND));
 
-        // Phân quyền: Dealer Manager chỉ được sửa DRAFT và chỉ sửa của mình
-        if (roles != null && roles.contains("DEALER_MANAGER") && !roles.contains("ADMIN")
-                && !roles.contains("EVM_STAFF")) {
+        // S1066: Merge nested if — Phân quyền: Dealer Manager chỉ được sửa DRAFT và chỉ sửa của mình
+        if (isDealerManagerOnly(roles)) {
             if (existing.getStatus() != PromotionStatus.DRAFT) {
                 throw new AppException(ErrorCode.DATA_NOT_FOUND); // Hoặc tạo ErrorCode mới cho "Promotion already authenticated"
             }
@@ -110,45 +114,44 @@ public class PromotionService {
 
     public Promotion getPromotionById(UUID id) {
         return promotionRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Promotion not found"));
+                .orElseThrow(() -> new EntityNotFoundException(PROMOTION_NOT_FOUND));
     }
 
     public List<Promotion> getAllPromotions() {
         updatePromotionStatuses();
         return promotionRepository.findAll().stream()
                 .filter(p -> p.getStatus() != PromotionStatus.DELETED)
-                .collect(Collectors.toList());
+                .toList(); // S6204: replace Collectors.toList() with Stream.toList()
     }
 
+    // S135: Refactored to reduce break/continue count by using stream + filter + forEach
     private void updatePromotionStatuses() {
         LocalDateTime now = LocalDateTime.now();
         List<Promotion> promotions = promotionRepository.findAll();
 
-        for (Promotion promotion : promotions) {
-            if (promotion.getStartDate() == null || promotion.getEndDate() == null)
-                continue;
+        promotions.stream()
+                .filter(p -> p.getStartDate() != null && p.getEndDate() != null)
+                .filter(p -> !p.getStatus().equals(PromotionStatus.DELETED))
+                .forEach(promotion -> updateSinglePromotionStatus(promotion, now));
 
-            // Bỏ qua nếu đã xóa
-            if (promotion.getStatus().equals(PromotionStatus.DELETED))
-                continue;
-
-            // Hết hạn
-            if (promotion.getEndDate().isBefore(now)) {
-                promotion.setStatus(PromotionStatus.EXPIRED);
-                continue;
-            }
-
-            // Đang trong thời gian hoạt động
-            if (promotion.getStartDate().isBefore(now) && promotion.getEndDate().isAfter(now)) {
-                if (promotion.getStatus().equals(PromotionStatus.DRAFT)) {
-                    promotion.setStatus(PromotionStatus.INACTIVE); // Đã tới ngày nhưng chưa kích hoạt
-                } else if (promotion.getStatus().equals(PromotionStatus.NEAR)) {
-                    promotion.setStatus(PromotionStatus.ACTIVE); // Đã duyệt và tới ngày
-                }
-
-            }
-        }
         promotionRepository.saveAll(promotions);
+    }
+
+    private void updateSinglePromotionStatus(Promotion promotion, LocalDateTime now) {
+        // Hết hạn
+        if (promotion.getEndDate().isBefore(now)) {
+            promotion.setStatus(PromotionStatus.EXPIRED);
+            return;
+        }
+
+        // Đang trong thời gian hoạt động
+        if (promotion.getStartDate().isBefore(now) && promotion.getEndDate().isAfter(now)
+                && promotion.getStatus().equals(PromotionStatus.DRAFT)) {
+            promotion.setStatus(PromotionStatus.INACTIVE); // Đã tới ngày nhưng chưa kích hoạt
+        } else if (promotion.getStartDate().isBefore(now) && promotion.getEndDate().isAfter(now)
+                && promotion.getStatus().equals(PromotionStatus.NEAR)) {
+            promotion.setStatus(PromotionStatus.ACTIVE); // Đã duyệt và tới ngày
+        }
     }
 
     @Transactional
@@ -156,12 +159,9 @@ public class PromotionService {
         Promotion promotion = promotionRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.DATA_NOT_FOUND));
 
-        // Phân quyền xóa tương tự update
-        if (roles != null && roles.contains("DEALER_MANAGER") && !roles.contains("ADMIN")
-                && !roles.contains("EVM_STAFF")) {
-            if (promotion.getStatus() != PromotionStatus.DRAFT) {
-                throw new AppException(ErrorCode.DATA_NOT_FOUND);
-            }
+        // S1066: Merge nested if — Phân quyền xóa tương tự update
+        if (isDealerManagerOnly(roles) && promotion.getStatus() != PromotionStatus.DRAFT) {
+            throw new AppException(ErrorCode.DATA_NOT_FOUND);
         }
 
         if (quotationRepository.existsByPromotionId(id)) {
@@ -184,8 +184,7 @@ public class PromotionService {
         String finalDealerId = dealerId;
 
         // Nếu là Dealer Manager, ép buộc chỉ xem của dealer mình
-        if (roles != null && roles.contains("DEALER_MANAGER") && !roles.contains("ADMIN")
-                && !roles.contains("EVM_STAFF")) {
+        if (isDealerManagerOnly(roles)) {
             finalDealerId = currentUserDealerId;
             if (finalDealerId == null) {
                 return List.of(); // Không có dealerId thì không thấy gì
@@ -197,12 +196,12 @@ public class PromotionService {
 
     public Promotion authenticPromotion(UUID id, String roles) {
         // Chỉ Admin/Staff EVM mới được duyệt
-        if (roles == null || (!roles.contains("ADMIN") && !roles.contains("EVM_STAFF"))) {
+        if (roles == null || (!roles.contains(ROLE_ADMIN) && !roles.contains(ROLE_EVM_STAFF))) {
             throw new AppException(ErrorCode.UNAUTHORIZED);
         }
 
         Promotion existing = promotionRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Promotion not found"));
+                .orElseThrow(() -> new EntityNotFoundException(PROMOTION_NOT_FOUND));
         existing.setStatus(PromotionStatus.NEAR);
         return promotionRepository.save(existing);
     }
@@ -212,52 +211,20 @@ public class PromotionService {
      * (Phục vụ cho Form tạo báo giá)
      *
      * @param dealerId ID của đại lý (lấy từ header)
+     * @param modelId  ID của model (tùy chọn)
      * @return List<Promotion>
      */
+    // S3776: Refactored to reduce cognitive complexity by extracting helper methods
     public List<Promotion> getActivePromotionsForDealer(UUID dealerId, Optional<Long> modelId) {
         // 1. Lấy tất cả KM đang ACTIVE
         List<Promotion> allActivePromotions = promotionRepository.findByStatus(PromotionStatus.ACTIVE);
 
         // 2. Lọc danh sách
         return allActivePromotions.stream()
-                .filter(promo -> {
-                    String dealerJson = promo.getDealerIdJson();
-                    String modelJson = promo.getApplicableModelsJson();
-                    LocalDateTime now = LocalDateTime.now();
-
-                    // 2.1. Kiểm tra ngày (phòng trường hợp cron job chưa chạy)
-                    if (promo.getStartDate() != null && promo.getStartDate().isAfter(now))
-                        return false;
-                    if (promo.getEndDate() != null && promo.getEndDate().isBefore(now))
-                        return false;
-
-                    // 2.2. Lọc theo Đại lý
-                    boolean dealerMatch = false;
-                    if (dealerJson == null || dealerJson.isEmpty() || dealerJson.equals("[]")) {
-                        dealerMatch = true; // KM chung
-                    } else {
-                        dealerMatch = dealerJson.contains(dealerId.toString()); // KM riêng
-                    }
-
-                    if (!dealerMatch)
-                        return false; // Nếu không khớp đại lý -> loại
-
-                    // 2.3. Lọc theo Model (NẾU modelId được cung cấp)
-                    if (modelId.isPresent()) {
-                        Long mId = modelId.get();
-                        // Nếu KM này có áp dụng cho model cụ thể (không rỗng)
-                        if (modelJson != null && !modelJson.isEmpty() && !modelJson.equals("[]")) {
-                            // Và nếu JSON model *không* chứa modelId -> loại
-                            if (!modelJson.contains(mId.toString())) {
-                                return false;
-                            }
-                        }
-                        // (Nếu KM không chỉ định model, nó được coi là áp dụng cho mọi model)
-                    }
-
-                    return true; // Vượt qua mọi kiểm tra
-                })
-                .collect(Collectors.toList());
+                .filter(promo -> isWithinDateRange(promo, LocalDateTime.now()))
+                .filter(promo -> isDealerMatch(promo.getDealerIdJson(), dealerId.toString()))
+                .filter(promo -> isModelMatch(promo.getApplicableModelsJson(), modelId))
+                .toList();
     }
 
     /**
@@ -268,24 +235,9 @@ public class PromotionService {
         LocalDateTime now = LocalDateTime.now();
 
         return allActivePromotions.stream()
-                .filter(promo -> {
-                    // Kiểm tra thời gian hợp lệ
-                    if (promo.getStartDate() != null && promo.getStartDate().isAfter(now))
-                        return false;
-                    if (promo.getEndDate() != null && promo.getEndDate().isBefore(now))
-                        return false;
-
-                    // Nếu có modelId, lọc theo model
-                    if (modelId.isPresent()) {
-                        String modelJson = promo.getApplicableModelsJson();
-                        Long mId = modelId.get();
-                        if (modelJson != null && !modelJson.isEmpty() && !modelJson.equals("[]")) {
-                            return modelJson.contains(mId.toString());
-                        }
-                    }
-                    return true;
-                })
-                .collect(Collectors.toList());
+                .filter(promo -> isWithinDateRange(promo, now))
+                .filter(promo -> isModelMatch(promo.getApplicableModelsJson(), modelId))
+                .toList();
     }
 
     /**
@@ -299,29 +251,86 @@ public class PromotionService {
 
         // 2. Lọc theo Dealer
         return promotions.stream()
-                .filter(promo -> {
-                    // KM chung hoặc KM thuộc dealerId
-                    String dealerJson = promo.getDealerIdJson();
+                .filter(promo -> isDealerMatchWithParsing(promo.getDealerIdJson(), dealerId))
+                .toList();
+    }
 
-                    if (dealerJson == null || dealerJson.isEmpty() || dealerJson.equals("[]")) {
-                        return true;
-                    }
+    // ===== Helper methods (S3776 / S1066: reduce cognitive complexity & merge ifs) =====
 
-                    try {
-                        // Parse thành List<String> để chấp nhận cả DLRxxx và UUID
-                        List<String> dealerIds = objectMapper.readValue(dealerJson,
-                                new com.fasterxml.jackson.core.type.TypeReference<List<String>>() {
-                                });
+    /**
+     * Kiểm tra role chỉ là Dealer Manager (không phải Admin hoặc EVM Staff)
+     */
+    private boolean isDealerManagerOnly(String roles) {
+        return roles != null && roles.contains(ROLE_DEALER_MANAGER)
+                && !roles.contains(ROLE_ADMIN) && !roles.contains(ROLE_EVM_STAFF);
+    }
 
-                        String searchId = dealerId.toString();
-                        return dealerIds != null && dealerIds.stream()
-                                .anyMatch(id -> id.equalsIgnoreCase(searchId));
-                    } catch (Exception e) {
-                        // Fallback an toàn nếu parse lỗi
-                        return dealerJson.contains(dealerId.toString());
-                    }
-                })
-                .collect(Collectors.toList());
+    /**
+     * Kiểm tra promotion có nằm trong khoảng thời gian hợp lệ không
+     */
+    private boolean isWithinDateRange(Promotion promo, LocalDateTime now) {
+        if (promo.getStartDate() != null && promo.getStartDate().isAfter(now)) {
+            return false;
+        }
+        return promo.getEndDate() == null || !promo.getEndDate().isBefore(now);
+    }
+
+    /**
+     * Kiểm tra dealer có khớp không (so sánh chuỗi đơn giản)
+     */
+    private boolean isDealerMatch(String dealerJson, String dealerIdStr) {
+        if (isEmptyJsonArray(dealerJson)) {
+            return true; // KM chung
+        }
+        return dealerJson.contains(dealerIdStr); // KM riêng
+    }
+
+    /**
+     * Kiểm tra dealer match với JSON parsing (hỗ trợ cả DLRxxx và UUID)
+     */
+    private boolean isDealerMatchWithParsing(String dealerJson, UUID dealerId) {
+        if (isEmptyJsonArray(dealerJson)) {
+            return true;
+        }
+
+        try {
+            // Parse thành List<String> để chấp nhận cả DLRxxx và UUID
+            List<String> dealerIds = objectMapper.readValue(dealerJson,
+                    new com.fasterxml.jackson.core.type.TypeReference<List<String>>() {
+                    });
+
+            String searchId = dealerId.toString();
+            return dealerIds != null && dealerIds.stream()
+                    .anyMatch(id -> id.equalsIgnoreCase(searchId));
+        } catch (Exception e) {
+            // Fallback an toàn nếu parse lỗi
+            return dealerJson.contains(dealerId.toString());
+        }
+    }
+
+    /**
+     * Kiểm tra model có khớp không
+     */
+    private boolean isModelMatch(String modelJson, Optional<Long> modelId) {
+        if (modelId.isEmpty()) {
+            return true; // Không filter theo model
+        }
+
+        Long mId = modelId.get();
+        // Nếu KM không chỉ định model → áp dụng cho mọi model
+        if (isEmptyJsonArray(modelJson)) {
+            return true;
+        }
+        // JSON model phải chứa modelId
+        return modelJson.contains(mId.toString());
+    }
+
+    /**
+     * Kiểm tra JSON array rỗng hay null
+     */
+    private boolean isEmptyJsonArray(String json) {
+        return json == null || json.isEmpty() || json.equals(EMPTY_JSON_ARRAY);
     }
 
 }
+
