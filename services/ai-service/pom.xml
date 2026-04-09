@@ -26,10 +26,6 @@
         <tag/>
         <url/>
     </scm>
-<<<<<<< HEAD
-=======
->>>>>>> f469a9df1dfea5e6cc2b7668338719e67d8d800a
->>>>>>> feature/reporting-service
     <properties>
         <java.version>21</java.version>
         <spring-ai.version>1.1.2</spring-ai.version>
