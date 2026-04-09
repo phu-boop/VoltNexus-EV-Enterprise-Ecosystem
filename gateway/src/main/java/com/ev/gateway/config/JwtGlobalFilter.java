@@ -40,25 +40,31 @@ public class JwtGlobalFilter implements GlobalFilter, Ordered {
             "/payments/api/v1/payments/gateway/callback/vnpay-return",
             "/payments/api/v1/payments/gateway/callback/vnpay-ipn",
             "/favicon.ico",
-            // Vehicle service endpoints (after rewrite)
+            // Customer service
+            "/customers",
+            "/cart",
+            "/test-drives",
+            "/feedback",
+            "/complaints",
+            "/charging-stations",
+            // Dealer service
+            "/dealers",
+            // Inventory service
+            "/inventory",
+            // Payment service
+            "/payments",
+            // Sales service
+            "/sales",
+            "/orders",
+            "/sales-orders",
+            // Vehicle service
+            "/vehicles",
             "/vehicle-catalog",
             "/variants",
             "/models",
-            // Vehicle service endpoints (before rewrite)
-            "/vehicles/vehicle-catalog",
-            "/vehicles/variants",
-            "/vehicles/models",
-            // Sales service endpoints (after rewrite)
-            "/promotions/active",
-            // Sales service endpoints (before rewrite)
-            "/sales/promotions/active",
-            // Cart endpoints
-            "/cart",
-            // Customer service endpoints (public)
-            "/customers/api/test-drives/public",
-            "/customers/api/test-drives/public",
-            "/test-drives/public",
-            // AI Chatbot endpoint (Gateway handles rate limiting)
+            // Reporting service
+            "/reporting",
+            // AI Chatbot endpoint
             "/ai/chat/ask");
 
     public JwtGlobalFilter(JwtUtil jwtUtil, RedisService redisService) {

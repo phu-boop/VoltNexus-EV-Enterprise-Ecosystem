@@ -52,9 +52,11 @@ public class GatewayHeaderFilter extends OncePerRequestFilter {
         }
 
         String email = request.getHeader(HEADER_EMAIL);
+        String roles = request.getHeader(HEADER_ROLE);
 
         if (email != null && !email.isEmpty()) {
             // Trường hợp 1: Request đến từ Gateway (có X-User-* headers)
+            log.info("[GatewayHeaderFilter] Header {} found: {}. Roles: {}", HEADER_EMAIL, email, roles);
             log.debug("Authenticating via Gateway headers for user: {}", email);
             processGatewayHeaders(request, email);
         } else {
