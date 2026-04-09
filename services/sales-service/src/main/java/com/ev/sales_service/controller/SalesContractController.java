@@ -8,6 +8,7 @@ import com.ev.common_lib.dto.respond.ApiRespond;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -21,6 +22,7 @@ public class SalesContractController {
 
     private final SalesContractService salesContractService;
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'EVM_STAFF', 'DEALER_MANAGER', 'DEALER_STAFF')")
     @PostMapping
     public ResponseEntity<ApiRespond<SalesContractResponse>> createContract(@RequestBody SalesContractRequest request) {
         log.info("Creating sales contract for order: {}", request.getOrderId());
@@ -28,6 +30,7 @@ public class SalesContractController {
         return ResponseEntity.ok(ApiRespond.success("Sales contract created successfully", response));
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'EVM_STAFF', 'DEALER_MANAGER', 'DEALER_STAFF')")
     @PutMapping("/{contractId}")
     public ResponseEntity<ApiRespond<SalesContractResponse>> updateContract(
             @PathVariable UUID contractId,
@@ -37,6 +40,7 @@ public class SalesContractController {
         return ResponseEntity.ok(ApiRespond.success("Sales contract updated successfully", response));
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'EVM_STAFF', 'DEALER_MANAGER', 'DEALER_STAFF', 'CUSTOMER')")
     @GetMapping("/{contractId}")
     public ResponseEntity<ApiRespond<SalesContractResponse>> getContractById(@PathVariable UUID contractId) {
         log.info("Fetching sales contract: {}", contractId);
@@ -44,6 +48,7 @@ public class SalesContractController {
         return ResponseEntity.ok(ApiRespond.success("Sales contract fetched successfully", response));
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'EVM_STAFF', 'DEALER_MANAGER', 'DEALER_STAFF', 'CUSTOMER')")
     @GetMapping("/order/{orderId}")
     public ResponseEntity<ApiRespond<SalesContractResponse>> getContractByOrderId(@PathVariable UUID orderId) {
         log.info("Fetching sales contract for order: {}", orderId);
@@ -51,6 +56,7 @@ public class SalesContractController {
         return ResponseEntity.ok(ApiRespond.success("Sales contract fetched successfully", response));
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'EVM_STAFF', 'DEALER_MANAGER', 'DEALER_STAFF')")
     @GetMapping("/status/{status}")
     public ResponseEntity<ApiRespond<List<SalesContractResponse>>> getContractsByStatus(@PathVariable String status) {
         log.info("Fetching sales contracts with status: {}", status);
@@ -58,6 +64,7 @@ public class SalesContractController {
         return ResponseEntity.ok(ApiRespond.success("Sales contracts fetched successfully", responses));
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'EVM_STAFF', 'DEALER_MANAGER', 'DEALER_STAFF', 'CUSTOMER')")
     @PutMapping("/{contractId}/sign")
     public ResponseEntity<ApiRespond<SalesContractResponse>> signContract(
             @PathVariable UUID contractId,
@@ -67,6 +74,7 @@ public class SalesContractController {
         return ResponseEntity.ok(ApiRespond.success("Contract signed successfully", response));
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'EVM_STAFF', 'DEALER_MANAGER', 'DEALER_STAFF')")
     @PutMapping("/{contractId}/status")
     public ResponseEntity<ApiRespond<SalesContractResponse>> updateContractStatus(
             @PathVariable UUID contractId,
@@ -76,6 +84,7 @@ public class SalesContractController {
         return ResponseEntity.ok(ApiRespond.success("Contract status updated successfully", response));
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'EVM_STAFF', 'DEALER_MANAGER', 'DEALER_STAFF')")
     @PostMapping("/order/{orderId}/generate")
     public ResponseEntity<ApiRespond<SalesContractResponse>> generateContractFromTemplate(@PathVariable UUID orderId) {
         log.info("Generating contract from template for order: {}", orderId);
@@ -83,6 +92,7 @@ public class SalesContractController {
         return ResponseEntity.ok(ApiRespond.success("Contract generated successfully", response));
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'EVM_STAFF', 'DEALER_MANAGER', 'DEALER_STAFF')")
     @PostMapping("/{contractId}/validate")
     public ResponseEntity<ApiRespond<Void>> validateContract(@PathVariable UUID contractId) {
         log.info("Validating contract: {}", contractId);
@@ -90,6 +100,7 @@ public class SalesContractController {
         return ResponseEntity.ok(ApiRespond.success("Contract validated successfully",null));
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'EVM_STAFF', 'DEALER_MANAGER', 'DEALER_STAFF')")
     @GetMapping("/expiring")
     public ResponseEntity<ApiRespond<List<SalesContractResponse>>> getExpiringContracts(@RequestParam int days) {
         log.info("Fetching contracts expiring in {} days", days);
@@ -97,6 +108,7 @@ public class SalesContractController {
         return ResponseEntity.ok(ApiRespond.success("Expiring contracts fetched successfully", responses));
     }
     // Lấy tất cả hợp đồng
+    @PreAuthorize("hasAnyRole('ADMIN', 'EVM_STAFF', 'DEALER_MANAGER', 'DEALER_STAFF')")
     @GetMapping
     public ResponseEntity<ApiRespond<List<SalesContractResponse>>> getAllContracts() {
         log.info("Fetching all sales contracts");
@@ -105,6 +117,7 @@ public class SalesContractController {
     }
 
     // Xóa hợp đồng
+    @PreAuthorize("hasAnyRole('ADMIN', 'EVM_STAFF')")
     @DeleteMapping("/{contractId}")
     public ResponseEntity<ApiRespond<Void>> deleteContract(@PathVariable UUID contractId) {
         log.info("Deleting contract: {}", contractId);
@@ -113,6 +126,7 @@ public class SalesContractController {
     }
 
     // Xóa(mem) hợp đồng
+    @PreAuthorize("hasAnyRole('ADMIN', 'EVM_STAFF', 'DEALER_MANAGER', 'DEALER_STAFF')")
     @PostMapping("/{contractId}")
     public ResponseEntity<ApiRespond<Void>> cancleContract(@PathVariable UUID contractId) {
         log.info("Deleting contract: {}", contractId);
@@ -121,6 +135,7 @@ public class SalesContractController {
     }
 
     // Tìm kiếm hợp đồng (filter theo khách hàng, trạng thái hoặc số hợp đồng)
+    @PreAuthorize("hasAnyRole('ADMIN', 'EVM_STAFF', 'DEALER_MANAGER', 'DEALER_STAFF')")
     @GetMapping("/search")
     public ResponseEntity<ApiRespond<List<SalesContractResponse>>> searchContracts(
             @RequestParam(required = false) Long customerId,

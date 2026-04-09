@@ -7,6 +7,7 @@ import com.ev.common_lib.dto.respond.ApiRespond;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -20,6 +21,7 @@ public class OrderTrackingController {
 
     private final OrderTrackingService orderTrackingService;
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'EVM_STAFF', 'DEALER_MANAGER', 'DEALER_STAFF')")
     @PostMapping
     public ResponseEntity<ApiRespond<OrderTrackingResponse>> createTrackingRecord(@RequestBody OrderTrackingRequest request) {
         log.info("Creating tracking record for order: {}", request.getOrderId());
@@ -27,6 +29,7 @@ public class OrderTrackingController {
         return ResponseEntity.ok(ApiRespond.success("Tracking record created successfully", response));
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'EVM_STAFF', 'DEALER_MANAGER', 'DEALER_STAFF')")
     @PutMapping("/{trackId}")
     public ResponseEntity<ApiRespond<OrderTrackingResponse>> updateTrackingRecord(
             @PathVariable UUID trackId,
@@ -36,6 +39,7 @@ public class OrderTrackingController {
         return ResponseEntity.ok(ApiRespond.success("Tracking record updated successfully", response));
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'EVM_STAFF')")
     @DeleteMapping("/{trackId}")
     public ResponseEntity<ApiRespond<?>> deleteTrackingRecord(@PathVariable UUID trackId) {
         log.info("Deleting tracking record: {}", trackId);
@@ -43,6 +47,7 @@ public class OrderTrackingController {
         return ResponseEntity.ok(ApiRespond.success("Tracking record deleted successfully", null));
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'EVM_STAFF', 'DEALER_MANAGER', 'DEALER_STAFF', 'CUSTOMER')")
     @GetMapping("/{trackId}")
     public ResponseEntity<ApiRespond<OrderTrackingResponse>> getTrackingRecordById(@PathVariable UUID trackId) {
         log.info("Fetching tracking record: {}", trackId);
@@ -50,6 +55,7 @@ public class OrderTrackingController {
         return ResponseEntity.ok(ApiRespond.success("Tracking record fetched successfully", response));
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'EVM_STAFF', 'DEALER_MANAGER', 'DEALER_STAFF', 'CUSTOMER')")
     @GetMapping("/order/{orderId}")
     public ResponseEntity<ApiRespond<List<OrderTrackingResponse>>> getTrackingHistoryByOrderId(@PathVariable UUID orderId) {
         log.info("Fetching tracking history for order: {}", orderId);
@@ -57,6 +63,7 @@ public class OrderTrackingController {
         return ResponseEntity.ok(ApiRespond.success("Tracking history fetched successfully", responses));
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'EVM_STAFF', 'DEALER_MANAGER', 'DEALER_STAFF', 'CUSTOMER')")
     @GetMapping("/order/{orderId}/current")
     public ResponseEntity<ApiRespond<OrderTrackingResponse>> getCurrentStatus(@PathVariable UUID orderId) {
         log.info("Fetching current status for order: {}", orderId);
@@ -64,6 +71,7 @@ public class OrderTrackingController {
         return ResponseEntity.ok(ApiRespond.success("Current status fetched successfully", response));
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'EVM_STAFF', 'DEALER_MANAGER')")
     @GetMapping("/status/{status}")
     public ResponseEntity<ApiRespond<List<OrderTrackingResponse>>> getTrackingByStatus(@PathVariable String status) {
         log.info("Fetching tracking records with status: {}", status);
@@ -71,6 +79,7 @@ public class OrderTrackingController {
         return ResponseEntity.ok(ApiRespond.success("Tracking records fetched successfully", responses));
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'EVM_STAFF', 'DEALER_MANAGER', 'DEALER_STAFF')")
     @PostMapping("/order/{orderId}/note")
     public ResponseEntity<ApiRespond<OrderTrackingResponse>> addTrackingNote(
             @PathVariable UUID orderId,
