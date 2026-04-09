@@ -16,7 +16,7 @@ import org.springframework.security.web.access.AccessDeniedHandler;
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
-@Profile("docker")
+@Profile("!dev")
 public class ProductionSecurityConfig {
 
     private static final String ROLE_EVM_STAFF = "ROLE_EVM_STAFF";
@@ -24,11 +24,11 @@ public class ProductionSecurityConfig {
     private static final String ROLE_DEALER_MANAGER = "ROLE_DEALER_MANAGER";
     private static final String ROLE_DEALER_STAFF = "ROLE_DEALER_STAFF";
 
-    private final GatewayHeaderFilter gatewayHeaderFilter;
+    private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
     @Autowired
-    public ProductionSecurityConfig(GatewayHeaderFilter gatewayHeaderFilter) {
-        this.gatewayHeaderFilter = gatewayHeaderFilter;
+    public ProductionSecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {
+        this.jwtAuthenticationFilter = jwtAuthenticationFilter;
     }
 
     @Bean
@@ -86,7 +86,7 @@ public class ProductionSecurityConfig {
 
                         .anyRequest().authenticated())
                 .exceptionHandling(ex -> ex.accessDeniedHandler(accessDeniedHandler()))
-                .addFilterBefore(gatewayHeaderFilter, UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }

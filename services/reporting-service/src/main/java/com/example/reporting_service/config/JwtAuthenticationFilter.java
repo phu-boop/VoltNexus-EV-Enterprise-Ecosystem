@@ -1,4 +1,4 @@
-package com.ev.vehicle_service.config;
+package com.example.reporting_service.config;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
