@@ -1,6 +1,6 @@
 package com.ev.dealer_service.controller;
 
-import com.ev.dealer_service.config.SecurityConfig;
+import com.ev.dealer_service.config.DevSecurityConfig;
 import com.ev.dealer_service.dto.request.DealerRequest;
 import com.ev.dealer_service.dto.response.DealerResponse;
 import com.ev.dealer_service.service.Interface.DealerService;
@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.security.test.context.support.WithMockUser;
@@ -29,7 +30,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(controllers = DealerController.class)
 @WithMockUser(roles = "ADMIN")
-@Import(SecurityConfig.class)
+@Import(DevSecurityConfig.class)
+@ActiveProfiles("dev")
 @DisplayName("DealerController — slice test (MockMvc + mock DealerService)")
 class DealerControllerWebMvcTest {
 
