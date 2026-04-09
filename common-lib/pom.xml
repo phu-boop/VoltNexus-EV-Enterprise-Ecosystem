@@ -1,5 +1,4 @@
 <?xml version="1.0" encoding="UTF-8"?>
-
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
@@ -34,7 +33,7 @@
             <version>1.18.40</version>
 =======
             <version>${lombok.version}</version>
->>>>>>> 7ddbdd8fc9c752a08f59f70198728761bd5239ea
+>>>>>>> f469a9df1dfea5e6cc2b7668338719e67d8d800a
             <scope>provided</scope>
         </dependency>
 
@@ -75,8 +74,6 @@
             <groupId>jakarta.validation</groupId>
             <artifactId>jakarta.validation-api</artifactId>
         </dependency>
-<<<<<<< HEAD
-=======
 
         <!-- Monitoring & Metrics -->
         <dependency>
@@ -91,28 +88,10 @@
             <groupId>org.hibernate.orm</groupId>
             <artifactId>hibernate-core</artifactId>
         </dependency>
->>>>>>> 7ddbdd8fc9c752a08f59f70198728761bd5239ea
     </dependencies>
 
     <build>
         <plugins>
-            <!-- Maven Compiler Plugin with Lombok annotation processing -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.11.0</version>
-                <configuration>
-                    <source>${java.version}</source>
-                    <target>${java.version}</target>
-                    <annotationProcessorPaths>
-                        <path>
-                            <groupId>org.projectlombok</groupId>
-                            <artifactId>lombok</artifactId>
-                            <version>1.18.40</version>
-                        </path>
-                    </annotationProcessorPaths>
-                </configuration>
-            </plugin>
             <!-- Build jar bình thường -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -138,6 +117,25 @@
                         </manifest>
                     </archive>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>0.8.12</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>report</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>

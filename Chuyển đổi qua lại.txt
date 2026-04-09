@@ -70,3 +70,9 @@ mvn clean clean -DskipTests
 docker compose up -d zookeeper kafka redis-db
 # Đợi 30 giây
 docker compose up -d gateway user-service customer-service
+
+
+mvn test -Dtest=ReportingServiceTest -Djacoco.skip=true
+
+
+mvn test -Dtest=SalesRecordRequestBVATest

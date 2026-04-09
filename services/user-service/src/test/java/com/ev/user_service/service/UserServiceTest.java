@@ -89,13 +89,13 @@ class UserServiceTest {
         @Test
         @DisplayName("Should return list of users")
         void getAllUser_ShouldReturnListOfUserRespond() {
-            when(userRepository.findAll()).thenReturn(List.of(user));
+            when(userRepository.findAll((org.springframework.data.domain.Pageable) any())).thenReturn(new org.springframework.data.domain.PageImpl<>(List.of(user)));
             when(userMapper.usertoUserRespond(any(User.class))).thenReturn(new UserRespond());
 
-            List<UserRespond> result = userService.getAllUser();
+            org.springframework.data.domain.Page<UserRespond> result = userService.getAllUser(1, 10, "id", "asc");
 
-            assertThat(result).hasSize(1);
-            verify(userRepository).findAll();
+            assertThat(result.getContent()).hasSize(1);
+            verify(userRepository).findAll((org.springframework.data.domain.Pageable) any());
             verify(userMapper).usertoUserRespond(user);
         }
 

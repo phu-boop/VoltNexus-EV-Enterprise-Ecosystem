@@ -136,7 +136,7 @@ class CustomerServiceTest {
             when(customerRepository.findById(1L)).thenReturn(Optional.of(customer));
             when(customerRepository.existsByEmail("other@test.com")).thenReturn(true);
 
-            assertThatThrownBy(() -> customerService.updateCustomer(1L, customerRequest))
+            assertThatThrownBy(() -> customerService.updateCustomer(1L, customerRequest, "ADMIN", null))
                     .isInstanceOf(DuplicateResourceException.class);
         }
     }
@@ -180,7 +180,7 @@ class CustomerServiceTest {
     @Test
     @DisplayName("Tìm kiếm customer thành công")
     void searchCustomers_success() {
-        when(customerRepository.searchCustomers("John")).thenReturn(List.of(customer));
+        when(customerRepository.searchCustomersByDealer("John", null)).thenReturn(List.of(customer));
         List<CustomerResponse> result = customerService.searchCustomers("John");
         assertThat(result).hasSize(1);
     }

@@ -6,5 +6,6 @@ metadata:
 data:
   SPRING_PROFILES_ACTIVE: "docker"
   KAFKA_BOOTSTRAP_SERVERS: "kafka:9092"
+  SPRING_KAFKA_BOOTSTRAP_SERVERS: "kafka:9092"
   REDIS_HOST: "redis-db"
   REDIS_PORT: "6379"

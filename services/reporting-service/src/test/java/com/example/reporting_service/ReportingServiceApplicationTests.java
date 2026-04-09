@@ -5,8 +5,8 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.kafka.core.KafkaTemplate;
 
-// Cấu hình để sử dụng H2 In-Memory Database thay vì MariaDB/MySQL thực tế.
-// Điều này giúp môi trường Test (Test Context) khởi tạo mà không cần driver thực.
+// Cấu hình đã được đổi để kết nối Database MySQL và Kafka thực tế (thay vì H2).
+// Điều này giúp môi trường Test (Test Context) chạy tương đương với môi trường dev/thực tế.
 @ActiveProfiles("test")
 class ReportingServiceApplicationTests {
 
