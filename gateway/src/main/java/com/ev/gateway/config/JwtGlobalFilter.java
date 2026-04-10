@@ -40,14 +40,6 @@ public class JwtGlobalFilter implements GlobalFilter, Ordered {
             "/payments/api/v1/payments/gateway/callback/vnpay-return",
             "/payments/api/v1/payments/gateway/callback/vnpay-ipn",
             "/favicon.ico",
-            // Vehicle service endpoints (after rewrite)
-            "/vehicle-catalog",
-            "/variants",
-            "/models",
-            // Vehicle service endpoints (before rewrite)
-            "/vehicles/vehicle-catalog",
-            "/vehicles/variants",
-            "/vehicles/models",
             // Sales service endpoints (after rewrite)
             "/promotions/active",
             // Sales service endpoints (before rewrite)
