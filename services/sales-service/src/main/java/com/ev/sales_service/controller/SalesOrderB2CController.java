@@ -33,7 +33,7 @@ public class SalesOrderB2CController {
      * GET /api/v1/sales-orders/b2c?status=PENDING&page=0&size=10
      */
     @GetMapping("/b2c")
-    @PreAuthorize("hasAnyRole('ADMIN', 'EVM_STAFF')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'EVM_STAFF', 'DEALER_MANAGER', 'DEALER_STAFF')")
     public ResponseEntity<ApiRespond<Page<SalesOrderB2CResponse>>> getAllB2COrders(
             @RequestParam(value = "status", required = false) String status,
             @PageableDefault(size = 10, sort = "orderDate") Pageable pageable) {
@@ -43,6 +43,7 @@ public class SalesOrderB2CController {
         return ResponseEntity.ok(ApiRespond.success("Lấy danh sách đơn hàng B2C thành công", orderPage));
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'EVM_STAFF')")
     @GetMapping("/internal/all-for-reporting")
     public ResponseEntity<List<SalesOrderB2CResponse>> getAllSalesForReporting(
             @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE_TIME) java.time.LocalDateTime since) {
@@ -50,6 +51,7 @@ public class SalesOrderB2CController {
         return ResponseEntity.ok(salesOrderServiceB2C.getAllSalesForReporting(since));
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'EVM_STAFF', 'DEALER_MANAGER', 'DEALER_STAFF')")
     @PostMapping("/b2c/from-quotation/{quotationId}")
     public ResponseEntity<ApiRespond<SalesOrderB2CResponse>> createSalesOrderFromQuotation(
             @PathVariable UUID quotationId) {
@@ -84,6 +86,7 @@ public class SalesOrderB2CController {
         return ResponseEntity.ok(ApiRespond.success("Create order after payment succesfully", response));
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'EVM_STAFF', 'DEALER_MANAGER', 'DEALER_STAFF', 'CUSTOMER')")
     @GetMapping("/b2c/{orderId}")
     public ResponseEntity<ApiRespond<SalesOrderB2CResponse>> getSalesOrderById(@PathVariable UUID orderId) {
         log.info("Fetching B2C sales order by ID: {}", orderId);
@@ -92,7 +95,7 @@ public class SalesOrderB2CController {
     }
 
     @GetMapping("/b2c/dealer/{dealerId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'EVM_STAFF')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'EVM_STAFF', 'DEALER_MANAGER', 'DEALER_STAFF')")
     public ResponseEntity<ApiRespond<List<SalesOrderB2CResponse>>> getSalesOrdersByDealer(@PathVariable UUID dealerId) {
         log.info("Fetching B2C sales orders for dealer (Admin view): {}", dealerId);
         List<SalesOrderB2CResponse> responses = salesOrderServiceB2C.getSalesOrdersByDealer(dealerId);
@@ -108,6 +111,7 @@ public class SalesOrderB2CController {
         return ResponseEntity.ok(ApiRespond.success("My sales orders fetched successfully", responses));
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'EVM_STAFF', 'DEALER_MANAGER', 'DEALER_STAFF', 'CUSTOMER')")
     @GetMapping("/b2c/customer/{customerId}")
     public ResponseEntity<ApiRespond<List<SalesOrderB2CResponse>>> getSalesOrdersByCustomer(
             @PathVariable Long customerId) {
@@ -116,6 +120,7 @@ public class SalesOrderB2CController {
         return ResponseEntity.ok(ApiRespond.success("Sales orders fetched successfully", responses));
     }
     
+    @PreAuthorize("hasAnyRole('ADMIN', 'EVM_STAFF', 'DEALER_MANAGER', 'DEALER_STAFF', 'CUSTOMER')")
     @GetMapping("/b2c/profile/{profileId}")
     public ResponseEntity<ApiRespond<List<SalesOrderB2CResponse>>> getSalesOrdersByProfileId(
             @PathVariable String profileId) {
@@ -124,6 +129,7 @@ public class SalesOrderB2CController {
         return ResponseEntity.ok(ApiRespond.success("Sales orders fetched successfully", responses));
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'EVM_STAFF', 'DEALER_MANAGER', 'DEALER_STAFF')")
     @PutMapping("/b2c/{orderId}/status")
     public ResponseEntity<ApiRespond<SalesOrderB2CResponse>> updateSalesOrderStatus(
             @PathVariable UUID orderId,
@@ -133,6 +139,7 @@ public class SalesOrderB2CController {
         return ResponseEntity.ok(ApiRespond.success("Sales order status updated successfully", response));
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'DEALER_MANAGER')")
     @PutMapping("/b2c/{orderId}/approve")
     public ResponseEntity<ApiRespond<SalesOrderB2CResponse>> approveSalesOrder(
             @PathVariable UUID orderId,
@@ -142,12 +149,14 @@ public class SalesOrderB2CController {
         return ResponseEntity.ok(ApiRespond.success("Sales order approved successfully", response));
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'EVM_STAFF', 'DEALER_MANAGER', 'DEALER_STAFF')")
     @GetMapping("/b2c/{orderId}/model-id")
     public ResponseEntity<Long> getModelIdBySalesOrderId(@PathVariable UUID orderId) {
         Long modelId = salesOrderServiceB2C.getModelIdBySalesOrderId(orderId);
         return ResponseEntity.ok(modelId);
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'DEALER_MANAGER', 'DEALER_STAFF')")
     @PutMapping("/b2c/{orderId}/order-items")
     public ResponseEntity<ApiRespond<SalesOrderB2CResponse>> addOrderItemsToSalesOrder(
             @PathVariable UUID orderId) {
@@ -159,6 +168,7 @@ public class SalesOrderB2CController {
     /**
      * ✅ Manager hoặc khách hàng từ chối đơn hàng (APPROVED → REJECTED)
      */
+    @PreAuthorize("hasAnyRole('ADMIN', 'DEALER_MANAGER', 'CUSTOMER')")
     @PostMapping("/{orderId}/reject")
     public ApiRespond<SalesOrderB2CResponse> rejectOrder(
             @PathVariable UUID orderId,
@@ -168,6 +178,7 @@ public class SalesOrderB2CController {
         return ApiRespond.success("Order rejected successfully", response);
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'DEALER_MANAGER', 'DEALER_STAFF')")
     @PostMapping("/b2c/{orderId}/convert-to-contract")
     public ResponseEntity<ApiRespond<SalesContractResponse>> convertToContract(
             @PathVariable UUID orderId) {
@@ -182,6 +193,7 @@ public class SalesOrderB2CController {
                 ApiRespond.success("Tạo hợp đồng thành công từ đơn hàng đã xác nhận", response));
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'DEALER_MANAGER', 'DEALER_STAFF')")
     @PostMapping("/b2c/{orderId}/complete")
     public ResponseEntity<ApiRespond<SalesOrderB2CResponse>> convertToComplete(
             @PathVariable UUID orderId) {
@@ -194,6 +206,7 @@ public class SalesOrderB2CController {
                 ApiRespond.success("Tạo hợp đồng thành công từ đơn hàng đã xác nhận", response));
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'DEALER_MANAGER', 'DEALER_STAFF')")
     @PutMapping("/b2c/{orderId}/mark-edited")
     public ResponseEntity<ApiRespond<SalesOrderB2CResponse>> markOrderAsEdited(
             @PathVariable UUID orderId,

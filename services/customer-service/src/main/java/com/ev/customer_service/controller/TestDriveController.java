@@ -62,6 +62,7 @@ public class TestDriveController {
     /**
      * Lấy danh sách lịch hẹn của customer theo profileId (UUID) (cho customer app)
      */
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'ADMIN', 'EVM_STAFF', 'DEALER_MANAGER', 'DEALER_STAFF')")
     @GetMapping("/profile/{profileId}")
     public ResponseEntity<ApiResponse<List<TestDriveResponse>>> getMyTestDrives(@PathVariable String profileId) {
         log.info("Getting test drives for profileId: {}", profileId);
@@ -134,7 +135,7 @@ public class TestDriveController {
      * Endpoint riêng cho customer có thể cancel lịch hẹn của mình
      */
     @PutMapping("/{id}/cancel")
-    @PreAuthorize("hasAnyRole('DEALER_STAFF', 'CUSTOMER')")
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'DEALER_STAFF', 'DEALER_MANAGER', 'ADMIN')")
     public ResponseEntity<ApiResponse<Void>> cancelTestDriveByCustomer(
             @PathVariable Long id,
             @Valid @RequestBody CancelTestDriveRequest request) {
@@ -493,7 +494,7 @@ public class TestDriveController {
      * User Story 3: Dealer Manager xem thống kê
      */
     @GetMapping("/statistics")
-    @PreAuthorize("hasAnyRole('DEALER_MANAGER', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('DEALER_MANAGER', 'ADMIN', 'EVM_STAFF')")
     public ResponseEntity<ApiResponse<TestDriveStatisticsResponse>> getStatistics(
             @RequestParam(required = false) String dealerId, // Optional for ADMIN
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
