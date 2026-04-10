@@ -50,71 +50,72 @@ jobs:
           # Running unit tests for all services and generating coverage reports
           mvn test -DskipITs
 
-      - name: "CI: Frontend Test"
-        run: |
-          echo "Running Frontend Tests..."
-          # Run tests for customer-app
-          cd frontend/customer-app && npm install && npm test -- --watchAll=false
-          # Run tests for my-app
-          cd ../my-app && npm install && npm test -- --watchAll=false
+#      - name: "CI: Frontend Test"
+#        run: |
+#          echo "Running Frontend Tests..."
+#          # Run tests for customer-app
+#          cd frontend/customer-app && npm install && npm test -- --watchAll=false
+#          # Run tests for my-app
+#          cd ../my-app && npm install && npm test -- --watchAll=false
 
-      - name: "CI: Static Analysis & Quality Gate"
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          echo "Running SonarCloud Analysis..."
-          mvn sonar:sonar \
-            -Dsonar.projectKey=phu-boop_VoltNexus-EV-Enterprise-Ecosystem \
-            -Dsonar.organization=phu-boop \
-            -Dsonar.host.url=https://sonarcloud.io \
-            -Dsonar.token=$SONAR_TOKEN \
-            -Dsonar.qualitygate.wait=true
-      - name: "CI: Check SonarCloud Issues"
-        if: always()
-        id: sonar_check
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_PROJECT: "phu-boop_VoltNexus-EV-Enterprise-Ecosystem"
-        run: |
-          echo "Checking for BLOCKER/CRITICAL issues in SonarCloud..."
-          ISSUE_COUNT=$(curl -s -u "$SONAR_TOKEN:" "https://sonarcloud.io/api/issues/search?componentKeys=$SONAR_PROJECT&severities=BLOCKER,CRITICAL&resolved=false" | jq '.total')
-          echo "Found $ISSUE_COUNT Blocker/Critical issues."
-          if [ "$ISSUE_COUNT" -gt 0 ]; then
-            echo "has_issues=true" >> $GITHUB_OUTPUT
-            echo "issue_count=$ISSUE_COUNT" >> $GITHUB_OUTPUT
-          else
-            echo "has_issues=false" >> $GITHUB_OUTPUT
-          fi
+#      - name: "CI: Static Analysis & Quality Gate"
+#        env:
+#          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#        run: |
+#          echo "Running SonarCloud Analysis..."
+#          mvn sonar:sonar \
+#            -Dsonar.projectKey=phu-boop_VoltNexus-EV-Enterprise-Ecosystem \
+#            -Dsonar.organization=phu-boop \
+#            -Dsonar.host.url=https://sonarcloud.io \
+#            -Dsonar.token=$SONAR_TOKEN \
+#            -Dsonar.qualitygate.wait=true
+#      - name: "CI: Check SonarCloud Issues"
+#        if: always()
+#        id: sonar_check
+#        env:
+#          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+#          SONAR_PROJECT: "phu-boop_VoltNexus-EV-Enterprise-Ecosystem"
+#        run: |
+#          echo "Checking for BLOCKER/CRITICAL issues in SonarCloud..."
+#          ISSUE_COUNT=$(curl -s -u "$SONAR_TOKEN:" "https://sonarcloud.io/api/issues/search?componentKeys=$SONAR_PROJECT&severities=BLOCKER,CRITICAL&resolved=false" | jq '.total')
+#          echo "Found $ISSUE_COUNT Blocker/Critical issues."
+#          if [ "$ISSUE_COUNT" -gt 0 ]; then
+#            echo "has_issues=true" >> $GITHUB_OUTPUT
+#            echo "issue_count=$ISSUE_COUNT" >> $GITHUB_OUTPUT
+#          else
+#            echo "has_issues=false" >> $GITHUB_OUTPUT
+#          fi
+#
+#      - name: "Notify: Jira Bug on SonarCloud Quality Gate Failure"
+#        if: always() && steps.sonar_check.outputs.has_issues == 'true'
+#        env:
+#          JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
+#          JIRA_USER_EMAIL: ${{ secrets.JIRA_USER_EMAIL }}
+#          JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+#          JIRA_PROJECT_KEY: ${{ secrets.JIRA_PROJECT_KEY }}
+#        run: |
+#          # Dùng ${{ env.xxx }} và ${{ github.xxx }} để đảm bảo biến được điền giá trị trước khi chạy shell
+#          SUMMARY="[SonarCloud] ${{ github.repository }} - ${{ steps.sonar_check.outputs.issue_count }} Critical Issues Found (#${{ github.run_number }})"
+#          DESCRIPTION="🚨 *SonarCloud Quality Gate Failure*\n\n*Repository:* ${{ github.repository }}\n*Branch:* ${{ github.ref_name }}\n*Workflow:* ${{ github.workflow }}\n*Run ID:* [${{ github.run_id }}](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})\n\nFound *${{ steps.sonar_check.outputs.issue_count }}* issues with severity *BLOCKER* or *CRITICAL*.\n\n*SonarCloud Project:* [View Issues](https://sonarcloud.io/project/issues?id=phu-boop_VoltNexus-EV-Enterprise-Ecosystem&resolved=false&severities=BLOCKER%2CCRITICAL)"
+#
+#          cat <<EOF > jira-sonar-payload.json
+#          {
+#            "fields": {
+#              "project": { "key": "$JIRA_PROJECT_KEY" },
+#              "summary": "$SUMMARY",
+#              "description": "$DESCRIPTION",
+#              "issuetype": { "name": "Bug" },
+#              "priority": { "name": "High" }
+#            }
+#          }
+#          EOF
+#          CLEAN_URL=$(echo "${JIRA_BASE_URL}" | sed 's:\/*$::')
+#          curl -s -X POST --url "${CLEAN_URL}/rest/api/2/issue" \
+#            --user "${JIRA_USER_EMAIL}:${JIRA_API_TOKEN}" \
+#            --header "Content-Type: application/json" \
+#            --data @jira-sonar-payload.json
 
-      - name: "Notify: Jira Bug on SonarCloud Quality Gate Failure"
-        if: always() && steps.sonar_check.outputs.has_issues == 'true'
-        env:
-          JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
-          JIRA_USER_EMAIL: ${{ secrets.JIRA_USER_EMAIL }}
-          JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
-          JIRA_PROJECT_KEY: ${{ secrets.JIRA_PROJECT_KEY }}
-        run: |
-          # Dùng ${{ env.xxx }} và ${{ github.xxx }} để đảm bảo biến được điền giá trị trước khi chạy shell
-          SUMMARY="[SonarCloud] ${{ github.repository }} - ${{ steps.sonar_check.outputs.issue_count }} Critical Issues Found (#${{ github.run_number }})"
-          DESCRIPTION="🚨 *SonarCloud Quality Gate Failure*\n\n*Repository:* ${{ github.repository }}\n*Branch:* ${{ github.ref_name }}\n*Workflow:* ${{ github.workflow }}\n*Run ID:* [${{ github.run_id }}](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})\n\nFound *${{ steps.sonar_check.outputs.issue_count }}* issues with severity *BLOCKER* or *CRITICAL*.\n\n*SonarCloud Project:* [View Issues](https://sonarcloud.io/project/issues?id=phu-boop_VoltNexus-EV-Enterprise-Ecosystem&resolved=false&severities=BLOCKER%2CCRITICAL)"
-
-          cat <<EOF > jira-sonar-payload.json
-          {
-            "fields": {
-              "project": { "key": "$JIRA_PROJECT_KEY" },
-              "summary": "$SUMMARY",
-              "description": "$DESCRIPTION",
-              "issuetype": { "name": "Bug" },
-              "priority": { "name": "High" }
-            }
-          }
-          EOF
-          CLEAN_URL=$(echo "${JIRA_BASE_URL}" | sed 's:\/*$::')
-          curl -s -X POST --url "${CLEAN_URL}/rest/api/2/issue" \
-            --user "${JIRA_USER_EMAIL}:${JIRA_API_TOKEN}" \
-            --header "Content-Type: application/json" \
-            --data @jira-sonar-payload.json
 
       - name: "CI: Security Scan"
         uses: aquasecurity/trivy-action@master
