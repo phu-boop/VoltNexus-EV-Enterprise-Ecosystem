@@ -77,7 +77,8 @@ class ReportingControllerTest {
     @DisplayName("Nên lấy báo cáo Sales Summary thành công")
     void getSalesSummary_ShouldReturnList() throws Exception {
         SalesRecord record = new SalesRecord();
-        record.setOrderId(UUID.randomUUID());
+        UUID orderId = UUID.randomUUID();
+        record.setOrderId(orderId);
         record.setModelName("VF 5");
 
         when(salesReportingService.getAllRecords()).thenReturn(List.of(record));
@@ -86,7 +87,7 @@ class ReportingControllerTest {
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray())
-                .andExpect(jsonPath("$[0].orderId").value("ORD-1"))
+                .andExpect(jsonPath("$[0].orderId").value(orderId.toString()))
                 .andExpect(jsonPath("$[0].modelName").value("VF 5"));
     }
 

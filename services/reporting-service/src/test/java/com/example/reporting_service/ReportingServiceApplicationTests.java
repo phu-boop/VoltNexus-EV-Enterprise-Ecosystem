@@ -2,6 +2,7 @@ package com.example.reporting_service;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.kafka.core.KafkaTemplate;
 
@@ -9,6 +10,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 // Cấu hình đã được đổi để kết nối Database MySQL và Kafka thực tế (thay vì H2).
 // Điều này giúp môi trường Test (Test Context) chạy tương đương với môi trường dev/thực tế.
+@SpringBootTest
 @ActiveProfiles("test")
 class ReportingServiceApplicationTests {
 

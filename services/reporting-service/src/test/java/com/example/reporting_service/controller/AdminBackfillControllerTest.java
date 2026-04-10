@@ -14,6 +14,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -45,6 +46,9 @@ class AdminBackfillControllerTest {
 
     @MockBean
     private RestTemplate restTemplate;
+
+    @MockBean
+    private PlatformTransactionManager transactionManager;
 
     @Autowired
     private AdminBackfillController adminBackfillController;
