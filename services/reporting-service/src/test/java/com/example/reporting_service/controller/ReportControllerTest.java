@@ -108,9 +108,9 @@ class ReportControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray())
                 .andExpect(jsonPath("$[0].region").value("Central"))
-                .andExpect(jsonPath("$[0].modelgeDailySales").value(2.0));
-    }Name").value("VF 5"))
-                .andExpect(jsonPath("$[0].avera
+                .andExpect(jsonPath("$[0].modelName").value("VF 5"))
+                .andExpect(jsonPath("$[0].averageDailySales").value(2.0));
+    }
 
     @Test
     @DisplayName("Nên lấy báo cáo Tồn kho trung tâm thành công")

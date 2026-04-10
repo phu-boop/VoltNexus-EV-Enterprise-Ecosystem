@@ -63,7 +63,7 @@ public class VehicleReviewController {
      * Get customer's own reviews
      */
     @GetMapping("/customer/{customerId}")
-    @PreAuthorize("hasAnyRole('CUSTOMER', 'DEALER_STAFF')")
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'ADMIN', 'EVM_STAFF', 'DEALER_MANAGER', 'DEALER_STAFF')")
     public ResponseEntity<ApiResponse<List<VehicleReviewResponse>>> getCustomerReviews(
             @PathVariable Long customerId) {
         log.info("Fetching reviews for customer: {}", customerId);
