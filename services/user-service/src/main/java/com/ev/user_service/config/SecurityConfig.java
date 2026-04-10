@@ -54,7 +54,8 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/", "/error", "/auth/**", "/auth/oauth2/success", "/users/**",
+                        .requestMatchers("/", "/error", "/auth/**", "/auth/oauth2/success",
+                                "/users/register/admin", "/users/internal/**",
                                 "/payment/**", "/payment/return/**", "/actuator/health")
                         .permitAll()
                         .requestMatchers(
