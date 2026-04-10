@@ -10,6 +10,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -56,6 +57,7 @@ public class CartController {
      * Lấy tổng quan giỏ hàng (items + tổng tiền)
      * GET /cart/{customerId}/summary
      */
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'ADMIN', 'DEALER_MANAGER')")
     @GetMapping("/{customerId}/summary")
     public ResponseEntity<ApiRespond<CartSummaryResponse>> getCartSummary(@PathVariable Long customerId) {
         log.info("Getting cart summary for customer: {}", customerId);
@@ -68,6 +70,7 @@ public class CartController {
      * Cập nhật cart item (quantity, selected features)
      * PUT /cart/{customerId}/items/{cartItemId}
      */
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'ADMIN', 'DEALER_MANAGER')")
     @PutMapping("/{customerId}/items/{cartItemId}")
     public ResponseEntity<ApiRespond<CartItemResponse>> updateCartItem(
             @PathVariable Long customerId,
@@ -84,6 +87,7 @@ public class CartController {
      * Xóa một item khỏi giỏ hàng
      * DELETE /cart/{customerId}/items/{cartItemId}
      */
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'ADMIN', 'DEALER_MANAGER')")
     @DeleteMapping("/{customerId}/items/{cartItemId}")
     public ResponseEntity<ApiRespond<Void>> removeCartItem(
             @PathVariable Long customerId,
@@ -99,6 +103,7 @@ public class CartController {
      * Xóa tất cả items khỏi giỏ hàng
      * DELETE /cart/{customerId}/clear
      */
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'ADMIN', 'DEALER_MANAGER')")
     @DeleteMapping("/{customerId}/clear")
     public ResponseEntity<ApiRespond<Void>> clearCart(@PathVariable Long customerId) {
         log.info("Clearing cart for customer {}", customerId);
