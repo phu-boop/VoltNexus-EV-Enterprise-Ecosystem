@@ -61,7 +61,7 @@ class KnowledgeBaseLoaderTest {
 
         assertThat(addedDocs).anyMatch(doc -> doc.getText().contains("Chính sách bảo hành"));
         assertThat(addedDocs).anyMatch(doc -> doc.getText().contains("VF8 Standard"));
-        assertThat(addedDocs).anyMatch(doc -> doc.getText().contains("40,000.00"));
+        assertThat(addedDocs).anyMatch(doc -> doc.getText().contains("40.000,00"));
         assertThat(addedDocs).anyMatch(doc -> doc.getText().contains("Dealer A"));
         assertThat(addedDocs).anyMatch(doc -> doc.getText().contains("Hanoi"));
     }
