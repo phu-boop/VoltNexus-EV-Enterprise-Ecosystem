@@ -10,8 +10,9 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.http.MediaType;
-import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -28,10 +29,15 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(controllers = DealerController.class)
+@ContextConfiguration(classes = {DealerController.class, DealerControllerWebMvcTest.TestConfig.class})
 @AutoConfigureMockMvc(addFilters = false)
-@WithMockUser(roles = "ADMIN")
 @DisplayName("DealerController — slice test (MockMvc + mock DealerService)")
 class DealerControllerWebMvcTest {
+
+    @TestConfiguration
+    static class TestConfig {
+        // This minimal config ensures we don't scan for security/kafka/etc.
+    }
 
     @Autowired
     private MockMvc mockMvc;
