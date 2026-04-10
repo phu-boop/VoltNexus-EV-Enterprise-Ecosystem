@@ -15,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -28,6 +29,7 @@ import java.util.UUID;
 public class QuotationController {
     private final QuotationService quotationService;
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'DEALER_MANAGER', 'DEALER_STAFF')")
     @PostMapping("/draft")
     public ResponseEntity<ApiRespond<QuotationResponse>> createDraftQuotation(
             @RequestBody @Valid QuotationCreateRequest request) {
@@ -36,6 +38,7 @@ public class QuotationController {
         return ResponseEntity.ok(ApiRespond.success("Quotation created successfully", response));
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'DEALER_MANAGER', 'DEALER_STAFF')")
     @PutMapping("/{quotationId}/calculate")
     public ResponseEntity<ApiRespond<QuotationResponse>> calculateQuotationPrice(
             @PathVariable UUID quotationId,
@@ -45,6 +48,7 @@ public class QuotationController {
         return ResponseEntity.ok(ApiRespond.success("Quotation calculated successfully", response));
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'DEALER_MANAGER', 'DEALER_STAFF')")
     @PutMapping("/{quotationId}/send")
     public ResponseEntity<ApiRespond<QuotationResponse>> sendQuotationToCustomer(
             @PathVariable UUID quotationId,
@@ -54,6 +58,7 @@ public class QuotationController {
         return ResponseEntity.ok(ApiRespond.success("Quotation sent to customer successfully", response));
     }
 
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'DEALER_MANAGER', 'DEALER_STAFF')")
     @PutMapping("/{quotationId}/customer-response")
     public ResponseEntity<ApiRespond<QuotationResponse>> handleCustomerResponse(
             @PathVariable UUID quotationId,
@@ -63,6 +68,7 @@ public class QuotationController {
         return ResponseEntity.ok(ApiRespond.success("Customer response handled successfully", response));
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'DEALER_MANAGER', 'DEALER_STAFF')")
     @PostMapping("/{quotationId}/convert-to-order")
     public ResponseEntity<ApiRespond<SalesOrderB2CResponse>> convertToSalesOrder(
             @PathVariable String quotationId) {
@@ -71,6 +77,7 @@ public class QuotationController {
         return ResponseEntity.ok(ApiRespond.success("Quotation converted to order successfully", response));
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'EVM_STAFF', 'DEALER_MANAGER', 'DEALER_STAFF', 'CUSTOMER')")
     @GetMapping("/{quotationId}")
     public ResponseEntity<ApiRespond<QuotationResponse>> getQuotationById(
             @PathVariable UUID quotationId) {
@@ -79,6 +86,7 @@ public class QuotationController {
         return ResponseEntity.ok(ApiRespond.success("Quotation fetched successfully", response));
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'EVM_STAFF', 'DEALER_MANAGER')")
     @GetMapping
     public ResponseEntity<ApiRespond<List<QuotationResponse>>> getQuotations(
             @Valid QuotationFilterRequest filterRequest) {
@@ -88,6 +96,7 @@ public class QuotationController {
         return ResponseEntity.ok(ApiRespond.success("Quotations fetched successfully", responses));
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'DEALER_MANAGER')")
     @DeleteMapping("/{quotationId}")
     public ResponseEntity<ApiRespond<String>> deleteQuotation(
             @PathVariable UUID quotationId) {
@@ -96,6 +105,7 @@ public class QuotationController {
         return ResponseEntity.ok(ApiRespond.success("Quotation deleted successfully", "Deleted"));
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'DEALER_MANAGER', 'DEALER_STAFF')")
     @GetMapping("/staff/{staffId}")
     public ResponseEntity<ApiRespond<List<QuotationResponse>>> getQuotationsByStaff(
             @PathVariable String staffId,
@@ -117,6 +127,7 @@ public class QuotationController {
         return ResponseEntity.ok(ApiRespond.success("Quotations fetched successfully for staff", responses));
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'EVM_STAFF', 'DEALER_MANAGER')")
     @GetMapping("/dealer/{dealerId}")
     public ResponseEntity<ApiRespond<List<QuotationResponse>>> getQuotationsByDealer(
             @PathVariable UUID dealerId,

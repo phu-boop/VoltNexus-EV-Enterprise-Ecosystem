@@ -237,6 +237,7 @@ public class SalesOrderControllerB2B {
     }
 
     // API lấy báo cáo doanh số theo khu vực đại lí
+    @PreAuthorize("hasAnyRole('ADMIN', 'EVM_STAFF')")
     @GetMapping("/b2b/report-completed")
     public ResponseEntity<ApiRespond<List<SalesOrder>>> getCompletedOrdersForReport(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
@@ -262,6 +263,7 @@ public class SalesOrderControllerB2B {
 
     // API Cập nhật trạng thái thanh toán (được gọi từ Payment Service)
     // PUT /sales-orders/{orderId}/payment-status?status=UNPAID
+    @PreAuthorize("hasAnyRole('ADMIN', 'EVM_STAFF')")
     @PutMapping("/{orderId}/payment-status")
     public ResponseEntity<ApiRespond<Void>> updatePaymentStatus(
             @PathVariable UUID orderId,

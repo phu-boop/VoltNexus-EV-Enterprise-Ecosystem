@@ -54,8 +54,6 @@ public class JwtGlobalFilter implements GlobalFilter, Ordered {
             "/sales/promotions/active",
             // Cart endpoints
             "/cart",
-            // Dealer service endpoints
-            "/dealers",
             // Customer service endpoints (public)
             "/customers/api/test-drives/public",
             "/customers/api/test-drives/public",

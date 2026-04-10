@@ -14,6 +14,7 @@ import com.example.reporting_service.dto.InventoryVelocityDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -44,6 +45,7 @@ public class ReportController {
      * API: GET /reports/inventory
      * Phục vụ task: "xem tồn kho theo mẫu xe, phiên bản và khu vực" (Có thể filter)
      */
+    @PreAuthorize("hasAnyRole('ADMIN', 'EVM_STAFF', 'DEALER_MANAGER')")
     @GetMapping("/inventory")
     public ResponseEntity<List<InventorySummaryByRegion>> getInventoryReport(
         @RequestParam(required = false) String region,
@@ -73,6 +75,7 @@ public class ReportController {
      * API: GET /reports/sales
      * Phục vụ task: "Doanh số theo khu vực, đại lý" (Có thể filter)
      */
+    @PreAuthorize("hasAnyRole('ADMIN', 'EVM_STAFF', 'DEALER_MANAGER')")
     @GetMapping("/sales")
     public ResponseEntity<List<SalesSummaryByDealership>> getSalesReport(
         @RequestParam(required = false) String region,
@@ -106,6 +109,7 @@ public class ReportController {
      * API: GET /reports/inventory-velocity
      * Phục vụ task: "Tồn kho & tốc độ tiêu thụ"
      */
+    @PreAuthorize("hasAnyRole('ADMIN', 'EVM_STAFF', 'DEALER_MANAGER')")
     @GetMapping("/inventory-velocity")
     public ResponseEntity<List<InventoryVelocityDTO>> getInventoryVelocityReport(
         @RequestParam(required = false) String region,
@@ -149,6 +153,7 @@ public class ReportController {
      * API: GET /reports/central-inventory
      * Phục vụ task: "Tồn kho trung tâm theo mẫu xe" (EVM Admin/Staff)
      */
+    @PreAuthorize("hasAnyRole('ADMIN', 'EVM_STAFF')")
     @GetMapping("/central-inventory")
     public ResponseEntity<List<CentralInventorySummary>> getCentralInventoryReport(
         @RequestParam(required = false) String modelId,
@@ -171,6 +176,7 @@ public class ReportController {
      * API: GET /reports/central-inventory/transactions
      * Phục vụ task: "Lịch sử giao dịch kho trung tâm" (EVM Admin/Staff)
      */
+    @PreAuthorize("hasAnyRole('ADMIN', 'EVM_STAFF')")
     @GetMapping("/central-inventory/transactions")
     public ResponseEntity<List<CentralInventoryTransactionLog>> getCentralTransactionHistory(
         @RequestParam(required = false) String transactionType,
