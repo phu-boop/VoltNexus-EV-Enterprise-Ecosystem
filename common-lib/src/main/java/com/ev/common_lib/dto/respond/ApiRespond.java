@@ -4,11 +4,13 @@ package com.ev.common_lib.dto.respond;
 import com.ev.common_lib.exception.ErrorCode;
 import org.jetbrains.annotations.Nullable;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 
 @Data
+@Builder
 @AllArgsConstructor
 @NoArgsConstructor
 public class ApiRespond<T> {

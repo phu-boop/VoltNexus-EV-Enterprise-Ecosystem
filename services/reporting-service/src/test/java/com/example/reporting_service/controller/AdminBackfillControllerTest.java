@@ -66,7 +66,7 @@ class AdminBackfillControllerTest {
         dealer.setRegion("North");
 
         ApiRespond<List<DealerBasicDto>> apiRespond = ApiRespond.<List<DealerBasicDto>>builder()
-                .code(200)
+                .code("200")
                 .data(List.of(dealer))
                 .build();
 
@@ -94,7 +94,7 @@ class AdminBackfillControllerTest {
     void backfillDealers_WhenApiFails_ShouldReturnBadRequest() throws Exception {
         // Arrange
         ApiRespond<List<DealerBasicDto>> apiRespond = ApiRespond.<List<DealerBasicDto>>builder()
-                .code(500)
+                .code("500")
                 .data(null)
                 .build();
 
@@ -123,7 +123,7 @@ class AdminBackfillControllerTest {
         vehicle.setModelName("VF 8");
 
         ApiRespond<List<VariantDetailDto>> apiRespond = ApiRespond.<List<VariantDetailDto>>builder()
-                .code(200)
+                .code("200")
                 .data(List.of(vehicle))
                 .build();
 

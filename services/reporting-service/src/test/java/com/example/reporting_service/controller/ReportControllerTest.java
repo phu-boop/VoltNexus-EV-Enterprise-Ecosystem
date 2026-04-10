@@ -22,6 +22,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
+import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
@@ -76,7 +77,8 @@ class ReportControllerTest {
     void getSalesReport_ShouldReturnList() throws Exception {
         SalesSummaryByDealership sales = new SalesSummaryByDealership();
         sales.setRegion("South");
-        sales.setDealershipId(10L);
+        UUID dealershipId = UUID.fromString("00000000-0000-0000-0000-000000000010");
+        sales.setDealershipId(dealershipId);
 
         when(salesRepository.findAll(ArgumentMatchers.<Specification<SalesSummaryByDealership>>any()))
                 .thenReturn(List.of(sales));
@@ -88,7 +90,7 @@ class ReportControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray())
                 .andExpect(jsonPath("$[0].region").value("South"))
-                .andExpect(jsonPath("$[0].dealershipId").value(10));
+                .andExpect(jsonPath("$[0].dealershipId").value(dealershipId.toString()));
     }
 
     @Test
@@ -108,9 +110,9 @@ class ReportControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray())
                 .andExpect(jsonPath("$[0].region").value("Central"))
-                .andExpect(jsonPath("$[0].modelgeDailySales").value(2.0));
-    }Name").value("VF 5"))
-                .andExpect(jsonPath("$[0].avera
+                .andExpect(jsonPath("$[0].modelName").value("VF 5"))
+                .andExpect(jsonPath("$[0].averageDailySales").value(2.0));
+    }
 
     @Test
     @DisplayName("Nên lấy báo cáo Tồn kho trung tâm thành công")
@@ -118,7 +120,7 @@ class ReportControllerTest {
         CentralInventorySummary summary = new CentralInventorySummary();
         summary.setModelId(1L);
         summary.setVariantId(2L);
-        summary.setTotalStock(100L);
+        summary.setAvailableStock(100L);
 
         when(centralInventoryRepo.findAll(ArgumentMatchers.<Specification<CentralInventorySummary>>any()))
                 .thenReturn(List.of(summary));
@@ -130,7 +132,7 @@ class ReportControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray())
                 .andExpect(jsonPath("$[0].modelId").value(1))
-                .andExpect(jsonPath("$[0].totalStock").value(100));
+                .andExpect(jsonPath("$[0].availableStock").value(100));
     }
 
     @Test

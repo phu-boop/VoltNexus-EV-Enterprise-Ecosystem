@@ -15,6 +15,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
@@ -40,7 +41,7 @@ class ReportingControllerTest {
     @DisplayName("Nên gửi request reportSale thành công")
     void reportSale_ShouldReturnSuccess() throws Exception {
         SalesRecordRequest req = new SalesRecordRequest();
-        req.setOrderId("ORD-123");
+        req.setOrderId(UUID.randomUUID());
         req.setTotalAmount(new BigDecimal("999.99"));
         req.setDealerName("Dealer A");
         req.setModelName("VF 8");
@@ -60,7 +61,7 @@ class ReportingControllerTest {
     @DisplayName("Nên bắt lỗi nếu reportSale bị văng Exception")
     void reportSale_ShouldReturn500OnError() throws Exception {
         SalesRecordRequest req = new SalesRecordRequest();
-        req.setOrderId("ORD-123");
+        req.setOrderId(UUID.randomUUID());
         req.setTotalAmount(new BigDecimal("999.99"));
 
         doThrow(new RuntimeException("Lỗi DB")).when(salesReportingService).recordSale(any(SalesRecord.class));
@@ -76,7 +77,7 @@ class ReportingControllerTest {
     @DisplayName("Nên lấy báo cáo Sales Summary thành công")
     void getSalesSummary_ShouldReturnList() throws Exception {
         SalesRecord record = new SalesRecord();
-        record.setOrderId("ORD-1");
+        record.setOrderId(UUID.randomUUID());
         record.setModelName("VF 5");
 
         when(salesReportingService.getAllRecords()).thenReturn(List.of(record));

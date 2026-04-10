@@ -134,7 +134,7 @@ class SalesReportingServiceTest {
     @DisplayName("Nên đồng bộ Inventory Data từ external API")
     void syncInventoryData_ShouldSucceed() {
         DealerInventoryDto dto = new DealerInventoryDto();
-        dto.setDealerId(1L);
+        dto.setDealerId(UUID.randomUUID());
         dto.setVariantId(2L);
         dto.setAvailableQuantity(10);
 
