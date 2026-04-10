@@ -116,6 +116,7 @@ jobs:
 #            --header "Content-Type: application/json" \
 #            --data @jira-sonar-payload.json
 
+<<<<<<< HEAD
 
 #      - name: "CI: Security Scan"
 #        uses: aquasecurity/trivy-action@master
@@ -353,4 +354,6 @@ jobs:
 #          echo "Checking Health Status via Prometheus/Grafana..."
 #          # curl -s https://api.monitoring.volt-nexus.com/health || true
 #          echo "Infrastructure Health: [OK]"
+=======
+>>>>>>> 836a335a9f537bf8db9b1aeeb46ce00ffb758515
 
