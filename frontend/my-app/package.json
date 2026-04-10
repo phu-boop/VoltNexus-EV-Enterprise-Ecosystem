@@ -10,6 +10,12 @@
     "preview": "vite preview",
     "test": "jest"
   },
+  "jest": {
+    "testPathIgnorePatterns": [
+      "/node_modules/",
+      "<rootDir>/tests/"
+    ]
+  },
   "dependencies": {
     "@ant-design/pro-components": "^2.8.10",
     "@headlessui/react": "^2.2.9",
