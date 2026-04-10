@@ -30,6 +30,7 @@ public class CartController {
      * Thêm sản phẩm vào giỏ hàng
      * POST /cart/{customerId}
      */
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'ADMIN', 'DEALER_MANAGER', 'DEALER_STAFF')")
     @PostMapping("/{customerId}")
     public ResponseEntity<ApiRespond<CartItemResponse>> addToCart(
             @PathVariable Long customerId,
@@ -45,6 +46,7 @@ public class CartController {
      * Lấy tất cả items trong giỏ hàng
      * GET /cart/{customerId}/items
      */
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'ADMIN', 'EVM_STAFF', 'DEALER_MANAGER', 'DEALER_STAFF')")
     @GetMapping("/{customerId}/items")
     public ResponseEntity<ApiRespond<List<CartItemResponse>>> getCartItems(@PathVariable Long customerId) {
         log.info("Getting cart items for customer: {}", customerId);
@@ -57,7 +59,6 @@ public class CartController {
      * Lấy tổng quan giỏ hàng (items + tổng tiền)
      * GET /cart/{customerId}/summary
      */
-    @PreAuthorize("hasAnyRole('CUSTOMER', 'ADMIN', 'DEALER_MANAGER')")
     @GetMapping("/{customerId}/summary")
     public ResponseEntity<ApiRespond<CartSummaryResponse>> getCartSummary(@PathVariable Long customerId) {
         log.info("Getting cart summary for customer: {}", customerId);
@@ -70,7 +71,6 @@ public class CartController {
      * Cập nhật cart item (quantity, selected features)
      * PUT /cart/{customerId}/items/{cartItemId}
      */
-    @PreAuthorize("hasAnyRole('CUSTOMER', 'ADMIN', 'DEALER_MANAGER')")
     @PutMapping("/{customerId}/items/{cartItemId}")
     public ResponseEntity<ApiRespond<CartItemResponse>> updateCartItem(
             @PathVariable Long customerId,
@@ -87,7 +87,6 @@ public class CartController {
      * Xóa một item khỏi giỏ hàng
      * DELETE /cart/{customerId}/items/{cartItemId}
      */
-    @PreAuthorize("hasAnyRole('CUSTOMER', 'ADMIN', 'DEALER_MANAGER')")
     @DeleteMapping("/{customerId}/items/{cartItemId}")
     public ResponseEntity<ApiRespond<Void>> removeCartItem(
             @PathVariable Long customerId,
@@ -103,7 +102,6 @@ public class CartController {
      * Xóa tất cả items khỏi giỏ hàng
      * DELETE /cart/{customerId}/clear
      */
-    @PreAuthorize("hasAnyRole('CUSTOMER', 'ADMIN', 'DEALER_MANAGER')")
     @DeleteMapping("/{customerId}/clear")
     public ResponseEntity<ApiRespond<Void>> clearCart(@PathVariable Long customerId) {
         log.info("Clearing cart for customer {}", customerId);
@@ -117,6 +115,7 @@ public class CartController {
      * GET /cart/{profileId}/count
      * @param profileId UUID of the customer's profile from User Service
      */
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'ADMIN', 'EVM_STAFF', 'DEALER_MANAGER', 'DEALER_STAFF')")
     @GetMapping("/{profileId}/count")
     public ResponseEntity<ApiRespond<Long>> getCartItemCount(@PathVariable String profileId) {
         log.info("Getting cart item count for profile {}", profileId);

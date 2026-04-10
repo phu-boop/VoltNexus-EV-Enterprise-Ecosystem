@@ -11,8 +11,8 @@
     <groupId>com.ev</groupId>
     <artifactId>user-service</artifactId>
     <version>1.0.0</version>
-    <name>user-service</name>
-    <description>website</description>
+    <name>ai-service</name>
+    <description>AI service for forecasting and analytics</description>
     <url/>
     <licenses>
         <license/>
