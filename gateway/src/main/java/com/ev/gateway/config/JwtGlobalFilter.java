@@ -28,11 +28,15 @@ public class JwtGlobalFilter implements GlobalFilter, Ordered {
 
     // Danh sách path được bỏ qua xác thực (không yêu cầu token)
     private static final List<String> EXCLUDED_PATHS = List.of(
-            "/auth",
-            "/users",
+            "/auth/login",
+            "/auth/register/customer",
+            "/auth/forgot-password",
+            "/auth/reset-password",
+            "/auth/oauth2",
             "/oauth2", // OAuth2 authentication flow
             "/login", // OAuth2 login callback
-            "/sendmail",
+            "/users/register/admin", // Bootstrap admin
+            "/sendmail/customer-response",
             "/ws",
             "/payments/payment/return",
             "/payments/payment/ipn",
@@ -40,32 +44,14 @@ public class JwtGlobalFilter implements GlobalFilter, Ordered {
             "/payments/api/v1/payments/gateway/callback/vnpay-return",
             "/payments/api/v1/payments/gateway/callback/vnpay-ipn",
             "/favicon.ico",
-            // Customer service
-            "/customers",
-            "/cart",
-            "/test-drives",
-            "/feedback",
-            "/complaints",
+            // Public info (if any)
             "/charging-stations",
-            // Dealer service
-            "/dealers",
-            // Inventory service
-            "/inventory",
-            // Payment service
-            "/payments",
-            // Sales service
-            "/sales",
-            "/orders",
-            "/sales-orders",
-            // Vehicle service
-            "/vehicles",
             "/vehicle-catalog",
-            "/variants",
-            "/models",
-            // Reporting service
-            "/reporting",
-            // AI Chatbot endpoint
-            "/ai/chat/ask");
+            "/vehicles/public",
+            "/ai/chat/ask",
+            "/actuator/health",
+            "/v3/api-docs",
+            "/swagger-ui");
 
     public JwtGlobalFilter(JwtUtil jwtUtil, RedisService redisService) {
         this.jwtUtil = jwtUtil;
