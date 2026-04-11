@@ -62,6 +62,11 @@ public class SecurityConfig {
                                 // Allow all other service paths to reach JwtGlobalFilter/Downstream
                                 // where they will be checked specifically
                                 "/users/**",
+                                "/customers/**",
+                                "/cart/**",
+                                "/test-drives/**",
+                                "/feedback/**",
+                                "/complaints/**",
                                 "/dealers/**",
                                 "/inventory/**",
                                 "/payments/**",

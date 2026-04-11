@@ -13,6 +13,9 @@ import org.springframework.core.Ordered;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.ReactiveSecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
@@ -51,9 +54,7 @@ public class JwtGlobalFilter implements GlobalFilter, Ordered {
             "/ai/chat/ask",
             "/actuator/health",
             "/v3/api-docs",
-            "/swagger-ui");
-            // Sales service endpoints (after rewrite)
-            "/promotions/active",
+            "/swagger-ui",
             // Sales service endpoints (before rewrite)
             "/sales/promotions/active",
             // Cart endpoints
@@ -145,7 +146,15 @@ public class JwtGlobalFilter implements GlobalFilter, Ordered {
             // Mutate Request với các headers thông tin User
             ServerWebExchange mutatedExchange = mutateExchangeWithUserHeaders(exchange, email, role, userId, profileId,
                     dealerId, token);
-            return chain.filter(mutatedExchange);
+
+            // Populate Authentication cho WebFlux SecurityContext
+            List<SimpleGrantedAuthority> authorities = (role != null && !role.trim().isEmpty())
+                    ? List.of(new SimpleGrantedAuthority(role))
+                    : List.of();
+            UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(email, null, authorities);
+
+            return chain.filter(mutatedExchange)
+                    .contextWrite(ReactiveSecurityContextHolder.withAuthentication(auth));
 
         } catch (ExpiredJwtException e) {
             log.warn("[JwtGlobalFilter] Token expired for path: {} | Error: {}", path, e.getMessage());
