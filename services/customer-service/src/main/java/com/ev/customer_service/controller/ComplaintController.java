@@ -56,7 +56,7 @@ public class ComplaintController {
      * Dealer Manager gán nhân viên và chuyển trạng thái
      */
     @PutMapping("/{id}/assign")
-    @PreAuthorize("hasAnyRole('DEALER_MANAGER', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('DEALER_MANAGER')")
     public ResponseEntity<ApiResponse<ComplaintResponse>> assignComplaint(
             @PathVariable Long id,
             @Valid @RequestBody AssignComplaintRequest request) {
@@ -98,7 +98,7 @@ public class ComplaintController {
      * Dealer Manager xác nhận đóng sau khi resolved
      */
     @PutMapping("/{id}/close")
-    @PreAuthorize("hasAnyRole('DEALER_MANAGER', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('DEALER_MANAGER')")
     public ResponseEntity<ApiResponse<ComplaintResponse>> closeComplaint(@PathVariable Long id) {
         log.info("Closing complaint {}", id);
         ComplaintResponse response = complaintService.closeComplaint(id);
@@ -109,7 +109,7 @@ public class ComplaintController {
      * Lấy chi tiết phản hồi
      */
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('CUSTOMER', 'DEALER_STAFF', 'DEALER_MANAGER', 'ADMIN', 'EVM_STAFF')")
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'DEALER_STAFF', 'DEALER_MANAGER')")
     public ResponseEntity<ApiResponse<ComplaintResponse>> getComplaintById(@PathVariable Long id) {
         ComplaintResponse response = complaintService.getComplaintById(id);
         return ResponseEntity.ok(ApiResponse.success(response));
@@ -144,7 +144,7 @@ public class ComplaintController {
      * Dealer Manager xem dashboard
      */
     @GetMapping("/statistics")
-    @PreAuthorize("hasAnyRole('DEALER_MANAGER', 'ADMIN', 'EVM_STAFF')")
+    @PreAuthorize("hasAnyRole('DEALER_MANAGER', 'DEALER_STAFF')")
     public ResponseEntity<ApiResponse<ComplaintStatisticsResponse>> getStatistics(
             @RequestParam String dealerId,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
