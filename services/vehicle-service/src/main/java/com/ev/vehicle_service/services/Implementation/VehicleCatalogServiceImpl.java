@@ -130,6 +130,10 @@ public class VehicleCatalogServiceImpl implements VehicleCatalogService {
             Integer maxRange,
             Pageable pageable) {
 
+        if (minPrice != null && maxPrice != null && minPrice.compareTo(maxPrice) > 0) {
+            throw new AppException(ErrorCode.INVALID_PRICE_RANGE);
+        }
+
         // Convert String status to Enum
         VehicleStatus statusEnum = null;
         if (status != null && !status.isBlank()) {

@@ -50,6 +50,7 @@ public class VehicleCatalogController {
      * OPTIMIZED: Có pagination và caching
      */
     @GetMapping("/models")
+    @PreAuthorize("hasAnyRole('ADMIN', 'EVM_STAFF')")
     public ResponseEntity<ApiRespond<Page<ModelSummaryDto>>> getAllModels(
             @RequestParam(required = false) Sort sort,
             @RequestParam(defaultValue = "0") int page,
@@ -66,6 +67,7 @@ public class VehicleCatalogController {
      * Search models with filters - OPTIMIZED
      */
     @GetMapping("/models/search")
+    @PreAuthorize("hasAnyRole('ADMIN', 'EVM_STAFF')")
     public ResponseEntity<ApiRespond<Page<ModelSummaryDto>>> searchModels(
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) String status,
@@ -88,6 +90,7 @@ public class VehicleCatalogController {
      * Lấy chi tiết một mẫu xe (bao gồm các phiên bản của nó).
      */
     @GetMapping("/models/{modelId}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'EVM_STAFF')")
     public ResponseEntity<ApiRespond<ModelDetailDto>> getModelDetails(@PathVariable Long modelId) {
         ModelDetailDto modelDto = vehicleCatalogService.getModelDetails(modelId);
         return ResponseEntity.ok(ApiRespond.success("Fetched model details successfully", modelDto));
@@ -170,6 +173,7 @@ public class VehicleCatalogController {
      * Lấy tất cả các phiên bản (variants) thuộc về một mẫu xe cụ thể.
      */
     @GetMapping("/models/{modelId}/variants")
+    @PreAuthorize("hasAnyRole('ADMIN', 'EVM_STAFF')")
     public ResponseEntity<ApiRespond<List<VariantDetailDto>>> getVariantsByModelId(@PathVariable Long modelId) {
         List<VariantDetailDto> variants = vehicleCatalogService.getVariantsByModelId(modelId);
         return ResponseEntity.ok(ApiRespond.success("Fetched all variants for model successfully", variants));
@@ -195,6 +199,7 @@ public class VehicleCatalogController {
      * Lấy chi tiết một phiên bản xe cụ thể.
      */
     @GetMapping("/variants/{variantId}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'EVM_STAFF')")
     public ResponseEntity<ApiRespond<VariantDetailDto>> getVariantDetails(@PathVariable Long variantId) {
         VariantDetailDto variantDto = vehicleCatalogService.getVariantDetails(variantId);
         return ResponseEntity.ok(ApiRespond.success("Fetched variant details successfully", variantDto));
