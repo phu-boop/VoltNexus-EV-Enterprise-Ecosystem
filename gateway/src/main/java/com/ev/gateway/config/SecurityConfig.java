@@ -31,57 +31,45 @@ public class SecurityConfig {
                         .pathMatchers(
                                 "/",
                                 "/error",
+                                "/favicon.ico",
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**",
                                 "/actuator/health",
 
-                                // user-service
-                                "/auth/**",
-                                "/users/**",
+                                // Public endpoints (will also be excluded in JwtGlobalFilter)
+                                "/auth/login",
+                                "/auth/register/customer",
+                                "/auth/forgot-password",
+                                "/auth/reset-password",
+                                "/auth/oauth2/**",
+                                "/oauth2/**",
+                                "/login/**",
+                                "/users/register/admin",
+                                "/sendmail/customer-response/**",
+                                "/ws/**",
+                                "/payments/payment/return",
+                                "/payments/payment/ipn",
+                                "/payments/payment/pay-url",
+                                "/payments/api/v1/payments/gateway/callback/vnpay-return",
+                                "/payments/api/v1/payments/gateway/callback/vnpay-ipn",
 
-                                "/oauth2/**",  // OAuth2 authentication flow
-                                "/login/**",   // OAuth2 login callback
-
-                                // customer-service
-                                "/customers/**",
-                                "/cart/**", // Cart endpoints
-                                "/test-drives/**",
-                                "/feedback/**",
-                                "/complaints/**",
+                                // Public resources
                                 "/charging-stations/**",
+                                "/vehicle-catalog/**",
+                                "/vehicles/public/**",
+                                "/ai/chat/ask",
 
-                                // dealer-service
+                                // Allow all other service paths to reach JwtGlobalFilter/Downstream
+                                // where they will be checked specifically
+                                "/users/**",
                                 "/dealers/**",
-
-                                // inventory-service
                                 "/inventory/**",
-
-                                // payment-service
                                 "/payments/**",
-                                "/api/v1/payments/**",
-                                "/favicon.ico",
-                                "/api/v1/payments/gateway/callback/vnpay-return",
-                                "/api/v1/payments/gateway/callback/vnpay-ipn",
-
-                                // "/sales/**"
                                 "/sales/**",
                                 "/orders/**",
-
                                 "/sales-orders/**",
-                                "/api/v1/sales-orders/**",
-
-                                // vehicle-service
                                 "/vehicles/**",
-
-                                // reporting-service
                                 "/reporting/**",
-
-                                // sendmail
-                                "/sendmail/customer-response/**",
-
-                                "/ws/**",
-
-                                // ai-service
                                 "/ai/**")
                         .permitAll()
 
