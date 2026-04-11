@@ -21,10 +21,17 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 @RestController
 @RequestMapping("/reports") 
 public class ReportController {
+
+    @ExceptionHandler({MethodArgumentTypeMismatchException.class, NumberFormatException.class})
+    public ResponseEntity<String> handleTypeMismatch(Exception ex) {
+        return ResponseEntity.badRequest().body("Invalid parameter");
+    }
 
     @Autowired
     private InventorySummaryRepository inventoryRepository;
@@ -49,8 +56,8 @@ public class ReportController {
     @GetMapping("/inventory")
     public ResponseEntity<List<InventorySummaryByRegion>> getInventoryReport(
         @RequestParam(required = false) String region,
-        @RequestParam(required = false) String modelId,
-        @RequestParam(required = false) String variantId
+        @RequestParam(required = false) Long modelId,
+        @RequestParam(required = false) Long variantId
     ) {
         // Khởi tạo Specification để xây dựng truy vấn động (filter theo tham số)
         Specification<InventorySummaryByRegion> spec = (root, query, cb) -> cb.conjunction();
@@ -58,10 +65,10 @@ public class ReportController {
         if (region != null && !region.isEmpty()) {
             spec = spec.and((root, query, cb) -> cb.equal(root.get("region"), region));
         }
-        if (modelId != null && !modelId.isEmpty()) {
+        if (modelId != null) {
             spec = spec.and((root, query, cb) -> cb.equal(root.get("modelId"), modelId));
         }
-        if (variantId != null && !variantId.isEmpty()) {
+        if (variantId != null) {
             spec = spec.and((root, query, cb) -> cb.equal(root.get("variantId"), variantId));
         }
 
@@ -80,8 +87,8 @@ public class ReportController {
     public ResponseEntity<List<SalesSummaryByDealership>> getSalesReport(
         @RequestParam(required = false) String region,
         @RequestParam(required = false) Long dealershipId,
-        @RequestParam(required = false) String modelId,
-        @RequestParam(required = false) String variantId
+        @RequestParam(required = false) Long modelId,
+        @RequestParam(required = false) Long variantId
     ) {
         // Tái sử dụng Specification y hệt như API inventory
         Specification<SalesSummaryByDealership> spec = (root, query, cb) -> cb.conjunction();
@@ -92,10 +99,10 @@ public class ReportController {
         if (dealershipId != null) {
             spec = spec.and((root, query, cb) -> cb.equal(root.get("dealershipId"), dealershipId));
         }
-        if (modelId != null && !modelId.isEmpty()) {
+        if (modelId != null) {
             spec = spec.and((root, query, cb) -> cb.equal(root.get("modelId"), modelId));
         }
-        if (variantId != null && !variantId.isEmpty()) {
+        if (variantId != null) {
             spec = spec.and((root, query, cb) -> cb.equal(root.get("variantId"), variantId));
         }
 
@@ -113,8 +120,8 @@ public class ReportController {
     @GetMapping("/inventory-velocity")
     public ResponseEntity<List<InventoryVelocityDTO>> getInventoryVelocityReport(
         @RequestParam(required = false) String region,
-        @RequestParam(required = false) String modelId,
-        @RequestParam(required = false) String variantId
+        @RequestParam(required = false) Long modelId,
+        @RequestParam(required = false) Long variantId
         // Lưu ý: Không filter theo dealershipId ở đây, 
         // vì chúng ta đang tính velocity theo Region (khớp với bảng Inventory)
     ) {
@@ -124,10 +131,10 @@ public class ReportController {
         if (region != null && !region.isEmpty()) {
             inventorySpec = inventorySpec.and((root, query, cb) -> cb.equal(root.get("region"), region));
         }
-        if (modelId != null && !modelId.isEmpty()) {
+        if (modelId != null) {
             inventorySpec = inventorySpec.and((root, query, cb) -> cb.equal(root.get("modelId"), modelId));
         }
-        if (variantId != null && !variantId.isEmpty()) {
+        if (variantId != null) {
             inventorySpec = inventorySpec.and((root, query, cb) -> cb.equal(root.get("variantId"), variantId));
         }
         
@@ -136,10 +143,10 @@ public class ReportController {
         if (region != null && !region.isEmpty()) {
             salesSpec = salesSpec.and((root, query, cb) -> cb.equal(root.get("region"), region));
         }
-        if (modelId != null && !modelId.isEmpty()) {
+        if (modelId != null) {
             salesSpec = salesSpec.and((root, query, cb) -> cb.equal(root.get("modelId"), modelId));
         }
-        if (variantId != null && !variantId.isEmpty()) {
+        if (variantId != null) {
             salesSpec = salesSpec.and((root, query, cb) -> cb.equal(root.get("variantId"), variantId));
         }
 
@@ -156,16 +163,16 @@ public class ReportController {
     @PreAuthorize("hasAnyRole('ADMIN', 'EVM_STAFF')")
     @GetMapping("/central-inventory")
     public ResponseEntity<List<CentralInventorySummary>> getCentralInventoryReport(
-        @RequestParam(required = false) String modelId,
-        @RequestParam(required = false) String variantId
+        @RequestParam(required = false) Long modelId,
+        @RequestParam(required = false) Long variantId
     ) {
         Specification<CentralInventorySummary> spec = (root, query, cb) -> cb.conjunction();
 
-        if (modelId != null && !modelId.isEmpty()) {
-            spec = spec.and((root, query, cb) -> cb.equal(root.get("modelId"), Long.valueOf(modelId)));
+        if (modelId != null) {
+            spec = spec.and((root, query, cb) -> cb.equal(root.get("modelId"), modelId));
         }
-        if (variantId != null && !variantId.isEmpty()) {
-            spec = spec.and((root, query, cb) -> cb.equal(root.get("variantId"), Long.valueOf(variantId)));
+        if (variantId != null) {
+            spec = spec.and((root, query, cb) -> cb.equal(root.get("variantId"), variantId));
         }
 
         List<CentralInventorySummary> results = centralInventoryRepo.findAll(spec);
@@ -180,7 +187,7 @@ public class ReportController {
     @GetMapping("/central-inventory/transactions")
     public ResponseEntity<List<CentralInventoryTransactionLog>> getCentralTransactionHistory(
         @RequestParam(required = false) String transactionType,
-        @RequestParam(required = false) String variantId
+        @RequestParam(required = false) Long variantId
     ) {
         Specification<CentralInventoryTransactionLog> spec = (root, query, cb) -> {
             query.orderBy(cb.desc(root.get("transactionDate")));
@@ -190,8 +197,8 @@ public class ReportController {
         if (transactionType != null && !transactionType.isEmpty()) {
             spec = spec.and((root, query, cb) -> cb.equal(root.get("transactionType"), transactionType));
         }
-        if (variantId != null && !variantId.isEmpty()) {
-            spec = spec.and((root, query, cb) -> cb.equal(root.get("variantId"), Long.valueOf(variantId)));
+        if (variantId != null) {
+            spec = spec.and((root, query, cb) -> cb.equal(root.get("variantId"), variantId));
         }
 
         List<CentralInventoryTransactionLog> results = centralTransactionLogRepo.findAll(spec);
