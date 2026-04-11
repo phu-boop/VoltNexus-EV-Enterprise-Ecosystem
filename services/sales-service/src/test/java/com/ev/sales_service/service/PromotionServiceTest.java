@@ -4,6 +4,7 @@ import com.ev.sales_service.entity.Promotion;
 import com.ev.sales_service.enums.PromotionStatus;
 import com.ev.sales_service.repository.OutboxRepository;
 import com.ev.sales_service.repository.PromotionRepository;
+import com.ev.sales_service.repository.QuotationRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -34,6 +35,9 @@ class PromotionServiceTest {
 
     @Mock
     private ObjectMapper objectMapper;
+
+    @Mock
+    private QuotationRepository quotationRepository;
 
     @InjectMocks
     private PromotionService promotionService;
@@ -69,6 +73,7 @@ class PromotionServiceTest {
     @Test
     void updatePromotion_ShouldUpdateExistingFields() {
         when(promotionRepository.findById(promotion.getPromotionId())).thenReturn(Optional.of(promotion));
+        when(quotationRepository.existsByPromotionId(promotion.getPromotionId())).thenReturn(false);
         when(promotionRepository.save(any(Promotion.class))).thenReturn(promotion);
 
         Promotion updateData = Promotion.builder()
@@ -105,6 +110,7 @@ class PromotionServiceTest {
     @Test
     void deletePromotion_ShouldSetStatusToDeleted() {
         when(promotionRepository.findById(promotion.getPromotionId())).thenReturn(Optional.of(promotion));
+        when(quotationRepository.existsByPromotionId(promotion.getPromotionId())).thenReturn(false);
 
         promotionService.deletePromotion(promotion.getPromotionId(), "ADMIN", null);
 

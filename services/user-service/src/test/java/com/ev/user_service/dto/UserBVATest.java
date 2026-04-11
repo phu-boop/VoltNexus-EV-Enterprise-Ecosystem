@@ -33,7 +33,7 @@ public class UserBVATest {
         req7.setPassword("1234567");
         Set<ConstraintViolation<CustomerRegistrationRequest>> violations7 = validator.validate(req7);
         assertFalse(violations7.isEmpty(), "PASSWORD_MIN_FAIL: Nên có lỗi khi password = 7 ký tự (Min-1)");
-        assertTrue(violations7.stream().anyMatch(v -> v.getMessage().contains("at least 8 characters")));
+        assertTrue(violations7.stream().anyMatch(v -> v.getMessage().contains("must be between 8 and 32 characters")));
 
         // Case boundary: 8 (Min) - Expected: PASS
         CustomerRegistrationRequest req8 = new CustomerRegistrationRequest();

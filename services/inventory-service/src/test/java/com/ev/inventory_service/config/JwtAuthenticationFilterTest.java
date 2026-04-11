@@ -12,17 +12,14 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
-import java.util.Collections;
-import java.util.List;
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-@DisplayName("GatewayHeaderFilter Unit Tests")
-class GatewayHeaderFilterTest {
+@DisplayName("JwtAuthenticationFilter Unit Tests")
+class JwtAuthenticationFilterTest {
 
-    private GatewayHeaderFilter gatewayHeaderFilter;
+    private JwtAuthenticationFilter jwtAuthenticationFilter;
 
     @Mock
     private HttpServletRequest request;
@@ -33,7 +30,7 @@ class GatewayHeaderFilterTest {
 
     @BeforeEach
     void setUp() {
-        gatewayHeaderFilter = new GatewayHeaderFilter();
+        jwtAuthenticationFilter = new JwtAuthenticationFilter();
         SecurityContextHolder.clearContext();
     }
 
@@ -42,21 +39,18 @@ class GatewayHeaderFilterTest {
     void doFilterInternal_Success() throws Exception {
         // Given
         when(request.getHeader("X-User-Email")).thenReturn("user@ev.com");
-        when(request.getHeader("X-User-Role")).thenReturn("ADMIN,EVM_STAFF");
-        when(request.getHeader("X-User-Id")).thenReturn("user-123");
-        when(request.getHeader("X-User-ProfileId")).thenReturn("prof-456");
-        when(request.getHeaderNames()).thenReturn(Collections.enumeration(List.of("X-User-Email", "X-User-Role")));
+        when(request.getHeader("X-User-Role")).thenReturn("ADMIN");
 
         // When
-        gatewayHeaderFilter.doFilterInternal(request, response, filterChain);
+        jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
 
         // Then
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         assertThat(auth).isNotNull();
         assertThat(auth.getName()).isEqualTo("user@ev.com");
-        assertThat(auth.getAuthorities()).hasSize(2);
+        assertThat(auth.getAuthorities()).hasSize(1);
         assertThat(auth.getAuthorities().stream().map(a -> a.getAuthority()).toList())
-                .containsExactlyInAnyOrder("ROLE_ADMIN", "ROLE_EVM_STAFF");
+                .containsExactly("ROLE_ADMIN");
         verify(filterChain).doFilter(request, response);
     }
 
@@ -65,10 +59,10 @@ class GatewayHeaderFilterTest {
     void doFilterInternal_NoEmail() throws Exception {
         // Given
         when(request.getHeader("X-User-Email")).thenReturn(null);
-        when(request.getHeaderNames()).thenReturn(Collections.emptyEnumeration());
+        when(request.getHeader("X-User-Role")).thenReturn("ADMIN");
 
         // When
-        gatewayHeaderFilter.doFilterInternal(request, response, filterChain);
+        jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
 
         // Then
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
@@ -77,20 +71,18 @@ class GatewayHeaderFilterTest {
     }
 
     @Test
-    @DisplayName("Should handle empty role header gracefully")
-    void doFilterInternal_EmptyRole() throws Exception {
+    @DisplayName("Should not set authentication when role header is missing")
+    void doFilterInternal_NoRole() throws Exception {
         // Given
         when(request.getHeader("X-User-Email")).thenReturn("user@ev.com");
-        when(request.getHeader("X-User-Role")).thenReturn("");
-        when(request.getHeaderNames()).thenReturn(Collections.enumeration(List.of("X-User-Email", "X-User-Role")));
+        when(request.getHeader("X-User-Role")).thenReturn(null);
 
         // When
-        gatewayHeaderFilter.doFilterInternal(request, response, filterChain);
+        jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
 
         // Then
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        assertThat(auth).isNotNull();
-        assertThat(auth.getAuthorities()).isEmpty();
+        assertThat(auth).isNull();
         verify(filterChain).doFilter(request, response);
     }
 }
