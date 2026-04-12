@@ -25,6 +25,10 @@ public class EmailConfig {
         return trimUrl(baseUrl) + quotationConfirmPath.replace("{token}", token).replace("{accepted}", "false");
     }
 
+    public String getOrderConfirmUrl(String token, boolean accepted) {
+        return trimUrl(baseUrl) + "/sales/sendmail/customer-response/public/order/confirm?token=" + token + "&accepted=" + accepted;
+    }
+
     // =================== Utils ===================
     private String trimUrl(String url) {
         if (url == null) return "";

@@ -9,35 +9,16 @@ import org.springframework.web.client.RestTemplate;
 @EnableCaching
 public class AppConfig {
 
-    //private final GatewayHeaderFilter gatewayHeaderFilter;
-//    public AppConfig(GatewayHeaderFilter gatewayHeaderFilter) {
-//        this.gatewayHeaderFilter = gatewayHeaderFilter;
-//    }
-//
-//    // Bean RestTemplate để gọi HTTP request
+    private final SecurityHeaderInterceptor securityHeaderInterceptor;
+
+    public AppConfig(SecurityHeaderInterceptor securityHeaderInterceptor) {
+        this.securityHeaderInterceptor = securityHeaderInterceptor;
+    }
+
     @Bean
     public RestTemplate restTemplate() {
-        return new RestTemplate();
+        RestTemplate restTemplate = new RestTemplate();
+        restTemplate.getInterceptors().add(securityHeaderInterceptor);
+        return restTemplate;
     }
-//    @Bean
-//    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-//
-//        http
-//            .csrf(csrf -> csrf.disable())
-//            .authorizeHttpRequests(auth -> auth
-//                .anyRequest().permitAll()
-//            )
-//            .exceptionHandling(ex -> ex.accessDeniedHandler((request, response, accessDeniedException) -> {
-//                response.setStatus(ErrorCode.FORBIDDEN.getHttpStatus().value());
-//                response.setContentType("application/json");
-//                String body = String.format("{\"code\":\"%s\",\"message\":\"%s\"}",
-//                        ErrorCode.FORBIDDEN.getCode(),
-//                        ErrorCode.FORBIDDEN.getMessage());
-//                response.getWriter().write(body);
-//            }));
-//            //.addFilterBefore(gatewayHeaderFilter, UsernamePasswordAuthenticationFilter.class);
-//
-//        return http.build();
-//    }
-
 }

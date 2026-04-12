@@ -4,6 +4,7 @@ import com.ev.common_lib.dto.respond.ApiRespond;
 import com.ev.common_lib.exception.ErrorCode;
 import com.ev.sales_service.dto.response.CustomerResponseRequest;
 import com.ev.sales_service.dto.response.QuotationResponse;
+import com.ev.sales_service.dto.response.SalesOrderB2CResponse;
 import com.ev.sales_service.service.Interface.QuotationService;
 import com.ev.sales_service.service.Interface.SalesOrderServiceB2C;
 import lombok.RequiredArgsConstructor;
@@ -190,6 +191,31 @@ public class CustomerResponseController {
         } catch (Exception e) {
             log.error("Public Web Confirmation Error: {}", e.getMessage(), e);
             return createErrorPage("Không thể xử lý phản hồi báo giá. Vui lòng kiểm tra lại liên kết hoặc liên hệ nhân viên tư vấn.");
+        }
+    }
+
+    /**
+     * Public endpoint phục vụ cho việc xác nhận đơn hàng qua link email (Sử dụng Token)
+     * Trả về giao diện HTML
+     */
+    @GetMapping("/public/order/confirm")
+    public ModelAndView confirmOrderPublicWeb(
+            @RequestParam String token,
+            @RequestParam boolean accepted) {
+        log.info("Handling public web confirmation for order token: {}, accepted: {}", token, accepted);
+        try {
+            SalesOrderB2CResponse response = salesOrderServiceB2C.confirmOrderByToken(token, accepted);
+
+            ModelAndView modelAndView = new ModelAndView("response-success");
+            modelAndView.addObject("orderId", response.getOrderId());
+            modelAndView.addObject("action", accepted ? "confirmed" : "rejected");
+            modelAndView.addObject("message", accepted ? "Đơn hàng đã được xác nhận thành công!" : "Đơn hàng đã được từ chối!");
+            log.info("Public confirmation successful, returning response-success view for order: {}", response.getOrderId());
+            return modelAndView;
+
+        } catch (Exception e) {
+            log.error("Public Web Confirmation Error for order: {}", e.getMessage(), e);
+            return createErrorPage("Không thể xử lý phản hồi đơn hàng. Vui lòng kiểm tra lại liên kết hoặc liên hệ nhân viên tư vấn.");
         }
     }
 }

@@ -83,35 +83,32 @@ public class QuotationServiceImpl implements QuotationService {
             throw new AppException(ErrorCode.INVALID_QUOTATION_STATUS);
         }
 
+        BigDecimal basePrice = quotation.getBasePrice();
         BigDecimal totalDiscount = BigDecimal.ZERO;
-        Set<Promotion> appliedPromotions = new HashSet<>();
+        Set<Promotion> appliedPromotions = new java.util.HashSet<>();
 
         // 2. Áp dụng promotions từ request
         if (request.getPromotionIds() != null && !request.getPromotionIds().isEmpty()) {
             List<Promotion> promotionsFromDb = promotionRepository.findAllById(request.getPromotionIds());
             for (Promotion promotion : promotionsFromDb) {
                 appliedPromotions.add(promotion);
-                BigDecimal discountAmount = quotation.getBasePrice()
-                        .multiply(promotion.getDiscountRate())
-                        .divide(BigDecimal.valueOf(100));
+                // discountRate là hệ số (vd: 0.1 cho 10%) nên không chia 100
+                BigDecimal discountAmount = basePrice.multiply(promotion.getDiscountRate());
                 totalDiscount = totalDiscount.add(discountAmount);
             }
         }
 
-        // 3. Áp dụng additionalDiscountRate từ request
-        if (request.getAdditionalDiscountRate() != null) {
-            BigDecimal additionalDiscount = quotation.getBasePrice()
-                    .multiply(request.getAdditionalDiscountRate())
-                    .divide(BigDecimal.valueOf(100));
+        // 3. Áp dụng additionalDiscountRate từ request (dạng % vd: 5 cho 5%)
+        if (request.getAdditionalDiscountRate() != null && request.getAdditionalDiscountRate().compareTo(BigDecimal.ZERO) > 0) {
+            BigDecimal additionalRateFactor = request.getAdditionalDiscountRate()
+                    .divide(new BigDecimal("100"), 4, java.math.RoundingMode.HALF_UP);
+            BigDecimal additionalDiscount = basePrice.multiply(additionalRateFactor);
             totalDiscount = totalDiscount.add(additionalDiscount);
         }
 
-        // 4. Không vượt quá basePrice
-        if (totalDiscount.compareTo(quotation.getBasePrice()) > 0) {
-            totalDiscount = quotation.getBasePrice();
-        }
-
-        BigDecimal finalPrice = quotation.getBasePrice().subtract(totalDiscount);
+        // Làm tròn số tiền cho VND
+        totalDiscount = totalDiscount.setScale(0, java.math.RoundingMode.HALF_UP);
+        BigDecimal finalPrice = basePrice.subtract(totalDiscount).setScale(0, java.math.RoundingMode.HALF_UP);
 
         // 5. Cập nhật promotions cho quotation an toàn
         Hibernate.initialize(quotation.getPromotions());
@@ -364,19 +361,17 @@ public class QuotationServiceImpl implements QuotationService {
         QuotationResponse response = modelMapper.map(quotation, QuotationResponse.class);
 
         // Map promotions một cách an toàn
-        if (quotation.getPromotions() != null) {
-            // 1. Force load collection từ Hibernate
+        if (quotation.getPromotions() != null && !quotation.getPromotions().isEmpty()) {
+            // Force load collection từ Hibernate
             Hibernate.initialize(quotation.getPromotions());
 
-            // 2. Copy sang List để tránh ConcurrentModificationException
-            List<Promotion> promotions = new ArrayList<>(quotation.getPromotions());
-
-            // 3. Map từng Promotion sang PromotionResponse
-            List<PromotionResponse> promotionResponses = promotions.stream()
-                    .map(p -> mapPromotionToResponse(p))
+            List<PromotionResponse> promotionResponses = quotation.getPromotions().stream()
+                    .map(this::mapPromotionToResponse)
                     .collect(Collectors.toList());
 
             response.setAppliedPromotions(promotionResponses);
+        } else {
+            response.setAppliedPromotions(java.util.Collections.emptyList());
         }
 
         return response;
@@ -385,7 +380,6 @@ public class QuotationServiceImpl implements QuotationService {
     private PromotionResponse mapPromotionToResponse(Promotion promotion) {
         PromotionResponse pr = new PromotionResponse();
 
-        // --- Các field cơ bản ---
         pr.setPromotionId(promotion.getPromotionId());
         pr.setPromotionName(promotion.getPromotionName());
         pr.setDescription(promotion.getDescription());
@@ -394,7 +388,6 @@ public class QuotationServiceImpl implements QuotationService {
         pr.setEndDate(promotion.getEndDate());
         pr.setStatus(promotion.getStatus());
 
-        // --- Tính trạng thái ---
         LocalDateTime now = LocalDateTime.now();
         pr.setIsActive(promotion.getStatus() == PromotionStatus.ACTIVE &&
                 (promotion.getStartDate() == null || !promotion.getStartDate().isAfter(now)) &&
@@ -402,16 +395,29 @@ public class QuotationServiceImpl implements QuotationService {
         pr.setIsExpired(promotion.getEndDate() != null && promotion.getEndDate().isBefore(now));
         pr.setIsUpcoming(promotion.getStartDate() != null && promotion.getStartDate().isAfter(now));
 
-        // --- Parse JSON nếu cần ---
-        // pr.setApplicableDealers(parseDealerIds(promotion.getDealerIdJson()));
-        // pr.setApplicableModels(parseModels(promotion.getApplicableModelsJson()));
+        // Parse JSON fields
+        try {
+            if (promotion.getApplicableModelsJson() != null && !promotion.getApplicableModelsJson().equals("[]")) {
+                pr.setApplicableModels(objectMapper.readValue(promotion.getApplicableModelsJson(),
+                        new com.fasterxml.jackson.core.type.TypeReference<List<String>>() {}));
+            } else {
+                pr.setApplicableModels(java.util.Collections.emptyList());
+            }
 
-        // --- Lấy count quotation áp dụng, tránh vòng lặp ---
-        if (promotion.getQuotations() != null) {
-            pr.setAppliedQuotationsCount((long) promotion.getQuotations().size());
-        } else {
-            pr.setAppliedQuotationsCount(0L);
+            if (promotion.getDealerIdJson() != null && !promotion.getDealerIdJson().equals("[]")) {
+                pr.setApplicableDealers(objectMapper.readValue(promotion.getDealerIdJson(),
+                        new com.fasterxml.jackson.core.type.TypeReference<List<String>>() {}));
+            } else {
+                pr.setApplicableDealers(java.util.Collections.emptyList());
+            }
+        } catch (Exception e) {
+            log.error("Error parsing promotion JSON fields for ID: {}", promotion.getPromotionId(), e);
+            pr.setApplicableModels(java.util.Collections.emptyList());
+            pr.setApplicableDealers(java.util.Collections.emptyList());
         }
+
+        // Không load AppliedQuotationsCount ở đây để tránh N+1 query khi hiển thị danh sách báo giá
+        pr.setAppliedQuotationsCount(0L);
 
         return pr;
     }

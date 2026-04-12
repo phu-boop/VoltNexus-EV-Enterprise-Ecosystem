@@ -40,4 +40,20 @@ public class OrderTracking {
 
     @Column(name = "updated_by", columnDefinition = "BINARY(16)")
     private UUID updatedBy;
+
+    /**
+     * Tự động đồng bộ cột 'status' (String, NOT NULL trong DB) từ 'statusB2C' 
+     * trước khi lưu để tránh SQL NOT NULL constraint violation.
+     */
+    @PrePersist
+    @PreUpdate
+    public void syncStatusFromEnum() {
+        if (this.status == null) {
+            if (this.statusB2C != null) {
+                this.status = this.statusB2C.name();
+            } else {
+                this.status = "CREATED"; // Default fallback
+            }
+        }
+    }
 }

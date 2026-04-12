@@ -29,7 +29,7 @@ public class ProductionSecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // ƯU TIÊN CAO NHẤT cho các đường dẫn public
                         .requestMatchers("/sendmail/customer-response/public/**", "/sendmail/**").permitAll()
-                        .requestMatchers("/ws", "/ws/**", "/api/v1/quotations/public/**").permitAll()
+                        .requestMatchers("/ws", "/ws/**", "/api/v1/quotations/public/**", "/api/v1/sales-orders/public/**").permitAll()
                         .anyRequest().authenticated())
                 .anonymous(anonymous -> anonymous.principal("anonymousUser").authorities("ROLE_ANONYMOUS"))
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
