@@ -66,7 +66,7 @@ public class PromotionMapper {
         try {
             if (promotion.getDealerIdJson() != null && !promotion.getDealerIdJson().isEmpty()) {
                 response.setApplicableDealers(
-                        objectMapper.readValue(promotion.getDealerIdJson(), new TypeReference<List<UUID>>() {
+                        objectMapper.readValue(promotion.getDealerIdJson(), new TypeReference<List<String>>() {
                         }));
             } else {
                 response.setApplicableDealers(Collections.emptyList());
@@ -74,7 +74,7 @@ public class PromotionMapper {
 
             if (promotion.getApplicableModelsJson() != null && !promotion.getApplicableModelsJson().isEmpty()) {
                 response.setApplicableModels(
-                        objectMapper.readValue(promotion.getApplicableModelsJson(), new TypeReference<List<Long>>() {
+                        objectMapper.readValue(promotion.getApplicableModelsJson(), new TypeReference<List<String>>() {
                         }));
             } else {
                 response.setApplicableModels(Collections.emptyList());

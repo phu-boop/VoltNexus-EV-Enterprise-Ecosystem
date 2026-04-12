@@ -26,8 +26,8 @@ public class PromotionResponse {
     private PromotionStatus status;
 
     // Parsed from JSON fields
-    private List<UUID> applicableDealers;  // Parse từ dealer_id_json
-    private List<Long> applicableModels;   // Parse từ applicable_models_json
+    private List<String> applicableDealers;  // Parse từ dealer_id_json (DLR001, UUID, etc.)
+    private List<String> applicableModels;   // Parse từ applicable_models_json (MODEL-xxx, etc.)
 
     // Additional computed fields for frontend
     private Boolean isActive;              // Computed: status=ACTIVE và trong thời gian hiệu lực

@@ -55,8 +55,12 @@ public class JwtGlobalFilter implements GlobalFilter, Ordered {
             "/actuator/health",
             "/v3/api-docs",
             "/swagger-ui",
-            // Sales service endpoints (before rewrite)
+            // Sales service public endpoints
             "/sales/promotions/active",
+            "/sales/api/v1/quotations/public",
+            "/sales/api/v1/orders/public",
+            "/sales/sendmail/customer-response/public",
+            "/sales/sendmail/customer-response", // Allow older paths too
             // Cart endpoints
             "/cart",
             // Customer service endpoints (public)

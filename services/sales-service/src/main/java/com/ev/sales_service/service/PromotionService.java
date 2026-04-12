@@ -216,13 +216,16 @@ public class PromotionService {
      */
     // S3776: Refactored to reduce cognitive complexity by extracting helper methods
     public List<Promotion> getActivePromotionsForDealer(UUID dealerId, Optional<Long> modelId) {
-        // 1. Lấy tất cả KM đang ACTIVE
+        // 1. Cập nhật trạng thái tự động (từ NEAR sang ACTIVE nếu đến ngày)
+        updatePromotionStatuses();
+
+        // 2. Lấy tất cả KM đang ACTIVE
         List<Promotion> allActivePromotions = promotionRepository.findByStatus(PromotionStatus.ACTIVE);
 
-        // 2. Lọc danh sách
+        // 3. Lọc danh sách
         return allActivePromotions.stream()
                 .filter(promo -> isWithinDateRange(promo, LocalDateTime.now()))
-                .filter(promo -> isDealerMatch(promo.getDealerIdJson(), dealerId.toString()))
+                .filter(promo -> isDealerMatch(promo.getDealerIdJson(), dealerId))
                 .filter(promo -> isModelMatch(promo.getApplicableModelsJson(), modelId))
                 .toList();
     }
@@ -231,6 +234,7 @@ public class PromotionService {
      * Lấy tất cả khuyến mãi đang ACTIVE (tùy chọn lọc theo modelId)
      */
     public List<Promotion> getActivePromotions(Optional<Long> modelId) {
+        updatePromotionStatuses();
         List<Promotion> allActivePromotions = promotionRepository.findByStatus(PromotionStatus.ACTIVE);
         LocalDateTime now = LocalDateTime.now();
 
@@ -278,11 +282,11 @@ public class PromotionService {
     /**
      * Kiểm tra dealer có khớp không (so sánh chuỗi đơn giản)
      */
-    private boolean isDealerMatch(String dealerJson, String dealerIdStr) {
+    private boolean isDealerMatch(String dealerJson, UUID dealerId) {
         if (isEmptyJsonArray(dealerJson)) {
-            return true; // KM chung
+            return true; // KM chung cho toàn hệ thống
         }
-        return dealerJson.contains(dealerIdStr); // KM riêng
+        return isDealerMatchWithParsing(dealerJson, dealerId);
     }
 
     /**
@@ -316,13 +320,21 @@ public class PromotionService {
             return true; // Không filter theo model
         }
 
-        Long mId = modelId.get();
-        // Nếu KM không chỉ định model → áp dụng cho mọi model
         if (isEmptyJsonArray(modelJson)) {
-            return true;
+            return true; // KM áp dụng cho mọi model
         }
-        // JSON model phải chứa modelId
-        return modelJson.contains(mId.toString());
+
+        try {
+            String targetId = modelId.get().toString();
+            List<String> modelIds = objectMapper.readValue(modelJson,
+                    new com.fasterxml.jackson.core.type.TypeReference<List<String>>() {
+                    });
+            return modelIds != null && modelIds.stream()
+                    .anyMatch(id -> id.equalsIgnoreCase(targetId));
+        } catch (Exception e) {
+            log.error("Error parsing modelJson: {}", modelJson, e);
+            return false;
+        }
     }
 
     /**
