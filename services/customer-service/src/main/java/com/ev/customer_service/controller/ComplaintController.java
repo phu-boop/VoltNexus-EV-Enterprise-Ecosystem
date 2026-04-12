@@ -41,7 +41,7 @@ public class ComplaintController {
      * Dealer Staff tạo phản hồi từ khách hàng
      */
     @PostMapping
-    @PreAuthorize("hasAnyRole('DEALER_STAFF', 'DEALER_MANAGER')")
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'DEALER_STAFF', 'DEALER_MANAGER')")
     public ResponseEntity<ApiResponse<ComplaintResponse>> createComplaint(
             @Valid @RequestBody CreateComplaintRequest request) {
         log.info("Creating new complaint for customer {}", request.getCustomerId());
@@ -56,7 +56,7 @@ public class ComplaintController {
      * Dealer Manager gán nhân viên và chuyển trạng thái
      */
     @PutMapping("/{id}/assign")
-    @PreAuthorize("hasRole('DEALER_MANAGER')")
+    @PreAuthorize("hasAnyRole('DEALER_MANAGER')")
     public ResponseEntity<ApiResponse<ComplaintResponse>> assignComplaint(
             @PathVariable Long id,
             @Valid @RequestBody AssignComplaintRequest request) {
@@ -70,7 +70,7 @@ public class ComplaintController {
      * Dealer Staff (người được gán) thêm update note
      */
     @PostMapping("/{id}/progress")
-    @PreAuthorize("hasAnyRole('DEALER_STAFF', 'DEALER_MANAGER')")
+    @PreAuthorize("hasAnyRole('DEALER_STAFF', 'DEALER_MANAGER', 'ADMIN')")
     public ResponseEntity<ApiResponse<ComplaintResponse>> addProgressUpdate(
             @PathVariable Long id,
             @Valid @RequestBody ComplaintProgressUpdate update) {
@@ -84,7 +84,7 @@ public class ComplaintController {
      * Dealer Staff hoàn tất xử lý
      */
     @PutMapping("/{id}/resolve")
-    @PreAuthorize("hasAnyRole('DEALER_STAFF', 'DEALER_MANAGER')")
+    @PreAuthorize("hasAnyRole('DEALER_STAFF', 'DEALER_MANAGER', 'ADMIN')")
     public ResponseEntity<ApiResponse<ComplaintResponse>> resolveComplaint(
             @PathVariable Long id,
             @Valid @RequestBody ResolveComplaintRequest request) {
@@ -98,7 +98,7 @@ public class ComplaintController {
      * Dealer Manager xác nhận đóng sau khi resolved
      */
     @PutMapping("/{id}/close")
-    @PreAuthorize("hasRole('DEALER_MANAGER')")
+    @PreAuthorize("hasAnyRole('DEALER_MANAGER')")
     public ResponseEntity<ApiResponse<ComplaintResponse>> closeComplaint(@PathVariable Long id) {
         log.info("Closing complaint {}", id);
         ComplaintResponse response = complaintService.closeComplaint(id);
@@ -109,7 +109,7 @@ public class ComplaintController {
      * Lấy chi tiết phản hồi
      */
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('DEALER_STAFF', 'DEALER_MANAGER')")
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'DEALER_STAFF', 'DEALER_MANAGER')")
     public ResponseEntity<ApiResponse<ComplaintResponse>> getComplaintById(@PathVariable Long id) {
         ComplaintResponse response = complaintService.getComplaintById(id);
         return ResponseEntity.ok(ApiResponse.success(response));
@@ -119,7 +119,7 @@ public class ComplaintController {
      * Lấy danh sách phản hồi theo dealer
      */
     @GetMapping("/dealer/{dealerId}")
-    @PreAuthorize("hasAnyRole('DEALER_STAFF', 'DEALER_MANAGER')")
+    @PreAuthorize("hasAnyRole('DEALER_STAFF', 'DEALER_MANAGER', 'ADMIN', 'EVM_STAFF')")
     public ResponseEntity<ApiResponse<List<ComplaintResponse>>> getComplaintsByDealer(
             @PathVariable String dealerId) {
         List<ComplaintResponse> complaints = complaintService.getComplaintsByDealer(dealerId);
@@ -131,7 +131,7 @@ public class ComplaintController {
      * Dealer Manager xem và lọc danh sách
      */
     @PostMapping("/filter")
-    @PreAuthorize("hasAnyRole('DEALER_STAFF', 'DEALER_MANAGER')")
+    @PreAuthorize("hasAnyRole('DEALER_STAFF', 'DEALER_MANAGER', 'ADMIN', 'EVM_STAFF')")
     public ResponseEntity<ApiResponse<Page<ComplaintResponse>>> filterComplaints(
             @Valid @RequestBody ComplaintFilterRequest filter) {
         log.info("Filtering complaints with criteria: {}", filter);
@@ -144,7 +144,7 @@ public class ComplaintController {
      * Dealer Manager xem dashboard
      */
     @GetMapping("/statistics")
-    @PreAuthorize("hasRole('DEALER_MANAGER')")
+    @PreAuthorize("hasAnyRole('DEALER_MANAGER', 'DEALER_STAFF')")
     public ResponseEntity<ApiResponse<ComplaintStatisticsResponse>> getStatistics(
             @RequestParam String dealerId,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
@@ -168,7 +168,7 @@ public class ComplaintController {
      * Dealer Staff có thể gửi thủ công
      */
     @PostMapping("/{id}/send-notification")
-    @PreAuthorize("hasAnyRole('DEALER_STAFF', 'DEALER_MANAGER')")
+    @PreAuthorize("hasAnyRole('DEALER_STAFF', 'DEALER_MANAGER', 'ADMIN')")
     public ResponseEntity<ApiResponse<ComplaintResponse>> sendNotificationToCustomer(
             @PathVariable Long id) {
         log.info("Sending notification to customer for complaint {}", id);

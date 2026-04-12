@@ -22,6 +22,7 @@ import jakarta.mail.internet.MimeMessage;
 
 import java.time.format.DateTimeFormatter;
 import java.util.Locale;
+import java.util.Map;
 
 @Service
 @Slf4j
@@ -104,11 +105,35 @@ public class EmailServiceImpl implements EmailService {
         }
     }
 
+    @Override
+    public void sendOrderApprovedEmail(Map<String, Object> payload) {
+        String customerEmail = (String) payload.get("customerEmail");
+        if (customerEmail == null || customerEmail.isBlank()) {
+            log.warn("Cannot send OrderApprovedEmail: customerEmail is missing in payload");
+            return;
+        }
+
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+            helper.setTo(customerEmail);
+            helper.setSubject("Đơn hàng #" + payload.get("orderId") + " đã được phê duyệt");
+            helper.setText(buildOrderApprovedEmailContent(payload), true);
+
+            mailSender.send(message);
+            log.info("Order approved email sent successfully to: {}", customerEmail);
+        } catch (MessagingException e) {
+            log.error("Failed to send order approved email to: {}", customerEmail, e);
+            throw new AppException(ErrorCode.EMAIL_SENDING_FAILED);
+        }
+    }
+
     // =================== Build Email Content ===================
 
     private String buildQuotationEmailContent(Quotation quotation, CustomerResponse customer) {
         try {
-            Context context = new Context(new Locale("vi"));
+            Context context = new Context(Locale.forLanguageTag("vi"));
             context.setVariable("customer", customer);
             context.setVariable("quotation", quotation);
             context.setVariable("validUntil",
@@ -117,8 +142,8 @@ public class EmailServiceImpl implements EmailService {
                     quotation.getQuotationDate().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")));
 
             // Add URLs
-            context.setVariable("acceptUrl", emailConfig.getQuotationAcceptUrl(quotation.getQuotationId().toString()));
-            context.setVariable("rejectUrl", emailConfig.getQuotationRejectUrl(quotation.getQuotationId().toString()));
+            context.setVariable("acceptUrl", emailConfig.getQuotationAcceptUrl(quotation.getConfirmationToken()));
+            context.setVariable("rejectUrl", emailConfig.getQuotationRejectUrl(quotation.getConfirmationToken()));
             context.setVariable("frontendUrl", emailConfig.getFrontendUrl());
 
             return templateEngine.process("quotation-email", context);
@@ -130,7 +155,7 @@ public class EmailServiceImpl implements EmailService {
 
     private String buildQuotationAcceptedEmailContent(Quotation quotation, CustomerResponse customer) {
         try {
-            Context context = new Context(new Locale("vi"));
+            Context context = new Context(Locale.forLanguageTag("vi"));
             context.setVariable("customer", customer);
             context.setVariable("quotation", quotation);
             return templateEngine.process("quotation-accepted-email", context);
@@ -142,7 +167,7 @@ public class EmailServiceImpl implements EmailService {
 
     private String buildQuotationRejectedEmailContent(Quotation quotation, CustomerResponse customer) {
         try {
-            Context context = new Context(new Locale("vi"));
+            Context context = new Context(Locale.forLanguageTag("vi"));
             context.setVariable("customer", customer);
             context.setVariable("quotation", quotation);
             return templateEngine.process("quotation-rejected-email", context);
@@ -155,7 +180,7 @@ public class EmailServiceImpl implements EmailService {
     private String buildOrderConfirmedEmailContent(SalesOrder salesOrder, CustomerResponse customer,
             String showroomName) {
         try {
-            Context context = new Context(new Locale("vi"));
+            Context context = new Context(Locale.forLanguageTag("vi"));
             context.setVariable("customer", customer);
             context.setVariable("salesOrder", salesOrder);
             context.setVariable("showroomName", showroomName);
@@ -167,6 +192,25 @@ public class EmailServiceImpl implements EmailService {
         } catch (TemplateInputException e) {
             log.warn("Template 'order-confirmed-email' not found, using fallback content");
             return buildFallbackOrderConfirmedEmailContent(salesOrder, customer, showroomName);
+        }
+    }
+
+    private String buildOrderApprovedEmailContent(Map<String, Object> payload) {
+        try {
+            Context context = new Context(Locale.forLanguageTag("vi"));
+            payload.forEach(context::setVariable);
+            
+            String token = (String) payload.get("confirmationToken");
+            if (token != null) {
+                context.setVariable("acceptUrl", emailConfig.getOrderConfirmUrl(token, true));
+                context.setVariable("rejectUrl", emailConfig.getOrderConfirmUrl(token, false));
+            }
+
+            context.setVariable("frontendUrl", emailConfig.getFrontendUrl());
+            return templateEngine.process("order-approved-email", context);
+        } catch (TemplateInputException e) {
+            log.warn("Template 'order-approved-email' not found, using fallback content");
+            return buildFallbackOrderApprovedEmailContent(payload);
         }
     }
 
@@ -247,5 +291,33 @@ public class EmailServiceImpl implements EmailService {
                 salesOrder.getDownPayment(),
                 salesOrder.getTotalAmount().subtract(salesOrder.getDownPayment()),
                 confirmUrl);
+    }
+
+    private String buildFallbackOrderApprovedEmailContent(Map<String, Object> payload) {
+        String token = (String) payload.get("confirmationToken");
+        String acceptUrl = emailConfig.getOrderConfirmUrl(token, true);
+        String rejectUrl = emailConfig.getOrderConfirmUrl(token, false);
+
+        return String.format(
+                "Kính gửi %s,\n\n" +
+                        "Chúc mừng! Đơn hàng #%s của Quý khách đã được phê duyệt.\n\n" +
+                        "Chi tiết đơn hàng:\n" +
+                        "- Mã đơn hàng: %s\n" +
+                        "- Ngày đặt hàng: %s\n" +
+                        "- Tổng tiền: %s VND\n" +
+                        "- Showroom: %s\n\n" +
+                        "Vui lòng xác nhận đơn hàng bằng các liên kết bên dưới:\n" +
+                        "- Chấp nhận: %s\n" +
+                        "- Từ chối: %s\n\n" +
+                        "Chúng tôi sẽ sớm liên hệ với Quý khách để thông báo các bước tiếp theo.\n\n" +
+                        "Trân trọng,\nĐội ngũ EV Automotive",
+                payload.getOrDefault("customerName", "Quý khách"),
+                payload.get("orderId"),
+                payload.get("orderId"),
+                payload.get("orderDate"),
+                payload.get("totalAmount"),
+                payload.getOrDefault("showroomName", "N/A"),
+                acceptUrl,
+                rejectUrl);
     }
 }

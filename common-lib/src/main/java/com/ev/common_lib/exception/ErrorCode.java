@@ -25,7 +25,8 @@ public enum ErrorCode {
     TOO_MANY_REQUESTS("2011", "Thực hiện quá nhiều yêu cầu trong thời gian ngắn", HttpStatus.TOO_MANY_REQUESTS),
     INVALID_DATE_FUTURE("2012", "Ngày phải nằm trong tương lai", HttpStatus.BAD_REQUEST),
     INVALID_DISCOUNT_RANGE("2013", "Mức giảm giá phải nằm trong khoảng từ 0 đến 100", HttpStatus.BAD_REQUEST),
-    INVALID_PRICE("2014", "Giá phải lớn hơn 0", HttpStatus.BAD_REQUEST),
+        INVALID_PRICE("2014", "Giá phải lớn hơn 0", HttpStatus.BAD_REQUEST),
+        INVALID_PRICE_RANGE("2041", "minPrice cannot be greater than maxPrice", HttpStatus.BAD_REQUEST),
     MISSING_TERMS_CONDITIONS("2015", "Thiếu điều khoản và điều kiện", HttpStatus.BAD_REQUEST),
     VALID_UNTIL_REQUIRED("2016", "Ngày hết hạn là bắt buộc", HttpStatus.BAD_REQUEST),
     VALID_UNTIL_FUTURE("2017", "Ngày hết hạn phải nằm trong tương lai", HttpStatus.BAD_REQUEST),
@@ -112,6 +113,8 @@ public enum ErrorCode {
     QUOTATION_NOT_CALCULATED("5013", "Báo giá phải được tính toán trước khi gửi", HttpStatus.BAD_REQUEST),
 
     SALES_ORDER_ALREADY_EXISTS("5014", "Đơn hàng đã tồn tại cho báo giá này", HttpStatus.CONFLICT),
+
+    INVALID_CONFIRMATION_TOKEN("5015", "Token xác nhận báo giá không hợp lệ hoặc đã qua sử dụng", HttpStatus.BAD_REQUEST),
 
     // ===== 6xxx - Lỗi nghiệp vụ =====
     PAYMENT_FAILED("6001", "Thanh toán thất bại", HttpStatus.BAD_REQUEST),

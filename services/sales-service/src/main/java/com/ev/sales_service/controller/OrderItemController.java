@@ -7,6 +7,7 @@ import com.ev.common_lib.dto.respond.ApiRespond;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -20,6 +21,7 @@ public class OrderItemController {
 
     private final OrderItemService orderItemService;
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'DEALER_MANAGER', 'DEALER_STAFF')")
     @PostMapping
     public ResponseEntity<ApiRespond<OrderItemResponse>> createOrderItem(@RequestBody OrderItemRequest request) {
         log.info("Creating order item for order: {}", request.getOrderId());
@@ -27,6 +29,7 @@ public class OrderItemController {
         return ResponseEntity.ok(ApiRespond.success("Order item created successfully", response));
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'DEALER_MANAGER', 'DEALER_STAFF')")
     @PutMapping("/{orderItemId}")
     public ResponseEntity<ApiRespond<OrderItemResponse>> updateOrderItem(
             @PathVariable UUID orderItemId,
@@ -36,6 +39,7 @@ public class OrderItemController {
         return ResponseEntity.ok(ApiRespond.success("Order item updated successfully", response));
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'DEALER_MANAGER', 'DEALER_STAFF')")
     @DeleteMapping("/{orderItemId}")
     public ResponseEntity<ApiRespond<Void>> deleteOrderItem(@PathVariable UUID orderItemId) {
         log.info("Deleting order item: {}", orderItemId);
@@ -43,6 +47,7 @@ public class OrderItemController {
         return ResponseEntity.ok(ApiRespond.success("Order item deleted successfully", null));
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'EVM_STAFF', 'DEALER_MANAGER', 'DEALER_STAFF', 'CUSTOMER')")
     @GetMapping("/{orderItemId}")
     public ResponseEntity<ApiRespond<OrderItemResponse>> getOrderItemById(@PathVariable UUID orderItemId) {
         log.info("Fetching order item: {}", orderItemId);
@@ -50,6 +55,7 @@ public class OrderItemController {
         return ResponseEntity.ok(ApiRespond.success("Order item fetched successfully", response));
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'EVM_STAFF', 'DEALER_MANAGER', 'DEALER_STAFF', 'CUSTOMER')")
     @GetMapping("/order/{orderId}")
     public ResponseEntity<ApiRespond<List<OrderItemResponse>>> getOrderItemsByOrderId(@PathVariable UUID orderId) {
         log.info("Fetching order items for order: {}", orderId);
@@ -57,6 +63,7 @@ public class OrderItemController {
         return ResponseEntity.ok(ApiRespond.success("Order items fetched successfully", responses));
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'DEALER_MANAGER', 'DEALER_STAFF')")
     @PutMapping("/order/{orderId}/bulk")
     public ResponseEntity<ApiRespond<List<OrderItemResponse>>> updateOrderItems(
             @PathVariable UUID orderId,
@@ -66,6 +73,7 @@ public class OrderItemController {
         return ResponseEntity.ok(ApiRespond.success("Order items updated successfully", responses));
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'DEALER_MANAGER', 'DEALER_STAFF')")
     @PostMapping("/validate")
     public ResponseEntity<ApiRespond<Void>> validateOrderItems(@RequestBody List<OrderItemRequest> orderItems) {
         log.info("Validating order items");

@@ -31,57 +31,54 @@ public class SecurityConfig {
                         .pathMatchers(
                                 "/",
                                 "/error",
+                                "/favicon.ico",
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**",
                                 "/actuator/health",
 
-                                // user-service
-                                "/auth/**",
+                                // Public endpoints (will also be excluded in JwtGlobalFilter)
+                                "/auth/login",
+                                "/auth/register/customer",
+                                "/auth/forgot-password",
+                                "/auth/reset-password",
+                                "/auth/oauth2/**",
+                                "/oauth2/**",
+                                "/login/**",
+                                "/users/register/admin",
+                                "/sendmail/customer-response/**",
+                                "/ws/**",
+                                "/payments/payment/return",
+                                "/payments/payment/ipn",
+                                "/payments/payment/pay-url",
+                                "/payments/api/v1/payments/gateway/callback/vnpay-return",
+                                "/payments/api/v1/payments/gateway/callback/vnpay-ipn",
+
+                                // Public resources
+                                "/charging-stations/**",
+                                "/vehicle-catalog/**",
+                                "/vehicles/public/**",
+                                "/ai/chat/ask",
+                                // Public sales confirmation endpoints (pre-rewrite paths)
+                                "/sales/api/v1/quotations/public/**",
+                                "/sales/api/v1/orders/public/**",
+                                "/sales/sendmail/customer-response/**",
+
+                                // Allow all other service paths to reach JwtGlobalFilter/Downstream
+                                // where they will be checked specifically
                                 "/users/**",
-
-                                "/oauth2/**",  // OAuth2 authentication flow
-                                "/login/**",   // OAuth2 login callback
-
-                                // customer-service
                                 "/customers/**",
-                                "/cart/**", // Cart endpoints
+                                "/cart/**",
                                 "/test-drives/**",
                                 "/feedback/**",
                                 "/complaints/**",
-                                "/charging-stations/**",
-
-                                // dealer-service
                                 "/dealers/**",
-
-                                // inventory-service
                                 "/inventory/**",
-
-                                // payment-service
                                 "/payments/**",
-                                "/api/v1/payments/**",
-                                "/favicon.ico",
-                                "/api/v1/payments/gateway/callback/vnpay-return",
-                                "/api/v1/payments/gateway/callback/vnpay-ipn",
-
-                                // "/sales/**"
                                 "/sales/**",
                                 "/orders/**",
-
                                 "/sales-orders/**",
-                                "/api/v1/sales-orders/**",
-
-                                // vehicle-service
                                 "/vehicles/**",
-
-                                // reporting-service
                                 "/reporting/**",
-
-                                // sendmail
-                                "/sendmail/customer-response/**",
-
-                                "/ws/**",
-
-                                // ai-service
                                 "/ai/**")
                         .permitAll()
 

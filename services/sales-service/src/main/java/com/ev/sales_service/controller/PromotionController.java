@@ -9,6 +9,7 @@ import com.ev.sales_service.mapper.PromotionMapper;
 import com.ev.sales_service.service.PromotionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -23,6 +24,7 @@ public class PromotionController {
         private final PromotionService promotionService;
         private final PromotionMapper promotionMapper;
 
+        @PreAuthorize("hasAnyRole('ADMIN', 'EVM_STAFF', 'DEALER_MANAGER')")
         @PostMapping
         public ResponseEntity<ApiRespond<PromotionResponse>> createPromotion(@RequestBody PromotionRequest request) {
                 Promotion promotion = promotionMapper.toEntity(request);
@@ -32,6 +34,7 @@ public class PromotionController {
                                                 promotionMapper.toResponse(saved)));
         }
 
+        @PreAuthorize("hasAnyRole('ADMIN', 'EVM_STAFF', 'DEALER_MANAGER')")
         @PutMapping("/{id}")
         public ResponseEntity<ApiRespond<PromotionResponse>> updatePromotion(
                         @PathVariable UUID id,
@@ -47,6 +50,7 @@ public class PromotionController {
         }
 
         // chuyển status sang active dành cho admin/evm_staff
+        @PreAuthorize("hasAnyRole('ADMIN', 'EVM_STAFF')")
         @PutMapping("/authentic/{id}")
         public ResponseEntity<ApiRespond<PromotionResponse>> authenticPromotion(
                         @PathVariable UUID id,
@@ -58,6 +62,7 @@ public class PromotionController {
                                                 promotionMapper.toResponse(updated)));
         }
 
+        @PreAuthorize("hasAnyRole('ADMIN', 'EVM_STAFF', 'DEALER_MANAGER', 'DEALER_STAFF')")
         @GetMapping("/{id}")
         public ResponseEntity<ApiRespond<PromotionResponse>> getPromotionById(@PathVariable UUID id) {
                 Promotion promotion = promotionService.getPromotionById(id);
@@ -74,6 +79,7 @@ public class PromotionController {
                                                 promotionMapper.toResponseList(promotions)));
         }
 
+        @PreAuthorize("hasAnyRole('ADMIN', 'EVM_STAFF')")
         @DeleteMapping("/{id}")
         public ResponseEntity<ApiRespond<Void>> deletePromotion(
                         @PathVariable UUID id,
@@ -84,6 +90,7 @@ public class PromotionController {
                 return ResponseEntity.ok(ApiRespond.success("Promotion deleted successfully", null));
         }
 
+        @PreAuthorize("hasAnyRole('ADMIN', 'EVM_STAFF', 'DEALER_MANAGER', 'DEALER_STAFF')")
         @GetMapping("/status/{status}")
         public ResponseEntity<ApiRespond<List<PromotionResponse>>> getPromotionsByStatus(
                         @PathVariable PromotionStatus status) {
@@ -93,6 +100,7 @@ public class PromotionController {
                                                 promotionMapper.toResponseList(list)));
         }
 
+        @PreAuthorize("hasAnyRole('ADMIN', 'EVM_STAFF', 'DEALER_MANAGER', 'DEALER_STAFF')")
         @GetMapping("/search")
         public ResponseEntity<ApiRespond<List<PromotionResponse>>> searchPromotions(
                         @RequestParam(required = false) String status,
@@ -112,6 +120,7 @@ public class PromotionController {
         /**
          * API cho frontend (Form Báo giá) lấy các KM đang active của đại lý
          */
+        @PreAuthorize("hasAnyRole('ADMIN', 'EVM_STAFF', 'DEALER_MANAGER', 'DEALER_STAFF', 'CUSTOMER')")
         @GetMapping("/dealer/active")
         public ResponseEntity<ApiRespond<List<PromotionResponse>>> getActivePromotionsForDealer(
                         @RequestHeader(value = "X-User-DealerId", required = false) String dealerId,
@@ -134,6 +143,7 @@ public class PromotionController {
          * Có thể truyền modelId để lọc thêm.
          * Endpoint: GET /promotions/active
          */
+        @PreAuthorize("hasAnyRole('ADMIN', 'EVM_STAFF', 'DEALER_MANAGER', 'DEALER_STAFF', 'CUSTOMER')")
         @GetMapping("/active")
         public ResponseEntity<ApiRespond<List<PromotionResponse>>> getActivePromotions(
                         @RequestParam(required = false) Long modelId) {
@@ -146,6 +156,7 @@ public class PromotionController {
         /**
          * API dành riêng cho Dealer Staff View (chỉ lấy ACTIVE/NEAR của dealer đó)
          */
+        @PreAuthorize("hasAnyRole('ADMIN', 'EVM_STAFF', 'DEALER_MANAGER', 'DEALER_STAFF')")
         @GetMapping("/dealer/active-view")
         public ResponseEntity<ApiRespond<List<PromotionResponse>>> getActivePromotionsForDealerList(
                         @RequestHeader(value = "X-User-DealerId", required = false) String dealerId) {

@@ -55,11 +55,6 @@ export const dealerManagerMenuItems = [
         path: "/dealer/manager/vehicles/all",
       },
       {
-        icon: FiFileText,
-        label: "Tạo Báo Giá",
-        path: "/dealer/manager/quotes/create",
-      },
-      {
         icon: FiCreditCard,
         label: "Khuyến Mãi",
         path: "/dealer/manager/promotions",
@@ -250,11 +245,6 @@ export const dealerStaffMenuItems = [
         icon: FiTag,
         label: "Phiên Bản",
         path: "/dealer/staff/vehicles/all",
-      },
-      {
-        icon: FiFileText,
-        label: "Tạo Báo Giá",
-        path: "/dealer/staff/quotations",
       },
       {
         icon: FiFileText,

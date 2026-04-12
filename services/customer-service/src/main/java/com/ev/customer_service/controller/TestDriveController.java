@@ -53,7 +53,7 @@ public class TestDriveController {
      * Lấy danh sách lịch hẹn theo dealer
      */
     @GetMapping("/dealer/{dealerId}")
-    @PreAuthorize("hasAnyRole('DEALER_STAFF', 'DEALER_MANAGER')")
+    @PreAuthorize("hasAnyRole('DEALER_MANAGER')")
     public ResponseEntity<ApiResponse<List<TestDriveResponse>>> getTestDrivesByDealer(@PathVariable String dealerId) {
         List<TestDriveResponse> appointments = testDriveService.getAppointmentsByDealerId(dealerId);
         return ResponseEntity.ok(ApiResponse.success(appointments));
@@ -62,6 +62,7 @@ public class TestDriveController {
     /**
      * Lấy danh sách lịch hẹn của customer theo profileId (UUID) (cho customer app)
      */
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'DEALER_MANAGER', 'DEALER_STAFF')")
     @GetMapping("/profile/{profileId}")
     public ResponseEntity<ApiResponse<List<TestDriveResponse>>> getMyTestDrives(@PathVariable String profileId) {
         log.info("Getting test drives for profileId: {}", profileId);
@@ -94,7 +95,7 @@ public class TestDriveController {
      * User Story 1: Dealer Staff tạo lịch hẹn cho khách hàng
      */
     @PostMapping
-    @PreAuthorize("hasRole('DEALER_STAFF')")
+    @PreAuthorize("hasAnyRole('DEALER_STAFF', 'DEALER_MANAGER')")
     public ResponseEntity<ApiResponse<TestDriveResponse>> createTestDrive(
             @Valid @RequestBody TestDriveRequest request) {
         TestDriveResponse appointment = testDriveService.createAppointment(request);
@@ -108,7 +109,7 @@ public class TestDriveController {
      * User Story 2: Dealer Staff cập nhật lịch hẹn
      */
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('DEALER_STAFF')")
+    @PreAuthorize("hasAnyRole('DEALER_STAFF', 'DEALER_MANAGER')")
     public ResponseEntity<ApiResponse<TestDriveResponse>> updateTestDrive(
             @PathVariable Long id,
             @Valid @RequestBody UpdateTestDriveRequest request) {
@@ -121,7 +122,7 @@ public class TestDriveController {
      * User Story 2: Dealer Staff hủy lịch hẹn
      */
     @DeleteMapping("/{id}/cancel")
-    @PreAuthorize("hasAnyRole('DEALER_STAFF', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('DEALER_MANAGER', 'DEALER_STAFF')")
     public ResponseEntity<ApiResponse<Void>> cancelTestDrive(
             @PathVariable Long id,
             @Valid @RequestBody CancelTestDriveRequest request) {
@@ -134,7 +135,7 @@ public class TestDriveController {
      * Endpoint riêng cho customer có thể cancel lịch hẹn của mình
      */
     @PutMapping("/{id}/cancel")
-    @PreAuthorize("hasAnyRole('DEALER_STAFF', 'CUSTOMER')")
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'DEALER_STAFF', 'DEALER_MANAGER')")
     public ResponseEntity<ApiResponse<Void>> cancelTestDriveByCustomer(
             @PathVariable Long id,
             @Valid @RequestBody CancelTestDriveRequest request) {
@@ -145,7 +146,7 @@ public class TestDriveController {
      * Xác nhận lịch hẹn (dành cho staff)
      */
     @PutMapping("/{id}/confirm")
-    @PreAuthorize("hasAnyRole('DEALER_STAFF', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('DEALER_STAFF', 'DEALER_MANAGER')")
     public ResponseEntity<ApiResponse<Void>> confirmTestDrive(@PathVariable Long id) {
         testDriveService.confirmAppointment(id);
         return ResponseEntity.ok(ApiResponse.success(SUCCESS_CONFIRMED, null));
@@ -447,7 +448,7 @@ public class TestDriveController {
      * Đánh dấu hoàn thành lịch hẹn
      */
     @PutMapping("/{id}/complete")
-    @PreAuthorize("hasAnyRole('DEALER_STAFF', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('DEALER_STAFF', 'DEALER_MANAGER')")
     public ResponseEntity<ApiResponse<Void>> completeTestDrive(@PathVariable Long id) {
         testDriveService.completeAppointment(id);
         return ResponseEntity.ok(ApiResponse.success(SUCCESS_COMPLETED, null));
@@ -458,7 +459,7 @@ public class TestDriveController {
      * User Story 3: Dealer Manager xem lịch với bộ lọc
      */
     @PostMapping("/filter")
-    @PreAuthorize("hasAnyRole('DEALER_STAFF', 'DEALER_MANAGER', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('DEALER_STAFF', 'DEALER_MANAGER')")
     public ResponseEntity<ApiResponse<List<TestDriveResponse>>> filterTestDrives(
             @Valid @RequestBody TestDriveFilterRequest filter) {
         List<TestDriveResponse> appointments = testDriveService.filterAppointments(filter);
@@ -470,7 +471,7 @@ public class TestDriveController {
      * User Story 3: Dealer Manager xem lịch dạng calendar
      */
     @GetMapping("/calendar")
-    @PreAuthorize("hasAnyRole('DEALER_STAFF', 'DEALER_MANAGER', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('DEALER_STAFF', 'DEALER_MANAGER')")
     public ResponseEntity<ApiResponse<List<TestDriveCalendarResponse>>> getCalendarView(
             @RequestParam(required = false) String dealerId, // Optional for ADMIN
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
@@ -492,9 +493,9 @@ public class TestDriveController {
      * Lấy thống kê lịch hẹn
      * User Story 3: Dealer Manager xem thống kê
      */
-    @GetMapping("/statistics")
-    @PreAuthorize("hasAnyRole('DEALER_MANAGER', 'ADMIN')")
-    public ResponseEntity<ApiResponse<TestDriveStatisticsResponse>> getStatistics(
+@GetMapping("/statistics")
+@PreAuthorize("hasAnyRole('DEALER_MANAGER')")
+public ResponseEntity<ApiResponse<TestDriveStatisticsResponse>> getStatistics(
             @RequestParam(required = false) String dealerId, // Optional for ADMIN
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate) {

@@ -23,6 +23,7 @@ public class CustomerService {
     private final CustomerRepository customerRepository;
     private final ModelMapper modelMapper;
     private final com.ev.customer_service.repository.CustomerProfileAuditRepository auditRepository;
+    private final org.springframework.kafka.core.KafkaTemplate<String, Object> kafkaTemplate;
 
     @Transactional(readOnly = true)
     public List<CustomerResponse> getCustomersWithFilter(String search, String roles, String currentUserDealerId) {
@@ -171,6 +172,9 @@ public class CustomerService {
 
         recordAuditTrail(oldState, updatedCustomer);
 
+        // Publish event to Kafka
+        kafkaTemplate.send("customer.updated", updatedCustomer.getCustomerId());
+
         return modelMapper.map(updatedCustomer, CustomerResponse.class);
     }
 
@@ -295,6 +299,9 @@ public class CustomerService {
         }
 
         customerRepository.deleteById(id);
+        
+        // Publish event to Kafka
+        kafkaTemplate.send("customer.deleted", id);
     }
 
     @Transactional(readOnly = true)
