@@ -23,12 +23,15 @@ public class ProductionSecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-
         http
                 .csrf(csrf -> csrf.disable())
+                .headers(headers -> headers.frameOptions(frame -> frame.disable()))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/ws", "/ws/**").permitAll()
+                        // ƯU TIÊN CAO NHẤT cho các đường dẫn public
+                        .requestMatchers("/sendmail/customer-response/public/**", "/sendmail/**").permitAll()
+                        .requestMatchers("/ws", "/ws/**", "/api/v1/quotations/public/**").permitAll()
                         .anyRequest().authenticated())
+                .anonymous(anonymous -> anonymous.principal("anonymousUser").authorities("ROLE_ANONYMOUS"))
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }

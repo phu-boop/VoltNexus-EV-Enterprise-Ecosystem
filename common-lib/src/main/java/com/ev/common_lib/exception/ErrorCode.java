@@ -114,6 +114,8 @@ public enum ErrorCode {
 
     SALES_ORDER_ALREADY_EXISTS("5014", "Đơn hàng đã tồn tại cho báo giá này", HttpStatus.CONFLICT),
 
+    INVALID_CONFIRMATION_TOKEN("5015", "Token xác nhận báo giá không hợp lệ hoặc đã qua sử dụng", HttpStatus.BAD_REQUEST),
+
     // ===== 6xxx - Lỗi nghiệp vụ =====
     PAYMENT_FAILED("6001", "Thanh toán thất bại", HttpStatus.BAD_REQUEST),
 

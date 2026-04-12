@@ -1,14 +1,12 @@
 package com.ev.sales_service.config;
 
+import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import com.ev.common_lib.exception.ErrorCode;
 import org.springframework.web.client.RestTemplate;
 
 @Configuration
+@EnableCaching
 public class AppConfig {
 
     //private final GatewayHeaderFilter gatewayHeaderFilter;

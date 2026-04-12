@@ -26,6 +26,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.hibernate.Hibernate;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
@@ -145,7 +146,11 @@ public class QuotationServiceImpl implements QuotationService {
         quotation.setValidUntil(request.getValidUntil());
         quotation.setTermsConditions(request.getTermsConditions());
         quotation.setQuotationDate(LocalDateTime.now());
-        quotation.setStatus(QuotationStatus.SENT); // PENDING = đã gửi cho quản lý duyệt
+        quotation.setStatus(QuotationStatus.SENT);
+
+        // Generate confirmation token for email link
+        quotation.setConfirmationToken(UUID.randomUUID().toString());
+        quotation.setTokenExpiredAt(request.getValidUntil());
 
         Quotation updatedQuotation = quotationRepository.save(quotation);
 
@@ -206,8 +211,33 @@ public class QuotationServiceImpl implements QuotationService {
         return mapToResponse(updatedQuotation);
     }
 
+    @Override
+    public QuotationResponse confirmQuotationByToken(String token, boolean accepted) {
+        log.info("Confirming quotation with token: {}, accepted: {}", token, accepted);
+        Quotation quotation = quotationRepository.findByConfirmationToken(token)
+                .orElseThrow(() -> new AppException(ErrorCode.INVALID_CONFIRMATION_TOKEN));
+
+        if (quotation.getStatus() != QuotationStatus.SENT) {
+            throw new AppException(ErrorCode.INVALID_QUOTATION_STATUS);
+        }
+
+        if (quotation.getTokenExpiredAt() != null && quotation.getTokenExpiredAt().isBefore(LocalDateTime.now())) {
+            quotation.setStatus(QuotationStatus.EXPIRED);
+            quotationRepository.save(quotation);
+            throw new AppException(ErrorCode.QUOTATION_EXPIRED);
+        }
+
+        CustomerResponseRequest responseRequest = new CustomerResponseRequest();
+        responseRequest.setAccepted(accepted);
+        responseRequest.setCustomerNote(accepted ? "Accepted via email" : "Rejected via email");
+
+        // Reuse existing logic
+        return handleCustomerResponse(quotation.getQuotationId(), responseRequest);
+    }
+
     // Helper method để lấy thông tin khách hàng
-    private CustomerResponse getCustomerInfo(Long customerId) {
+    @Cacheable(value = "customers", key = "#customerId")
+    public CustomerResponse getCustomerInfo(Long customerId) {
         try {
             ApiRespond<CustomerResponse> response = customerClient.getCustomerById(customerId);
             if (response != null && response.getCode().equals("1000") && response.getData() != null) {

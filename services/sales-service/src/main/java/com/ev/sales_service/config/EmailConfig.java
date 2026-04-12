@@ -10,20 +10,19 @@ import org.springframework.stereotype.Component;
 public class EmailConfig {
     private String baseUrl;
     private String frontendUrl;
-    private String orderConfirmPath = "/sendmail/customer-response/order/{orderId}/confirm";
-    private String quotationAcceptPath = "/sendmail/customer-response/quotation/{quotationId}/accept";
-    private String quotationRejectPath = "/sendmail/customer-response/quotation/{quotationId}/reject";
+    private String orderConfirmPath = "/sales/sendmail/customer-response/order/{token}/confirm"; // Giả sử order cũng dùng token sau này, hoặc giữ nguyên tạm thời
+    private String quotationConfirmPath = "/sales/sendmail/customer-response/public/quotation/confirm?token={token}&accepted={accepted}";
 
-    public String getOrderConfirmUrl(String orderId) {
-        return trimUrl(baseUrl) + orderConfirmPath.replace("{orderId}", orderId);
+    public String getOrderConfirmUrl(String token) {
+        return trimUrl(baseUrl) + orderConfirmPath.replace("{token}", token);
     }
 
-    public String getQuotationAcceptUrl(String quotationId) {
-        return trimUrl(baseUrl) + quotationAcceptPath.replace("{quotationId}", quotationId);
+    public String getQuotationAcceptUrl(String token) {
+        return trimUrl(baseUrl) + quotationConfirmPath.replace("{token}", token).replace("{accepted}", "true");
     }
 
-    public String getQuotationRejectUrl(String quotationId) {
-        return trimUrl(frontendUrl) + quotationRejectPath.replace("{quotationId}", quotationId);
+    public String getQuotationRejectUrl(String token) {
+        return trimUrl(baseUrl) + quotationConfirmPath.replace("{token}", token).replace("{accepted}", "false");
     }
 
     // =================== Utils ===================

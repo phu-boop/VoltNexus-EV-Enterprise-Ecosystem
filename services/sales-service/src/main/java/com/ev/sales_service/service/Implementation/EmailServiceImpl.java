@@ -117,8 +117,8 @@ public class EmailServiceImpl implements EmailService {
                     quotation.getQuotationDate().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")));
 
             // Add URLs
-            context.setVariable("acceptUrl", emailConfig.getQuotationAcceptUrl(quotation.getQuotationId().toString()));
-            context.setVariable("rejectUrl", emailConfig.getQuotationRejectUrl(quotation.getQuotationId().toString()));
+            context.setVariable("acceptUrl", emailConfig.getQuotationAcceptUrl(quotation.getConfirmationToken()));
+            context.setVariable("rejectUrl", emailConfig.getQuotationRejectUrl(quotation.getConfirmationToken()));
             context.setVariable("frontendUrl", emailConfig.getFrontendUrl());
 
             return templateEngine.process("quotation-email", context);

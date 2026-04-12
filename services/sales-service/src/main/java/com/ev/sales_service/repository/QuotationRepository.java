@@ -53,6 +53,6 @@ public interface QuotationRepository extends JpaRepository<Quotation, UUID>, Jpa
     @Query("SELECT CASE WHEN COUNT(q) > 0 THEN true ELSE false END FROM Quotation q JOIN q.promotions p WHERE p.promotionId = :promotionId")
     boolean existsByPromotionId(@Param("promotionId") UUID promotionId);
 
-    Quotation save(Quotation quotation);
+    java.util.Optional<Quotation> findByConfirmationToken(String confirmationToken);
 
 }
