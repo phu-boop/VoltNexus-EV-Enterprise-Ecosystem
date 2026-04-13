@@ -303,7 +303,7 @@ class UserServiceTest {
             EvmStaffProfile profile = new EvmStaffProfile();
             when(evmStaffProfileRepository.findByUserId(user.getId())).thenReturn(Optional.of(profile));
 
-            userService.updateUserEvmStaff(req);
+            userService.updateUserEvmStaff(UUID.randomUUID(),req);
 
             verify(userRepository).save(user);
             verify(evmStaffProfileRepository).save(profile);
@@ -318,7 +318,7 @@ class UserServiceTest {
             DealerStaffProfile profile = new DealerStaffProfile();
             when(dealerStaffProfileRepository.findByUserId(user.getId())).thenReturn(Optional.of(profile));
 
-            userService.updateUserDealerStaff(req);
+            userService.updateUserDealerStaff(UUID.randomUUID(),req);
 
             verify(userRepository).save(user);
             verify(dealerStaffProfileRepository).save(profile);
@@ -333,7 +333,7 @@ class UserServiceTest {
             DealerManagerProfile profile = new DealerManagerProfile();
             when(dealerManagerProfileRepository.findByUserId(user.getId())).thenReturn(Optional.of(profile));
 
-            userService.updateUserDealerManager(req);
+            userService.updateUserDealerManager(UUID.randomUUID(),req);
 
             verify(userRepository).save(user);
             verify(dealerManagerProfileRepository).save(profile);
@@ -348,7 +348,7 @@ class UserServiceTest {
             AdminProfile profile = new AdminProfile();
             when(adminProfileRepository.findByUserId(user.getId())).thenReturn(Optional.of(profile));
 
-            userService.updateUserEvmAdmin(req);
+            userService.updateUserEvmAdmin(UUID.randomUUID(),req);
 
             verify(userRepository).save(user);
             verify(adminProfileRepository).save(profile);

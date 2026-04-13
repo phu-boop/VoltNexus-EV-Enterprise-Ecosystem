@@ -34,8 +34,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(controllers = DealerController.class)
-@WithMockUser(roles = "ADMIN")
-@ActiveProfiles("dev") // DevSecurityConfig: tránh trùng securityFilterChain với ProductionSecurityConfig (!dev)
 @ContextConfiguration(classes = {DealerController.class, DealerControllerWebMvcTest.TestConfig.class})
 @AutoConfigureMockMvc(addFilters = false)
 @DisplayName("DealerController — slice test (MockMvc + mock DealerService)")
