@@ -24,37 +24,9 @@
 
 VoltNexus is built on a **10-service microservices architecture** sitting behind a reactive API Gateway with JWT-based authentication, event-driven messaging via Apache Kafka, and real-time push notifications via WebSocket (STOMP/SockJS).
 
-```
-                              ┌─────────────────┐
-                              │   React Frontends│
-                              │  (Admin + Customer│
-                              │      Apps)        │
-                              └────────┬──────────┘
-                                       │ HTTP / WebSocket
-                              ┌────────▼──────────┐
-                              │   Spring Cloud     │
-                              │   API Gateway      │ ← JWT Validation
-                              │   (Port 8080)      │   Redis Blacklist
-                              │                    │   Rate Limiting
-                              └────────┬───────────┘
-              ┌──────────────┬─────────┼───────────┬──────────────────────┐
-              ▼              ▼         ▼           ▼                      ▼
-      ┌───────────┐ ┌──────────────┐ ┌─────────┐ ┌──────────────┐ ┌───────────────┐
-      │   User    │ │  Customer    │ │ Dealer  │ │  Inventory   │ │    Sales      │
-      │  Service  │ │  Service     │ │ Service │ │   Service    │ │   Service     │
-      │  :8081    │ │  :8082       │ │  :8083  │ │   :8084      │ │   :8086       │
-      └───────────┘ └──────────────┘ └─────────┘ └──────────────┘ └───────────────┘
-              ┌──────────────┬─────────────────┬──────────────────────┐
-              ▼              ▼                 ▼                      ▼
-      ┌───────────┐ ┌──────────────┐  ┌──────────────┐     ┌───────────────┐
-      │  Payment  │ │   Vehicle    │  │  Reporting   │     │  AI Service   │
-      │  Service  │ │   Service    │  │   Service    │     │   :8500       │
-      │  :8085    │ │   :8087      │  │   :8088      │     │  (Gemini AI)  │
-      └───────────┘ └──────────────┘  └──────────────┘     └───────────────┘
-                                    Apache Kafka (Event Bus)
-                              Redis (Session + Cache + Blacklist)
-                               MySQL (Per-service databases)
-```
+[![Architecture Diagram](docs/assets/diagram-export-4-13-2026-7_28_23-PM.png)](https://app.eraser.io/workspace/LC2RNO5DsnY3C6uncXiO)
+
+> 🔗 [View & edit full diagram on Eraser.io →](https://app.eraser.io/workspace/LC2RNO5DsnY3C6uncXiO)
 
 ---
 
@@ -156,6 +128,10 @@ VoltNexus is built on a **10-service microservices architecture** sitting behind
 ---
 
 ## CI/CD Pipeline
+
+[![CI/CD Pipeline Diagram](https://app.eraser.io/workspace/znVIlzq56TwuQigJbgrc/preview)](https://app.eraser.io/workspace/znVIlzq56TwuQigJbgrc)
+
+> 🔗 [View & edit full pipeline diagram on Eraser.io →](https://app.eraser.io/workspace/znVIlzq56TwuQigJbgrc)
 
 ```
 Push to main
