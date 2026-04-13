@@ -2,7 +2,7 @@ name: CI/CD Enterprise Pipeline
 
 on:
   push:
-    branches: [main, feature/reporting-service]
+    branches: [main]
   workflow_dispatch:
 
 permissions:
