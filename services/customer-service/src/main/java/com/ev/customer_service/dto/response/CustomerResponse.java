@@ -6,6 +6,7 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Data
 @NoArgsConstructor
@@ -23,7 +24,7 @@ public class CustomerResponse {
     private String customerType;
     private LocalDate registrationDate;
     private String status;
-    private Long preferredDealerId;
+    private UUID preferredDealerId;
     private String assignedStaffId; // UUID string
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

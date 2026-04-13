@@ -2,164 +2,200 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Xác Nhận Đơn Hàng</title>
   <style>
     body {
-      font-family: 'Inter', 'Segoe UI', Tahoma, sans-serif;
-      background: #f5f6fa;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background-color: #f8fafc;
       margin: 0;
       padding: 0;
-      color: #2d3748;
+      color: #1e293b;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .wrapper {
+      width: 100%;
+      table-layout: fixed;
+      padding: 40px 0;
     }
 
     .container {
-      max-width: 680px;
-      margin: 32px auto;
-      background: #fff;
-      border-radius: 12px;
-      box-shadow: 4px 5px 10px rgba(0, 0, 0, 0.4);
+      max-width: 600px;
+      margin: 0 auto;
+      background-color: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
       overflow: hidden;
     }
 
     .header {
-      background: linear-gradient(135deg, #5b67ec, #764ba2);
-      color: white;
-      text-align: center;
-      padding: 24px 16px;
+      padding: 40px 40px 20px;
+      text-align: left;
+    }
+
+    .brand {
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: #64748b;
+      margin-bottom: 8px;
     }
 
     .header h1 {
-      font-size: 22px;
+      font-size: 24px;
       font-weight: 600;
-      margin-bottom: 4px;
+      margin: 0;
+      color: #0f172a;
     }
 
-    .body {
-      padding: 28px 24px;
+    .content {
+      padding: 20px 40px 40px;
       line-height: 1.6;
     }
 
     .greeting {
       font-size: 16px;
+      margin-bottom: 24px;
+    }
+
+    .order-card {
+      background-color: #f1f5f9;
+      border-radius: 6px;
+      padding: 24px;
+      margin-bottom: 24px;
+    }
+
+    .order-row {
+      display: flex;
+      justify-content: space-between;
       margin-bottom: 12px;
     }
 
-    .order-info {
-      background: #f9fafb;
-      border-left: 4px solid #667eea;
-      border-radius: 8px;
-      padding: 16px 20px;
-      margin: 16px 0 24px;
+    .order-row:last-child {
+      margin-bottom: 0;
+      padding-top: 12px;
+      border-top: 1px solid #e2e8f0;
     }
 
-    .info-item {
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 8px;
-      font-size: 15px;
+    .label {
+      color: #64748b;
+      font-size: 14px;
     }
 
-    .info-label {
-      color: #4a5568;
-    }
-
-    .info-value {
+    .value {
       font-weight: 600;
+      color: #0f172a;
+      font-size: 14px;
+    }
+
+    .total-label {
+      font-weight: 600;
+      color: #0f172a;
+    }
+
+    .total-value {
+      font-size: 18px;
+      color: #0f172a;
     }
 
     .note {
-      background: #fff8e1;
-      border: 1px solid #f6e05e;
-      border-radius: 8px;
-      padding: 12px 16px;
       font-size: 13px;
-      color: #744210;
-      margin-bottom: 20px;
+      color: #64748b;
+      padding: 16px;
+      border-left: 2px solid #e2e8f0;
+      margin-bottom: 32px;
+    }
+
+    .button-container {
+      text-align: center;
+      margin-bottom: 32px;
     }
 
     .button {
       display: inline-block;
-      background: linear-gradient(135deg, #667eea, #764ba2);
-      color: white;
-      padding: 12px 28px;
-      border-radius: 8px;
+      background-color: #0f172a;
+      color: #ffffff !important;
+      padding: 14px 32px;
+      border-radius: 6px;
       text-decoration: none;
       font-weight: 500;
       font-size: 15px;
-      transition: all 0.2s ease;
-    }
-
-    .button:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 12px rgba(102, 126, 234, 0.3);
     }
 
     .footer {
+      padding: 32px 40px;
+      background-color: #f8fafc;
+      border-top: 1px solid #e2e8f0;
+      color: #64748b;
+      font-size: 12px;
       text-align: center;
-      padding: 20px 0;
-      background: #f9fafb;
-      color: #718096;
-      font-size: 13px;
-      line-height: 1.4;
     }
 
-    .footer strong {
-      color: #4a5568;
+    .footer p {
+      margin: 4px 0;
     }
 
-    p.link {
-      font-size: 13px;
-      color: #667eea;
+    .link-alt {
+      font-size: 11px;
+      color: #94a3b8;
+      text-align: center;
       word-break: break-all;
+      margin-top: 16px;
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <div class="header">
-      <h1>Xác Nhận Đơn Hàng</h1>
-      <p>EV Automotive</p>
-    </div>
+  <div class="wrapper">
+    <div class="container">
+      <div class="header">
+        <div class="brand">EV Automotive</div>
+        <h1>Xác nhận đơn hàng</h1>
+      </div>
 
-    <div class="body">
-      <p class="greeting">
-        Kính gửi <strong th:text="${customer.fullName}">Quý khách</strong>,
-      </p>
-      <p>
-        Cảm ơn Quý khách đã lựa chọn EV Automotive. Đơn hàng của Quý khách hiện đang chờ xác nhận.
-      </p>
+      <div class="content">
+        <p class="greeting">
+          Xin chào <strong th:text="${customer.fullName}">Quý khách</strong>,
+        </p>
+        <p>
+          Cảm ơn bạn đã lựa chọn EV Automotive. Đơn hàng của bạn đã được ghi nhận và đang chờ xác nhận từ hệ thống.
+        </p>
 
-      <div class="order-info">
-        <div class="info-item">
-          <span class="info-label">Mã đơn hàng:</span>
-          <span class="info-value" th:text="'#' + ${salesOrder.orderId}">#12345</span>
+        <div class="order-card">
+          <div class="order-row">
+            <span class="label">Mã đơn hàng</span>
+            <span class="value" th:text="'#' + ${salesOrder.orderId}">#12345</span>
+          </div>
+          <div class="order-row">
+            <span class="label">Ngày đặt hàng</span>
+            <span class="value" th:text="${orderDate}">01/01/2024</span>
+          </div>
+          <div class="order-row">
+            <span class="total-label">Tổng thanh toán</span>
+            <span class="value total-value" th:text="${#numbers.formatDecimal(salesOrder.totalAmount, 0, 'COMMA', 0, 'POINT') + ' VND'}">0 VND</span>
+          </div>
         </div>
-        <div class="info-item">
-          <span class="info-label">Ngày tạo:</span>
-          <span class="info-value" th:text="${orderDate}">01/01/2024 10:00</span>
+
+        <div class="note">
+          <strong>Lưu ý:</strong> Vui lòng xác nhận đơn hàng trong vòng 24 giờ để chúng tôi có thể xử lý giao dịch sớm nhất.
         </div>
-        <div class="info-item">
-          <span class="info-label">Tổng tiền:</span>
-          <span class="info-value" th:text="${#numbers.formatDecimal(salesOrder.totalAmount, 0, 'COMMA', 0, 'POINT') + ' VND'}">0 VND</span>
+
+        <div class="button-container">
+          <a th:href="${confirmUrl}" class="button">Xác nhận đơn hàng ngay</a>
+        </div>
+
+        <div class="link-alt">
+          Nếu nút không hoạt động, bạn có thể sao chép liên kết vào trình duyệt:<br/>
+          <span th:text="${confirmUrl}"></span>
         </div>
       </div>
 
-      <div class="note">
-        <strong>Lưu ý:</strong> Vui lòng xác nhận đơn hàng trong vòng 24 giờ để đảm bảo giao dịch được xử lý kịp thời.
+      <div class="footer">
+        <p><strong>Đội ngũ EV Automotive</strong></p>
+        <p>Hotline: 1800 1234 | support@ev-automotive.com</p>
+        <p>&copy; 2024 EV Automotive. Vietnam.</p>
       </div>
-
-      <div style="text-align: center; margin: 24px 0;">
-        <a th:href="${confirmUrl}" class="button">Xác Nhận Đơn Hàng</a>
-      </div>
-
-      <p style="font-size: 13px;">Nếu nút trên không hoạt động, vui lòng mở liên kết sau:</p>
-      <p class="link" th:text="${confirmUrl}"></p>
-    </div>
-
-    <div class="footer">
-      <p>Trân trọng,<br /><strong>Đội ngũ EV Automotive</strong></p>
-      <p>Hotline: 1800 1234 | Email: support@ev-automotive.com</p>
-      <p>© 2024 EV Automotive. All rights reserved.</p>
     </div>
   </div>
 </body>

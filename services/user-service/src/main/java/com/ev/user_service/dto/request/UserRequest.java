@@ -16,7 +16,7 @@ import java.util.UUID;
 public class UserRequest {
 
     // ----- COMMON -----
-    @NotBlank(groups = {OnCreate.class, OnUpdate.class, OnCreateDealerManager.class, OnCreateDealerStaff.class, OnCreateEvmStaff.class})
+    @NotBlank(groups = {OnCreate.class, OnCreateDealerManager.class, OnCreateDealerStaff.class, OnCreateEvmStaff.class})
     @Email(groups = {OnCreate.class, OnUpdate.class, OnCreateDealerManager.class, OnCreateDealerStaff.class, OnCreateEvmStaff.class})
     @Size(max = 255, message = "EMAIL_TOO_LONG", groups = {OnCreate.class, OnUpdate.class, OnCreateDealerManager.class, OnCreateDealerStaff.class, OnCreateEvmStaff.class})
     private String email;
@@ -33,7 +33,7 @@ public class UserRequest {
     )
     private String password;
 
-    @NotBlank(groups = {OnCreate.class, OnUpdate.class, OnCreateDealerManager.class, OnCreateDealerStaff.class, OnCreateEvmStaff.class})
+    @NotBlank(groups = {OnCreate.class, OnCreateDealerManager.class, OnCreateDealerStaff.class, OnCreateEvmStaff.class})
     // Thêm @Size để test Boundary Value (Bắt buộc)
     @Size(min = 2, max = 50, message = "NAME_OUT_OF_RANGE_LIMIT", 
           groups = {OnCreate.class, OnUpdate.class, OnCreateDealerManager.class, OnCreateDealerStaff.class, OnCreateEvmStaff.class})

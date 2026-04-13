@@ -9,14 +9,15 @@ import com.ev.common_lib.dto.respond.ApiRespond;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @Slf4j
 @RestController
@@ -34,6 +35,7 @@ public class CustomerController {
         return ResponseEntity.ok("Customer Service is running!");
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'EVM_STAFF', 'DEALER_MANAGER', 'DEALER_STAFF')")
     @GetMapping
     public ResponseEntity<ApiRespond<List<CustomerResponse>>> getAllCustomers(
             @RequestParam(required = false) String search,
@@ -50,6 +52,30 @@ public class CustomerController {
         }
     }
 
+    @PreAuthorize("hasAnyRole('DEALER_MANAGER', 'DEALER_STAFF')")
+    @GetMapping("/dealer")
+    public ResponseEntity<ApiRespond<List<CustomerResponse>>> getCustomersByDealer(
+            @RequestParam(required = false) String search,
+            @RequestHeader(value = "X-User-DealerId", required = false) String currentUserDealerId) {
+        log.info("GET /customers/dealer - search: '{}', dealerId: '{}'", search, currentUserDealerId);
+
+        List<CustomerResponse> customers = customerService.getCustomersByDealer(search, currentUserDealerId);
+        return ResponseEntity.ok(ApiRespond.success("Dealer customers retrieved successfully", customers));
+    }
+
+    @PreAuthorize("hasAnyRole('DEALER_MANAGER', 'DEALER_STAFF')")
+    @GetMapping("/paged")
+    public ResponseEntity<ApiRespond<Page<CustomerResponse>>> getCustomersPaged(
+            @RequestParam(required = false) String search,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        log.info("GET /customers/paged - search: '{}', page: {}, size: {}", search, page, size);
+
+        Page<CustomerResponse> customers = customerService.getCustomersWithPagination(search, page, size);
+        return ResponseEntity.ok(ApiRespond.success("Customers retrieved", customers));
+    }
+
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'ADMIN', 'EVM_STAFF', 'DEALER_MANAGER', 'DEALER_STAFF')")
     @GetMapping("/{id}")
     public ResponseEntity<ApiRespond<CustomerResponse>> getCustomerById(@PathVariable String id) {
         Long customerId = Long.parseLong(id);
@@ -57,6 +83,7 @@ public class CustomerController {
         return ResponseEntity.ok(ApiRespond.success("Customer retrieved successfully", customer));
     }
     
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'ADMIN', 'EVM_STAFF', 'DEALER_MANAGER', 'DEALER_STAFF')")
     @GetMapping("/profile/{profileId}")
     public ResponseEntity<ApiRespond<CustomerResponse>> getCustomerByProfileId(@PathVariable String profileId) {
         log.info("Fetching customer by profileId: {}", profileId);
@@ -64,6 +91,7 @@ public class CustomerController {
         return ResponseEntity.ok(ApiRespond.success("Customer retrieved successfully", customer));
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'DEALER_MANAGER', 'DEALER_STAFF')")
     @PostMapping
     public ResponseEntity<ApiRespond<CustomerResponse>> createCustomer(
             @Valid @RequestBody CustomerRequest request,
@@ -75,6 +103,18 @@ public class CustomerController {
                 .body(ApiRespond.success("Customer created successfully", customer));
     }
 
+        @PreAuthorize("hasAnyRole('DEALER_MANAGER', 'DEALER_STAFF')")
+        @PostMapping("/dealer")
+        public ResponseEntity<ApiRespond<CustomerResponse>> createCustomerForDealer(
+            @Valid @RequestBody CustomerRequest request,
+            @RequestHeader(value = "X-User-DealerId", required = false) String currentUserDealerId) {
+        CustomerResponse customer = customerService.createCustomerForDealer(request, currentUserDealerId);
+        return ResponseEntity
+            .status(HttpStatus.CREATED)
+            .body(ApiRespond.success("Dealer customer created successfully", customer));
+        }
+
+    @PreAuthorize("hasAnyRole('ADMIN', 'DEALER_MANAGER', 'DEALER_STAFF')")
     @PutMapping("/{id}")
     public ResponseEntity<ApiRespond<CustomerResponse>> updateCustomer(
             @PathVariable String id,
@@ -86,6 +126,7 @@ public class CustomerController {
         return ResponseEntity.ok(ApiRespond.success("Customer updated successfully", customer));
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'EVM_STAFF')")
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiRespond<Void>> deleteCustomer(
             @PathVariable String id,
@@ -100,6 +141,7 @@ public class CustomerController {
      * Get available customer statuses
      * GET /customers/enums/statuses
      */
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'ADMIN', 'EVM_STAFF', 'DEALER_MANAGER', 'DEALER_STAFF')")
     @GetMapping("/enums/statuses")
     public ResponseEntity<ApiRespond<List<Map<String, String>>>> getCustomerStatuses() {
         List<Map<String, String>> statuses = Arrays.stream(CustomerStatus.values())
@@ -107,7 +149,7 @@ public class CustomerController {
                     "value", status.name(),
                     "displayName", status.getDisplayName()
                 ))
-                .collect(Collectors.toList());
+                .toList();
         
         return ResponseEntity.ok(ApiRespond.success("Customer statuses retrieved successfully", statuses));
     }
@@ -116,6 +158,7 @@ public class CustomerController {
      * Get available customer types
      * GET /customers/enums/types
      */
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'ADMIN', 'EVM_STAFF', 'DEALER_MANAGER', 'DEALER_STAFF')")
     @GetMapping("/enums/types")
     public ResponseEntity<ApiRespond<List<Map<String, String>>>> getCustomerTypes() {
         List<Map<String, String>> types = Arrays.stream(CustomerType.values())
@@ -123,7 +166,7 @@ public class CustomerController {
                     "value", type.name(),
                     "displayName", type.getDisplayName()
                 ))
-                .collect(Collectors.toList());
+                .toList();
         
         return ResponseEntity.ok(ApiRespond.success("Customer types retrieved successfully", types));
     }
@@ -132,6 +175,7 @@ public class CustomerController {
      * Get audit history for a customer
      * GET /customers/{id}/audit-history
      */
+    @PreAuthorize("hasAnyRole('ADMIN', 'EVM_STAFF', 'DEALER_MANAGER', 'DEALER_STAFF')")
     @GetMapping("/{id}/audit-history")
     public ResponseEntity<ApiRespond<List<com.ev.customer_service.dto.response.AuditResponse>>> getCustomerAuditHistory(@PathVariable String id) {
         Long customerId = Long.parseLong(id);

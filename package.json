@@ -1,0 +1,26 @@
+{
+  "name": "voltnexus-ev-enterprise-ecosystem",
+  "version": "1.0.0",
+  "description": "<div align=\"center\">",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/phu-boop/VoltNexus-EV-Enterprise-Ecosystem.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/phu-boop/VoltNexus-EV-Enterprise-Ecosystem/issues"
+  },
+  "homepage": "https://github.com/phu-boop/VoltNexus-EV-Enterprise-Ecosystem#readme",
+  "devDependencies": {
+    "@playwright/test": "^1.59.1",
+    "@types/node": "^25.5.2"
+  }
+}

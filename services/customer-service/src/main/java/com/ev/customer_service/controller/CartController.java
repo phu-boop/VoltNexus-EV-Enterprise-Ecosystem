@@ -10,6 +10,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -29,6 +30,7 @@ public class CartController {
      * Thêm sản phẩm vào giỏ hàng
      * POST /cart/{customerId}
      */
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'ADMIN', 'DEALER_MANAGER', 'DEALER_STAFF')")
     @PostMapping("/{customerId}")
     public ResponseEntity<ApiRespond<CartItemResponse>> addToCart(
             @PathVariable Long customerId,
@@ -44,6 +46,7 @@ public class CartController {
      * Lấy tất cả items trong giỏ hàng
      * GET /cart/{customerId}/items
      */
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'ADMIN', 'EVM_STAFF', 'DEALER_MANAGER', 'DEALER_STAFF')")
     @GetMapping("/{customerId}/items")
     public ResponseEntity<ApiRespond<List<CartItemResponse>>> getCartItems(@PathVariable Long customerId) {
         log.info("Getting cart items for customer: {}", customerId);
@@ -112,6 +115,7 @@ public class CartController {
      * GET /cart/{profileId}/count
      * @param profileId UUID of the customer's profile from User Service
      */
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'ADMIN', 'EVM_STAFF', 'DEALER_MANAGER', 'DEALER_STAFF')")
     @GetMapping("/{profileId}/count")
     public ResponseEntity<ApiRespond<Long>> getCartItemCount(@PathVariable String profileId) {
         log.info("Getting cart item count for profile {}", profileId);

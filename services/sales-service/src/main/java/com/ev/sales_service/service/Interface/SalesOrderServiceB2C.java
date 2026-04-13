@@ -46,6 +46,8 @@ public interface SalesOrderServiceB2C {
 
     SalesOrderB2CResponse markOrderAsEdited(UUID orderId, UUID staffId);
 
+    SalesOrderB2CResponse confirmOrderByToken(String token, boolean accepted);
+
     /**
      * Admin/Staff lấy tất cả đơn hàng B2C với phân trang và filter theo status
      * 

@@ -24,20 +24,20 @@ public class NotificationController {
         notificationService.sendPromotionNotificationToAdmins(dto);
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'EVM_STAFF')")
     @GetMapping
     public ResponseEntity<ApiRespond<List<Notification>>> getAllNotifications() {
         return ResponseEntity.ok(ApiRespond.success("get all notification successful", notificationService.findAll()));
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'EVM_STAFF')")
     @PutMapping("/{id}/read")
     public ResponseEntity<ApiRespond<Object>> markAsRead(@PathVariable UUID id) {
         notificationService.markAsRead(id);
         return ResponseEntity.ok(ApiRespond.success("mark readed", null));
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'EVM_STAFF')")
     @PutMapping("/mark-all-read")
     public ResponseEntity<ApiRespond<Object>> markAllAsRead() {
         notificationService.markAllAsRead();

@@ -107,7 +107,7 @@ class UserServiceTest {
             role.setName("DEALER_MANAGER");
             manager.setRoles(Set.of(role));
 
-            when(userRepository.findAll()).thenReturn(List.of(manager, user));
+            when(userRepository.findByRoleName("DEALER_MANAGER")).thenReturn(List.of(manager));
             when(userMapper.usertoUserRespond(manager)).thenReturn(new UserRespond());
 
             List<UserRespond> result = userService.getAllUserDealerManage();
@@ -127,7 +127,7 @@ class UserServiceTest {
             profile.setDealerId(dealerId);
             staff.setDealerStaffProfile(profile);
 
-            when(userRepository.findAll()).thenReturn(List.of(staff, user));
+            when(userRepository.findByRoleName("DEALER_STAFF")).thenReturn(List.of(staff));
             when(userMapper.usertoUserRespond(staff)).thenReturn(new UserRespond());
 
             List<UserRespond> result = userService.getAllUserStaffDealer(dealerId);

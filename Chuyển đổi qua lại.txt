@@ -1,0 +1,78 @@
+Get-Process java -ErrorAction SilentlyContinue | Stop-Process -Force; Write-Host "Java processes stopped"
+ 
+
+tắt tất cả các process java đang chạy để tránh lỗi khi build lại dự án.
+
+
+# 2. Build và chạy Docker
+docker-compose build
+docker-compose up -d
+
+# 3. Kiểm tra
+docker ps
+
+
+
+
+
+Muốn quay lại Local mode:
+# Tắt Docker services (giữ infrastructure)
+docker-compose stop gateway user-service customer-service dealer-service inventory-service payment-service sales-service vehicle-service reporting-service ai-service frontend
+
+# Chạy local như bình thường
+cd services/user-service && mvn spring-boot:run
+
+
+
+docker build từng services 
+
+docker-compose build user-service
+docker-compose build customer-service
+docker-compose build dealer-service
+docker-compose build inventory-service
+docker-compose build sales-service
+docker-compose build reporting-service
+docker-compose build ai-service
+docker-compose build gateway
+docker-compose build frontend
+docker-compose up -d frontend
+
+docker-compose up -d
+
+
+
+
+lệnh chạy - test tránh tràn ram : docker compose up -d zookeeper kafka redis-db gateway user-service customer-service
+
+
+Cơ bản	Thêm nếu cần
+zookeeper, kafka, redis-db	-
+gateway	Để truy cập API
+user-service	Xác thực
+customer-service	Test customer
+frontend	Giao diện
+
+
+
+
+cd c:\ktpm\VoltNexus-EV-Enterprise-Ecosystem\services\user-service
+mvn clean compile -DskipTests
+
+cd c:\ktpm\VoltNexus-EV-Enterprise-Ecosystem\services\customer-service
+mvn clean compile -DskipTests
+
+cd c:\ktpm\VoltNexus-EV-Enterprise-Ecosystem\services\dealer-service
+mvn clean compile -DskipTests
+
+mvn clean clean -DskipTests
+
+
+docker compose up -d zookeeper kafka redis-db
+# Đợi 30 giây
+docker compose up -d gateway user-service customer-service
+
+
+mvn test -Dtest=ReportingServiceTest -Djacoco.skip=true
+
+
+mvn test -Dtest=SalesRecordRequestBVATest

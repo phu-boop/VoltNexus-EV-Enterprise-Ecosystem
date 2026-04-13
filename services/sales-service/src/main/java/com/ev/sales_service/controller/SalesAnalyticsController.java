@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -30,6 +31,7 @@ public class SalesAnalyticsController {
      * Lấy sales history cho AI forecasting
      * Endpoint này được gọi từ AI Service
      */
+    @PreAuthorize("hasAnyRole('ADMIN', 'EVM_STAFF')")
     @GetMapping("/history")
     public ResponseEntity<ApiRespond<List<SalesHistoryDto>>> getSalesHistory(
             @RequestParam(required = false) Long variantId,
@@ -61,6 +63,7 @@ public class SalesAnalyticsController {
     /**
      * Lấy sales summary theo variant
      */
+    @PreAuthorize("hasAnyRole('ADMIN', 'EVM_STAFF')")
     @GetMapping("/summary/by-variant")
     public ResponseEntity<ApiRespond<List<SalesHistoryDto>>> getSalesSummaryByVariant(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,

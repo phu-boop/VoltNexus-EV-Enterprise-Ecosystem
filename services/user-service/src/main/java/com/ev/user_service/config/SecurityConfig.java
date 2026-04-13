@@ -1,7 +1,5 @@
 package com.ev.user_service.config;
 
-import com.ev.user_service.security.JwtUtil;
-import com.ev.user_service.service.RedisService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -18,10 +16,19 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.web.client.RestTemplate;
 import com.ev.user_service.filter.RateLimitFilter;
 import com.ev.user_service.security.JwtAuthenticationFilter;
+import com.ev.user_service.security.JwtUtil;
 import com.ev.user_service.security.OAuth2LoginSuccessHandler;
+import com.ev.user_service.service.RedisService;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ev.common_lib.dto.respond.ApiRespond;
+import com.ev.common_lib.exception.ErrorCode;
+import org.springframework.http.MediaType;
+import org.springframework.web.client.RestTemplate;
+
+import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
 
 @Configuration
 @EnableWebSecurity
@@ -47,14 +54,14 @@ public class SecurityConfig {
     }
 
     @Bean
-    @SuppressWarnings("java:S4502") // Disable CSRF check for stateless AI service APIs
     public SecurityFilterChain securityFilterChain(HttpSecurity http, JwtAuthenticationFilter jwtAuthenticationFilter)
             throws Exception {
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/", "/error", "/auth/**", "/auth/oauth2/success", "/users/**",
+                        .requestMatchers("/", "/error", "/auth/**", "/auth/oauth2/success",
+                                "/users/register/admin", "/users/internal/**",
                                 "/payment/**", "/payment/return/**", "/actuator/health")
                         .permitAll()
                         .requestMatchers(
@@ -74,7 +81,15 @@ public class SecurityConfig {
                 // .httpBasic(AbstractHttpConfigurer::disable)
                 // .formLogin(AbstractHttpConfigurer::disable)
                 .exceptionHandling(ex -> ex.accessDeniedHandler((req, res, e) -> {
-                    throw e;
+                    res.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                    res.setContentType(MediaType.APPLICATION_JSON_VALUE);
+                    res.setCharacterEncoding("UTF-8");
+
+                    ApiRespond<Void> apiRespond = new ApiRespond<>();
+                    apiRespond.setCode(ErrorCode.FORBIDDEN.getCode());
+                    apiRespond.setMessage(ErrorCode.FORBIDDEN.getMessage());
+
+                    new ObjectMapper().writeValue(res.getWriter(), apiRespond);
                 }))
                 .addFilterBefore(rateLimitFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

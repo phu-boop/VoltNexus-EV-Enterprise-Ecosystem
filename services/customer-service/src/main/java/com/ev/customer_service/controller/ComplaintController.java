@@ -12,6 +12,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -41,9 +43,13 @@ public class ComplaintController {
      * Dealer Staff tạo phản hồi từ khách hàng
      */
     @PostMapping
-    @PreAuthorize("hasAnyRole('DEALER_STAFF', 'DEALER_MANAGER')")
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'DEALER_STAFF', 'DEALER_MANAGER')")
     public ResponseEntity<ApiResponse<ComplaintResponse>> createComplaint(
-            @Valid @RequestBody CreateComplaintRequest request) {
+            @Valid @RequestBody CreateComplaintRequest request,
+            Authentication authentication,
+            @RequestHeader(value = "X-User-DealerId", required = false) String userDealerId) {
+        String effectiveDealerId = resolveDealerIdForCreate(request.getDealerId(), userDealerId, authentication);
+        request.setDealerId(effectiveDealerId);
         log.info("Creating new complaint for customer {}", request.getCustomerId());
         ComplaintResponse response = complaintService.createComplaint(request);
         return ResponseEntity
@@ -56,7 +62,7 @@ public class ComplaintController {
      * Dealer Manager gán nhân viên và chuyển trạng thái
      */
     @PutMapping("/{id}/assign")
-    @PreAuthorize("hasRole('DEALER_MANAGER')")
+    @PreAuthorize("hasAnyRole('DEALER_MANAGER')")
     public ResponseEntity<ApiResponse<ComplaintResponse>> assignComplaint(
             @PathVariable Long id,
             @Valid @RequestBody AssignComplaintRequest request) {
@@ -70,7 +76,7 @@ public class ComplaintController {
      * Dealer Staff (người được gán) thêm update note
      */
     @PostMapping("/{id}/progress")
-    @PreAuthorize("hasAnyRole('DEALER_STAFF', 'DEALER_MANAGER')")
+    @PreAuthorize("hasAnyRole('DEALER_STAFF', 'DEALER_MANAGER', 'ADMIN')")
     public ResponseEntity<ApiResponse<ComplaintResponse>> addProgressUpdate(
             @PathVariable Long id,
             @Valid @RequestBody ComplaintProgressUpdate update) {
@@ -84,7 +90,7 @@ public class ComplaintController {
      * Dealer Staff hoàn tất xử lý
      */
     @PutMapping("/{id}/resolve")
-    @PreAuthorize("hasAnyRole('DEALER_STAFF', 'DEALER_MANAGER')")
+    @PreAuthorize("hasAnyRole('DEALER_STAFF', 'DEALER_MANAGER', 'ADMIN')")
     public ResponseEntity<ApiResponse<ComplaintResponse>> resolveComplaint(
             @PathVariable Long id,
             @Valid @RequestBody ResolveComplaintRequest request) {
@@ -98,7 +104,7 @@ public class ComplaintController {
      * Dealer Manager xác nhận đóng sau khi resolved
      */
     @PutMapping("/{id}/close")
-    @PreAuthorize("hasRole('DEALER_MANAGER')")
+    @PreAuthorize("hasAnyRole('DEALER_MANAGER')")
     public ResponseEntity<ApiResponse<ComplaintResponse>> closeComplaint(@PathVariable Long id) {
         log.info("Closing complaint {}", id);
         ComplaintResponse response = complaintService.closeComplaint(id);
@@ -109,7 +115,7 @@ public class ComplaintController {
      * Lấy chi tiết phản hồi
      */
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('DEALER_STAFF', 'DEALER_MANAGER')")
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'DEALER_STAFF', 'DEALER_MANAGER')")
     public ResponseEntity<ApiResponse<ComplaintResponse>> getComplaintById(@PathVariable Long id) {
         ComplaintResponse response = complaintService.getComplaintById(id);
         return ResponseEntity.ok(ApiResponse.success(response));
@@ -119,7 +125,7 @@ public class ComplaintController {
      * Lấy danh sách phản hồi theo dealer
      */
     @GetMapping("/dealer/{dealerId}")
-    @PreAuthorize("hasAnyRole('DEALER_STAFF', 'DEALER_MANAGER')")
+    @PreAuthorize("hasAnyRole('DEALER_STAFF', 'DEALER_MANAGER', 'ADMIN', 'EVM_STAFF')")
     public ResponseEntity<ApiResponse<List<ComplaintResponse>>> getComplaintsByDealer(
             @PathVariable String dealerId) {
         List<ComplaintResponse> complaints = complaintService.getComplaintsByDealer(dealerId);
@@ -131,7 +137,7 @@ public class ComplaintController {
      * Dealer Manager xem và lọc danh sách
      */
     @PostMapping("/filter")
-    @PreAuthorize("hasAnyRole('DEALER_STAFF', 'DEALER_MANAGER')")
+    @PreAuthorize("hasAnyRole('DEALER_STAFF', 'DEALER_MANAGER', 'ADMIN', 'EVM_STAFF')")
     public ResponseEntity<ApiResponse<Page<ComplaintResponse>>> filterComplaints(
             @Valid @RequestBody ComplaintFilterRequest filter) {
         log.info("Filtering complaints with criteria: {}", filter);
@@ -144,7 +150,7 @@ public class ComplaintController {
      * Dealer Manager xem dashboard
      */
     @GetMapping("/statistics")
-    @PreAuthorize("hasRole('DEALER_MANAGER')")
+    @PreAuthorize("hasAnyRole('DEALER_MANAGER', 'DEALER_STAFF')")
     public ResponseEntity<ApiResponse<ComplaintStatisticsResponse>> getStatistics(
             @RequestParam String dealerId,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
@@ -168,11 +174,32 @@ public class ComplaintController {
      * Dealer Staff có thể gửi thủ công
      */
     @PostMapping("/{id}/send-notification")
-    @PreAuthorize("hasAnyRole('DEALER_STAFF', 'DEALER_MANAGER')")
+    @PreAuthorize("hasAnyRole('DEALER_STAFF', 'DEALER_MANAGER', 'ADMIN')")
     public ResponseEntity<ApiResponse<ComplaintResponse>> sendNotificationToCustomer(
             @PathVariable Long id) {
         log.info("Sending notification to customer for complaint {}", id);
         ComplaintResponse response = complaintService.sendNotificationToCustomer(id);
         return ResponseEntity.ok(ApiResponse.success("Thông báo đã được gửi đến khách hàng", response));
+    }
+
+    private String resolveDealerIdForCreate(String requestDealerId, String userDealerId, Authentication authentication) {
+        boolean isDealerUser = authentication != null
+                && authentication.getAuthorities().stream()
+                        .map(GrantedAuthority::getAuthority)
+                        .anyMatch(authority -> "ROLE_DEALER_STAFF".equals(authority)
+                                || "ROLE_DEALER_MANAGER".equals(authority));
+
+        if (isDealerUser) {
+            if (userDealerId == null || userDealerId.isBlank()) {
+                throw new IllegalArgumentException("X-User-DealerId header is required for dealer accounts");
+            }
+            return userDealerId;
+        }
+
+        if (requestDealerId == null || requestDealerId.isBlank()) {
+            throw new IllegalArgumentException("Dealer ID is required");
+        }
+
+        return requestDealerId;
     }
 }

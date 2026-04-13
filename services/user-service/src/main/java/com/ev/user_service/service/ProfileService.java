@@ -7,15 +7,16 @@ import com.ev.user_service.entity.DealerManagerProfile;
 import com.ev.user_service.entity.DealerStaffProfile;
 import com.ev.user_service.repository.DealerManagerProfileRepository;
 import com.ev.user_service.repository.DealerStaffProfileRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Service
+@Slf4j
 public class ProfileService {
     private final DealerStaffProfileRepository dealerStaffProfileRepository;
     private final DealerManagerProfileRepository dealerManagerProfileRepository;
@@ -60,12 +61,14 @@ public class ProfileService {
 
                     return dto;
                 })
-                .collect(Collectors.toList());
+                .toList();
     }
 
     /**
      * Resolves dealer id from a dealer staff/manager profile id, or from the user id of that member.
      */
+    //find idealer by idMember
+    @Transactional(readOnly = true)
     public UUID getIdDealerByIdMember(UUID idMember) {
         Optional<DealerStaffProfile> staffOpt = dealerStaffProfileRepository.findById(idMember);
         Optional<DealerManagerProfile> managerOpt = dealerManagerProfileRepository.findById(idMember);
@@ -87,6 +90,7 @@ public class ProfileService {
 
         if (staffOpt.isPresent() && managerOpt.isPresent()) {
             System.err.println("Duplicate profile found for ID: " + idForLog + ". Preferring Manager Profile.");
+            log.warn("Duplicate profile found for ID {}. Preferring Manager Profile.", idMember);
             return managerOpt.get().getDealerId();
         }
 

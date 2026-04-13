@@ -1,7 +1,9 @@
 import axios from "axios";
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
 const apiConst = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL,
+  baseURL: API_BASE_URL,
   headers: { "Content-Type": "application/json" },
   withCredentials: true,
 });
@@ -22,11 +24,7 @@ apiConst.interceptors.response.use(
     const originalRequest = error.config;
 
     // Kiểm tra nếu lỗi 401 và chưa retry
-    if (
-      error.response &&
-      error.response.status === 401 &&
-      !originalRequest._retry
-    ) {
+    if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
 
       try {
@@ -53,20 +51,20 @@ apiConst.interceptors.response.use(
         sessionStorage.clear();
 
         // Chuyển về trang login
-        window.location.href = "/login";
+        globalThis.location.href = "/login";
 
-        return Promise.reject(refreshError);
+        throw refreshError;
       }
     }
 
     // Nếu lỗi 401 và không thể refresh, log ra nhưng không auto redirect
-    if (error.response && error.response.status === 401) {
+    if (error.response?.status === 401) {
       // Không tự động redirect trong development để debug dễ hơn
       // sessionStorage.clear();
       // window.location.href = "/login";
     }
 
-    return Promise.reject(error);
+    throw error;
   }
 );
 

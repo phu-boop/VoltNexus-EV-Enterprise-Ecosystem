@@ -1,0 +1,1314 @@
+{
+  "info": {
+    "_postman_id": "77c4bfe5-e951-4665-9051-93404c1fa624",
+    "name": "BUG HUNTING - Reporting Service",
+    "description": "Collection tim bug nghiem trong - VoltNexus Reporting Service\n\n## CAC BUG DA PHAT HIEN:\n\n### 1. CRITICAL - Authentication Bypass\n- SecurityConfig.java:26 - anyRequest().permitAll()\n- Admin APIs khong co bao ve\n\n### 2. CRITICAL - Null Pointer Exception\n- AdminBackfillController.java:62,105 - Khong check null getBody()\n\n### 3. CRITICAL - Missing Input Validation\n- ReportingController.java:22 - Khong validate SalesRecordRequest\n\n### 4. MEDIUM - NumberFormatException\n- ReportController.java:160,163,188 - Long.valueOf() co the crash\n\n### 5. MEDIUM - Information Disclosure\n- SalesReportingService.java:157 - Leak exception details\n\n### 6. LOW - Missing Rate Limiting\n- AI Forecast va Sync APIs khong co rate limit",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "51838372",
+    "_collection_link": "https://go.postman.co/collection/51838372-77c4bfe5-e951-4665-9051-93404c1fa624?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "0. SETUP - Nhap Admin Token",
+      "item": [
+        {
+          "name": "HUONG DAN: Set admin_token trong Variables",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// HUONG DAN SU DUNG:",
+                  "// 1. Vao tab 'Variables' cua Collection nay",
+                  "// 2. Tim bien 'admin_token'",
+                  "// 3. Paste JWT token cua admin vao cot 'CURRENT VALUE'",
+                  "// 4. Save lai",
+                  "",
+                  "pm.test(\"Kiem tra admin_token da duoc set\", function() {",
+                  "    const token = pm.collectionVariables.get('admin_token');",
+                  "    ",
+                  "    if (!token || token === '' || token === 'PASTE_YOUR_ADMIN_TOKEN_HERE') {",
+                  "        console.warn('========================================');",
+                  "        console.warn('CHUA SET TOKEN!');",
+                  "        console.warn('Vao tab Variables -> admin_token');",
+                  "        console.warn('Paste JWT token vao CURRENT VALUE');",
+                  "        console.warn('========================================');",
+                  "        pm.expect.fail('Chua set admin_token! Xem huong dan trong Console.');",
+                  "    } else {",
+                  "        console.log('admin_token da duoc set!');",
+                  "        console.log('Token length:', token.length);",
+                  "        pm.expect(token.length).to.be.greaterThan(10);",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{url_reporting}}/reports/inventory",
+              "host": [
+                "{{url_reporting}}"
+              ],
+              "path": [
+                "reports",
+                "inventory"
+              ]
+            },
+            "description": "HUONG DAN SET TOKEN:\n\n1. Vao tab 'Variables' cua Collection\n2. Tim dong 'admin_token'\n3. Paste JWT token vao cot 'CURRENT VALUE'\n4. Save (Ctrl+S)\n\nSau do chay request nay de kiem tra token hop le."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "1. CRITICAL - Authentication Bypass",
+      "item": [
+        {
+          "name": "BUG-01: Admin Backfill - NO AUTH REQUIRED",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// BUG: API Admin ma KHONG can token van truy cap duoc",
+                  "// File: SecurityConfig.java:26 - anyRequest().permitAll()",
+                  "// File: AdminBackfillController.java:48 - @PreAuthorize bi comment",
+                  "",
+                  "pm.test(\"[BUG-01] CRITICAL: Admin API accessible WITHOUT token\", function() {",
+                  "    // Neu status KHONG PHAI 401/403 -> BUG NGHIEM TRONG!",
+                  "    if (pm.response.code !== 401 && pm.response.code !== 403) {",
+                  "        console.error('BUG NGHIEM TRONG: Admin API khong yeu cau xac thuc!');",
+                  "        console.error('Status Code:', pm.response.code);",
+                  "        console.error('Response:', pm.response.text());",
+                  "        pm.expect.fail('CRITICAL BUG: Admin API phai tra ve 401/403 khi khong co token, nhung tra ve: ' + pm.response.code);",
+                  "    } else {",
+                  "        pm.expect(pm.response.code).to.be.oneOf([401, 403]);",
+                  "        console.log('OK: API duoc bao ve dung cach');",
+                  "    }",
+                  "});",
+                  "",
+                  "pm.test(\"[BUG-01] Phat hien: PreAuthorize bi tat\", function() {",
+                  "    // Kiem tra xem co tra ve du lieu hay khong (khong nen co)",
+                  "    const code = pm.response.code;",
+                  "    if (code === 200 || code === 400) {",
+                  "        pm.expect.fail('BUG: @PreAuthorize(hasRole(ADMIN)) dang bi comment/tat trong AdminBackfillController.java');",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{url_reporting}}/api/v1/admin/backfill/dealers",
+              "host": [
+                "{{url_reporting}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "backfill",
+                "dealers"
+              ]
+            },
+            "description": "TEST: Goi Admin API ma KHONG gui token\n\nExpected: 401 Unauthorized hoac 403 Forbidden\nBUG: Neu tra ve 200/400 -> Authentication bi bypass!"
+          },
+          "response": []
+        },
+        {
+          "name": "BUG-02: Admin Backfill Vehicles - NO AUTH",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"[BUG-02] Admin Vehicles API phai yeu cau auth\", function() {",
+                  "    if (pm.response.code !== 401 && pm.response.code !== 403) {",
+                  "        console.error('BUG: Admin Vehicles API khong yeu cau xac thuc!');",
+                  "        pm.expect.fail('CRITICAL: Phai tra ve 401/403, nhung tra ve: ' + pm.response.code);",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{url_reporting}}/api/v1/admin/backfill/vehicles",
+              "host": [
+                "{{url_reporting}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "backfill",
+                "vehicles"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "BUG-03: Sync APIs - Should require Admin role",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// File: SyncController.java - Khong co @PreAuthorize",
+                  "pm.test(\"[BUG-03] Sync Sales API phai yeu cau auth\", function() {",
+                  "    if (pm.response.code !== 401 && pm.response.code !== 403) {",
+                  "        console.error('BUG: Sync API accessible without authentication');",
+                  "        pm.expect.fail('CRITICAL: Sync API should require authentication');",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{url_reporting}}/api/sync/sales",
+              "host": [
+                "{{url_reporting}}"
+              ],
+              "path": [
+                "api",
+                "sync",
+                "sales"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TEST-01: Admin Backfill Dealers - WITH ADMIN TOKEN",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// TEST: Goi API voi token Admin - phai thanh cong",
+                  "",
+                  "pm.test(\"[TEST-01] Admin API voi token phai hoat dong\", function() {",
+                  "    // Neu co token admin hop le -> phai duoc phep",
+                  "    if (pm.response.code === 401 || pm.response.code === 403) {",
+                  "        console.error('Kiem tra lai token admin trong environment');",
+                  "        console.error('Bien admin_token can duoc set dung');",
+                  "    }",
+                  "    // 200 OK hoac 500 (neu service khac chua san sang) deu OK",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 500, 503]);",
+                  "});",
+                  "",
+                  "pm.test(\"[TEST-01] Verify Authorization header duoc gui\", function() {",
+                  "    const authHeader = pm.request.headers.get('Authorization');",
+                  "    pm.expect(authHeader).to.include('Bearer');",
+                  "    console.log('Authorization header:', authHeader ? 'OK' : 'MISSING');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{url_reporting}}/api/v1/admin/backfill/dealers",
+              "host": [
+                "{{url_reporting}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "backfill",
+                "dealers"
+              ]
+            },
+            "description": "TEST: Goi Admin API VOI token admin\n\nExpected: 200 OK (hoac 500 neu service khac chua san sang)\nHeader: Authorization: Bearer {{admin_token}}"
+          },
+          "response": []
+        },
+        {
+          "name": "TEST-02: Admin Backfill Vehicles - WITH ADMIN TOKEN",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"[TEST-02] Admin Vehicles API voi token phai hoat dong\", function() {",
+                  "    if (pm.response.code === 401 || pm.response.code === 403) {",
+                  "        console.error('Token admin khong hop le hoac het han');",
+                  "    }",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 500, 503]);",
+                  "});",
+                  "",
+                  "pm.test(\"[TEST-02] Verify Bearer token format\", function() {",
+                  "    const authHeader = pm.request.headers.get('Authorization');",
+                  "    pm.expect(authHeader).to.match(/^Bearer .+$/);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{url_reporting}}/api/v1/admin/backfill/vehicles",
+              "host": [
+                "{{url_reporting}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "backfill",
+                "vehicles"
+              ]
+            },
+            "description": "TEST: Goi Admin Vehicles API VOI token admin\n\nHeader: Authorization: Bearer {{admin_token}}"
+          },
+          "response": []
+        },
+        {
+          "name": "TEST-03: Sync Sales - WITH ADMIN TOKEN",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"[TEST-03] Sync API voi token admin phai hoat dong\", function() {",
+                  "    if (pm.response.code === 401 || pm.response.code === 403) {",
+                  "        console.error('Sync API tu choi token admin');",
+                  "    }",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 500, 503]);",
+                  "});",
+                  "",
+                  "pm.test(\"[TEST-03] Response message check\", function() {",
+                  "    if (pm.response.code === 200) {",
+                  "        const json = pm.response.json();",
+                  "        pm.expect(json.message).to.include('success');",
+                  "        console.log('Sync thanh cong!');",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{url_reporting}}/api/sync/sales",
+              "host": [
+                "{{url_reporting}}"
+              ],
+              "path": [
+                "api",
+                "sync",
+                "sales"
+              ]
+            },
+            "description": "TEST: Goi Sync API VOI token admin\n\nHeader: Authorization: Bearer {{admin_token}}"
+          },
+          "response": []
+        },
+        {
+          "name": "TEST-04: Sync Inventory - WITH ADMIN TOKEN",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"[TEST-04] Sync Inventory voi admin token\", function() {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 500, 503]);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{url_reporting}}/api/sync/inventory",
+              "host": [
+                "{{url_reporting}}"
+              ],
+              "path": [
+                "api",
+                "sync",
+                "inventory"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TEST-05: Sync Metadata - WITH ADMIN TOKEN",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"[TEST-05] Sync Metadata voi admin token\", function() {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 500, 503]);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{url_reporting}}/api/sync/metadata",
+              "host": [
+                "{{url_reporting}}"
+              ],
+              "path": [
+                "api",
+                "sync",
+                "metadata"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "2. CRITICAL - Input Validation Missing",
+      "item": [
+        {
+          "name": "BUG-04: Negative totalAmount",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// File: ReportingController.java:22 - Khong co @Valid",
+                  "// File: SalesRecordRequest.java - Khong co validation annotations",
+                  "",
+                  "pm.test(\"[BUG-04] totalAmount am phai bi reject\", function() {",
+                  "    // totalAmount AM phai bi tu choi",
+                  "    if (pm.response.code === 200) {",
+                  "        console.error('BUG: He thong chap nhan totalAmount AM!');",
+                  "        console.error('Response:', pm.response.text());",
+                  "        pm.expect.fail('CRITICAL: totalAmount am khong duoc phep luu vao DB');",
+                  "    }",
+                  "});",
+                  "",
+                  "pm.test(\"[BUG-04] Phai tra ve 400 Bad Request\", function() {",
+                  "    pm.expect(pm.response.code, 'Should return 400 for negative amount').to.equal(400);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"orderId\": \"550e8400-e29b-41d4-a716-446655440099\",\n    \"totalAmount\": -999999999,\n    \"dealerName\": \"HACKER Dealer\",\n    \"variantId\": 1,\n    \"modelName\": \"VF8\",\n    \"region\": \"North\"\n}"
+            },
+            "url": {
+              "raw": "{{url_reporting}}/api/reports/sales",
+              "host": [
+                "{{url_reporting}}"
+              ],
+              "path": [
+                "api",
+                "reports",
+                "sales"
+              ]
+            },
+            "description": "TEST: Gui totalAmount AM de kiem tra validation\n\nExpected: 400 Bad Request\nBUG: Neu 200 OK -> He thong luu so am vao DB!"
+          },
+          "response": []
+        },
+        {
+          "name": "BUG-05: NULL orderId",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"[BUG-05] orderId null phai bi reject\", function() {",
+                  "    if (pm.response.code === 200) {",
+                  "        pm.expect.fail('BUG: orderId null duoc chap nhan!');",
+                  "    }",
+                  "});",
+                  "",
+                  "pm.test(\"[BUG-05] Kiem tra 400 hoac 500\", function() {",
+                  "    // Neu 500 -> Crash Null Pointer Exception",
+                  "    if (pm.response.code === 500) {",
+                  "        console.error('BUG: Server crash do NullPointerException!');",
+                  "        pm.expect.fail('CRITICAL: Server bi crash - can xu ly orderId null');",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"orderId\": null,\n    \"totalAmount\": 500000000,\n    \"dealerName\": \"Test Dealer\",\n    \"variantId\": 1,\n    \"modelName\": \"VF8\",\n    \"region\": \"North\"\n}"
+            },
+            "url": {
+              "raw": "{{url_reporting}}/api/reports/sales",
+              "host": [
+                "{{url_reporting}}"
+              ],
+              "path": [
+                "api",
+                "reports",
+                "sales"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "BUG-06: Empty/Blank dealerName",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"[BUG-06] dealerName rong phai bi reject\", function() {",
+                  "    if (pm.response.code === 200) {",
+                  "        pm.expect.fail('BUG: dealerName rong duoc chap nhan - vi pham data integrity');",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"orderId\": \"550e8400-e29b-41d4-a716-446655440011\",\n    \"totalAmount\": 500000000,\n    \"dealerName\": \"\",\n    \"variantId\": 1,\n    \"modelName\": \"\",\n    \"region\": \"\"\n}"
+            },
+            "url": {
+              "raw": "{{url_reporting}}/api/reports/sales",
+              "host": [
+                "{{url_reporting}}"
+              ],
+              "path": [
+                "api",
+                "reports",
+                "sales"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "BUG-07: XSS in dealerName",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"[BUG-07] XSS payload phai bi sanitize\", function() {",
+                  "    if (pm.response.code === 200) {",
+                  "        console.warn('CANH BAO: XSS payload duoc luu - can kiem tra output encoding');",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"orderId\": \"550e8400-e29b-41d4-a716-446655440012\",\n    \"totalAmount\": 100000,\n    \"dealerName\": \"<script>alert('XSS')</script>\",\n    \"variantId\": 1,\n    \"modelName\": \"<img onerror=alert(1) src=x>\",\n    \"region\": \"<svg onload=alert(1)>\"\n}"
+            },
+            "url": {
+              "raw": "{{url_reporting}}/api/reports/sales",
+              "host": [
+                "{{url_reporting}}"
+              ],
+              "path": [
+                "api",
+                "reports",
+                "sales"
+              ]
+            },
+            "description": "TEST: XSS payload trong cac truong text\n\nKiem tra: Du lieu co bi luu thang vao DB khong?"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "3. NumberFormatException",
+      "item": [
+        {
+          "name": "BUG-09: Invalid modelId (non-numeric)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// File: ReportController.java:160 - Long.valueOf(modelId)",
+                  "// Khong co try-catch -> NumberFormatException -> 500",
+                  "",
+                  "pm.test(\"[BUG-09] Invalid modelId phai tra ve 400, khong phai 500\", function() {",
+                  "    if (pm.response.code === 500) {",
+                  "        console.error('BUG: NumberFormatException khong duoc handle!');",
+                  "        console.error('File: ReportController.java:160');",
+                  "        pm.expect.fail('MEDIUM BUG: Server crash do NumberFormatException - can validate input');",
+                  "    }",
+                  "    // Phai la 400 Bad Request neu validation dung",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 400]);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{url_reporting}}/reports/central-inventory?modelId=abc_not_a_number",
+              "host": [
+                "{{url_reporting}}"
+              ],
+              "path": [
+                "reports",
+                "central-inventory"
+              ],
+              "query": [
+                {
+                  "key": "modelId",
+                  "value": "abc_not_a_number"
+                }
+              ]
+            },
+            "description": "TEST: Gui modelId KHONG PHAI SO\n\nFile bug: ReportController.java:160\nCode: Long.valueOf(modelId) se throw NumberFormatException"
+          },
+          "response": []
+        },
+        {
+          "name": "BUG-10: Invalid variantId (special chars)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"[BUG-10] variantId invalid phai tra ve 400\", function() {",
+                  "    if (pm.response.code === 500) {",
+                  "        pm.expect.fail('BUG: ReportController.java:163 - Long.valueOf crash');",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{url_reporting}}/reports/central-inventory?variantId=!@%23$%^",
+              "host": [
+                "{{url_reporting}}"
+              ],
+              "path": [
+                "reports",
+                "central-inventory"
+              ],
+              "query": [
+                {
+                  "key": "variantId",
+                  "value": "!@#$%^"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "BUG-11: Transaction History - Invalid variantId",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"[BUG-11] Transaction history crash test\", function() {",
+                  "    // File: ReportController.java:188",
+                  "    if (pm.response.code === 500) {",
+                  "        pm.expect.fail('BUG: getCentralTransactionHistory crash - Line 188');",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{url_reporting}}/reports/central-inventory/transactions?variantId=DROP_TABLE",
+              "host": [
+                "{{url_reporting}}"
+              ],
+              "path": [
+                "reports",
+                "central-inventory",
+                "transactions"
+              ],
+              "query": [
+                {
+                  "key": "variantId",
+                  "value": "DROP_TABLE"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "4. NullPointerException",
+      "item": [
+        {
+          "name": "BUG-12: Empty Request Body",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"[BUG-12] Empty body phai tra ve 400\", function() {",
+                  "    if (pm.response.code === 500) {",
+                  "        console.error('BUG: NullPointerException khi body rong!');",
+                  "        pm.expect.fail('CRITICAL: Server crash voi empty body');",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": ""
+            },
+            "url": {
+              "raw": "{{url_reporting}}/api/reports/sales",
+              "host": [
+                "{{url_reporting}}"
+              ],
+              "path": [
+                "api",
+                "reports",
+                "sales"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "BUG-13: Malformed JSON",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"[BUG-13] Malformed JSON phai tra 400\", function() {",
+                  "    pm.expect(pm.response.code).to.equal(400);",
+                  "    if (pm.response.code === 500) {",
+                  "        pm.expect.fail('BUG: Server khong handle JSON parse error');",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{invalid json here!!!"
+            },
+            "url": {
+              "raw": "{{url_reporting}}/api/reports/sales",
+              "host": [
+                "{{url_reporting}}"
+              ],
+              "path": [
+                "api",
+                "reports",
+                "sales"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "BUG-14: Request with all null fields",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"[BUG-14] All null fields test\", function() {",
+                  "    if (pm.response.code === 500) {",
+                  "        const body = pm.response.text();",
+                  "        if (body.includes('NullPointer') || body.includes('null')) {",
+                  "            pm.expect.fail('CRITICAL: NullPointerException - can validate required fields');",
+                  "        }",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"orderId\": null,\n    \"totalAmount\": null,\n    \"orderDate\": null,\n    \"dealerName\": null,\n    \"variantId\": null,\n    \"modelName\": null,\n    \"region\": null\n}"
+            },
+            "url": {
+              "raw": "{{url_reporting}}/api/reports/sales",
+              "host": [
+                "{{url_reporting}}"
+              ],
+              "path": [
+                "api",
+                "reports",
+                "sales"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "5. Information Disclosure",
+      "item": [
+        {
+          "name": "BUG-15: Error Message Leak - Sync Failed",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// File: SalesReportingService.java:157",
+                  "// Code: throw new RuntimeException('Sync failed: ' + e.getMessage());",
+                  "",
+                  "pm.test(\"[BUG-15] Error message khong nen chua thong tin noi bo\", function() {",
+                  "    const body = pm.response.text().toLowerCase();",
+                  "    ",
+                  "    // Kiem tra xem error co leak thong tin nhay cam khong",
+                  "    const sensitivePatterns = [",
+                  "        'jdbc', 'connection', 'database', 'password',",
+                  "        'stack', 'exception', 'at com.', 'at org.',",
+                  "        'hibernate', 'sql', 'mysql', 'postgres',",
+                  "        'internal server', 'localhost', '127.0.0.1'",
+                  "    ];",
+                  "    ",
+                  "    sensitivePatterns.forEach(pattern => {",
+                  "        if (body.includes(pattern)) {",
+                  "            console.error('INFO LEAK: Response chua \"' + pattern + '\"');",
+                  "        }",
+                  "    });",
+                  "});",
+                  "",
+                  "pm.test(\"[BUG-15] Khong nen hien thi stack trace\", function() {",
+                  "    const body = pm.response.text();",
+                  "    if (body.includes('at ') && body.includes('.java:')) {",
+                  "        pm.expect.fail('MEDIUM: Stack trace bi leak trong response');",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{url_reporting}}/api/sync/sales",
+              "host": [
+                "{{url_reporting}}"
+              ],
+              "path": [
+                "api",
+                "sync",
+                "sales"
+              ]
+            },
+            "description": "TEST: Goi sync khi service khac chua san sang\nKiem tra: Error message co leak internal info?"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "6. Rate Limiting Missing",
+      "item": [
+        {
+          "name": "BUG-16: AI Forecast - No Rate Limit",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Dem so lan goi",
+                  "let count = pm.environment.get('forecast_call_count') || 0;",
+                  "count++;",
+                  "pm.environment.set('forecast_call_count', count);",
+                  "console.log('Forecast call #' + count);"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// File: ReportingController.java:43 - Khong co rate limiting",
+                  "// AI API tot tien va co the bi abuse",
+                  "",
+                  "pm.test(\"[BUG-16] Rate limiting check\", function() {",
+                  "    const count = pm.environment.get('forecast_call_count');",
+                  "    ",
+                  "    // Neu goi duoc nhieu lan lien tuc ma khong bi chan",
+                  "    if (pm.response.code === 200 && count > 5) {",
+                  "        console.warn('CANH BAO: Khong co rate limit cho AI API');",
+                  "        console.warn('Hacker co the spam de gay ton tien API Gemini');",
+                  "    }",
+                  "    ",
+                  "    // Neu bi rate limit thi tot",
+                  "    if (pm.response.code === 429) {",
+                  "        console.log('OK: Rate limiting dang hoat dong');",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"modelName\": \"VF8\",\n    \"region\": \"North\"\n}"
+            },
+            "url": {
+              "raw": "{{url_reporting}}/api/reports/forecast?modelName=VF8",
+              "host": [
+                "{{url_reporting}}"
+              ],
+              "path": [
+                "api",
+                "reports",
+                "forecast"
+              ],
+              "query": [
+                {
+                  "key": "modelName",
+                  "value": "VF8"
+                }
+              ]
+            },
+            "description": "TEST: Goi API AI nhieu lan de kiem tra rate limit\n\nRISK: Khong co rate limit -> Bi abuse -> Ton tien Gemini API"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "7. Business Logic Bugs",
+      "item": [
+        {
+          "name": "BUG-17: Duplicate orderId INSERT",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"[BUG-17] Duplicate orderId xu ly\", function() {",
+                  "    // Neu 200 OK ca 2 lan -> Bug duplicate data",
+                  "    if (pm.response.code === 200) {",
+                  "        console.warn('Lan goi thu 2 voi cung orderId');",
+                  "        console.warn('Kiem tra DB xem co record trung khong');",
+                  "    }",
+                  "    // Phai la 400 hoac 409 Conflict",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"orderId\": \"aaaaaaaa-bbbb-cccc-dddd-eeeeeeee0001\",\n    \"totalAmount\": 500000000,\n    \"dealerName\": \"Test Duplicate\",\n    \"variantId\": 1,\n    \"modelName\": \"VF8\",\n    \"region\": \"North\"\n}"
+            },
+            "url": {
+              "raw": "{{url_reporting}}/api/reports/sales",
+              "host": [
+                "{{url_reporting}}"
+              ],
+              "path": [
+                "api",
+                "reports",
+                "sales"
+              ]
+            },
+            "description": "GOI 2 LAN VOI CUNG orderId de kiem tra:\n- Lan 1: Phai 200 OK\n- Lan 2: Phai 400/409 Conflict\n\nNeu ca 2 deu 200 -> BUG duplicate data!"
+          },
+          "response": []
+        },
+        {
+          "name": "BUG-18: Future orderDate",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"[BUG-18] orderDate tuong lai phai bi reject\", function() {",
+                  "    if (pm.response.code === 200) {",
+                  "        console.warn('BUG: He thong chap nhan orderDate trong tuong lai!');",
+                  "        pm.expect.fail('orderDate nam 2099 khong hop le');",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"orderId\": \"550e8400-e29b-41d4-a716-446655440099\",\n    \"totalAmount\": 100000000,\n    \"orderDate\": \"2099-12-31T23:59:59\",\n    \"dealerName\": \"Future Dealer\",\n    \"variantId\": 1,\n    \"modelName\": \"VF99\",\n    \"region\": \"Future\"\n}"
+            },
+            "url": {
+              "raw": "{{url_reporting}}/api/reports/sales",
+              "host": [
+                "{{url_reporting}}"
+              ],
+              "path": [
+                "api",
+                "reports",
+                "sales"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "BUG-19: Extreme large amount",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"[BUG-19] So qua lon phai duoc validate\", function() {",
+                  "    if (pm.response.code === 500) {",
+                  "        pm.expect.fail('BUG: Overflow exception khi so qua lon');",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"orderId\": \"550e8400-e29b-41d4-a716-446655440088\",\n    \"totalAmount\": 99999999999999999999999999999999,\n    \"dealerName\": \"Big Money Dealer\",\n    \"variantId\": 1,\n    \"modelName\": \"VF8\",\n    \"region\": \"North\"\n}"
+            },
+            "url": {
+              "raw": "{{url_reporting}}/api/reports/sales",
+              "host": [
+                "{{url_reporting}}"
+              ],
+              "path": [
+                "api",
+                "reports",
+                "sales"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "requests": {},
+        "exec": [
+          "// Reset counter moi lan chay collection",
+          "if (!pm.environment.get('test_run_id')) {",
+          "    pm.environment.set('test_run_id', Date.now());",
+          "    pm.environment.set('forecast_call_count', 0);",
+          "}"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "requests": {},
+        "exec": [
+          ""
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "url_reporting",
+      "value": "http://localhost:8085"
+    },
+    {
+      "key": "admin_token",
+      "value": "eyJhbGciOiJIUzI1NiJ9.eyJyb2xlIjoiQURNSU4iLCJwcm9maWxlSWQiOiI5NTQwMzllNi04OWViLTQxZjQtOGQ1NC0wMmFhMjFhYmM4N2YiLCJzdWIiOiJhZG1pbkBnbWFpbC5jb20iLCJpYXQiOjE3NzQyMTEwNjksImV4cCI6MTc3NDIxNDY2OX0.aAcAudc5mIGuMPc__RWj9aLgUifi7Qon8i28LxsTCJU",
+      "description": "JWT token cua admin - Tu nhap vao day"
+    }
+  ]
+}

@@ -91,7 +91,7 @@ public class UserController {
                 .body(ApiRespond.success("Create User Successfully", userService.createUser(userRequest)));
     }
 
-    @PreAuthorize("hasAnyRole('DEALER_MANAGER', 'EVM_STAFF')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'DEALER_MANAGER', 'EVM_STAFF')")
     @PostMapping("/register/dealerStaff")
     public ResponseEntity<ApiRespond<UserRespond>> createUserDealerStaff(
             @Validated(OnCreateDealerStaff.class) @RequestBody UserRequest userRequest) {
