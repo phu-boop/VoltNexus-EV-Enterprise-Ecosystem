@@ -12,6 +12,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -43,7 +45,11 @@ public class ComplaintController {
     @PostMapping
     @PreAuthorize("hasAnyRole('CUSTOMER', 'DEALER_STAFF', 'DEALER_MANAGER')")
     public ResponseEntity<ApiResponse<ComplaintResponse>> createComplaint(
-            @Valid @RequestBody CreateComplaintRequest request) {
+            @Valid @RequestBody CreateComplaintRequest request,
+            Authentication authentication,
+            @RequestHeader(value = "X-User-DealerId", required = false) String userDealerId) {
+        String effectiveDealerId = resolveDealerIdForCreate(request.getDealerId(), userDealerId, authentication);
+        request.setDealerId(effectiveDealerId);
         log.info("Creating new complaint for customer {}", request.getCustomerId());
         ComplaintResponse response = complaintService.createComplaint(request);
         return ResponseEntity
@@ -174,5 +180,26 @@ public class ComplaintController {
         log.info("Sending notification to customer for complaint {}", id);
         ComplaintResponse response = complaintService.sendNotificationToCustomer(id);
         return ResponseEntity.ok(ApiResponse.success("Thông báo đã được gửi đến khách hàng", response));
+    }
+
+    private String resolveDealerIdForCreate(String requestDealerId, String userDealerId, Authentication authentication) {
+        boolean isDealerUser = authentication != null
+                && authentication.getAuthorities().stream()
+                        .map(GrantedAuthority::getAuthority)
+                        .anyMatch(authority -> "ROLE_DEALER_STAFF".equals(authority)
+                                || "ROLE_DEALER_MANAGER".equals(authority));
+
+        if (isDealerUser) {
+            if (userDealerId == null || userDealerId.isBlank()) {
+                throw new IllegalArgumentException("X-User-DealerId header is required for dealer accounts");
+            }
+            return userDealerId;
+        }
+
+        if (requestDealerId == null || requestDealerId.isBlank()) {
+            throw new IllegalArgumentException("Dealer ID is required");
+        }
+
+        return requestDealerId;
     }
 }

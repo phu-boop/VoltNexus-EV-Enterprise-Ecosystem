@@ -2,21 +2,21 @@ package com.ev.user_service.service;
 
 import com.ev.common_lib.exception.AppException;
 import com.ev.common_lib.exception.ErrorCode;
-import com.ev.user_service.controller.ProfileController;
 import com.ev.user_service.dto.respond.ApiResponseStaffDealer;
 import com.ev.user_service.entity.DealerManagerProfile;
 import com.ev.user_service.entity.DealerStaffProfile;
 import com.ev.user_service.repository.DealerManagerProfileRepository;
 import com.ev.user_service.repository.DealerStaffProfileRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Service
+@Slf4j
 public class ProfileService {
     private final DealerStaffProfileRepository dealerStaffProfileRepository;
     private final DealerManagerProfileRepository dealerManagerProfileRepository;
@@ -29,6 +29,7 @@ public class ProfileService {
         this.dealerStaffProfileRepository = dealerStaffProfileRepository;
     }
 
+    @Transactional(readOnly = true)
     public List<ApiResponseStaffDealer> getStaffDealerByIdDealer(UUID idDealer) {
         List<DealerStaffProfile> dealerStaffProfiles = dealerStaffProfileRepository.findByDealerId(idDealer);
         return dealerStaffProfiles.stream()
@@ -60,7 +61,7 @@ public class ProfileService {
 
                     return dto;
                 })
-                .collect(Collectors.toList());
+                .toList();
     }
 
     //find idealer by idMember
@@ -68,8 +69,7 @@ public class ProfileService {
         Optional<DealerStaffProfile> staffOpt = dealerStaffProfileRepository.findById(idMember);
         Optional<DealerManagerProfile> managerOpt = dealerManagerProfileRepository.findById(idMember);
         if (staffOpt.isPresent() && managerOpt.isPresent()) {
-            // Log warning instead of throwing exception
-            System.err.println("Duplicate profile found for ID: " + idMember + ". Preferring Manager Profile.");
+            log.warn("Duplicate profile found for ID {}. Preferring Manager Profile.", idMember);
             return managerOpt.get().getDealerId();
         }
 
