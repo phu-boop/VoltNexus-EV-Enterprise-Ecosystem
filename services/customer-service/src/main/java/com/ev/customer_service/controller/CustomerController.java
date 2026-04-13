@@ -103,6 +103,17 @@ public class CustomerController {
                 .body(ApiRespond.success("Customer created successfully", customer));
     }
 
+        @PreAuthorize("hasAnyRole('DEALER_MANAGER', 'DEALER_STAFF')")
+        @PostMapping("/dealer")
+        public ResponseEntity<ApiRespond<CustomerResponse>> createCustomerForDealer(
+            @Valid @RequestBody CustomerRequest request,
+            @RequestHeader(value = "X-User-DealerId", required = false) String currentUserDealerId) {
+        CustomerResponse customer = customerService.createCustomerForDealer(request, currentUserDealerId);
+        return ResponseEntity
+            .status(HttpStatus.CREATED)
+            .body(ApiRespond.success("Dealer customer created successfully", customer));
+        }
+
     @PreAuthorize("hasAnyRole('ADMIN', 'DEALER_MANAGER', 'DEALER_STAFF')")
     @PutMapping("/{id}")
     public ResponseEntity<ApiRespond<CustomerResponse>> updateCustomer(

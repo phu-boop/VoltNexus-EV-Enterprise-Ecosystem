@@ -141,6 +141,23 @@ public class CustomerService {
         return modelMapper.map(savedCustomer, CustomerResponse.class);
     }
 
+    @Transactional
+    public CustomerResponse createCustomerForDealer(CustomerRequest request, String currentUserDealerId) {
+        if (currentUserDealerId == null || currentUserDealerId.isBlank()) {
+            throw new IllegalArgumentException("Dealer ID is required for dealer customer creation");
+        }
+
+        validateNewCustomerUniqueness(request);
+
+        Customer customer = modelMapper.map(request, Customer.class);
+        customer.setPreferredDealerId(UUID.fromString(currentUserDealerId));
+        parseEnums(customer, request);
+        customer.setCustomerCode(generateCustomerCode());
+
+        Customer savedCustomer = customerRepository.save(customer);
+        return modelMapper.map(savedCustomer, CustomerResponse.class);
+    }
+
     private void validateNewCustomerUniqueness(CustomerRequest request) {
         if (customerRepository.existsByEmail(request.getEmail())) {
             throw new DuplicateResourceException("Customer with email " + request.getEmail() + " already exists");

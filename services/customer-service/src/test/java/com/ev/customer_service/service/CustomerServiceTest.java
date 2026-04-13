@@ -225,4 +225,28 @@ class CustomerServiceTest {
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("Page size exceeds maximum limit of 100");
     }
+
+    @Test
+    @DisplayName("Tạo customer theo đại lý thành công")
+    void createCustomerForDealer_success() {
+        UUID dealerId = UUID.randomUUID();
+        when(customerRepository.existsByEmail(anyString())).thenReturn(false);
+        when(customerRepository.existsByPhone(anyString())).thenReturn(false);
+        when(customerRepository.existsByIdNumber(anyString())).thenReturn(false);
+        when(customerRepository.count()).thenReturn(100L);
+        when(customerRepository.save(any(Customer.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        CustomerResponse result = customerService.createCustomerForDealer(customerRequest, dealerId.toString());
+
+        assertThat(result).isNotNull();
+        verify(customerRepository).save(argThat(c -> dealerId.equals(c.getPreferredDealerId())));
+    }
+
+    @Test
+    @DisplayName("Tạo customer theo đại lý thiếu dealerId -> ném IllegalArgumentException")
+    void createCustomerForDealer_missingDealerId() {
+        assertThatThrownBy(() -> customerService.createCustomerForDealer(customerRequest, null))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Dealer ID is required for dealer customer creation");
+    }
 }

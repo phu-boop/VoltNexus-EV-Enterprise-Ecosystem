@@ -187,6 +187,23 @@ class CustomerControllerTest {
     }
 
     @Test
+    @WithMockUser(roles = "DEALER_MANAGER")
+    @DisplayName("Create dealer customer")
+    void createCustomerForDealer() throws Exception {
+        when(customerService.createCustomerForDealer(any(CustomerRequest.class), any())).thenReturn(customerResponse);
+
+        mockMvc.perform(post("/customers/dealer")
+                .with(csrf())
+                .header("X-User-DealerId", UUID.randomUUID().toString())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(customerRequest)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.code").value("1000"))
+                .andExpect(jsonPath("$.message").value("Dealer customer created successfully"))
+                .andExpect(jsonPath("$.data.email").value("john@example.com"));
+    }
+
+    @Test
     @DisplayName("Update customer")
     void updateCustomer() throws Exception {
         when(customerService.updateCustomer(anyLong(), any(CustomerRequest.class), any(), any()))
