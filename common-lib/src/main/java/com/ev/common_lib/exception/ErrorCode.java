@@ -114,6 +114,8 @@ public enum ErrorCode {
 
     SALES_ORDER_ALREADY_EXISTS("5014", "Đơn hàng đã tồn tại cho báo giá này", HttpStatus.CONFLICT),
 
+    INVALID_CONFIRMATION_TOKEN("5015", "Token xác nhận báo giá không hợp lệ hoặc đã qua sử dụng", HttpStatus.BAD_REQUEST),
+
     // ===== 6xxx - Lỗi nghiệp vụ =====
     PAYMENT_FAILED("6001", "Thanh toán thất bại", HttpStatus.BAD_REQUEST),
 
@@ -189,7 +191,7 @@ public enum ErrorCode {
     // ===== 7xxx - Lỗi dịch vụ xe =====
     VEHICLE_MODEL_NOT_FOUND("7001", "Không tìm thấy mẫu xe", HttpStatus.NOT_FOUND),
 
-    VEHICLE_MODEL_ALREADY_EXISTS("7002", "Mẫu xe với tên và phiên bản này đã tồn tại", HttpStatus.CONFLICT),
+        VEHICLE_MODEL_ALREADY_EXISTS("7002", "Model name already exists", HttpStatus.CONFLICT),
 
     VEHICLE_VARIANT_NOT_FOUND("7003", "Không tìm thấy phiên bản xe", HttpStatus.NOT_FOUND),
 

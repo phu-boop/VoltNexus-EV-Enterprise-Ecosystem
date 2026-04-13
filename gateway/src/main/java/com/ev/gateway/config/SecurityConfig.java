@@ -58,6 +58,10 @@ public class SecurityConfig {
                                 "/vehicle-catalog/**",
                                 "/vehicles/public/**",
                                 "/ai/chat/ask",
+                                // Public sales confirmation endpoints (pre-rewrite paths)
+                                "/sales/api/v1/quotations/public/**",
+                                "/sales/api/v1/orders/public/**",
+                                "/sales/sendmail/customer-response/**",
 
                                 // Allow all other service paths to reach JwtGlobalFilter/Downstream
                                 // where they will be checked specifically
