@@ -1,6 +1,6 @@
-<div align="center">
+<div align="left">
 
-# 🚗 VoltNexus EV Enterprise Ecosystem
+# VoltNexus EV Enterprise Ecosystem
 ### Enterprise-Grade Microservices Platform for Electric Vehicle Commerce
 
 [![Build Status](https://img.shields.io/badge/Build-Passing-brightgreen)](https://github.com/BinhLN1105/VMS-Commerce/actions)
@@ -8,40 +8,14 @@
 [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.4-green)](https://spring.io/projects/spring-boot)
 [![Spring AI](https://img.shields.io/badge/Spring%20AI-1.1.2-blue)](https://spring.io/projects/spring-ai)
 [![React](https://img.shields.io/badge/React-18-61DAFB)](https://reactjs.org/)
-[![Docker](https://img.shields.io/badge/Docker-Ready-2496ED)](https://www.dock4️⃣ Test lần cuối
-Chạy toàn bộ hệ thống:
-
-Backend: mvn clean install
-
-Frontend: npm run build
-
-👉 Test:
-
-API login / register
-
-DB connect
-
-Web load OKer.com/)
+[![Docker](https://img.shields.io/badge/Docker-Ready-2496ED)](https://www.docker.com/)
 [![License](https://img.shields.io/badge/License-MIT-yellow)](LICENSE)
 
 **A high-performance, AI-driven digital ecosystem connecting EV Manufacturers (EVM) and Dealers, optimizing the entire sales lifecycle from production forecasting to customer delivery.**
 
 [🌐 Live Demo](https://customer-app-production-b93d.up.railway.app/) · [📘 Architecture Documentation](https://dangtrong2608.atlassian.net/wiki/spaces/upwork/pages/41222538/SWR+Y+u+c+u+h+th+ng+SRS+Use+Case+Diagram) · [📽️ Video Showcase](#)
 
----4️⃣ Test lần cuối
-Chạy toàn bộ hệ thống:
-
-Backend: mvn clean install
-
-Frontend: npm run build
-
-👉 Test:
-
-API login / register
-
-DB connect
-
-Web load OK
+---
 
 ![VoltNexus Hero Banner](docs/assets/forReadme.png)
 *(Replace this with a polished application dashboard screenshot or conceptual banner)*
@@ -50,12 +24,12 @@ Web load OK
 
 ## � Project at a Glance
 
-| Metric | Value                                  |
-| :--- |:---------------------------------------|
-| **Microservices** | 10 high-cohesion services TrongDang    |
-| **REST Endpoints** | 45+ Production-ready APIs              |
-| **DB Tables** | 30+ Normalized relational tables       |
-| **Messaging** | 15+ Kafka Topics for Eventing          |
+| Metric | Value |
+| :--- | :--- |
+| **Microservices** | 10 high-cohesion services |
+| **REST Endpoints** | 45+ Production-ready APIs |
+| **DB Tables** | 30+ Normalized relational tables |
+| **Messaging** | 15+ Kafka Topics for Eventing |
 | **Stack** | Java 21, Spring Boot 3.4, React 18, AI |
 
 ---
@@ -80,6 +54,50 @@ Built with production-grade patterns to ensure reliability, scalability, and mai
 - **Distributed Caching Strategy:** Implemented through **Redis** to minimize database load and ensure sub-100ms response times for high-traffic endpoints.
 - **AI RAG Pipeline:** Uses **Spring AI** to integrate **Gemini 1.5 Flash** models with a **Redis Vector DB**, enabling context-aware demand forecasting and intelligent business insights.
 - **Stateless Authentication:** Secure RBAC (Role-Based Access Control) using **JWT** and **Spring Security**, distributed seamlessly via **Spring Cloud Gateway**.
+
+---
+
+## 🏗️ System Architecture
+
+```mermaid
+graph TD
+    Client([Web Browsers / Mobile]) --> Gateway[API Gateway - Spring Cloud]
+    
+    subgraph "Identity & Access"
+        Gateway --> UserService[User Service]
+        UserService[(MySQL)]
+    end
+
+    subgraph "Core Business Logic"
+        Gateway --> VehicleService[Vehicle Service]
+        Gateway --> SalesService[Sales Service]
+        Gateway --> DealerService[Dealer Service]
+        Gateway --> CustomerService[Customer Service]
+        
+        VehicleService[(MySQL)]
+        SalesService[(MySQL)]
+        DealerService[(MySQL)]
+        CustomerService[(MySQL)]
+    end
+
+    subgraph "Intelligence & Logistics"
+        Gateway --> AIService[AI Forecasting Service]
+        Gateway --> InventoryService[Inventory Service]
+        Gateway --> PaymentService[Payment Service]
+        
+        AIService[(Redis Vector)]
+        InventoryService[(MySQL)]
+        PaymentService[(MySQL)]
+    end
+
+    subgraph "Message Broker"
+        InventoryService -- "Stock Alert" --> Kafka{Apache Kafka}
+        SalesService -- "Order Events" --> Kafka
+        Kafka -- "Sync" --> AIService
+    end
+
+    Gateway -.-> Redis{Redis Cache}
+```
 
 ---
 
@@ -149,6 +167,5 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 <div align="center">
-  <sub>Built with ❤️ for the future of Electric Mobility</sub>
+  <sub>Built with ❤️ for the future of Electric Mobility.</sub>
 </div>
-System Architecture
