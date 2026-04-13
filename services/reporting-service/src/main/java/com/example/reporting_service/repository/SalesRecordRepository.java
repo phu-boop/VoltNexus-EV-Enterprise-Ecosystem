@@ -13,4 +13,8 @@ public interface SalesRecordRepository extends JpaRepository<SalesRecord, UUID> 
     boolean existsByOrderId(UUID orderId);
     @org.springframework.data.jpa.repository.Query("SELECT MAX(s.orderDate) FROM SalesRecord s")
     java.time.LocalDateTime findMaxOrderDate();
+    
+    // New methods for Feature 5 Advanced Reporting
+    List<SalesRecord> findByOrderDateBetween(java.time.LocalDateTime startDate, java.time.LocalDateTime endDate);
+    List<SalesRecord> findByDealerNameAndOrderDateBetween(String dealerName, java.time.LocalDateTime startDate, java.time.LocalDateTime endDate);
 }
