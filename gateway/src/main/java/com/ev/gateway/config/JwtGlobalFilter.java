@@ -13,6 +13,9 @@ import org.springframework.core.Ordered;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.ReactiveSecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
@@ -28,11 +31,15 @@ public class JwtGlobalFilter implements GlobalFilter, Ordered {
 
     // Danh sách path được bỏ qua xác thực (không yêu cầu token)
     private static final List<String> EXCLUDED_PATHS = List.of(
-            "/auth",
-            "/users",
+            "/auth/login",
+            "/auth/register/customer",
+            "/auth/forgot-password",
+            "/auth/reset-password",
+            "/auth/oauth2",
             "/oauth2", // OAuth2 authentication flow
             "/login", // OAuth2 login callback
-            "/sendmail",
+            "/users/register/admin", // Bootstrap admin
+            "/sendmail/customer-response",
             "/ws",
             "/payments/payment/return",
             "/payments/payment/ipn",
@@ -40,18 +47,20 @@ public class JwtGlobalFilter implements GlobalFilter, Ordered {
             "/payments/api/v1/payments/gateway/callback/vnpay-return",
             "/payments/api/v1/payments/gateway/callback/vnpay-ipn",
             "/favicon.ico",
-            // Vehicle service endpoints (after rewrite)
+            // Public info (if any)
+            "/charging-stations",
             "/vehicle-catalog",
-            "/variants",
-            "/models",
-            // Vehicle service endpoints (before rewrite)
-            "/vehicles/vehicle-catalog",
-            "/vehicles/variants",
-            "/vehicles/models",
-            // Sales service endpoints (after rewrite)
-            "/promotions/active",
-            // Sales service endpoints (before rewrite)
+            "/vehicles/public",
+            "/ai/chat/ask",
+            "/actuator/health",
+            "/v3/api-docs",
+            "/swagger-ui",
+            // Sales service public endpoints
             "/sales/promotions/active",
+            "/sales/api/v1/quotations/public",
+            "/sales/api/v1/orders/public",
+            "/sales/sendmail/customer-response/public",
+            "/sales/sendmail/customer-response", // Allow older paths too
             // Cart endpoints
             "/cart",
             // Customer service endpoints (public)
@@ -141,7 +150,15 @@ public class JwtGlobalFilter implements GlobalFilter, Ordered {
             // Mutate Request với các headers thông tin User
             ServerWebExchange mutatedExchange = mutateExchangeWithUserHeaders(exchange, email, role, userId, profileId,
                     dealerId, token);
-            return chain.filter(mutatedExchange);
+
+            // Populate Authentication cho WebFlux SecurityContext
+            List<SimpleGrantedAuthority> authorities = (role != null && !role.trim().isEmpty())
+                    ? List.of(new SimpleGrantedAuthority(role))
+                    : List.of();
+            UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(email, null, authorities);
+
+            return chain.filter(mutatedExchange)
+                    .contextWrite(ReactiveSecurityContextHolder.withAuthentication(auth));
 
         } catch (ExpiredJwtException e) {
             log.warn("[JwtGlobalFilter] Token expired for path: {} | Error: {}", path, e.getMessage());

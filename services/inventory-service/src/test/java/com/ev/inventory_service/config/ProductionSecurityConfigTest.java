@@ -23,11 +23,15 @@ import org.mockito.Answers;
 
 import org.springframework.security.web.DefaultSecurityFilterChain;
 
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
+
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 class ProductionSecurityConfigTest {
 
     @Mock
-    private GatewayHeaderFilter gatewayHeaderFilter;
+    private JwtAuthenticationFilter jwtAuthenticationFilter;
 
     @Mock(answer = Answers.RETURNS_DEEP_STUBS)
     private HttpSecurity httpSecurity;

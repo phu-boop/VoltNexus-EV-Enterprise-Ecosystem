@@ -12,4 +12,6 @@ public interface EmailService {
     void sendQuotationRejectedEmail(Quotation quotation, CustomerResponse customer);
 
     void sendOrderConfirmedEmail(SalesOrder salesOrder, CustomerResponse customer, String showroomName);
+
+    void sendOrderApprovedEmail(java.util.Map<String, Object> payload);
 }

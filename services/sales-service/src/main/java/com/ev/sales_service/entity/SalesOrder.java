@@ -108,4 +108,10 @@ public class SalesOrder {
     @EqualsAndHashCode.Exclude
     @Builder.Default
     private List<OrderTracking> orderTrackings = new java.util.ArrayList<>();
+
+    @Column(name = "confirmation_token", length = 100)
+    private String confirmationToken;
+
+    @Column(name = "token_expired_at")
+    private LocalDateTime tokenExpiredAt;
 }

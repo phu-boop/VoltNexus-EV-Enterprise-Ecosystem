@@ -26,6 +26,7 @@ public class ImageService {
      *               "vehicles/variants")
      * @return Cloudinary URL of uploaded image
      */
+    @SuppressWarnings("unchecked")
     public String uploadImage(MultipartFile file, String folder) {
         try {
             Map<String, Object> uploadParams = ObjectUtils.asMap(

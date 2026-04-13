@@ -162,9 +162,7 @@ const QuotationCreatePage = () => {
 
           setVariants(variantsRes.data?.data || variantsRes.data || []);
           setPromotions(
-            Array.isArray(promotionsRes.data?.data)
-              ? promotionsRes.data.data
-              : []
+            Array.isArray(promotionsRes?.data) ? promotionsRes.data : []
           );
 
           setFormData((prev) => ({
@@ -197,7 +195,8 @@ const QuotationCreatePage = () => {
       setErrorMessage("");
       const dealerId = getCurrentDealerId();
       const promotionsRes = await getActivePromotions(dealerId, modelId);
-      setPromotions(Array.isArray(promotionsRes) ? promotionsRes : []);
+      // Truy cập vào .data của API respond
+      setPromotions(promotionsRes?.data || []);
     } catch (error) {
       handleApiError(error, "Lỗi khi tải danh sách khuyến mãi");
     }

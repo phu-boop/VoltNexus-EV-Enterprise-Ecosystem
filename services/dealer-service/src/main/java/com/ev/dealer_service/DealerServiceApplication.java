@@ -5,16 +5,17 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.FilterType;
 
-@SpringBootApplication(scanBasePackages = {
-    "com.ev.dealer_service", 
-    "com.ev.common_lib"       
-})
+import org.springframework.boot.context.TypeExcludeFilter;
+import org.springframework.boot.autoconfigure.AutoConfigurationExcludeFilter;
+
+@SpringBootApplication
 @ComponentScan(
     basePackages = {"com.ev.dealer_service", "com.ev.common_lib"},
-    excludeFilters = @ComponentScan.Filter(
-        type = FilterType.ASSIGNABLE_TYPE,
-        classes = com.ev.common_lib.exception.GlobalExceptionHandler.class
-    )
+    excludeFilters = {
+        @ComponentScan.Filter(type = FilterType.CUSTOM, classes = TypeExcludeFilter.class),
+        @ComponentScan.Filter(type = FilterType.CUSTOM, classes = AutoConfigurationExcludeFilter.class),
+        @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, classes = com.ev.common_lib.exception.GlobalExceptionHandler.class)
+    }
 )
 public class DealerServiceApplication {
 

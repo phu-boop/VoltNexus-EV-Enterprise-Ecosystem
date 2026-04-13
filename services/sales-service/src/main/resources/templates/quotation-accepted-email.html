@@ -1,152 +1,173 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
-    <title>Xác Nhận Chấp Nhận Báo Giá</title>
-    <style>
-        :root {
-            --primary: #3b82f6;
-            --secondary: #10b981;
-            --accent: #facc15;
-            --dark: #1e293b;
-            --gray: #6b7280;
-            --light-bg: #f9fafb;
-        }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Xác nhận chấp nhận báo giá</title>
+  <style>
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background-color: #f8fafc;
+      margin: 0;
+      padding: 0;
+      color: #1e293b;
+      -webkit-font-smoothing: antialiased;
+    }
 
-        body {
-            font-family: 'Segoe UI', Roboto, sans-serif;
-            background: #f1f5f9;
-            color: var(--dark);
-            margin: 0;
-            padding: 0;
-        }
+    .wrapper {
+      width: 100%;
+      table-layout: fixed;
+      padding: 40px 0;
+    }
 
-        .container {
-            max-width: 700px;
-            margin: 30px auto;
-            background: white;
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: 4px 5px 10px rgba(0, 0, 0, 0.4);
-        }
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      background-color: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      overflow: hidden;
+    }
 
-        .header {
-            background: linear-gradient(135deg, #93c5fd, #60a5fa);
-            color: white;
-            padding: 25px 20px;
-            text-align: center;
-        }
+    .header {
+      padding: 40px 40px 20px;
+      text-align: left;
+    }
 
-        .brand {
-            font-size: 22px;
-            font-weight: 600;
-        }
+    .brand {
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: #64748b;
+      margin-bottom: 8px;
+    }
 
-        .content {
-            padding: 30px 25px;
-            line-height: 1.6;
-            background: var(--light-bg);
-        }
+    .header h1 {
+      font-size: 24px;
+      font-weight: 600;
+      margin: 0;
+      color: #0f172a;
+    }
 
-        .greeting {
-            font-size: 15px;
-            margin-bottom: 15px;
-        }
+    .content {
+      padding: 20px 40px 40px;
+      line-height: 1.6;
+    }
 
-        .confirmation-box {
-            background: #ecfdf5;
-            border: 1px solid #bbf7d0;
-            border-radius: 10px;
-            padding: 20px;
-            text-align: center;
-        }
+    .greeting {
+      font-size: 16px;
+      margin-bottom: 24px;
+    }
 
-        .success-icon {
-            font-size: 36px;
-            margin-bottom: 10px;
-        }
+    .success-card {
+      background-color: #f0fdf4;
+      border: 1px solid #dcfce7;
+      border-radius: 6px;
+      padding: 32px;
+      text-align: center;
+      margin-bottom: 24px;
+    }
 
-        .quotation-id {
-            display: inline-block;
-            background: var(--secondary);
-            color: white;
-            padding: 6px 12px;
-            border-radius: 6px;
-            font-weight: 500;
-            font-size: 14px;
-        }
+    .success-icon {
+      color: #15803d;
+      font-size: 32px;
+      margin-bottom: 12px;
+    }
 
-        .next-steps {
-            margin-top: 25px;
-            padding: 18px;
-            background: white;
-            border: 1px solid #e5e7eb;
-            border-left: 4px solid var(--primary);
-            border-radius: 10px;
-            font-size: 14px;
-            color: var(--gray);
-        }
+    .success-title {
+      font-weight: 600;
+      font-size: 18px;
+      color: #166534;
+      margin-bottom: 8px;
+    }
 
-        .footer {
-            text-align: center;
-            font-size: 13px;
-            color: var(--gray);
-            padding: 20px;
-            background: #f9fafb;
-            border-top: 1px solid #e5e7eb;
-        }
+    .quotation-tag {
+      display: inline-block;
+      background-color: #1e293b;
+      color: #ffffff;
+      padding: 4px 12px;
+      border-radius: 4px;
+      font-size: 13px;
+      font-weight: 600;
+      margin-top: 12px;
+    }
 
-        @media (max-width: 600px) {
-            .container {
-                margin: 10px;
-                border-radius: 10px;
-            }
+    .next-steps {
+      border-top: 1px solid #e2e8f0;
+      margin-top: 32px;
+      padding-top: 24px;
+    }
 
-            .content {
-                padding: 20px;
-            }
-        }
-    </style>
+    .next-steps h2 {
+      font-size: 14px;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: #64748b;
+      margin-bottom: 12px;
+      letter-spacing: 0.025em;
+    }
+
+    .next-steps p {
+      margin: 0;
+      color: #475569;
+      font-size: 15px;
+    }
+
+    .footer {
+      padding: 32px 40px;
+      background-color: #f8fafc;
+      border-top: 1px solid #e2e8f0;
+      color: #64748b;
+      font-size: 12px;
+      text-align: center;
+    }
+
+    .footer p {
+      margin: 4px 0;
+    }
+  </style>
 </head>
 <body>
-<div class="container">
-    <div class="header">
-        <div class="brand">🚗 EV Automotive</div>
-        <div style="font-size: 18px; font-weight: 500; margin-top: 5px;">
-            Xác Nhận Chấp Nhận Báo Giá
-        </div>
-    </div>
+  <div class="wrapper">
+    <div class="container">
+      <div class="header">
+        <div class="brand">EV Automotive</div>
+        <h1>Xác nhận chấp nhận báo giá</h1>
+      </div>
 
-    <div class="content">
+      <div class="content">
         <p class="greeting">
-            Kính gửi Quý khách <strong th:text="${customer.fullName}"></strong>,
+          Xin chào <strong th:text="${customer.fullName}">Quý khách</strong>,
         </p>
 
-        <div class="confirmation-box">
-            <div class="success-icon">✅</div>
-            <h3 style="margin: 0; font-size: 18px; color: var(--dark);">
-                Báo giá đã được chấp nhận
-            </h3>
-            <p style="margin: 10px 0; color: var(--gray); font-size: 14px;">
-                Chúng tôi xin xác nhận Quý khách đã chấp nhận báo giá sau:
-            </p>
-            <div class="quotation-id" th:text="${quotation.quotationId}"></div>
+        <div class="success-card">
+          <div class="success-icon">✓</div>
+          <div class="success-title">Báo giá đã được chấp nhận</div>
+          <p style="margin: 0; color: #166534; font-size: 14px;">
+            Hệ thống đã ghi nhận phản hồi đồng ý cho báo giá mã:
+          </p>
+          <div class="quotation-tag" th:text="${quotation.quotationId}">Q-12345</div>
         </div>
 
         <div class="next-steps">
-            <strong>Bước tiếp theo:</strong><br>
-            Đội ngũ tư vấn của EV Automotive sẽ sớm liên hệ với Quý khách
-            để hướng dẫn các thủ tục tiếp theo và hoàn tất hợp đồng.
+          <h2>Bước tiếp theo</h2>
+          <p>
+            Đội ngũ tư vấn của EV Automotive sẽ sớm liên hệ trực tiếp với bạn để trao đổi về các thủ tục hoàn tất hợp đồng và kế hoạch bàn giao sản phẩm.
+          </p>
         </div>
 
-        <p style="text-align: center; margin-top: 25px; font-size: 14px; color: var(--gray);">
-            Trân trọng cảm ơn sự tin tưởng của Quý khách!
+        <p style="margin-top: 32px; font-size: 14px; color: #64748b; text-align: center;">
+          Cảm ơn bạn đã tin tưởng lựa chọn dịch vụ của chúng tôi.
         </p>
-    </div>
+      </div>
 
-    <div class="footer">
+      <div class="footer">
         <p><strong>Đội ngũ EV Automotive</strong></p>
-        <p>📧 support@ev-automotive.com | 📞 1800-1234 | 🌐 www.ev-automotive.com</p>
+        <p>Email: support@ev-automotive.com | Hotline: 1800 1234</p>
+        <p>&copy; 2024 EV Automotive. Vietnam.</p>
+      </div>
     </div>
-</div>
+  </div>
 </body>
 </html>

@@ -29,6 +29,9 @@ public interface QuotationService {
     // Bước 4: Xử lý phản hồi khách hàng
     QuotationResponse handleCustomerResponse(UUID quotationId, CustomerResponseRequest request);
 
+    // Xử lý xác nhận qua Token (Email)
+    QuotationResponse confirmQuotationByToken(String token, boolean accepted);
+
     // Bước 5: Chuyển đổi thành đơn hàng
     SalesOrderB2CResponse convertToSalesOrderB2C(UUID quotationId);
 

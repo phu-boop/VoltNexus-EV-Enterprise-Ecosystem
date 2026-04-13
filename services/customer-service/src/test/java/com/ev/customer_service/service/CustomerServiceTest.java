@@ -172,7 +172,7 @@ class CustomerServiceTest {
     @Test
     @DisplayName("Xóa customer thành công")
     void deleteCustomer_success() {
-        when(customerRepository.existsById(1L)).thenReturn(true);
+        when(customerRepository.findById(1L)).thenReturn(Optional.of(customer));
         customerService.deleteCustomer(1L, "ADMIN", null);
         verify(customerRepository).deleteById(1L);
     }
