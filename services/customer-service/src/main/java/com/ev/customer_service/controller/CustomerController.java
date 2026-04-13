@@ -126,7 +126,7 @@ public class CustomerController {
         return ResponseEntity.ok(ApiRespond.success("Customer updated successfully", customer));
     }
 
-    @PreAuthorize("hasAnyRole('DEALER_MANAGER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'EVM_STAFF')")
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiRespond<Void>> deleteCustomer(
             @PathVariable String id,

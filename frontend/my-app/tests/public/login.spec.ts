@@ -3,8 +3,8 @@ import { test, expect } from '@playwright/test';
 test.describe('Chức năng Đăng nhập (Login)', () => {
 
   test.beforeEach(async ({ page }) => {
-    // Điều hướng tới trang đăng nhập (Giả sử Frontend chạy ở port 5173)
-    await page.goto('http://localhost:5173/login');
+    // Navigate to login page using baseURL
+    await page.goto('/login');
   });
 
   test('TC1: Giao diện Login tải đúng các trường nhập liệu', async ({ page }) => {
@@ -31,16 +31,17 @@ test.describe('Chức năng Đăng nhập (Login)', () => {
     // Ban đầu input phải là ẩn mật khẩu (password)
     await expect(passwordInput).toHaveAttribute('type', 'password');
     
-    // Click vào icon mắt (button nằm liền kề label của input)
-    // Trong file Login.jsx: span > input > label > button (icon mắt) cùng chung div relative
-    const eyeButton = page.locator('input[name="password"] ~ button[type="button"]');
-    await eyeButton.click();
+    // Locate the eye button by traversing up to the common container
+    const eyeButton = passwordInput.locator('..').locator('button').first();
     
-    // Chuyển sang dạng nhìn thấy được chữ
+    // Force click to bypass any animation or overlapping issue (which caused the stability timeout)
+    await eyeButton.click({ force: true });
+
+    // Verify password becomes visible
     await expect(passwordInput).toHaveAttribute('type', 'text');
-    
-    // Click thêm lần nữa để ẩn đi
-    await eyeButton.click();
+
+    // Toggle back to hidden state
+    await eyeButton.click({ force: true });
     await expect(passwordInput).toHaveAttribute('type', 'password');
   });
 

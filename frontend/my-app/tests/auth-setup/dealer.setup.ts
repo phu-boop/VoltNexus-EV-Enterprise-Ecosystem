@@ -1,5 +1,5 @@
 import { test as setup, expect } from '@playwright/test';
-import fs from 'fs';
+import * as fs from 'fs';
 
 const authFile = 'playwright/.auth/dealer.json';
 
@@ -36,7 +36,7 @@ setup('authenticate as dealer manager', async ({ page, request }) => {
     fullName: userData.fullName || "",
     userData: JSON.stringify(userData),
     memberId: userData.memberId || "",
-    profileId: userData.memberId || "", // Thêm profileId cho frontend
+    profileId: userData.memberId || "",
     avatarUrl: userData.url || "",
     dealerId: userData.dealerId || ""
   };

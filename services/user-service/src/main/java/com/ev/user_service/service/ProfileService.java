@@ -9,6 +9,7 @@ import com.ev.user_service.entity.DealerStaffProfile;
 import com.ev.user_service.repository.DealerManagerProfileRepository;
 import com.ev.user_service.repository.DealerStaffProfileRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -29,6 +30,7 @@ public class ProfileService {
         this.dealerStaffProfileRepository = dealerStaffProfileRepository;
     }
 
+    @Transactional(readOnly = true)
     public List<ApiResponseStaffDealer> getStaffDealerByIdDealer(UUID idDealer) {
         List<DealerStaffProfile> dealerStaffProfiles = dealerStaffProfileRepository.findByDealerId(idDealer);
         return dealerStaffProfiles.stream()
@@ -64,6 +66,7 @@ public class ProfileService {
     }
 
     //find idealer by idMember
+    @Transactional(readOnly = true)
     public UUID getIdDealerByIdMember(UUID idMember) {
         Optional<DealerStaffProfile> staffOpt = dealerStaffProfileRepository.findById(idMember);
         Optional<DealerManagerProfile> managerOpt = dealerManagerProfileRepository.findById(idMember);

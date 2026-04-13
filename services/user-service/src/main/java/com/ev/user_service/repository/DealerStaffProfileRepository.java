@@ -1,6 +1,7 @@
 package com.ev.user_service.repository;
 
 import com.ev.user_service.entity.DealerStaffProfile;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
@@ -9,5 +10,7 @@ import java.util.UUID;
 
 public interface DealerStaffProfileRepository extends JpaRepository<DealerStaffProfile, UUID> {
         Optional<DealerStaffProfile> findByUserId(UUID userID);
+
+        @EntityGraph(attributePaths = {"user"})
         List<DealerStaffProfile> findByDealerId(UUID dealerId);
 }

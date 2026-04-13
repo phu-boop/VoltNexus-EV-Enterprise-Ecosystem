@@ -97,7 +97,7 @@ public class QuotationController {
         return ResponseEntity.ok(ApiRespond.success("Quotation fetched successfully", response));
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'EVM_STAFF', 'DEALER_MANAGER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'EVM_STAFF', 'DEALER_MANAGER', 'DEALER_STAFF')")
     @GetMapping
     public ResponseEntity<ApiRespond<List<QuotationResponse>>> getQuotations(
             @Valid QuotationFilterRequest filterRequest) {
