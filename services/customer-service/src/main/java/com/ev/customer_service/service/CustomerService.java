@@ -11,6 +11,9 @@ import com.ev.customer_service.exception.ResourceNotFoundException;
 import com.ev.customer_service.repository.CustomerRepository;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -50,10 +53,47 @@ public class CustomerService {
     }
 
     @Transactional(readOnly = true)
+    public List<CustomerResponse> getCustomersByDealer(String search, String currentUserDealerId) {
+        if (currentUserDealerId == null || currentUserDealerId.isBlank()) {
+            throw new IllegalArgumentException("Dealer ID is required for dealer customer listing");
+        }
+
+        UUID dealerId = UUID.fromString(currentUserDealerId);
+
+        List<Customer> customers = (search != null && !search.isEmpty())
+                ? customerRepository.searchCustomersByDealer(search, dealerId)
+                : customerRepository.findByPreferredDealerId(dealerId);
+
+        return customers.stream()
+                .map(customer -> modelMapper.map(customer, CustomerResponse.class))
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
     public List<CustomerResponse> getAllCustomers() {
         return customerRepository.findAll().stream()
                 .map(customer -> modelMapper.map(customer, CustomerResponse.class))
                 .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public Page<CustomerResponse> getCustomersWithPagination(String search, int page, int size) {
+        if (page < 0) {
+            throw new IllegalArgumentException("Page index must not be negative");
+        }
+        if (size <= 0) {
+            throw new IllegalArgumentException("Page size must be greater than 0");
+        }
+        if (size > 100) {
+            throw new IllegalArgumentException("Page size exceeds maximum limit of 100");
+        }
+
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Customer> customerPage = (search != null && !search.isBlank())
+                ? customerRepository.searchCustomersByDealer(search, null, pageable)
+                : customerRepository.findAll(pageable);
+
+        return customerPage.map(customer -> modelMapper.map(customer, CustomerResponse.class));
     }
 
     @Transactional(readOnly = true)
@@ -95,6 +135,23 @@ public class CustomerService {
         parseEnums(customer, request);
 
         // Auto-generate customer code: CUS-YYYYMMDD-XXXX
+        customer.setCustomerCode(generateCustomerCode());
+
+        Customer savedCustomer = customerRepository.save(customer);
+        return modelMapper.map(savedCustomer, CustomerResponse.class);
+    }
+
+    @Transactional
+    public CustomerResponse createCustomerForDealer(CustomerRequest request, String currentUserDealerId) {
+        if (currentUserDealerId == null || currentUserDealerId.isBlank()) {
+            throw new IllegalArgumentException("Dealer ID is required for dealer customer creation");
+        }
+
+        validateNewCustomerUniqueness(request);
+
+        Customer customer = modelMapper.map(request, Customer.class);
+        customer.setPreferredDealerId(UUID.fromString(currentUserDealerId));
+        parseEnums(customer, request);
         customer.setCustomerCode(generateCustomerCode());
 
         Customer savedCustomer = customerRepository.save(customer);
