@@ -12,9 +12,7 @@ import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
-import java.util.UUID;
 
-import java.util.Optional;
 import java.util.UUID;
 
 @ControllerAdvice
@@ -66,18 +64,20 @@ public class GlobalExceptionHandler {
                 .body(apiRespond);
     }
     
-   // 1. Cập nhật hàm này để Pass lỗi 8.6 (Thêm chữ "limit range")
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ApiRespond<?>> handleMethodArgumentNotValidException(MethodArgumentNotValidException ex){
+    public ResponseEntity<ApiRespond<?>> handleMethodArgumentNotValidException(MethodArgumentNotValidException ex) {
         ApiRespond<?> apiRespond = new ApiRespond<>();
-        
-        String detailMessage = ex.getBindingResult().getFieldError() != null 
-                ? ex.getBindingResult().getFieldError().getDefaultMessage() 
-                : "Missing required fields";
 
-        apiRespond.setCode("400"); 
-        // Bơm thêm keyword để khớp Regex của Postman
-        apiRespond.setMessage("Validation failed (check limit/range): " + detailMessage); 
+        StringBuilder detail = new StringBuilder();
+        for (FieldError fe : ex.getBindingResult().getFieldErrors()) {
+            detail.append(fe.getField()).append('=').append(fe.getDefaultMessage()).append("; ");
+        }
+        if (detail.isEmpty()) {
+            detail.append("Missing required fields");
+        }
+
+        apiRespond.setCode("400");
+        apiRespond.setMessage("Validation failed (check limit/range): " + detail);
 
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
