@@ -173,7 +173,7 @@ public class CustomerService {
         recordAuditTrail(oldState, updatedCustomer);
 
         // Publish event to Kafka
-        kafkaTemplate.send("customer.updated", updatedCustomer.getCustomerId());
+        kafkaTemplate.send("customer.updated", String.valueOf(updatedCustomer.getCustomerId()));
 
         return modelMapper.map(updatedCustomer, CustomerResponse.class);
     }
@@ -301,7 +301,7 @@ public class CustomerService {
         customerRepository.deleteById(id);
         
         // Publish event to Kafka
-        kafkaTemplate.send("customer.deleted", id);
+        kafkaTemplate.send("customer.deleted", String.valueOf(id));
     }
 
     @Transactional(readOnly = true)

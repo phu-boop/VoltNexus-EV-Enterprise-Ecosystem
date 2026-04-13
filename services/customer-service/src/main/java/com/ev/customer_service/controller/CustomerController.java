@@ -92,7 +92,7 @@ public class CustomerController {
         return ResponseEntity.ok(ApiRespond.success("Customer updated successfully", customer));
     }
 
-    @PreAuthorize("hasRole('ADMIN', 'EVM_STAFF')")
+    @PreAuthorize("hasAnyRole('DEALER_MANAGER', 'DEALER_STAFF')")
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiRespond<Void>> deleteCustomer(
             @PathVariable String id,
@@ -141,7 +141,7 @@ public class CustomerController {
      * Get audit history for a customer
      * GET /customers/{id}/audit-history
      */
-    @PreAuthorize("hasAnyRole('ADMIN', 'EVM_STAFF')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'EVM_STAFF', 'DEALER_MANAGER', 'DEALER_STAFF')")
     @GetMapping("/{id}/audit-history")
     public ResponseEntity<ApiRespond<List<com.ev.customer_service.dto.response.AuditResponse>>> getCustomerAuditHistory(@PathVariable String id) {
         Long customerId = Long.parseLong(id);
