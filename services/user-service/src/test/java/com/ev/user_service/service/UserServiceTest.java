@@ -10,6 +10,7 @@ import com.ev.user_service.enums.RoleName;
 import com.ev.user_service.enums.UserStatus;
 import com.ev.user_service.mapper.UserMapper;
 import com.ev.user_service.repository.*;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -18,6 +19,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.List;
@@ -81,6 +85,21 @@ class UserServiceTest {
         userRequest.setPhone("0123456789");
         userRequest.setPassword("password");
         userRequest.setName("Test");
+    }
+
+    @AfterEach
+    void tearDown() {
+        SecurityContextHolder.clearContext();
+    }
+
+    /** Helper: set SecurityContext as an ADMIN user */
+    private void setAdminAuthentication() {
+        var auth = new UsernamePasswordAuthenticationToken(
+                "test@example.com",
+                null,
+                List.of(new SimpleGrantedAuthority("ROLE_ADMIN"))
+        );
+        SecurityContextHolder.getContext().setAuthentication(auth);
     }
 
     @Nested
@@ -299,11 +318,11 @@ class UserServiceTest {
         void updateUserEvmStaff_ShouldSucceed() {
             UserUpdateRequest req = new UserUpdateRequest();
             req.setEmail(user.getEmail());
-            when(userRepository.findByEmail(req.getEmail())).thenReturn(Optional.of(user));
+            when(userRepository.findById(userId)).thenReturn(Optional.of(user));
             EvmStaffProfile profile = new EvmStaffProfile();
             when(evmStaffProfileRepository.findByUserId(user.getId())).thenReturn(Optional.of(profile));
 
-            userService.updateUserEvmStaff(UUID.randomUUID(),req);
+            userService.updateUserEvmStaff(userId, req);
 
             verify(userRepository).save(user);
             verify(evmStaffProfileRepository).save(profile);
@@ -314,11 +333,11 @@ class UserServiceTest {
         void updateUserDealerStaff_ShouldSucceed() {
             DealerStaffUpdateRequest req = new DealerStaffUpdateRequest();
             req.setEmail(user.getEmail());
-            when(userRepository.findByEmail(req.getEmail())).thenReturn(Optional.of(user));
+            when(userRepository.findById(userId)).thenReturn(Optional.of(user));
             DealerStaffProfile profile = new DealerStaffProfile();
             when(dealerStaffProfileRepository.findByUserId(user.getId())).thenReturn(Optional.of(profile));
 
-            userService.updateUserDealerStaff(UUID.randomUUID(),req);
+            userService.updateUserDealerStaff(userId, req);
 
             verify(userRepository).save(user);
             verify(dealerStaffProfileRepository).save(profile);
@@ -329,11 +348,11 @@ class UserServiceTest {
         void updateUserDealerManager_ShouldSucceed() {
             DealerManagerUpdateRequest req = new DealerManagerUpdateRequest();
             req.setEmail(user.getEmail());
-            when(userRepository.findByEmail(req.getEmail())).thenReturn(Optional.of(user));
+            when(userRepository.findById(userId)).thenReturn(Optional.of(user));
             DealerManagerProfile profile = new DealerManagerProfile();
             when(dealerManagerProfileRepository.findByUserId(user.getId())).thenReturn(Optional.of(profile));
 
-            userService.updateUserDealerManager(UUID.randomUUID(),req);
+            userService.updateUserDealerManager(userId, req);
 
             verify(userRepository).save(user);
             verify(dealerManagerProfileRepository).save(profile);
@@ -344,11 +363,11 @@ class UserServiceTest {
         void updateUserEvmAdmin_ShouldSucceed() {
             AdminUpdateRequest req = new AdminUpdateRequest();
             req.setEmail(user.getEmail());
-            when(userRepository.findByEmail(req.getEmail())).thenReturn(Optional.of(user));
+            when(userRepository.findById(userId)).thenReturn(Optional.of(user));
             AdminProfile profile = new AdminProfile();
             when(adminProfileRepository.findByUserId(user.getId())).thenReturn(Optional.of(profile));
 
-            userService.updateUserEvmAdmin(UUID.randomUUID(),req);
+            userService.updateUserEvmAdmin(userId, req);
 
             verify(userRepository).save(user);
             verify(adminProfileRepository).save(profile);
@@ -390,6 +409,7 @@ class UserServiceTest {
         @Test
         @DisplayName("Should update user basic info successfully")
         void updateUser_ShouldSucceed() {
+            setAdminAuthentication(); // updateUser reads SecurityContextHolder internally
             when(userRepository.findById(userId)).thenReturn(Optional.of(user));
             when(userRepository.save(any(User.class))).thenReturn(user);
             when(userMapper.usertoUserRespond(any(User.class))).thenReturn(new UserRespond());
@@ -404,6 +424,7 @@ class UserServiceTest {
         @Test
         @DisplayName("Should throw exception if new email already exists")
         void updateUser_WhenNewEmailExists_ShouldThrowAppException() {
+            setAdminAuthentication(); // updateUser reads SecurityContextHolder internally
             userRequest.setEmail("new@example.com");
             when(userRepository.findById(userId)).thenReturn(Optional.of(user));
             when(userRepository.existsByEmail("new@example.com")).thenReturn(true);
@@ -420,6 +441,7 @@ class UserServiceTest {
         @Test
         @DisplayName("Should delete user when found")
         void deleteUser_ShouldSucceed() {
+            setAdminAuthentication(); // deleteUser reads SecurityContextHolder internally
             when(userRepository.findById(userId)).thenReturn(Optional.of(user));
 
             userService.deleteUser(userId);
