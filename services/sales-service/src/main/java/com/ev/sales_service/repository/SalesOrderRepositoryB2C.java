@@ -12,6 +12,7 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Repository
@@ -38,4 +39,6 @@ public interface SalesOrderRepositoryB2C extends JpaRepository<SalesOrder, UUID>
 
     // Phân trang với filter theo status
     Page<SalesOrder> findByTypeOderAndOrderStatusB2C(SaleOderType typeOder, OrderStatusB2C orderStatusB2C, Pageable pageable);
+
+    Optional<SalesOrder> findByConfirmationToken(String confirmationToken);
 }

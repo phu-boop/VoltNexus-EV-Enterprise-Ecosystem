@@ -17,18 +17,18 @@ import com.ev.sales_service.service.Interface.SalesContractService;
 import com.ev.sales_service.service.Interface.SalesOrderServiceB2C;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.modelmapper.ModelMapper;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
-import java.util.concurrent.CompletableFuture;
+
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
+
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -49,7 +49,6 @@ public class SalesOrderServiceB2CImpl implements SalesOrderServiceB2C {
     private final QuotationRepository quotationRepository;
     private final OrderItemRepository orderItemRepository;
     private final SalesContractService salesContractService;
-    private final EmailService emailService;
     private final CustomerClient customerClient;
     private final RestTemplate restTemplate;
 
@@ -184,22 +183,11 @@ public class SalesOrderServiceB2CImpl implements SalesOrderServiceB2C {
                     .toUriString();
             log.info("Calling Payment Service: {}", url);
 
-            // Create headers
-            org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
-            // Simulate an internal system call or use the current user's context if
-            // available
-            // For now, using a system-level admin identity for this reliable internal
-            // operation
-            headers.set("X-User-Email", "system@vms.com");
-            headers.set("X-User-Role", "ADMIN");
-            headers.set("X-User-ProfileId", UUID.randomUUID().toString()); // Dummy ID for system
-
-            org.springframework.http.HttpEntity<String> entity = new org.springframework.http.HttpEntity<>(headers);
-
+            // Interceptor handles security headers automatically
             org.springframework.http.ResponseEntity<Map> responseEntity = restTemplate.exchange(
                     url,
                     org.springframework.http.HttpMethod.GET,
-                    entity,
+                    null,
                     Map.class);
 
             Map<String, Object> response = responseEntity.getBody();
@@ -441,52 +429,23 @@ public class SalesOrderServiceB2CImpl implements SalesOrderServiceB2C {
         // Attempt to find region if possible, or leave null
         sendSalesReport(savedOrder, rptModelName, rptVariantId, rptDealerName);
 
-        // 8. Send confirmation email to customer
+        // 8. Publish email event to Outbox (async, dealer name resolved later by consumer)
         try {
-            String fullName = savedOrder.getCustomerName();
-            String firstName = fullName;
-            String lastName = "";
-            if (fullName != null && fullName.trim().contains(" ")) {
-                int lastSpaceIndex = fullName.trim().lastIndexOf(" ");
-                firstName = fullName.trim().substring(0, lastSpaceIndex);
-                lastName = fullName.trim().substring(lastSpaceIndex + 1);
-            }
+            Map<String, Object> emailPayload = new java.util.HashMap<>();
+            emailPayload.put("orderId", savedOrder.getOrderId().toString());
+            emailPayload.put("customerName", savedOrder.getCustomerName());
+            emailPayload.put("customerEmail", savedOrder.getCustomerEmail());
+            emailPayload.put("customerPhone", savedOrder.getCustomerPhone());
+            emailPayload.put("totalAmount", savedOrder.getTotalAmount());
+            emailPayload.put("orderDate", savedOrder.getOrderDate() != null ? savedOrder.getOrderDate().toString() : null);
+            emailPayload.put("dealerId", savedOrder.getDealerId() != null ? savedOrder.getDealerId().toString() : null);
+            emailPayload.put("modelName", rptModelName);
+            emailPayload.put("variantName", metadata.get("variantName"));
 
-            CustomerResponse customer = CustomerResponse.builder()
-                    .customerId(savedOrder.getCustomerId())
-                    .firstName(firstName)
-                    .lastName(lastName)
-                    .email(savedOrder.getCustomerEmail())
-                    .phone(savedOrder.getCustomerPhone())
-                    .build();
-
-            // Fetch showroom/dealer name
-            String showroomName = "N/A";
-            try {
-                String dealerUrl = UriComponentsBuilder.fromHttpUrl(dealerServiceUrl)
-                        .path("/api/dealers/{dealerId}")
-                        .buildAndExpand(savedOrder.getDealerId())
-                        .toUriString();
-                ApiRespond<Map<String, Object>> dealerResponse = restTemplate.exchange(
-                        dealerUrl,
-                        org.springframework.http.HttpMethod.GET,
-                        null,
-                        new org.springframework.core.ParameterizedTypeReference<ApiRespond<Map<String, Object>>>() {
-                        }).getBody();
-
-                if (dealerResponse != null && dealerResponse.getData() != null) {
-                    showroomName = (String) dealerResponse.getData().get("dealerName");
-                }
-            } catch (Exception e) {
-                log.warn("Failed to fetch dealer name for email: {}", e.getMessage());
-            }
-
-            emailService.sendOrderConfirmedEmail(savedOrder, customer, showroomName);
-            log.info("Order confirmation email sent to: {} with showroom: {}", savedOrder.getCustomerEmail(),
-                    showroomName);
+            saveOutboxEvent(savedOrder.getOrderId(), "OrderEmail", "OrderConfirmationEmail", emailPayload);
+            log.info("Queued OrderConfirmationEmail event for order {}", savedOrder.getOrderId());
         } catch (Exception e) {
-            log.error("Failed to send order confirmation email for order {}: {}", savedOrder.getOrderId(),
-                    e.getMessage());
+            log.error("Failed to queue email event for order {}: {}", savedOrder.getOrderId(), e.getMessage());
         }
 
         return mapToResponse(savedOrder);
@@ -603,12 +562,16 @@ public class SalesOrderServiceB2CImpl implements SalesOrderServiceB2C {
         salesOrder.setApprovalDate(LocalDateTime.now());
         salesOrder.setOrderStatusB2C(OrderStatusB2C.APPROVED);
 
+        // Generate confirmation token for email link
+        salesOrder.setConfirmationToken(UUID.randomUUID().toString());
+        salesOrder.setTokenExpiredAt(LocalDateTime.now().plusDays(7)); // Valid for 7 days
+
         // Add tracking entry
         OrderTracking tracking = OrderTracking.builder()
                 .salesOrder(salesOrder)
                 .statusB2C(OrderTrackingStatus.CREATED)
                 .updateDate(LocalDateTime.now())
-                .notes("Order approved by manager")
+                .notes("Order approved by manager. Waiting for customer confirmation.")
                 .updatedBy(managerId)
                 .build();
 
@@ -616,26 +579,47 @@ public class SalesOrderServiceB2CImpl implements SalesOrderServiceB2C {
 
         SalesOrder approvedSalesOrder = salesOrderRepository.save(salesOrder);
 
-        // --- Lấy thông tin khách hàng ---
-        CustomerResponse customer;
-        if (salesOrder.getCustomerId() != null) {
-            customer = getCustomerInfo(salesOrder.getCustomerId());
-        } else {
-            // Trường hợp khách vãng lai (guest) từ booking deposit
-            customer = CustomerResponse.builder()
-                    .firstName(salesOrder.getCustomerName())
-                    .email(salesOrder.getCustomerEmail())
-                    .phone(salesOrder.getCustomerPhone())
-                    .build();
-        }
-
-        // --- Gửi email xác nhận ---
+        // --- Publish email event to Outbox (async & reliable) ---
         try {
-            emailService.sendOrderConfirmedEmail(salesOrder, customer, "EV Automotive Showroom");
-            log.info("Order confirmation email sent to customer: {}", customer.getEmail());
+            // Fetch missing customer info if necessary
+            String customerEmail = approvedSalesOrder.getCustomerEmail();
+            String customerName = approvedSalesOrder.getCustomerName();
+            String customerPhone = approvedSalesOrder.getCustomerPhone();
+
+            if ((customerEmail == null || customerEmail.isBlank()) ||
+                    (customerName == null || customerName.isBlank()) ||
+                    (customerPhone == null || customerPhone.isBlank())) {
+                
+                log.info("Missing customer details for order {}. Fetching from customer-service...", approvedSalesOrder.getOrderId());
+                try {
+                    ApiRespond<CustomerResponse> customerRespond = customerClient.getCustomerById(approvedSalesOrder.getCustomerId());
+                    if (customerRespond != null && customerRespond.getData() != null) {
+                        CustomerResponse customer = customerRespond.getData();
+                        customerEmail = customer.getEmail();
+                        customerName = customer.getFullName();
+                        customerPhone = customer.getPhone();
+                    }
+                } catch (Exception ex) {
+                    log.error("Failed to fetch customer info from customer-service: {}", ex.getMessage());
+                }
+            }
+
+            Map<String, Object> emailPayload = new java.util.HashMap<>();
+            emailPayload.put("orderId", approvedSalesOrder.getOrderId().toString());
+            emailPayload.put("customerId", approvedSalesOrder.getCustomerId());
+            emailPayload.put("customerName", customerName);
+            emailPayload.put("customerEmail", customerEmail);
+            emailPayload.put("customerPhone", customerPhone);
+            emailPayload.put("totalAmount", approvedSalesOrder.getTotalAmount());
+            emailPayload.put("orderDate", approvedSalesOrder.getOrderDate() != null ? approvedSalesOrder.getOrderDate().toString() : null);
+            emailPayload.put("dealerId", approvedSalesOrder.getDealerId() != null ? approvedSalesOrder.getDealerId().toString() : null);
+            emailPayload.put("showroomName", "EV Automotive Showroom");
+            emailPayload.put("confirmationToken", approvedSalesOrder.getConfirmationToken());
+
+            saveOutboxEvent(approvedSalesOrder.getOrderId(), "OrderEmail", "OrderApprovedEmail", emailPayload);
+            log.info("Queued OrderApprovedEmail event (with token) for order {}", approvedSalesOrder.getOrderId());
         } catch (Exception e) {
-            log.error("Failed to send confirmation email for order: {}", orderId, e);
-            // Không throw exception để không ảnh hưởng business logic chính
+            log.error("Failed to queue email event for order {}: {}", orderId, e.getMessage());
         }
         return mapToResponse(approvedSalesOrder);
     }
@@ -1155,24 +1139,57 @@ public class SalesOrderServiceB2CImpl implements SalesOrderServiceB2C {
     }
 
     private void sendSalesReport(SalesOrder salesOrder, String modelName, Long variantId, String dealerName) {
-        CompletableFuture.runAsync(() -> {
-            try {
-                String url = reportingServiceUrl + "/api/reports/sales";
+        try {
+            Map<String, Object> body = new java.util.HashMap<>();
+            body.put("orderId", salesOrder.getOrderId());
+            body.put("totalAmount", salesOrder.getTotalAmount());
+            body.put("orderDate", salesOrder.getOrderDate());
+            body.put("modelName", modelName);
+            body.put("variantId", variantId);
+            body.put("dealerName", dealerName);
 
-                Map<String, Object> body = new java.util.HashMap<>();
-                body.put("orderId", salesOrder.getOrderId());
-                body.put("totalAmount", salesOrder.getTotalAmount());
-                body.put("orderDate", salesOrder.getOrderDate());
-                body.put("modelName", modelName);
-                body.put("variantId", variantId);
-                body.put("dealerName", dealerName);
-                // Region could be inferred from dealer or address
+            log.info("Recording sales report event in outbox for Order ID: {}", salesOrder.getOrderId());
+            saveOutboxEvent(salesOrder.getOrderId(), "SalesOrder", "SalesReport", body);
+        } catch (Exception e) {
+            log.error("Failed to record sales report in outbox: {}", e.getMessage());
+        }
+    }
 
-                log.info("Sending sales report for Order ID: {}", salesOrder.getOrderId());
-                restTemplate.postForObject(url, body, String.class);
-            } catch (Exception e) {
-                log.error("Failed to send sales report: {}", e.getMessage());
-            }
-        });
+    @Override
+    public SalesOrderB2CResponse confirmOrderByToken(String token, boolean accepted) {
+        log.info("Processing order confirmation for token: {}, accepted: {}", token, accepted);
+        SalesOrder salesOrder = salesOrderRepository.findByConfirmationToken(token)
+                .orElseThrow(() -> new AppException(ErrorCode.INVALID_CONFIRMATION_TOKEN));
+
+        if (salesOrder.getOrderStatusB2C() != OrderStatusB2C.APPROVED) {
+            throw new AppException(ErrorCode.INVALID_ORDER_STATUS);
+        }
+
+        if (salesOrder.getTokenExpiredAt() != null && salesOrder.getTokenExpiredAt().isBefore(LocalDateTime.now())) {
+            throw new AppException(ErrorCode.TOKEN_EXPIRED);
+        }
+
+        if (accepted) {
+            salesOrder.setOrderStatusB2C(OrderStatusB2C.CONFIRMED);
+            log.info("Order {} confirmed via email.", salesOrder.getOrderId());
+        } else {
+            salesOrder.setOrderStatusB2C(OrderStatusB2C.REJECTED);
+            log.info("Order {} rejected via email.", salesOrder.getOrderId());
+        }
+
+        // Add tracking entry
+        OrderTracking tracking = OrderTracking.builder()
+                .salesOrder(salesOrder)
+                .statusB2C(accepted ? OrderTrackingStatus.CONFIRMED : OrderTrackingStatus.REJECTED)
+                .updateDate(LocalDateTime.now())
+                .notes(accepted ? "Order confirmed by customer via email." : "Order rejected by customer via email.")
+                .updatedBy(salesOrder.getCustomerId() != null ? UUID.nameUUIDFromBytes(salesOrder.getCustomerId().toString().getBytes()) : null)
+                .build();
+
+        salesOrder.getOrderTrackings().add(tracking);
+
+        SalesOrder updatedOrder = salesOrderRepository.save(salesOrder);
+
+        return mapToResponse(updatedOrder);
     }
 }

@@ -14,6 +14,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -46,6 +47,9 @@ class AdminBackfillControllerTest {
     @MockBean
     private RestTemplate restTemplate;
 
+    @MockBean
+    private PlatformTransactionManager transactionManager;
+
     @Autowired
     private AdminBackfillController adminBackfillController;
 
@@ -66,7 +70,7 @@ class AdminBackfillControllerTest {
         dealer.setRegion("North");
 
         ApiRespond<List<DealerBasicDto>> apiRespond = ApiRespond.<List<DealerBasicDto>>builder()
-                .code(200)
+                .code("200")
                 .data(List.of(dealer))
                 .build();
 
@@ -94,7 +98,7 @@ class AdminBackfillControllerTest {
     void backfillDealers_WhenApiFails_ShouldReturnBadRequest() throws Exception {
         // Arrange
         ApiRespond<List<DealerBasicDto>> apiRespond = ApiRespond.<List<DealerBasicDto>>builder()
-                .code(500)
+                .code("500")
                 .data(null)
                 .build();
 
@@ -123,7 +127,7 @@ class AdminBackfillControllerTest {
         vehicle.setModelName("VF 8");
 
         ApiRespond<List<VariantDetailDto>> apiRespond = ApiRespond.<List<VariantDetailDto>>builder()
-                .code(200)
+                .code("200")
                 .data(List.of(vehicle))
                 .build();
 

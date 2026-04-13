@@ -58,6 +58,17 @@ public class QuotationController {
         return ResponseEntity.ok(ApiRespond.success("Quotation sent to customer successfully", response));
     }
 
+    // Public endpoint cho khách hàng xác nhận qua email (Sử dụng Token)
+    @GetMapping("/public/confirm")
+    public ResponseEntity<ApiRespond<QuotationResponse>> confirmQuotationPublic(
+            @RequestParam String token,
+            @RequestParam boolean accepted) {
+        log.info("Public confirmation for quotation token: {}, accepted: {}", token, accepted);
+        QuotationResponse response = quotationService.confirmQuotationByToken(token, accepted);
+        return ResponseEntity.ok(ApiRespond.success(
+                accepted ? "Báo giá đã được chấp nhận thành công" : "Báo giá đã bị từ chối", response));
+    }
+
     @PreAuthorize("hasAnyRole('CUSTOMER', 'DEALER_MANAGER', 'DEALER_STAFF')")
     @PutMapping("/{quotationId}/customer-response")
     public ResponseEntity<ApiRespond<QuotationResponse>> handleCustomerResponse(

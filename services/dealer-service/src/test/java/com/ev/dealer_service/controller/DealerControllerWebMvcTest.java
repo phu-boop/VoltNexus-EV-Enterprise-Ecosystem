@@ -1,6 +1,6 @@
 package com.ev.dealer_service.controller;
 
-import com.ev.dealer_service.config.SecurityConfig;
+import com.ev.dealer_service.config.DevSecurityConfig;
 import com.ev.dealer_service.dto.request.DealerRequest;
 import com.ev.dealer_service.dto.response.DealerResponse;
 import com.ev.dealer_service.service.Interface.DealerService;
@@ -8,12 +8,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.context.annotation.Import;
+import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.security.test.context.support.WithMockUser;
 
 import java.util.List;
 import java.util.UUID;
@@ -28,10 +29,15 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(controllers = DealerController.class)
-@WithMockUser(roles = "ADMIN")
-@Import(SecurityConfig.class)
+@ContextConfiguration(classes = {DealerController.class, DealerControllerWebMvcTest.TestConfig.class})
+@AutoConfigureMockMvc(addFilters = false)
 @DisplayName("DealerController — slice test (MockMvc + mock DealerService)")
 class DealerControllerWebMvcTest {
+
+    @TestConfiguration
+    static class TestConfig {
+        // This minimal config ensures we don't scan for security/kafka/etc.
+    }
 
     @Autowired
     private MockMvc mockMvc;

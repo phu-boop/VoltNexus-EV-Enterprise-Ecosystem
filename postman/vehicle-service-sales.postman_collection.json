@@ -1,0 +1,345 @@
+{
+  "info": {
+    "_postman_id": "7d4a6a9d-1f35-4b68-8f12-2f5f0c9a7e31",
+    "name": "VoltNexus Vehicle & Promotion APIs",
+    "description": "Postman collection to test vehicle-service variant/feature endpoints and sales-service promotion endpoints through the gateway. Set baseUrl to your gateway URL and accessToken to a valid JWT before running protected requests.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{accessToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080"
+    },
+    {
+      "key": "accessToken",
+      "value": ""
+    },
+    {
+      "key": "userEmail",
+      "value": "admin@voltnexus.com"
+    },
+    {
+      "key": "modelId",
+      "value": "1"
+    },
+    {
+      "key": "variantId",
+      "value": "1"
+    },
+    {
+      "key": "featureId",
+      "value": "1"
+    },
+    {
+      "key": "promotionId",
+      "value": "00000000-0000-0000-0000-000000000000"
+    }
+  ],
+  "item": [
+    {
+      "name": "Vehicle Variants",
+      "item": [
+        {
+          "name": "30 - createVehicleVariant",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-User-Email",
+                "value": "{{userEmail}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"versionName\": \"Long Range AWD\",\n  \"color\": \"Pearl White\",\n  \"skuCode\": \"VNX-MODEL-X-LRAWD\",\n  \"price\": 1299000000,\n  \"wholesalePrice\": 1195000000,\n  \"status\": \"IN_PRODUCTION\",\n  \"imageUrl\": \"https://cdn.example.com/vehicles/model-x/lr-awd.png\",\n  \"batteryCapacity\": 82.0,\n  \"chargingTime\": 0.75,\n  \"rangeKm\": 520,\n  \"motorPower\": 450,\n  \"seatingCapacity\": 5,\n  \"torque\": 650,\n  \"acceleration\": 3.9,\n  \"topSpeed\": 220,\n  \"dimensions\": \"4750 x 1934 x 1667\",\n  \"weight\": 2280,\n  \"warrantyYears\": 8,\n  \"description\": \"High-performance AWD variant\",\n  \"colorImages\": \"{\\\"Pearl White\\\":\\\"https://cdn.example.com/vehicles/model-x/color/pearl-white.png\\\"}\",\n  \"exteriorImages\": \"[\\\"https://cdn.example.com/vehicles/model-x/exterior-1.jpg\\\"]\",\n  \"interiorImages\": \"[\\\"https://cdn.example.com/vehicles/model-x/interior-1.jpg\\\"]\",\n  \"features\": [\n    {\n      \"featureId\": {{featureId}},\n      \"isStandard\": true,\n      \"additionalCost\": 0\n    },\n    {\n      \"featureId\": 2,\n      \"isStandard\": false,\n      \"additionalCost\": 15000000\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/vehicle-catalog/models/{{modelId}}/variants",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vehicle-catalog",
+                "models",
+                "{{modelId}}",
+                "variants"
+              ]
+            },
+            "description": "Tạo mới một variant cho model. Endpoint này tương ứng createVehicleVariant."
+          }
+        },
+        {
+          "name": "31 - updateVehicleVariant",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-User-Email",
+                "value": "{{userEmail}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"versionName\": \"Long Range AWD - Updated\",\n  \"color\": \"Pearl White\",\n  \"price\": 1279000000,\n  \"imageUrl\": \"https://cdn.example.com/vehicles/model-x/lr-awd-updated.png\",\n  \"status\": \"IN_PRODUCTION\",\n  \"batteryCapacity\": 82.0,\n  \"chargingTime\": 0.72,\n  \"rangeKm\": 530,\n  \"motorPower\": 470,\n  \"seatingCapacity\": 5,\n  \"torque\": 670,\n  \"acceleration\": 3.8,\n  \"topSpeed\": 225,\n  \"dimensions\": \"4750 x 1934 x 1667\",\n  \"weight\": 2275,\n  \"warrantyYears\": 8,\n  \"description\": \"Updated high-performance AWD variant\",\n  \"colorImages\": \"{\\\"Pearl White\\\":\\\"https://cdn.example.com/vehicles/model-x/color/pearl-white.png\\\"}\",\n  \"exteriorImages\": \"[\\\"https://cdn.example.com/vehicles/model-x/exterior-1.jpg\\\",\\\"https://cdn.example.com/vehicles/model-x/exterior-2.jpg\\\"]\",\n  \"interiorImages\": \"[\\\"https://cdn.example.com/vehicles/model-x/interior-1.jpg\\\"]\",\n  \"wholesalePrice\": 1180000000,\n  \"reason\": \"Adjust pricing and technical specs for sales policy update\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/vehicle-catalog/variants/{{variantId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vehicle-catalog",
+                "variants",
+                "{{variantId}}"
+              ]
+            },
+            "description": "Cập nhật thông tin variant theo variantId. Endpoint này tương ứng updateVehicleVariant."
+          }
+        },
+        {
+          "name": "32 - deleteVehicleVariant",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "X-User-Email",
+                "value": "{{userEmail}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/vehicle-catalog/variants/{{variantId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vehicle-catalog",
+                "variants",
+                "{{variantId}}"
+              ]
+            },
+            "description": "Ngừng kinh doanh hoặc xóa mềm variant theo variantId. Endpoint này tương ứng deleteVehicleVariant."
+          }
+        },
+        {
+          "name": "36 - listFeaturesByVariant",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/vehicle-catalog/variants/{{variantId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vehicle-catalog",
+                "variants",
+                "{{variantId}}"
+              ]
+            },
+            "description": "Lấy chi tiết một variant, trong response có danh sách features đã gán cho variant."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Variant Features",
+      "item": [
+        {
+          "name": "33 - createVariantFeature",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-User-Email",
+                "value": "{{userEmail}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"featureName\": \"Panoramic Sunroof\",\n  \"description\": \"Large glass roof with UV protection\",\n  \"category\": \"EXTERIOR\",\n  \"featureType\": \"COMFORT\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/vehicle-catalog/features",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vehicle-catalog",
+                "features"
+              ]
+            },
+            "description": "Tạo mới một feature trong thư viện tính năng. Endpoint này tương ứng createVariantFeature."
+          }
+        },
+        {
+          "name": "34 - updateVariantFeature",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-User-Email",
+                "value": "{{userEmail}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"featureName\": \"Panoramic Sunroof Plus\",\n  \"description\": \"Updated description for the panoramic roof feature\",\n  \"category\": \"EXTERIOR\",\n  \"featureType\": \"COMFORT\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/vehicle-catalog/features/{{featureId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vehicle-catalog",
+                "features",
+                "{{featureId}}"
+              ]
+            },
+            "description": "Cập nhật feature theo featureId. Endpoint này tương ứng updateVariantFeature."
+          }
+        },
+        {
+          "name": "35 - deleteVariantFeature",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "X-User-Email",
+                "value": "{{userEmail}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/vehicle-catalog/features/{{featureId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vehicle-catalog",
+                "features",
+                "{{featureId}}"
+              ]
+            },
+            "description": "Xóa hoặc vô hiệu hóa feature theo featureId. Endpoint này tương ứng deleteVariantFeature."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Promotions",
+      "item": [
+        {
+          "name": "37 - listPromotions",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/promotions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "promotions"
+              ]
+            },
+            "description": "Lấy danh sách toàn bộ chương trình khuyến mãi. Nếu bạn chỉ cần chương trình đang ACTIVE, đổi sang GET /promotions/active."
+          }
+        },
+        {
+          "name": "38 - createPromotionCampaign",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"promotionName\": \"Summer Sale 2026\",\n  \"description\": \"Giảm giá cho dòng xe điện mùa hè\",\n  \"discountRate\": 0.1,\n  \"startDate\": \"2026-04-01T00:00:00\",\n  \"endDate\": \"2026-06-30T23:59:59\",\n  \"status\": \"DRAFT\",\n  \"applicableDealers\": [\n    \"11111111-1111-1111-1111-111111111111\"\n  ],\n  \"applicableModels\": [\n    1,\n    2\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/promotions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "promotions"
+              ]
+            },
+            "description": "Tạo mới chương trình khuyến mãi. Endpoint này tương ứng createPromotionCampaign."
+          }
+        },
+        {
+          "name": "39 - updatePromotionCampaign",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"promotionName\": \"Summer Sale 2026 - Updated\",\n  \"description\": \"Cập nhật điều kiện áp dụng và mức giảm\",\n  \"discountRate\": 0.12,\n  \"startDate\": \"2026-04-15T00:00:00\",\n  \"endDate\": \"2026-07-15T23:59:59\",\n  \"status\": \"NEAR\",\n  \"applicableDealers\": [\n    \"11111111-1111-1111-1111-111111111111\",\n    \"22222222-2222-2222-2222-222222222222\"\n  ],\n  \"applicableModels\": [\n    1,\n    3\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/promotions/{{promotionId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "promotions",
+                "{{promotionId}}"
+              ]
+            },
+            "description": "Cập nhật chương trình khuyến mãi theo promotionId. Endpoint này tương ứng updatePromotionCampaign."
+          }
+        },
+        {
+          "name": "40 - deletePromotionCampaign",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/promotions/{{promotionId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "promotions",
+                "{{promotionId}}"
+              ]
+            },
+            "description": "Xóa mềm hoặc ngừng áp dụng chương trình khuyến mãi theo promotionId. Endpoint này tương ứng deletePromotionCampaign."
+          }
+        }
+      ]
+    }
+  ]
+}

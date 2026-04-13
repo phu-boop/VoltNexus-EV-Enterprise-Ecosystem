@@ -29,51 +29,58 @@ export default defineConfig({
     // baseURL: 'http://localhost:3000',
 
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
-    trace: 'on-first-retry',
+    trace: 'on',
+    /* Record video for tests */
+    video: 'on',
+    launchOptions: {
+      args: [
+        '--disable-gpu',
+        '--no-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-setuid-sandbox'
+      ]
+    }
   },
 
   /* Configure projects for major browsers */
   projects: [
+    // Setup - Chạy các file cấu hình đăng nhập ngầm 1 lần duy nhất
+    { name: 'setup', testMatch: /.*\.setup\.ts/ },
+
+    // Public - Test giao diện công khai (không cần login)
     {
-      name: 'chromium',
+      name: 'public',
+      testDir: './tests/public',
       use: { ...devices['Desktop Chrome'] },
     },
 
-    // {
-    //   name: 'firefox',
-    //   use: { ...devices['Desktop Firefox'] },
-    // },
+    // E2E Admin - Test Admin EVM
+    {
+      name: 'e2e-admin',
+      testDir: './tests/evm',
+      use: {
+        ...devices['Desktop Chrome'],
+        storageState: 'playwright/.auth/admin.json',
+      },
+      dependencies: ['setup'],
+    },
 
-    // {
-    //   name: 'webkit',
-    //   use: { ...devices['Desktop Safari'] },
-    // },
-
-    /* Test against mobile viewports. */
-    // {
-    //   name: 'Mobile Chrome',
-    //   use: { ...devices['Pixel 5'] },
-    // },
-    // {
-    //   name: 'Mobile Safari',
-    //   use: { ...devices['iPhone 12'] },
-    // },
-
-    /* Test against branded browsers. */
-    // {
-    //   name: 'Microsoft Edge',
-    //   use: { ...devices['Desktop Edge'], channel: 'msedge' },
-    // },
-    // {
-    //   name: 'Google Chrome',
-    //   use: { ...devices['Desktop Chrome'], channel: 'chrome' },
-    // },
+    // E2E Dealer - Test CRM Đại lý & Bàn hàng B2C
+    {
+      name: 'e2e-dealer',
+      testDir: './tests/dealer',
+      use: {
+        ...devices['Desktop Chrome'],
+        storageState: 'playwright/.auth/dealer.json',
+      },
+      dependencies: ['setup'],
+    },
   ],
 
   /* Run your local dev server before starting the tests */
-  webServer: {
-    command: 'npm run dev',
-    url: 'http://localhost:5173',
-    reuseExistingServer: !process.env.CI,
-  },
+  // webServer: {
+  //   command: 'npm run start',
+  //   url: 'http://localhost:3000',
+  //   reuseExistingServer: !process.env.CI,
+  // },
 });

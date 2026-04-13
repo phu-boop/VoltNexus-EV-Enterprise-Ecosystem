@@ -3,24 +3,32 @@ import React, { useMemo } from 'react';
 
 const Step2Calculation = ({ quotationDetail, calculationData, promotions, onChange, onSubmit, onBack, errorMessage }) => {
   const calculationResult = useMemo(() => {
-    const basePrice = quotationDetail?.basePrice || 0;
+    const basePrice = Number(quotationDetail?.basePrice || 0);
     
-    const promotionDiscount = promotions
-      .filter(promo => calculationData.promotionIds.includes(promo.promotionId))
-      .reduce((total, promo) => total + (basePrice * promo.discountRate), 0);
+    // Lấy danh sách chi tiết các KM đã chọn để hiển thị breakdown
+    const selectedPromos = promotions.filter(promo => 
+      calculationData.promotionIds.includes(promo.promotionId)
+    );
 
-    const additionalDiscount = basePrice * (calculationData.additionalDiscountRate / 100);
+    const promotionDiscount = selectedPromos.reduce((total, promo) => {
+      const rate = Number(promo.discountRate || 0);
+      return total + (basePrice * rate);
+    }, 0);
+
+    const additionalRate = Number(calculationData.additionalDiscountRate || 0);
+    const additionalDiscount = basePrice * (additionalRate / 100);
     
     const totalDiscount = promotionDiscount + additionalDiscount;
     const finalPrice = basePrice - totalDiscount;
 
     return {
+      basePrice,
+      selectedPromos,
       promotionDiscount,
       additionalDiscount,
       totalDiscount,
       finalPrice,
-      basePrice,
-      discountPercentage: (totalDiscount / basePrice) * 100
+      discountPercentage: basePrice > 0 ? (totalDiscount / basePrice) * 100 : 0
     };
   }, [calculationData, promotions, quotationDetail]);
 
@@ -273,15 +281,22 @@ const Step2Calculation = ({ quotationDetail, calculationData, promotions, onChan
                   <span className="font-semibold text-gray-900">{formatPrice(calculationResult.basePrice)}</span>
                 </div>
                 
-                {calculationResult.promotionDiscount > 0 && (
-                  <div className="flex justify-between items-center text-red-600">
-                    <span className="flex items-center gap-2">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
-                      </svg>
-                      Khuyến mãi
-                    </span>
-                    <span className="font-semibold">-{formatPrice(calculationResult.promotionDiscount)}</span>
+                {calculationResult.selectedPromos.length > 0 && (
+                  <div className="space-y-2 py-2 border-t border-gray-50 mt-2">
+                    <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Chi tiết khuyến mãi</div>
+                    {calculationResult.selectedPromos.map(promo => (
+                      <div key={promo.promotionId} className="flex justify-between items-center text-sm text-red-600">
+                        <span className="flex items-center gap-2">
+                          <div className="w-1.5 h-1.5 rounded-full bg-red-400"></div>
+                          {promo.promotionName}
+                        </span>
+                        <span className="font-medium">-{formatPrice(calculationResult.basePrice * promo.discountRate)}</span>
+                      </div>
+                    ))}
+                    <div className="flex justify-between items-center pt-2 text-red-600 border-t border-dashed border-red-100">
+                      <span className="font-medium">Tổng khuyến mãi</span>
+                      <span className="font-bold">-{formatPrice(calculationResult.promotionDiscount)}</span>
+                    </div>
                   </div>
                 )}
 

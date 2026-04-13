@@ -34,7 +34,7 @@ public class StaffAssignmentController {
      *   "note": "Optional note"
      * }
      */
-    @PreAuthorize("hasAnyRole('DEALER_MANAGER', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('DEALER_MANAGER')")
     @PostMapping("/{customerId}/assign-staff")
     public ResponseEntity<ApiRespond<AssignmentResponse>> assignStaff(
             @PathVariable Long customerId,
@@ -57,7 +57,7 @@ public class StaffAssignmentController {
      * Hủy phân công nhân viên cho khách hàng
      * DELETE /customers/{customerId}/assign-staff
      */
-    @PreAuthorize("hasAnyRole('DEALER_MANAGER', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('DEALER_MANAGER')")
     @DeleteMapping("/{customerId}/assign-staff")
     public ResponseEntity<ApiRespond<AssignmentResponse>> unassignStaff(@PathVariable Long customerId) {
         
@@ -76,7 +76,7 @@ public class StaffAssignmentController {
      * Lấy thông tin nhân viên được phân công cho khách hàng
      * GET /customers/{customerId}/assigned-staff
      */
-    @PreAuthorize("hasAnyRole('CUSTOMER', 'DEALER_STAFF', 'DEALER_MANAGER', 'ADMIN', 'EVM_STAFF')")
+    @PreAuthorize("hasAnyRole('DEALER_MANAGER')")
     @GetMapping("/{customerId}/assigned-staff")
     public ResponseEntity<ApiRespond<StaffDTO>> getAssignedStaff(@PathVariable Long customerId) {
         

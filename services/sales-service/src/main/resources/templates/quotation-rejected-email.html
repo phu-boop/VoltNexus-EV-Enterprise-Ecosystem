@@ -2,216 +2,183 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
   <meta charset="UTF-8" />
-  <title>Thông Báo Từ Chối Báo Giá</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Thông báo phản hồi báo giá</title>
   <style>
     body {
-      font-family: 'Inter', 'Segoe UI', sans-serif;
-      background: #f9fafb;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background-color: #f8fafc;
       margin: 0;
       padding: 0;
-      color: #334155;
+      color: #1e293b;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .wrapper {
+      width: 100%;
+      table-layout: fixed;
+      padding: 40px 0;
     }
 
     .container {
-      max-width: 640px;
-      margin: 40px auto;
-      background: #ffffff;
-      border-radius: 16px;
-      box-shadow: 4px 5px 10px rgba(0, 0, 0, 0.4);
+      max-width: 600px;
+      margin: 0 auto;
+      background-color: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
       overflow: hidden;
     }
 
     .header {
-      background: linear-gradient(135deg, #fca5a5, #f87171);
-      padding: 24px;
-      text-align: center;
-      color: #fff;
+      padding: 40px 40px 20px;
+      text-align: left;
     }
 
     .brand {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      gap: 10px;
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: #64748b;
       margin-bottom: 8px;
     }
 
-    .brand-icon {
-      font-size: 28px;
-      background: rgba(255, 255, 255, 0.2);
-      border-radius: 8px;
-      padding: 6px 10px;
-    }
-
-    .brand-name {
-      font-size: 22px;
+    .header h1 {
+      font-size: 24px;
       font-weight: 600;
+      margin: 0;
+      color: #0f172a;
     }
 
     .content {
-      padding: 28px 32px;
+      padding: 20px 40px 40px;
+      line-height: 1.6;
     }
 
     .greeting {
       font-size: 16px;
-      margin-bottom: 16px;
+      margin-bottom: 24px;
     }
 
-    .rejection-box {
-      background: #fef2f2;
-      border: 1px solid #fecaca;
-      border-radius: 12px;
-      padding: 20px;
+    .status-card {
+      background-color: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      padding: 24px;
       text-align: center;
-      margin: 20px 0;
+      margin-bottom: 32px;
     }
 
-    .rejection-icon {
-      font-size: 40px;
-      margin-bottom: 10px;
+    .status-title {
+      font-weight: 600;
+      font-size: 18px;
+      color: #475569;
+      margin-bottom: 8px;
     }
 
     .quotation-id {
-      background: #ef4444;
-      color: #fff;
-      padding: 6px 12px;
-      border-radius: 6px;
-      font-weight: 600;
       display: inline-block;
+      color: #64748b;
+      font-size: 13px;
+      font-weight: 500;
+      padding: 4px 10px;
+      border: 1px solid #e2e8f0;
+      border-radius: 4px;
       margin-top: 8px;
     }
 
-    .feedback-section {
-      background: #f8fafc;
-      border-left: 4px solid #2563eb;
-      border-radius: 10px;
-      padding: 20px;
-      margin: 20px 0;
-    }
-
-    .feedback-section h4 {
-      margin: 0 0 10px 0;
-      font-size: 16px;
-    }
-
-    .feedback-section p {
-      margin: 0;
+    .feedback-section h2 {
       font-size: 14px;
+      font-weight: 700;
+      text-transform: uppercase;
       color: #64748b;
+      margin-bottom: 16px;
+      letter-spacing: 0.025em;
     }
 
-    .contact-options {
-      display: flex;
-      justify-content: space-between;
-      flex-wrap: wrap;
-      gap: 10px;
+    .options {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
       margin-top: 16px;
     }
 
-    .contact-card {
-      flex: 1 1 48%;
-      background: #ffffff;
-      border: 1px solid #e5e7eb;
-      border-radius: 10px;
-      text-align: center;
+    .option-card {
       padding: 16px;
-      transition: 0.2s;
+      border: 1px solid #f1f5f9;
+      border-radius: 6px;
     }
 
-    .contact-card:hover {
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    .option-card strong {
+      display: block;
+      font-size: 14px;
+      color: #0f172a;
+      margin-bottom: 4px;
     }
 
-    .contact-card .icon {
-      font-size: 22px;
-      margin-bottom: 6px;
+    .option-card p {
+      margin: 0;
+      font-size: 13px;
+      color: #64748b;
     }
 
     .footer {
-      background: #f1f5f9;
-      text-align: center;
-      padding: 20px;
-      font-size: 14px;
-      color: #64748b;
+      padding: 32px 40px;
+      background-color: #f8fafc;
       border-top: 1px solid #e2e8f0;
+      color: #64748b;
+      font-size: 12px;
+      text-align: center;
     }
 
-    .footer strong {
-      color: #1e293b;
-    }
-
-    @media (max-width: 600px) {
-      .container {
-        margin: 20px;
-      }
-      .content {
-        padding: 20px;
-      }
-      .contact-options {
-        flex-direction: column;
-      }
-      .contact-card {
-        flex: 1 1 100%;
-      }
-    }
+    .footer p { margin: 4px 0; }
   </style>
 </head>
 <body>
-  <div class="container">
-    <div class="header">
-      <div class="brand">
-        <div class="brand-icon">🚘</div>
-        <div class="brand-name">EV Automotive</div>
-      </div>
-      <h2 style="margin: 0;">Thông Báo Từ Chối Báo Giá</h2>
-    </div>
-
-    <div class="content">
-      <p class="greeting">
-        Kính gửi Quý khách <strong th:text="${customer.fullName}"></strong>,
-      </p>
-
-      <div class="rejection-box">
-        <div class="rejection-icon">❌</div>
-        <h3 style="margin: 0;">Báo Giá Đã Bị Từ Chối</h3>
-        <p style="color: #64748b; font-size: 14px;">
-          Chúng tôi đã nhận được phản hồi từ chối báo giá của Quý khách.
-        </p>
-        <div class="quotation-id" th:text="${quotation.quotationId}"></div>
+  <div class="wrapper">
+    <div class="container">
+      <div class="header">
+        <div class="brand">EV Automotive</div>
+        <h1>Phản hồi báo giá</h1>
       </div>
 
-      <div class="feedback-section">
-        <h4>Chúng tôi có thể hỗ trợ gì thêm?</h4>
-        <p>
-          Nếu Quý khách có bất kỳ thắc mắc nào hoặc cần tư vấn thêm về sản phẩm,
-          vui lòng liên hệ với chúng tôi qua các kênh bên dưới.
+      <div class="content">
+        <p class="greeting">
+          Xin chào <strong th:text="${customer.fullName}">Quý khách</strong>,
         </p>
 
-        <div class="contact-options">
-          <div class="contact-card">
-            <div class="icon">💬</div>
-            <div><strong>Tư vấn trực tiếp</strong></div>
-            <div style="font-size: 13px;">Đội ngũ sẵn sàng 24/7</div>
-          </div>
-          <div class="contact-card">
-            <div class="icon">📄</div>
-            <div><strong>Yêu cầu báo giá mới</strong></div>
-            <div style="font-size: 13px;">Phù hợp hơn với nhu cầu của bạn</div>
+        <p>Chúng tôi đã nhận được thông tin bạn không tiếp tục thực hiện giao dịch với báo giá hiện tại.</p>
+
+        <div class="status-card">
+          <div class="status-title">Báo giá đã được hủy bỏ</div>
+          <div class="quotation-id" th:text="'Mã báo giá: ' + ${quotation.quotationId}">Q-12345</div>
+        </div>
+
+        <div class="feedback-section">
+          <h2>Chúng tôi có thể giúp gì thêm?</h2>
+          <p style="font-size: 14px; margin-bottom: 24px;">Nếu lý do từ chối là do cấu hình xe hoặc điều khoản chưa phù hợp, đội ngũ của chúng tôi luôn sẵn sàng hỗ trợ bạn tìm kiếm giải pháp tốt hơn:</p>
+          
+          <div class="options">
+            <div class="option-card">
+              <strong>Tư vấn lại</strong>
+              <p>Trao đổi trực tiếp để điều chỉnh báo giá.</p>
+            </div>
+            <div class="option-card">
+              <strong>Yêu cầu mới</strong>
+              <p>Chọn dòng xe hoặc gói ưu đãi khác.</p>
+            </div>
           </div>
         </div>
+
+        <p style="margin-top: 40px; text-align: center; font-size: 14px; color: #64748b;">
+          Cảm ơn bạn đã quan tâm đến EV Automotive. Hy vọng sẽ có cơ hội phục vụ bạn trong tương lai.
+        </p>
       </div>
 
-      <p style="text-align:center; font-size: 14px; color: #64748b; margin-top: 24px;">
-        Cảm ơn Quý khách đã quan tâm đến sản phẩm của EV Automotive.
-        Chúng tôi hy vọng có cơ hội phục vụ Quý khách trong tương lai.
-      </p>
-    </div>
-
-    <div class="footer">
-      <p><strong>Đội ngũ EV Automotive</strong><br/>Luôn sẵn sàng hỗ trợ Quý khách</p>
-      <div style="margin-top: 10px;">
-        📧 support@ev-automotive.com &nbsp; | &nbsp; 📞 1800-1234
-        <br/> 🌐 www.ev-automotive.com
+      <div class="footer">
+        <p><strong>Đội ngũ EV Automotive</strong></p>
+        <p>Email: support@ev-automotive.com | Hotline: 1800 1234</p>
+        <p>&copy; 2024 EV Automotive. Vietnam.</p>
       </div>
     </div>
   </div>
