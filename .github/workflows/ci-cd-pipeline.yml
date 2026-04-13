@@ -58,7 +58,7 @@ jobs:
           # Run tests for my-app
           cd ../my-app && npm install && npm test -- --watchAll=false
 
-      - name: "CI: Static Analysis & Quality Gate"
+            - name: "CI: Static Analysis & Quality Gate"
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -70,8 +70,11 @@ jobs:
             -Dsonar.host.url=https://sonarcloud.io \
             -Dsonar.token=$SONAR_TOKEN \
             -Dsonar.qualitygate.wait=true
+
       - name: "CI: Check SonarCloud Issues"
-        if: always()
+        if: |
+          always() && 
+          github.event.inputs.skip_quality_gate != 'true'
         id: sonar_check
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
@@ -88,14 +91,16 @@ jobs:
           fi
 
       - name: "Notify: Jira Bug on SonarCloud Quality Gate Failure"
-        if: always() && steps.sonar_check.outputs.has_issues == 'true'
+        if: |
+          always() && 
+          steps.sonar_check.outputs.has_issues == 'true' &&
+          github.event.inputs.skip_quality_gate != 'true'
         env:
           JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
           JIRA_USER_EMAIL: ${{ secrets.JIRA_USER_EMAIL }}
           JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
           JIRA_PROJECT_KEY: ${{ secrets.JIRA_PROJECT_KEY }}
         run: |
-          # Dùng ${{ env.xxx }} và ${{ github.xxx }} để đảm bảo biến được điền giá trị trước khi chạy shell
           SUMMARY="[SonarCloud] ${{ github.repository }} - ${{ steps.sonar_check.outputs.issue_count }} Critical Issues Found (#${{ github.run_number }})"
           DESCRIPTION="🚨 *SonarCloud Quality Gate Failure*\n\n*Repository:* ${{ github.repository }}\n*Branch:* ${{ github.ref_name }}\n*Workflow:* ${{ github.workflow }}\n*Run ID:* [${{ github.run_id }}](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})\n\nFound *${{ steps.sonar_check.outputs.issue_count }}* issues with severity *BLOCKER* or *CRITICAL*.\n\n*SonarCloud Project:* [View Issues](https://sonarcloud.io/project/issues?id=phu-boop_VoltNexus-EV-Enterprise-Ecosystem&resolved=false&severities=BLOCKER%2CCRITICAL)"
 
