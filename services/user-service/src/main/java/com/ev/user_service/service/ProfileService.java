@@ -90,7 +90,6 @@ public class ProfileService {
 
         if (staffOpt.isPresent() && managerOpt.isPresent()) {
             System.err.println("Duplicate profile found for ID: " + idForLog + ". Preferring Manager Profile.");
-            log.warn("Duplicate profile found for ID {}. Preferring Manager Profile.", idMember);
             return managerOpt.get().getDealerId();
         }
 
