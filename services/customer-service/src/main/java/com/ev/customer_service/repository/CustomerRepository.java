@@ -1,6 +1,8 @@
 package com.ev.customer_service.repository;
 
 import com.ev.customer_service.entity.Customer;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -40,4 +42,13 @@ public interface CustomerRepository extends JpaRepository<Customer, Long> {
            "OR LOWER(c.phone) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
            "OR LOWER(c.address) LIKE LOWER(CONCAT('%', :keyword, '%')))")
     List<Customer> searchCustomersByDealer(@Param("keyword") String keyword, @Param("dealerId") UUID dealerId);
+
+        @Query("SELECT c FROM Customer c WHERE (c.preferredDealerId = :dealerId OR :dealerId IS NULL) AND (" +
+            "LOWER(c.firstName) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
+            "OR LOWER(c.lastName) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
+            "OR LOWER(c.email) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
+            "OR LOWER(c.phone) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
+            "OR LOWER(c.address) LIKE LOWER(CONCAT('%', :keyword, '%')))")
+        Page<Customer> searchCustomersByDealer(@Param("keyword") String keyword, @Param("dealerId") UUID dealerId,
+             Pageable pageable);
 }

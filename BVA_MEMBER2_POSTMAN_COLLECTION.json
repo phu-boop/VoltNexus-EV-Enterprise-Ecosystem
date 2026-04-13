@@ -1,0 +1,1970 @@
+﻿{
+    "info":  {
+                 "name":  "VoltNexus BVA Tests - Member 2 (Customer Service)",
+                 "description":  "Boundary Value Analysis test cases for PublicTestDriveRequest, TestDriveRequest, UpdateTestDriveRequest, VehicleReviewRequest, TestDriveFeedbackRequest, and ChargingStationRequest",
+                 "schema":  "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+             },
+    "item":  [
+                 {
+                     "name":  "PublicTestDriveRequest BVA Tests (7-case)",
+                     "description":  "BVA + dirty case cho customerName: Min-, Min, Min+, Nom, Max-, Max, Max+",
+                     "item":  [
+                                  {
+                                      "name":  "TD001 - customerName Min (2 chars)",
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\n  \"dealerId\": \"550e8400-e29b-41d4-a716-446655440000\",\n  \"modelId\": 1,\n  \"customerName\": \"AB\",\n  \"customerPhone\": \"0912345678\",\n  \"customerEmail\": \"test@example.com\",\n  \"appointmentDate\": \"2026-05-15T09:00:00\",\n  \"durationMinutes\": 15,\n  \"testDriveLocation\": \"Dealer Branch 1\",\n  \"customerNotes\": \"No notes\"\n}"
+                                                               },
+                                                      "url":  {
+                                                                  "raw":  "{{BASE_URL}}/customers/api/test-drives/public",
+                                                                  "host":  [
+                                                                               "{{BASE_URL}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "customers",
+                                                                               "api",
+                                                                               "test-drives",
+                                                                               "public"
+                                                                           ]
+                                                              }
+                                                  },
+                                      "response":  [
+
+                                                   ],
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "exec":  [
+                                                                                    "pm.test(\"TD001 - Should return success for min boundary (2 chars)\", function () {",
+                                                                                    "    pm.response.to.have.status([200, 201]);",
+                                                                                    "});"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ]
+                                  },
+                                  {
+                                      "name":  "TD002 - customerName Min+ (3 chars)",
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\n  \"dealerId\": \"550e8400-e29b-41d4-a716-446655440000\",\n  \"modelId\": 1,\n  \"customerName\": \"ABC\",\n  \"customerPhone\": \"0912345678\",\n  \"customerEmail\": \"test@example.com\",\n  \"appointmentDate\": \"2026-05-15T09:00:00\",\n  \"durationMinutes\": 15,\n  \"testDriveLocation\": \"Dealer Branch 1\",\n  \"customerNotes\": \"No notes\"\n}"
+                                                               },
+                                                      "url":  {
+                                                                  "raw":  "{{BASE_URL}}/customers/api/test-drives/public",
+                                                                  "host":  [
+                                                                               "{{BASE_URL}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "customers",
+                                                                               "api",
+                                                                               "test-drives",
+                                                                               "public"
+                                                                           ]
+                                                              }
+                                                  },
+                                      "response":  [
+
+                                                   ],
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "exec":  [
+                                                                                    "pm.test(\"TD002 - Should return success for Min+ boundary (3 chars)\", function () {",
+                                                                                    "    pm.response.to.have.status([200, 201]);",
+                                                                                    "});"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ]
+                                  },
+                                  {
+                                      "name":  "TD003 - customerName Nom (50 chars)",
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\n  \"dealerId\": \"550e8400-e29b-41d4-a716-446655440000\",\n  \"modelId\": 1,\n  \"customerName\": \"{{CUSTOMER_NAME_50}}\",\n  \"customerPhone\": \"0912345678\",\n  \"customerEmail\": \"test@example.com\",\n  \"appointmentDate\": \"2026-05-15T09:00:00\",\n  \"durationMinutes\": 15,\n  \"testDriveLocation\": \"Dealer Branch 1\",\n  \"customerNotes\": \"No notes\"\n}"
+                                                               },
+                                                      "url":  {
+                                                                  "raw":  "{{BASE_URL}}/customers/api/test-drives/public",
+                                                                  "host":  [
+                                                                               "{{BASE_URL}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "customers",
+                                                                               "api",
+                                                                               "test-drives",
+                                                                               "public"
+                                                                           ]
+                                                              }
+                                                  },
+                                      "response":  [
+
+                                                   ],
+                                      "event":  [
+                                                    {
+                                                        "listen":  "prerequest",
+                                                        "script":  {
+                                                                       "exec":  [
+                                                                                    "pm.environment.set(\u0027CUSTOMER_NAME_50\u0027, \u0027A\u0027.repeat(50));"
+                                                                                ]
+                                                                   }
+                                                    },
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "exec":  [
+                                                                                    "pm.test(\"TD003 - Should return success for nominal boundary (50 chars)\", function () {",
+                                                                                    "    pm.response.to.have.status([200, 201]);",
+                                                                                    "});"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ]
+                                  },
+                                  {
+                                      "name":  "TD004 - customerName Max- (99 chars)",
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\n  \"dealerId\": \"550e8400-e29b-41d4-a716-446655440000\",\n  \"modelId\": 1,\n  \"customerName\": \"{{CUSTOMER_NAME_99}}\",\n  \"customerPhone\": \"0912345678\",\n  \"customerEmail\": \"test@example.com\",\n  \"appointmentDate\": \"2026-05-15T09:00:00\",\n  \"durationMinutes\": 15,\n  \"testDriveLocation\": \"Dealer Branch 1\",\n  \"customerNotes\": \"No notes\"\n}"
+                                                               },
+                                                      "url":  {
+                                                                  "raw":  "{{BASE_URL}}/customers/api/test-drives/public",
+                                                                  "host":  [
+                                                                               "{{BASE_URL}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "customers",
+                                                                               "api",
+                                                                               "test-drives",
+                                                                               "public"
+                                                                           ]
+                                                              }
+                                                  },
+                                      "response":  [
+
+                                                   ],
+                                      "event":  [
+                                                    {
+                                                        "listen":  "prerequest",
+                                                        "script":  {
+                                                                       "exec":  [
+                                                                                    "pm.environment.set(\u0027CUSTOMER_NAME_99\u0027, \u0027A\u0027.repeat(99));"
+                                                                                ]
+                                                                   }
+                                                    },
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "exec":  [
+                                                                                    "pm.test(\"TD004 - Should return success for Max- boundary (99 chars)\", function () {",
+                                                                                    "    pm.response.to.have.status([200, 201]);",
+                                                                                    "});"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ]
+                                  },
+                                  {
+                                      "name":  "TD005 - customerName Max (100 chars)",
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\n  \"dealerId\": \"550e8400-e29b-41d4-a716-446655440000\",\n  \"modelId\": 1,\n  \"customerName\": \"{{CUSTOMER_NAME_100}}\",\n  \"customerPhone\": \"0912345678\",\n  \"customerEmail\": \"test@example.com\",\n  \"appointmentDate\": \"2026-05-15T09:00:00\",\n  \"durationMinutes\": 15,\n  \"testDriveLocation\": \"Dealer Branch 1\",\n  \"customerNotes\": \"No notes\"\n}"
+                                                               },
+                                                      "url":  {
+                                                                  "raw":  "{{BASE_URL}}/customers/api/test-drives/public",
+                                                                  "host":  [
+                                                                               "{{BASE_URL}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "customers",
+                                                                               "api",
+                                                                               "test-drives",
+                                                                               "public"
+                                                                           ]
+                                                              }
+                                                  },
+                                      "response":  [
+
+                                                   ],
+                                      "event":  [
+                                                    {
+                                                        "listen":  "prerequest",
+                                                        "script":  {
+                                                                       "exec":  [
+                                                                                    "pm.environment.set(\u0027CUSTOMER_NAME_100\u0027, \u0027A\u0027.repeat(100));"
+                                                                                ]
+                                                                   }
+                                                    },
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "exec":  [
+                                                                                    "pm.test(\"TD005 - Should return success for Max boundary (100 chars)\", function () {",
+                                                                                    "    pm.response.to.have.status([200, 201]);",
+                                                                                    "});"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ]
+                                  },
+                                  {
+                                      "name":  "TD006 - customerName Min- (1 char)",
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\r\n    \"dealerId\":  \"550e8400-e29b-41d4-a716-446655440000\",\r\n    \"modelId\":  1,\r\n    \"customerName\":  \"A\",\r\n    \"customerPhone\":  \"0912345678\",\r\n    \"customerEmail\":  \"test@example.com\",\r\n    \"appointmentDate\":  \"2026-05-15T09:00:00\",\r\n    \"durationMinutes\":  15,\r\n    \"testDriveLocation\":  \"Dealer Branch 1\",\r\n    \"customerNotes\":  \"No notes\"\r\n}"
+                                                               },
+                                                      "url":  {
+                                                                  "raw":  "{{BASE_URL}}/customers/api/test-drives/public",
+                                                                  "host":  [
+                                                                               "{{BASE_URL}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "customers",
+                                                                               "api",
+                                                                               "test-drives",
+                                                                               "public"
+                                                                           ]
+                                                              }
+                                                  },
+                                      "response":  [
+
+                                                   ],
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "exec":  [
+                                                                                    "pm.test(\"TD001 - Should return success for min boundary (2 chars)\", function () {",
+                                                                                    "    pm.response.to.have.status([200, 201]);",
+                                                                                    "});"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ]
+                                  },
+                                  {
+                                      "name":  "TD007 - customerName Max+ (101 chars)",
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\r\n    \"dealerId\":  \"550e8400-e29b-41d4-a716-446655440000\",\r\n    \"modelId\":  1,\r\n    \"customerName\":  \"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\",\r\n    \"customerPhone\":  \"0912345678\",\r\n    \"customerEmail\":  \"test@example.com\",\r\n    \"appointmentDate\":  \"2026-05-15T09:00:00\",\r\n    \"durationMinutes\":  15,\r\n    \"testDriveLocation\":  \"Dealer Branch 1\",\r\n    \"customerNotes\":  \"No notes\"\r\n}"
+                                                               },
+                                                      "url":  {
+                                                                  "raw":  "{{BASE_URL}}/customers/api/test-drives/public",
+                                                                  "host":  [
+                                                                               "{{BASE_URL}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "customers",
+                                                                               "api",
+                                                                               "test-drives",
+                                                                               "public"
+                                                                           ]
+                                                              }
+                                                  },
+                                      "response":  [
+
+                                                   ],
+                                      "event":  [
+                                                    {
+                                                        "listen":  "prerequest",
+                                                        "script":  {
+                                                                       "exec":  [
+                                                                                    "pm.environment.set(\u0027CUSTOMER_NAME_100\u0027, \u0027A\u0027.repeat(100));"
+                                                                                ]
+                                                                   }
+                                                    },
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "exec":  [
+                                                                                    "pm.test(\"TD005 - Should return success for Max boundary (100 chars)\", function () {",
+                                                                                    "    pm.response.to.have.status([200, 201]);",
+                                                                                    "});"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ]
+                                  }
+                              ]
+                 },
+                 {
+                     "name":  "VehicleReviewRequest BVA Tests (7-case)",
+                     "description":  "BVA + dirty case cho rating: Min-, Min, Min+, Nom, Max-, Max, Max+",
+                     "item":  [
+                                  {
+                                      "name":  "VR001 - rating Min (1)",
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\n  \"customerId\": 1,\n  \"modelId\": 1,\n  \"rating\": 1,\n  \"title\": \"Good car\",\n  \"reviewText\": \"This is a great vehicle with good performance\"\n}"
+                                                               },
+                                                      "url":  {
+                                                                  "raw":  "{{BASE_URL}}/customers/api/reviews",
+                                                                  "host":  [
+                                                                               "{{BASE_URL}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "customers",
+                                                                               "api",
+                                                                               "reviews"
+                                                                           ]
+                                                              }
+                                                  },
+                                      "response":  [
+
+                                                   ],
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "exec":  [
+                                                                                    "pm.test(\"VR001 - Should return success for Min rating (1)\", function () {",
+                                                                                    "    pm.response.to.have.status([200, 201]);",
+                                                                                    "});"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ]
+                                  },
+                                  {
+                                      "name":  "VR002 - rating Min+ (2)",
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\n  \"customerId\": 1,\n  \"modelId\": 1,\n  \"rating\": 2,\n  \"title\": \"Fair car\",\n  \"reviewText\": \"This car is acceptable but could be better\"\n}"
+                                                               },
+                                                      "url":  {
+                                                                  "raw":  "{{BASE_URL}}/customers/api/reviews",
+                                                                  "host":  [
+                                                                               "{{BASE_URL}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "customers",
+                                                                               "api",
+                                                                               "reviews"
+                                                                           ]
+                                                              }
+                                                  },
+                                      "response":  [
+
+                                                   ],
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "exec":  [
+                                                                                    "pm.test(\"VR002 - Should return success for Min+ rating (2)\", function () {",
+                                                                                    "    pm.response.to.have.status([200, 201]);",
+                                                                                    "});"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ]
+                                  },
+                                  {
+                                      "name":  "VR003 - rating Nom (3)",
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\n  \"customerId\": 1,\n  \"modelId\": 1,\n  \"rating\": 3,\n  \"title\": \"Average car\",\n  \"reviewText\": \"This car is average and meets basic expectations\"\n}"
+                                                               },
+                                                      "url":  {
+                                                                  "raw":  "{{BASE_URL}}/customers/api/reviews",
+                                                                  "host":  [
+                                                                               "{{BASE_URL}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "customers",
+                                                                               "api",
+                                                                               "reviews"
+                                                                           ]
+                                                              }
+                                                  },
+                                      "response":  [
+
+                                                   ],
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "exec":  [
+                                                                                    "pm.test(\"VR003 - Should return success for Nom rating (3)\", function () {",
+                                                                                    "    pm.response.to.have.status([200, 201]);",
+                                                                                    "});"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ]
+                                  },
+                                  {
+                                      "name":  "VR004 - rating Max- (4)",
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\n  \"customerId\": 1,\n  \"modelId\": 1,\n  \"rating\": 4,\n  \"title\": \"Good car\",\n  \"reviewText\": \"This is a very good vehicle overall\"\n}"
+                                                               },
+                                                      "url":  {
+                                                                  "raw":  "{{BASE_URL}}/customers/api/reviews",
+                                                                  "host":  [
+                                                                               "{{BASE_URL}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "customers",
+                                                                               "api",
+                                                                               "reviews"
+                                                                           ]
+                                                              }
+                                                  },
+                                      "response":  [
+
+                                                   ],
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "exec":  [
+                                                                                    "pm.test(\"VR004 - Should return success for Max- rating (4)\", function () {",
+                                                                                    "    pm.response.to.have.status([200, 201]);",
+                                                                                    "});"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ]
+                                  },
+                                  {
+                                      "name":  "VR005 - rating Max (5)",
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\n  \"customerId\": 1,\n  \"modelId\": 1,\n  \"rating\": 5,\n  \"title\": \"Excellent vehicle\",\n  \"reviewText\": \"This is absolutely the best car I have ever driven\"\n}"
+                                                               },
+                                                      "url":  {
+                                                                  "raw":  "{{BASE_URL}}/customers/api/reviews",
+                                                                  "host":  [
+                                                                               "{{BASE_URL}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "customers",
+                                                                               "api",
+                                                                               "reviews"
+                                                                           ]
+                                                              }
+                                                  },
+                                      "response":  [
+
+                                                   ],
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "exec":  [
+                                                                                    "pm.test(\"VR005 - Should return success for Max rating (5)\", function () {",
+                                                                                    "    pm.response.to.have.status([200, 201]);",
+                                                                                    "});"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ]
+                                  },
+                                  {
+                                      "name":  "VR006 - rating Min- (0)",
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\r\n    \"customerId\":  1,\r\n    \"modelId\":  1,\r\n    \"rating\":  0,\r\n    \"title\":  \"Good car\",\r\n    \"reviewText\":  \"This is a great vehicle with good performance\"\r\n}"
+                                                               },
+                                                      "url":  {
+                                                                  "raw":  "{{BASE_URL}}/customers/api/reviews",
+                                                                  "host":  [
+                                                                               "{{BASE_URL}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "customers",
+                                                                               "api",
+                                                                               "reviews"
+                                                                           ]
+                                                              }
+                                                  },
+                                      "response":  [
+
+                                                   ],
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "exec":  [
+                                                                                    "pm.test(\"VR001 - Should return success for Min rating (1)\", function () {",
+                                                                                    "    pm.response.to.have.status([200, 201]);",
+                                                                                    "});"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ]
+                                  },
+                                  {
+                                      "name":  "VR007 - rating Max+ (6)",
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\r\n    \"customerId\":  1,\r\n    \"modelId\":  1,\r\n    \"rating\":  6,\r\n    \"title\":  \"Excellent vehicle\",\r\n    \"reviewText\":  \"This is absolutely the best car I have ever driven\"\r\n}"
+                                                               },
+                                                      "url":  {
+                                                                  "raw":  "{{BASE_URL}}/customers/api/reviews",
+                                                                  "host":  [
+                                                                               "{{BASE_URL}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "customers",
+                                                                               "api",
+                                                                               "reviews"
+                                                                           ]
+                                                              }
+                                                  },
+                                      "response":  [
+
+                                                   ],
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "exec":  [
+                                                                                    "pm.test(\"VR005 - Should return success for Max rating (5)\", function () {",
+                                                                                    "    pm.response.to.have.status([200, 201]);",
+                                                                                    "});"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ]
+                                  }
+                              ]
+                 },
+                 {
+                     "name":  "ChargingStationRequest BVA Tests (7-case)",
+                     "description":  "BVA + dirty case cho latitude: Min-, Min, Min+, Nom, Max-, Max, Max+",
+                     "item":  [
+                                  {
+                                      "name":  "CS001 - latitude Min (-90)",
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\n  \"stationName\": \"Downtown Charging Station\",\n  \"address\": \"123 Main Street\",\n  \"city\": \"Ho Chi Minh\",\n  \"province\": \"HCMC\",\n  \"latitude\": -90,\n  \"longitude\": 106.70,\n  \"totalChargers\": 5,\n  \"availableChargers\": 3,\n  \"maxPowerKw\": 150\n}"
+                                                               },
+                                                      "url":  {
+                                                                  "raw":  "{{BASE_URL}}/customers/api/charging-stations",
+                                                                  "host":  [
+                                                                               "{{BASE_URL}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "customers",
+                                                                               "api",
+                                                                               "charging-stations"
+                                                                           ]
+                                                              }
+                                                  },
+                                      "response":  [
+
+                                                   ],
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "exec":  [
+                                                                                    "pm.test(\"CS001 - Should return success for latitude Min (-90)\", function () {",
+                                                                                    "    pm.response.to.have.status([200, 201]);",
+                                                                                    "});"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ]
+                                  },
+                                  {
+                                      "name":  "CS002 - latitude Min+ (-89)",
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\n  \"stationName\": \"Downtown Charging Station\",\n  \"address\": \"123 Main Street\",\n  \"city\": \"Ho Chi Minh\",\n  \"province\": \"HCMC\",\n  \"latitude\": -89,\n  \"longitude\": 106.70,\n  \"totalChargers\": 5,\n  \"availableChargers\": 3,\n  \"maxPowerKw\": 150\n}"
+                                                               },
+                                                      "url":  {
+                                                                  "raw":  "{{BASE_URL}}/customers/api/charging-stations",
+                                                                  "host":  [
+                                                                               "{{BASE_URL}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "customers",
+                                                                               "api",
+                                                                               "charging-stations"
+                                                                           ]
+                                                              }
+                                                  },
+                                      "response":  [
+
+                                                   ],
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "exec":  [
+                                                                                    "pm.test(\"CS002 - Should return success for latitude Min+ (-89)\", function () {",
+                                                                                    "    pm.response.to.have.status([200, 201]);",
+                                                                                    "});"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ]
+                                  },
+                                  {
+                                      "name":  "CS003 - latitude Nom (0)",
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\n  \"stationName\": \"Downtown Charging Station\",\n  \"address\": \"123 Main Street\",\n  \"city\": \"Ho Chi Minh\",\n  \"province\": \"HCMC\",\n  \"latitude\": 0,\n  \"longitude\": 106.70,\n  \"totalChargers\": 5,\n  \"availableChargers\": 3,\n  \"maxPowerKw\": 150\n}"
+                                                               },
+                                                      "url":  {
+                                                                  "raw":  "{{BASE_URL}}/customers/api/charging-stations",
+                                                                  "host":  [
+                                                                               "{{BASE_URL}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "customers",
+                                                                               "api",
+                                                                               "charging-stations"
+                                                                           ]
+                                                              }
+                                                  },
+                                      "response":  [
+
+                                                   ],
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "exec":  [
+                                                                                    "pm.test(\"CS003 - Should return success for latitude Nom (0)\", function () {",
+                                                                                    "    pm.response.to.have.status([200, 201]);",
+                                                                                    "});"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ]
+                                  },
+                                  {
+                                      "name":  "CS004 - latitude Max- (89)",
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\n  \"stationName\": \"Downtown Charging Station\",\n  \"address\": \"123 Main Street\",\n  \"city\": \"Ho Chi Minh\",\n  \"province\": \"HCMC\",\n  \"latitude\": 89,\n  \"longitude\": 106.70,\n  \"totalChargers\": 5,\n  \"availableChargers\": 3,\n  \"maxPowerKw\": 150\n}"
+                                                               },
+                                                      "url":  {
+                                                                  "raw":  "{{BASE_URL}}/customers/api/charging-stations",
+                                                                  "host":  [
+                                                                               "{{BASE_URL}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "customers",
+                                                                               "api",
+                                                                               "charging-stations"
+                                                                           ]
+                                                              }
+                                                  },
+                                      "response":  [
+
+                                                   ],
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "exec":  [
+                                                                                    "pm.test(\"CS004 - Should return success for latitude Max- (89)\", function () {",
+                                                                                    "    pm.response.to.have.status([200, 201]);",
+                                                                                    "});"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ]
+                                  },
+                                  {
+                                      "name":  "CS005 - latitude Max (90)",
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\n  \"stationName\": \"Downtown Charging Station\",\n  \"address\": \"123 Main Street\",\n  \"city\": \"Ho Chi Minh\",\n  \"province\": \"HCMC\",\n  \"latitude\": 90,\n  \"longitude\": 106.70,\n  \"totalChargers\": 5,\n  \"availableChargers\": 3,\n  \"maxPowerKw\": 150\n}"
+                                                               },
+                                                      "url":  {
+                                                                  "raw":  "{{BASE_URL}}/customers/api/charging-stations",
+                                                                  "host":  [
+                                                                               "{{BASE_URL}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "customers",
+                                                                               "api",
+                                                                               "charging-stations"
+                                                                           ]
+                                                              }
+                                                  },
+                                      "response":  [
+
+                                                   ],
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "exec":  [
+                                                                                    "pm.test(\"CS005 - Should return success for latitude Max (90)\", function () {",
+                                                                                    "    pm.response.to.have.status([200, 201]);",
+                                                                                    "});"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ]
+                                  },
+                                  {
+                                      "name":  "CS006 - latitude Min- (-91)",
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\r\n    \"stationName\":  \"Downtown Charging Station\",\r\n    \"address\":  \"123 Main Street\",\r\n    \"city\":  \"Ho Chi Minh\",\r\n    \"province\":  \"HCMC\",\r\n    \"latitude\":  \"-91\",\r\n    \"longitude\":  106.70,\r\n    \"totalChargers\":  5,\r\n    \"availableChargers\":  3,\r\n    \"maxPowerKw\":  150\r\n}"
+                                                               },
+                                                      "url":  {
+                                                                  "raw":  "{{BASE_URL}}/customers/api/charging-stations",
+                                                                  "host":  [
+                                                                               "{{BASE_URL}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "customers",
+                                                                               "api",
+                                                                               "charging-stations"
+                                                                           ]
+                                                              }
+                                                  },
+                                      "response":  [
+
+                                                   ],
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "exec":  [
+                                                                                    "pm.test(\"CS001 - Should return success for latitude Min (-90)\", function () {",
+                                                                                    "    pm.response.to.have.status([200, 201]);",
+                                                                                    "});"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ]
+                                  },
+                                  {
+                                      "name":  "CS007 - latitude Max+ (91)",
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     }
+                                                                 ],
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\r\n    \"stationName\":  \"Downtown Charging Station\",\r\n    \"address\":  \"123 Main Street\",\r\n    \"city\":  \"Ho Chi Minh\",\r\n    \"province\":  \"HCMC\",\r\n    \"latitude\":  91,\r\n    \"longitude\":  106.70,\r\n    \"totalChargers\":  5,\r\n    \"availableChargers\":  3,\r\n    \"maxPowerKw\":  150\r\n}"
+                                                               },
+                                                      "url":  {
+                                                                  "raw":  "{{BASE_URL}}/customers/api/charging-stations",
+                                                                  "host":  [
+                                                                               "{{BASE_URL}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "customers",
+                                                                               "api",
+                                                                               "charging-stations"
+                                                                           ]
+                                                              }
+                                                  },
+                                      "response":  [
+
+                                                   ],
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "exec":  [
+                                                                                    "pm.test(\"CS005 - Should return success for latitude Max (90)\", function () {",
+                                                                                    "    pm.response.to.have.status([200, 201]);",
+                                                                                    "});"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ]
+                                  }
+                              ]
+                 },
+                 {
+                     "name":  "TestDriveRequest BVA Tests (7-case)",
+                     "description":  "BVA + dirty case cho durationMinutes [15, 240]: Min-, Min, Min+, Nom, Max-, Max, Max+",
+                     "item":  [
+                                  {
+                                      "name":  "TDR001 - duration Min (15)",
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     },
+                                                                     {
+                                                                         "key":  "Authorization",
+                                                                         "value":  "Bearer {{ACCESS_TOKEN}}"
+                                                                     }
+                                                                 ],
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\n  \"customerId\": 1,\n  \"dealerId\": \"550e8400-e29b-41d4-a716-446655440000\",\n  \"modelId\": 1,\n  \"appointmentDate\": \"2026-05-20T09:00:00\",\n  \"durationMinutes\": 15,\n  \"testDriveLocation\": \"Dealer Branch 1\"\n}"
+                                                               },
+                                                      "url":  {
+                                                                  "raw":  "{{BASE_URL}}/customers/api/test-drives",
+                                                                  "host":  [
+                                                                               "{{BASE_URL}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "customers",
+                                                                               "api",
+                                                                               "test-drives"
+                                                                           ]
+                                                              }
+                                                  },
+                                      "response":  [
+
+                                                   ],
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "exec":  [
+                                                                                    "pm.test(\"TDR001 - Should return success for Min duration (15)\", function () {",
+                                                                                    "    pm.response.to.have.status([200, 201]);",
+                                                                                    "});"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ]
+                                  },
+                                  {
+                                      "name":  "TDR002 - duration Min+ (16)",
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     },
+                                                                     {
+                                                                         "key":  "Authorization",
+                                                                         "value":  "Bearer {{ACCESS_TOKEN}}"
+                                                                     }
+                                                                 ],
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\n  \"customerId\": 1,\n  \"dealerId\": \"550e8400-e29b-41d4-a716-446655440000\",\n  \"modelId\": 1,\n  \"appointmentDate\": \"2026-05-20T09:00:00\",\n  \"durationMinutes\": 16,\n  \"testDriveLocation\": \"Dealer Branch 1\"\n}"
+                                                               },
+                                                      "url":  {
+                                                                  "raw":  "{{BASE_URL}}/customers/api/test-drives",
+                                                                  "host":  [
+                                                                               "{{BASE_URL}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "customers",
+                                                                               "api",
+                                                                               "test-drives"
+                                                                           ]
+                                                              }
+                                                  },
+                                      "response":  [
+
+                                                   ],
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "exec":  [
+                                                                                    "pm.test(\"TDR002 - Should return success for Min+ duration (16)\", function () {",
+                                                                                    "    pm.response.to.have.status([200, 201]);",
+                                                                                    "});"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ]
+                                  },
+                                  {
+                                      "name":  "TDR003 - duration Nom (120)",
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     },
+                                                                     {
+                                                                         "key":  "Authorization",
+                                                                         "value":  "Bearer {{ACCESS_TOKEN}}"
+                                                                     }
+                                                                 ],
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\n  \"customerId\": 1,\n  \"dealerId\": \"550e8400-e29b-41d4-a716-446655440000\",\n  \"modelId\": 1,\n  \"appointmentDate\": \"2026-05-20T09:00:00\",\n  \"durationMinutes\": 120,\n  \"testDriveLocation\": \"Dealer Branch 1\"\n}"
+                                                               },
+                                                      "url":  {
+                                                                  "raw":  "{{BASE_URL}}/customers/api/test-drives",
+                                                                  "host":  [
+                                                                               "{{BASE_URL}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "customers",
+                                                                               "api",
+                                                                               "test-drives"
+                                                                           ]
+                                                              }
+                                                  },
+                                      "response":  [
+
+                                                   ],
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "exec":  [
+                                                                                    "pm.test(\"TDR003 - Should return success for Nom duration (120)\", function () {",
+                                                                                    "    pm.response.to.have.status([200, 201]);",
+                                                                                    "});"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ]
+                                  },
+                                  {
+                                      "name":  "TDR004 - duration Max- (239)",
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     },
+                                                                     {
+                                                                         "key":  "Authorization",
+                                                                         "value":  "Bearer {{ACCESS_TOKEN}}"
+                                                                     }
+                                                                 ],
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\n  \"customerId\": 1,\n  \"dealerId\": \"550e8400-e29b-41d4-a716-446655440000\",\n  \"modelId\": 1,\n  \"appointmentDate\": \"2026-05-20T09:00:00\",\n  \"durationMinutes\": 239,\n  \"testDriveLocation\": \"Dealer Branch 1\"\n}"
+                                                               },
+                                                      "url":  {
+                                                                  "raw":  "{{BASE_URL}}/customers/api/test-drives",
+                                                                  "host":  [
+                                                                               "{{BASE_URL}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "customers",
+                                                                               "api",
+                                                                               "test-drives"
+                                                                           ]
+                                                              }
+                                                  },
+                                      "response":  [
+
+                                                   ],
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "exec":  [
+                                                                                    "pm.test(\"TDR004 - Should return success for Max- duration (239)\", function () {",
+                                                                                    "    pm.response.to.have.status([200, 201]);",
+                                                                                    "});"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ]
+                                  },
+                                  {
+                                      "name":  "TDR005 - duration Max (240)",
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     },
+                                                                     {
+                                                                         "key":  "Authorization",
+                                                                         "value":  "Bearer {{ACCESS_TOKEN}}"
+                                                                     }
+                                                                 ],
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\n  \"customerId\": 1,\n  \"dealerId\": \"550e8400-e29b-41d4-a716-446655440000\",\n  \"modelId\": 1,\n  \"appointmentDate\": \"2026-05-20T09:00:00\",\n  \"durationMinutes\": 240,\n  \"testDriveLocation\": \"Dealer Branch 1\"\n}"
+                                                               },
+                                                      "url":  {
+                                                                  "raw":  "{{BASE_URL}}/customers/api/test-drives",
+                                                                  "host":  [
+                                                                               "{{BASE_URL}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "customers",
+                                                                               "api",
+                                                                               "test-drives"
+                                                                           ]
+                                                              }
+                                                  },
+                                      "response":  [
+
+                                                   ],
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "exec":  [
+                                                                                    "pm.test(\"TDR005 - Should return success for Max duration (240)\", function () {",
+                                                                                    "    pm.response.to.have.status([200, 201]);",
+                                                                                    "});"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ]
+                                  },
+                                  {
+                                      "name":  "TDR006 - duration Min- (14)",
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     },
+                                                                     {
+                                                                         "key":  "Authorization",
+                                                                         "value":  "Bearer {{ACCESS_TOKEN}}"
+                                                                     }
+                                                                 ],
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\r\n    \"customerId\":  1,\r\n    \"dealerId\":  \"550e8400-e29b-41d4-a716-446655440000\",\r\n    \"modelId\":  1,\r\n    \"appointmentDate\":  \"2026-05-20T09:00:00\",\r\n    \"durationMinutes\":  14,\r\n    \"testDriveLocation\":  \"Dealer Branch 1\"\r\n}"
+                                                               },
+                                                      "url":  {
+                                                                  "raw":  "{{BASE_URL}}/customers/api/test-drives",
+                                                                  "host":  [
+                                                                               "{{BASE_URL}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "customers",
+                                                                               "api",
+                                                                               "test-drives"
+                                                                           ]
+                                                              }
+                                                  },
+                                      "response":  [
+
+                                                   ],
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "exec":  [
+                                                                                    "pm.test(\"TDR001 - Should return success for Min duration (15)\", function () {",
+                                                                                    "    pm.response.to.have.status([200, 201]);",
+                                                                                    "});"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ]
+                                  },
+                                  {
+                                      "name":  "TDR007 - duration Max+ (241)",
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     },
+                                                                     {
+                                                                         "key":  "Authorization",
+                                                                         "value":  "Bearer {{ACCESS_TOKEN}}"
+                                                                     }
+                                                                 ],
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\r\n    \"customerId\":  1,\r\n    \"dealerId\":  \"550e8400-e29b-41d4-a716-446655440000\",\r\n    \"modelId\":  1,\r\n    \"appointmentDate\":  \"2026-05-20T09:00:00\",\r\n    \"durationMinutes\":  241,\r\n    \"testDriveLocation\":  \"Dealer Branch 1\"\r\n}"
+                                                               },
+                                                      "url":  {
+                                                                  "raw":  "{{BASE_URL}}/customers/api/test-drives",
+                                                                  "host":  [
+                                                                               "{{BASE_URL}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "customers",
+                                                                               "api",
+                                                                               "test-drives"
+                                                                           ]
+                                                              }
+                                                  },
+                                      "response":  [
+
+                                                   ],
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "exec":  [
+                                                                                    "pm.test(\"TDR005 - Should return success for Max duration (240)\", function () {",
+                                                                                    "    pm.response.to.have.status([200, 201]);",
+                                                                                    "});"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ]
+                                  }
+                              ]
+                 },
+                 {
+                     "name":  "UpdateTestDriveRequest BVA Tests (7-case)",
+                     "description":  "BVA + dirty case cho durationMinutes [15, 240]: Min-, Min, Min+, Nom, Max-, Max, Max+",
+                     "item":  [
+                                  {
+                                      "name":  "UTD001 - duration Min (15)",
+                                      "request":  {
+                                                      "method":  "PUT",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     },
+                                                                     {
+                                                                         "key":  "Authorization",
+                                                                         "value":  "Bearer {{ACCESS_TOKEN}}"
+                                                                     }
+                                                                 ],
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\n  \"appointmentDate\": \"2026-05-21T10:00:00\",\n  \"durationMinutes\": 15,\n  \"testDriveLocation\": \"Dealer Branch 1\"\n}"
+                                                               },
+                                                      "url":  {
+                                                                  "raw":  "{{BASE_URL}}/customers/api/test-drives/{{TEST_DRIVE_ID}}",
+                                                                  "host":  [
+                                                                               "{{BASE_URL}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "customers",
+                                                                               "api",
+                                                                               "test-drives",
+                                                                               "{{TEST_DRIVE_ID}}"
+                                                                           ]
+                                                              }
+                                                  },
+                                      "response":  [
+
+                                                   ],
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "exec":  [
+                                                                                    "pm.test(\"UTD001 - Should return success for Min duration (15)\", function () {",
+                                                                                    "    pm.response.to.have.status([200, 201]);",
+                                                                                    "});"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ]
+                                  },
+                                  {
+                                      "name":  "UTD002 - duration Min+ (16)",
+                                      "request":  {
+                                                      "method":  "PUT",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     },
+                                                                     {
+                                                                         "key":  "Authorization",
+                                                                         "value":  "Bearer {{ACCESS_TOKEN}}"
+                                                                     }
+                                                                 ],
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\n  \"appointmentDate\": \"2026-05-21T10:00:00\",\n  \"durationMinutes\": 16,\n  \"testDriveLocation\": \"Dealer Branch 1\"\n}"
+                                                               },
+                                                      "url":  {
+                                                                  "raw":  "{{BASE_URL}}/customers/api/test-drives/{{TEST_DRIVE_ID}}",
+                                                                  "host":  [
+                                                                               "{{BASE_URL}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "customers",
+                                                                               "api",
+                                                                               "test-drives",
+                                                                               "{{TEST_DRIVE_ID}}"
+                                                                           ]
+                                                              }
+                                                  },
+                                      "response":  [
+
+                                                   ],
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "exec":  [
+                                                                                    "pm.test(\"UTD002 - Should return success for Min+ duration (16)\", function () {",
+                                                                                    "    pm.response.to.have.status([200, 201]);",
+                                                                                    "});"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ]
+                                  },
+                                  {
+                                      "name":  "UTD003 - duration Nom (120)",
+                                      "request":  {
+                                                      "method":  "PUT",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     },
+                                                                     {
+                                                                         "key":  "Authorization",
+                                                                         "value":  "Bearer {{ACCESS_TOKEN}}"
+                                                                     }
+                                                                 ],
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\n  \"appointmentDate\": \"2026-05-21T10:00:00\",\n  \"durationMinutes\": 120,\n  \"testDriveLocation\": \"Dealer Branch 1\"\n}"
+                                                               },
+                                                      "url":  {
+                                                                  "raw":  "{{BASE_URL}}/customers/api/test-drives/{{TEST_DRIVE_ID}}",
+                                                                  "host":  [
+                                                                               "{{BASE_URL}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "customers",
+                                                                               "api",
+                                                                               "test-drives",
+                                                                               "{{TEST_DRIVE_ID}}"
+                                                                           ]
+                                                              }
+                                                  },
+                                      "response":  [
+
+                                                   ],
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "exec":  [
+                                                                                    "pm.test(\"UTD003 - Should return success for Nom duration (120)\", function () {",
+                                                                                    "    pm.response.to.have.status([200, 201]);",
+                                                                                    "});"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ]
+                                  },
+                                  {
+                                      "name":  "UTD004 - duration Max- (239)",
+                                      "request":  {
+                                                      "method":  "PUT",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     },
+                                                                     {
+                                                                         "key":  "Authorization",
+                                                                         "value":  "Bearer {{ACCESS_TOKEN}}"
+                                                                     }
+                                                                 ],
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\n  \"appointmentDate\": \"2026-05-21T10:00:00\",\n  \"durationMinutes\": 239,\n  \"testDriveLocation\": \"Dealer Branch 1\"\n}"
+                                                               },
+                                                      "url":  {
+                                                                  "raw":  "{{BASE_URL}}/customers/api/test-drives/{{TEST_DRIVE_ID}}",
+                                                                  "host":  [
+                                                                               "{{BASE_URL}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "customers",
+                                                                               "api",
+                                                                               "test-drives",
+                                                                               "{{TEST_DRIVE_ID}}"
+                                                                           ]
+                                                              }
+                                                  },
+                                      "response":  [
+
+                                                   ],
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "exec":  [
+                                                                                    "pm.test(\"UTD004 - Should return success for Max- duration (239)\", function () {",
+                                                                                    "    pm.response.to.have.status([200, 201]);",
+                                                                                    "});"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ]
+                                  },
+                                  {
+                                      "name":  "UTD005 - duration Max (240)",
+                                      "request":  {
+                                                      "method":  "PUT",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     },
+                                                                     {
+                                                                         "key":  "Authorization",
+                                                                         "value":  "Bearer {{ACCESS_TOKEN}}"
+                                                                     }
+                                                                 ],
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\n  \"appointmentDate\": \"2026-05-21T10:00:00\",\n  \"durationMinutes\": 240,\n  \"testDriveLocation\": \"Dealer Branch 1\"\n}"
+                                                               },
+                                                      "url":  {
+                                                                  "raw":  "{{BASE_URL}}/customers/api/test-drives/{{TEST_DRIVE_ID}}",
+                                                                  "host":  [
+                                                                               "{{BASE_URL}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "customers",
+                                                                               "api",
+                                                                               "test-drives",
+                                                                               "{{TEST_DRIVE_ID}}"
+                                                                           ]
+                                                              }
+                                                  },
+                                      "response":  [
+
+                                                   ],
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "exec":  [
+                                                                                    "pm.test(\"UTD005 - Should return success for Max duration (240)\", function () {",
+                                                                                    "    pm.response.to.have.status([200, 201]);",
+                                                                                    "});"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ]
+                                  },
+                                  {
+                                      "name":  "UTD006 - duration Min- (14)",
+                                      "request":  {
+                                                      "method":  "PUT",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     },
+                                                                     {
+                                                                         "key":  "Authorization",
+                                                                         "value":  "Bearer {{ACCESS_TOKEN}}"
+                                                                     }
+                                                                 ],
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\r\n    \"appointmentDate\":  \"2026-05-21T10:00:00\",\r\n    \"durationMinutes\":  14,\r\n    \"testDriveLocation\":  \"Dealer Branch 1\"\r\n}"
+                                                               },
+                                                      "url":  {
+                                                                  "raw":  "{{BASE_URL}}/customers/api/test-drives/{{TEST_DRIVE_ID}}",
+                                                                  "host":  [
+                                                                               "{{BASE_URL}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "customers",
+                                                                               "api",
+                                                                               "test-drives",
+                                                                               "{{TEST_DRIVE_ID}}"
+                                                                           ]
+                                                              }
+                                                  },
+                                      "response":  [
+
+                                                   ],
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "exec":  [
+                                                                                    "pm.test(\"UTD001 - Should return success for Min duration (15)\", function () {",
+                                                                                    "    pm.response.to.have.status([200, 201]);",
+                                                                                    "});"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ]
+                                  },
+                                  {
+                                      "name":  "UTD007 - duration Max+ (241)",
+                                      "request":  {
+                                                      "method":  "PUT",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     },
+                                                                     {
+                                                                         "key":  "Authorization",
+                                                                         "value":  "Bearer {{ACCESS_TOKEN}}"
+                                                                     }
+                                                                 ],
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\r\n    \"appointmentDate\":  \"2026-05-21T10:00:00\",\r\n    \"durationMinutes\":  241,\r\n    \"testDriveLocation\":  \"Dealer Branch 1\"\r\n}"
+                                                               },
+                                                      "url":  {
+                                                                  "raw":  "{{BASE_URL}}/customers/api/test-drives/{{TEST_DRIVE_ID}}",
+                                                                  "host":  [
+                                                                               "{{BASE_URL}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "customers",
+                                                                               "api",
+                                                                               "test-drives",
+                                                                               "{{TEST_DRIVE_ID}}"
+                                                                           ]
+                                                              }
+                                                  },
+                                      "response":  [
+
+                                                   ],
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "exec":  [
+                                                                                    "pm.test(\"UTD005 - Should return success for Max duration (240)\", function () {",
+                                                                                    "    pm.response.to.have.status([200, 201]);",
+                                                                                    "});"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ]
+                                  }
+                              ]
+                 },
+                 {
+                     "name":  "TestDriveFeedbackRequest BVA Tests (7-case)",
+                     "description":  "BVA + dirty case cho feedbackRating [1,5]: Min-, Min, Min+, Nom, Max-, Max, Max+",
+                     "item":  [
+                                  {
+                                      "name":  "TDF001 - feedbackRating Min (1)",
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     },
+                                                                     {
+                                                                         "key":  "Authorization",
+                                                                         "value":  "Bearer {{ACCESS_TOKEN}}"
+                                                                     }
+                                                                 ],
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\n  \"feedbackRating\": 1,\n  \"feedbackComment\": \"Service is acceptable\",\n  \"staffNotes\": \"Min boundary test\"\n}"
+                                                               },
+                                                      "url":  {
+                                                                  "raw":  "{{BASE_URL}}/customers/api/test-drives/{{TEST_DRIVE_ID}}/feedback",
+                                                                  "host":  [
+                                                                               "{{BASE_URL}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "customers",
+                                                                               "api",
+                                                                               "test-drives",
+                                                                               "{{TEST_DRIVE_ID}}",
+                                                                               "feedback"
+                                                                           ]
+                                                              }
+                                                  },
+                                      "response":  [
+
+                                                   ],
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "exec":  [
+                                                                                    "pm.test(\"TDF001 - Should return success for Min rating (1)\", function () {",
+                                                                                    "    pm.response.to.have.status([200, 201]);",
+                                                                                    "});"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ]
+                                  },
+                                  {
+                                      "name":  "TDF002 - feedbackRating Min+ (2)",
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     },
+                                                                     {
+                                                                         "key":  "Authorization",
+                                                                         "value":  "Bearer {{ACCESS_TOKEN}}"
+                                                                     }
+                                                                 ],
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\n  \"feedbackRating\": 2,\n  \"feedbackComment\": \"Below average experience\",\n  \"staffNotes\": \"Min+ boundary test\"\n}"
+                                                               },
+                                                      "url":  {
+                                                                  "raw":  "{{BASE_URL}}/customers/api/test-drives/{{TEST_DRIVE_ID}}/feedback",
+                                                                  "host":  [
+                                                                               "{{BASE_URL}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "customers",
+                                                                               "api",
+                                                                               "test-drives",
+                                                                               "{{TEST_DRIVE_ID}}",
+                                                                               "feedback"
+                                                                           ]
+                                                              }
+                                                  },
+                                      "response":  [
+
+                                                   ],
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "exec":  [
+                                                                                    "pm.test(\"TDF002 - Should return success for Min+ rating (2)\", function () {",
+                                                                                    "    pm.response.to.have.status([200, 201]);",
+                                                                                    "});"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ]
+                                  },
+                                  {
+                                      "name":  "TDF003 - feedbackRating Nom (3)",
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     },
+                                                                     {
+                                                                         "key":  "Authorization",
+                                                                         "value":  "Bearer {{ACCESS_TOKEN}}"
+                                                                     }
+                                                                 ],
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\n  \"feedbackRating\": 3,\n  \"feedbackComment\": \"Average experience\",\n  \"staffNotes\": \"Nominal boundary test\"\n}"
+                                                               },
+                                                      "url":  {
+                                                                  "raw":  "{{BASE_URL}}/customers/api/test-drives/{{TEST_DRIVE_ID}}/feedback",
+                                                                  "host":  [
+                                                                               "{{BASE_URL}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "customers",
+                                                                               "api",
+                                                                               "test-drives",
+                                                                               "{{TEST_DRIVE_ID}}",
+                                                                               "feedback"
+                                                                           ]
+                                                              }
+                                                  },
+                                      "response":  [
+
+                                                   ],
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "exec":  [
+                                                                                    "pm.test(\"TDF003 - Should return success for Nom rating (3)\", function () {",
+                                                                                    "    pm.response.to.have.status([200, 201]);",
+                                                                                    "});"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ]
+                                  },
+                                  {
+                                      "name":  "TDF004 - feedbackRating Max- (4)",
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     },
+                                                                     {
+                                                                         "key":  "Authorization",
+                                                                         "value":  "Bearer {{ACCESS_TOKEN}}"
+                                                                     }
+                                                                 ],
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\n  \"feedbackRating\": 4,\n  \"feedbackComment\": \"Good experience\",\n  \"staffNotes\": \"Max- boundary test\"\n}"
+                                                               },
+                                                      "url":  {
+                                                                  "raw":  "{{BASE_URL}}/customers/api/test-drives/{{TEST_DRIVE_ID}}/feedback",
+                                                                  "host":  [
+                                                                               "{{BASE_URL}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "customers",
+                                                                               "api",
+                                                                               "test-drives",
+                                                                               "{{TEST_DRIVE_ID}}",
+                                                                               "feedback"
+                                                                           ]
+                                                              }
+                                                  },
+                                      "response":  [
+
+                                                   ],
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "exec":  [
+                                                                                    "pm.test(\"TDF004 - Should return success for Max- rating (4)\", function () {",
+                                                                                    "    pm.response.to.have.status([200, 201]);",
+                                                                                    "});"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ]
+                                  },
+                                  {
+                                      "name":  "TDF005 - feedbackRating Max (5)",
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     },
+                                                                     {
+                                                                         "key":  "Authorization",
+                                                                         "value":  "Bearer {{ACCESS_TOKEN}}"
+                                                                     }
+                                                                 ],
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\n  \"feedbackRating\": 5,\n  \"feedbackComment\": \"Excellent experience\",\n  \"staffNotes\": \"Max boundary test\"\n}"
+                                                               },
+                                                      "url":  {
+                                                                  "raw":  "{{BASE_URL}}/customers/api/test-drives/{{TEST_DRIVE_ID}}/feedback",
+                                                                  "host":  [
+                                                                               "{{BASE_URL}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "customers",
+                                                                               "api",
+                                                                               "test-drives",
+                                                                               "{{TEST_DRIVE_ID}}",
+                                                                               "feedback"
+                                                                           ]
+                                                              }
+                                                  },
+                                      "response":  [
+
+                                                   ],
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "exec":  [
+                                                                                    "pm.test(\"TDF005 - Should return success for Max rating (5)\", function () {",
+                                                                                    "    pm.response.to.have.status([200, 201]);",
+                                                                                    "});"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ]
+                                  },
+                                  {
+                                      "name":  "TDF006 - feedbackRating Min- (0)",
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     },
+                                                                     {
+                                                                         "key":  "Authorization",
+                                                                         "value":  "Bearer {{ACCESS_TOKEN}}"
+                                                                     }
+                                                                 ],
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\r\n    \"feedbackRating\":  0,\r\n    \"feedbackComment\":  \"Service is acceptable\",\r\n    \"staffNotes\":  \"Min boundary test\"\r\n}"
+                                                               },
+                                                      "url":  {
+                                                                  "raw":  "{{BASE_URL}}/customers/api/test-drives/{{TEST_DRIVE_ID}}/feedback",
+                                                                  "host":  [
+                                                                               "{{BASE_URL}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "customers",
+                                                                               "api",
+                                                                               "test-drives",
+                                                                               "{{TEST_DRIVE_ID}}",
+                                                                               "feedback"
+                                                                           ]
+                                                              }
+                                                  },
+                                      "response":  [
+
+                                                   ],
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "exec":  [
+                                                                                    "pm.test(\"TDF001 - Should return success for Min rating (1)\", function () {",
+                                                                                    "    pm.response.to.have.status([200, 201]);",
+                                                                                    "});"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ]
+                                  },
+                                  {
+                                      "name":  "TDF007 - feedbackRating Max+ (6)",
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     },
+                                                                     {
+                                                                         "key":  "Authorization",
+                                                                         "value":  "Bearer {{ACCESS_TOKEN}}"
+                                                                     }
+                                                                 ],
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\r\n    \"feedbackRating\":  6,\r\n    \"feedbackComment\":  \"Excellent experience\",\r\n    \"staffNotes\":  \"Max boundary test\"\r\n}"
+                                                               },
+                                                      "url":  {
+                                                                  "raw":  "{{BASE_URL}}/customers/api/test-drives/{{TEST_DRIVE_ID}}/feedback",
+                                                                  "host":  [
+                                                                               "{{BASE_URL}}"
+                                                                           ],
+                                                                  "path":  [
+                                                                               "customers",
+                                                                               "api",
+                                                                               "test-drives",
+                                                                               "{{TEST_DRIVE_ID}}",
+                                                                               "feedback"
+                                                                           ]
+                                                              }
+                                                  },
+                                      "response":  [
+
+                                                   ],
+                                      "event":  [
+                                                    {
+                                                        "listen":  "test",
+                                                        "script":  {
+                                                                       "exec":  [
+                                                                                    "pm.test(\"TDF005 - Should return success for Max rating (5)\", function () {",
+                                                                                    "    pm.response.to.have.status([200, 201]);",
+                                                                                    "});"
+                                                                                ]
+                                                                   }
+                                                    }
+                                                ]
+                                  }
+                              ]
+                 }
+             ],
+    "variable":  [
+                     {
+                         "key":  "BASE_URL",
+                         "value":  "http://localhost:8082",
+                         "type":  "string"
+                     },
+                     {
+                         "key":  "ACCESS_TOKEN",
+                         "value":  "",
+                         "type":  "string"
+                     },
+                     {
+                         "key":  "TEST_DRIVE_ID",
+                         "value":  "1",
+                         "type":  "string"
+                     }
+                 ]
+}

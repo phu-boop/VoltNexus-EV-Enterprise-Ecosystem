@@ -26,47 +26,52 @@ export default defineConfig({
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
     /* Base URL to use in actions like `await page.goto('')`. */
-    // baseURL: 'http://localhost:3000',
+    baseURL: 'http://localhost:5173',
 
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: 'on-first-retry',
+    /* Record video for tests */
+    video: 'on',
   },
 
   /* Configure projects for major browsers */
   projects: [
+    // Setup - Chạy các file cấu hình đăng nhập ngầm 1 lần duy nhất
+    { name: 'setup', testMatch: /.*\.setup\.ts/ },
+
+    // Public - Test giao diện công khai (không cần login)
     {
-      name: 'chromium',
+      name: 'public',
+      testDir: './tests/public',
       use: { ...devices['Desktop Chrome'] },
     },
 
-    // {
-    //   name: 'firefox',
-    //   use: { ...devices['Desktop Firefox'] },
-    // },
+    // E2E Admin - Test Admin EVM
+    {
+      name: 'e2e-admin',
+      testDir: './tests/evm',
+      use: {
+        ...devices['Desktop Chrome'],
+        storageState: 'playwright/.auth/admin.json',
+      },
+      dependencies: ['setup'],
+    },
 
-    // {
-    //   name: 'webkit',
-    //   use: { ...devices['Desktop Safari'] },
-    // },
+    // E2E Dealer - Test CRM Đại lý & Bàn hàng B2C
+    {
+      name: 'e2e-dealer',
+      testDir: './tests/dealer',
+      use: {
+        ...devices['Desktop Chrome'],
+        storageState: 'playwright/.auth/dealer.json',
+      },
+      dependencies: ['setup'],
+    },
 
     /* Test against mobile viewports. */
     // {
     //   name: 'Mobile Chrome',
     //   use: { ...devices['Pixel 5'] },
-    // },
-    // {
-    //   name: 'Mobile Safari',
-    //   use: { ...devices['iPhone 12'] },
-    // },
-
-    /* Test against branded browsers. */
-    // {
-    //   name: 'Microsoft Edge',
-    //   use: { ...devices['Desktop Edge'], channel: 'msedge' },
-    // },
-    // {
-    //   name: 'Google Chrome',
-    //   use: { ...devices['Desktop Chrome'], channel: 'chrome' },
     // },
   ],
 

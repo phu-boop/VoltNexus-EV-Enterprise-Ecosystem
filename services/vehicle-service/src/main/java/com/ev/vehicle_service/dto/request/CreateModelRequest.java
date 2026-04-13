@@ -3,8 +3,8 @@ package com.ev.vehicle_service.dto.request;
 import com.ev.common_lib.model.enums.VehicleStatus;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import lombok.Data;
 import java.util.List;
 import java.util.Map;
@@ -25,6 +25,7 @@ public class CreateModelRequest {
     
     private String thumbnailUrl;
 
+    @Positive(message = "Range must be positive")
     private Integer baseRangeKm;
     private Integer baseMotorPower;
     private Integer baseBatteryCapacity;

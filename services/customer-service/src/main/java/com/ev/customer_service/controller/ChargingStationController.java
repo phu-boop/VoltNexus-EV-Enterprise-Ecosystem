@@ -118,7 +118,7 @@ public class ChargingStationController {
      * Delete a charging station (Admin only)
      */
     @DeleteMapping("/{stationId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'EVM_STAFF')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'DEALER_MANAGER')")
     public ResponseEntity<ApiRespond<Void>> deleteStation(@PathVariable Long stationId) {
         chargingStationService.deleteStation(stationId);
         return ResponseEntity.ok(ApiRespond.success("Charging station deleted successfully", null));

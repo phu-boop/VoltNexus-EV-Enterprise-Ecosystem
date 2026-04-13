@@ -223,9 +223,17 @@ public class VehicleCatalogServiceImpl implements VehicleCatalogService {
     @Override
     @Transactional
     public VehicleModel createModelWithVariants(CreateModelRequest request) {
+        String modelName = request.getModelName() != null ? request.getModelName().trim() : null;
+        String brand = request.getBrand() != null ? request.getBrand().trim() : null;
+
+        if (modelName != null && brand != null
+                && modelRepository.existsByModelNameIgnoreCaseAndBrandIgnoreCase(modelName, brand)) {
+            throw new AppException(ErrorCode.VEHICLE_MODEL_ALREADY_EXISTS);
+        }
+
         VehicleModel newModel = new VehicleModel();
-        newModel.setModelName(request.getModelName());
-        newModel.setBrand(request.getBrand());
+        newModel.setModelName(modelName);
+        newModel.setBrand(brand);
         newModel.setStatus(request.getStatus() != null ? request.getStatus() : VehicleStatus.COMING_SOON);
         // --- XỬ LÝ DỮ LIỆU HYBRID ---
         // Gán các thông số cốt lõi
@@ -336,8 +344,17 @@ public class VehicleCatalogServiceImpl implements VehicleCatalogService {
     })
     public VehicleModel updateModel(Long modelId, UpdateModelRequest request, String updatedByEmail) {
         VehicleModel model = findModelById(modelId);
-        model.setModelName(request.getModelName());
-        model.setBrand(request.getBrand());
+        String modelName = request.getModelName() != null ? request.getModelName().trim() : null;
+        String brand = request.getBrand() != null ? request.getBrand().trim() : null;
+
+        if (modelName != null && brand != null
+                && modelRepository.existsByModelNameIgnoreCaseAndBrandIgnoreCaseAndModelIdNot(modelName, brand,
+                        modelId)) {
+            throw new AppException(ErrorCode.VEHICLE_MODEL_ALREADY_EXISTS);
+        }
+
+        model.setModelName(modelName);
+        model.setBrand(brand);
         model.setStatus(request.getStatus());
         model.setUpdatedBy(updatedByEmail);
         model.setThumbnailUrl(request.getThumbnailUrl());

@@ -594,7 +594,7 @@ class VehicleCatalogServiceImplTest {
                     any(ParameterizedTypeReference.class))).thenReturn(response);
 
             List<Long> result = ReflectionTestUtils.invokeMethod(vehicleCatalogService, "getVariantIdsFromInventory",
-                    "AVAILABLE");
+                    "AVAILABLE", null);
 
             assertThat(result).containsExactly(1L, 2L);
         }
@@ -607,7 +607,7 @@ class VehicleCatalogServiceImplTest {
                     .thenThrow(new RuntimeException("Fetch Error"));
 
             List<Long> result = ReflectionTestUtils.invokeMethod(vehicleCatalogService, "getVariantIdsFromInventory",
-                    "AVAILABLE");
+                    "AVAILABLE", null);
 
             assertThat(result).isEmpty();
         }

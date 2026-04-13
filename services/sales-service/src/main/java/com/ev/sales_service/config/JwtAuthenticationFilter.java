@@ -12,7 +12,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.util.List;
+import java.util.Arrays;
 
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
@@ -23,10 +23,22 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                     @NonNull FilterChain filterChain) throws ServletException, IOException {
 
         String email = request.getHeader("X-User-Email");
-        String role = request.getHeader("X-User-Role");
+        String roleHeader = request.getHeader("X-User-Role");
+        if (roleHeader == null) {
+            roleHeader = request.getHeader("X-User-Roles");
+        }
 
-        if (email != null && role != null) {
-            var authorities = List.of(new SimpleGrantedAuthority("ROLE_" + role));
+        if (email != null && roleHeader != null) {
+            // Handle role string that might be a JSON-like array: ["ROLE1", "ROLE2"]
+            String cleanedRole = roleHeader.replace("[", "").replace("]", "").replace("\"", "");
+            String[] roles = cleanedRole.split(",");
+
+            var authorities = Arrays.stream(roles)
+                    .map(String::trim)
+                    .filter(r -> !r.isEmpty())
+                    .map(r -> new SimpleGrantedAuthority("ROLE_" + r))
+                    .toList();
+
             var auth = new UsernamePasswordAuthenticationToken(email, null, authorities);
             SecurityContextHolder.getContext().setAuthentication(auth);
         }
