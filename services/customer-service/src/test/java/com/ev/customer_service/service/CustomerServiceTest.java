@@ -22,6 +22,7 @@ import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.convention.MatchingStrategies;
+import org.springframework.kafka.core.KafkaTemplate;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -40,6 +41,9 @@ class CustomerServiceTest {
 
     @Mock
     private CustomerProfileAuditRepository auditRepository;
+
+    @Mock
+    private KafkaTemplate<String, Object> kafkaTemplate;
 
     @Spy
     private ModelMapper modelMapper = new ModelMapper();
@@ -175,6 +179,7 @@ class CustomerServiceTest {
         when(customerRepository.findById(1L)).thenReturn(Optional.of(customer));
         customerService.deleteCustomer(1L, "ADMIN", null);
         verify(customerRepository).deleteById(1L);
+        verify(kafkaTemplate).send("customer.deleted", "1");
     }
 
     @Test
