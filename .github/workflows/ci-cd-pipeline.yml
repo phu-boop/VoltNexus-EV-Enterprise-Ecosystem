@@ -116,7 +116,6 @@ jobs:
             --header "Content-Type: application/json" \
             --data @jira-sonar-payload.json
 
-
       - name: "CI: Security Scan"
         uses: aquasecurity/trivy-action@master
         with:
@@ -200,7 +199,7 @@ jobs:
           # Create Firebase secret
           mkdir -p services/user-service/src/main/resources
           echo "$FIREBASE_SERVICE_ACCOUNT_JSON" > services/user-service/src/main/resources/firebase-service-account.json
-          
+
           # Apply Base K8s
           kubectl apply -f k8s/namespace.yaml || true
           kubectl apply -f k8s/configmap.yaml || true
