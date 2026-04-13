@@ -147,3 +147,48 @@ waiting for navigation to "**/evm/admin/dashboard" until "load"
   71 | });
   72 | 
 ```
+
+# Answer
+
+## 1. Reason for Test Failure
+
+- **Backend Connection Refused**: The UI failed to communicate with the Backend API (port 8081 is down), throwing `Connection refused`. This blocked the login sequence, preventing redirect to `Dashboard`, and finally triggered a timeout for `waitForURL('**/evm/admin/dashboard')`.
+- **Redundant Login Logic**: The `vehicle-backfill.spec.ts` defines an explicit `test.beforeEach` that repeats UI login. However, Playwright is effectively configured to inject authentication state automatically through `admin.setup.ts` (`storageState: 'playwright/.auth/admin.json'`). This duplicate login makes the test slower, less reliable, and breaks Playwright best practices.
+
+## 2. Playwright Best Practices
+
+- For tests within the `e2e-admin` project, the environment is already pre-authenticated via the dependency on the `setup` project. We do not need, and should not use, the UI to log in before each test. Ensure `admin.setup.ts` correctly caches this login state and navigate the tests immediately.
+- The test script should not suppress standard infrastructure errors. If the backend is down, the test should fail explicitly, not quietly catch connection errors. Ensure the backend starts before tests (e.g., using `webServer` config in `playwright.config.ts`).
+
+## 3. Code Fix Provided
+
+I have updated the `frontend/my-app/tests/evm/system/vehicle-backfill.spec.ts` to remove the redundant `test.beforeEach` block. The test is now much simpler and utilizes the global authentication state:
+
+```typescript
+import { test, expect } from '@playwright/test';
+
+test.describe('Function 110: backfillVehicleCache', () => {
+
+  test('ITC_5.110.1 Test backfill vehicles successfully (Đồng bộ Xe thành công)', async ({ page }) => {
+    test.setTimeout(180000);
+    
+    // 1. Direct navigation - User is already authenticated via admin.setup.ts
+    await page.goto('http://localhost:5173/evm/admin/system/data-backfill');
+    await expect(page).toHaveURL(/.*data-backfill/);
+
+    // 2. Click the green button
+    const syncButton = page.getByRole('button', { name: /Đồng bộ Xe \(Vehicles\)/i });
+    await expect(syncButton).toBeVisible();
+    await syncButton.click();
+
+    // 3. Wait for the system to process the records.
+    const loadingButton = page.getByRole('button', { name: /Đang đồng bộ.../i });
+    await expect(loadingButton).toBeDisabled();
+
+    // 4. Expected Output: Success message
+    const successMessage = page.getByText(/Backfill vehicles thành công!/i);
+    await expect(successMessage).toBeVisible({ timeout: 120000 });
+  });
+
+});
+```

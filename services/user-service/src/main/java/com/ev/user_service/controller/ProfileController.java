@@ -2,9 +2,10 @@ package com.ev.user_service.controller;
 
 
 import com.ev.common_lib.dto.respond.ApiRespond;
+import com.ev.common_lib.exception.AppException;
+import com.ev.common_lib.exception.ErrorCode;
 import com.ev.user_service.dto.respond.ApiResponseStaffDealer;
 import com.ev.user_service.service.ProfileService;
-import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -27,8 +28,18 @@ public class ProfileController {
     }
 
     @PostMapping("/idDealer")
-    public ResponseEntity<ApiRespond<UUID>> getIdDealerByIdMember(@RequestBody Map<String, String> body){
-        UUID idMember = UUID.fromString(body.get("idDealer")); // lấy từ JSON
+    public ResponseEntity<ApiRespond<UUID>> getIdDealerByIdMember(@RequestBody Map<String, String> body) {
+        String raw = body.get("userId");
+        if (raw == null || raw.isBlank()) {
+            raw = body.get("idMember");
+        }
+        if (raw == null || raw.isBlank()) {
+            raw = body.get("idDealer");
+        }
+        if (raw == null || raw.isBlank()) {
+            throw new AppException(ErrorCode.MISSING_REQUIRED_FIELD);
+        }
+        UUID idMember = UUID.fromString(raw);
         return ResponseEntity.ok(ApiRespond.success(
             "get id dealer successfully",
             profileService.getIdDealerByIdMember(idMember)

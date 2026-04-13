@@ -1,10 +1,35 @@
 import { test, expect } from '@playwright/test';
-import { injectDealerSession } from '../../helpers/auth-helper';
+import * as fs from 'fs';
 
 test.describe('CRM - Quản lý Khách Hàng (Dealer Manager)', () => {
 
   test.beforeEach(async ({ page }) => {
-    await injectDealerSession(page);
+    // Inject SessionStorage từ file đã lưu trong dealer.setup.ts
+    if (fs.existsSync('playwright/.auth/dealer-session.json')) {
+        const sessionData = JSON.parse(fs.readFileSync('playwright/.auth/dealer-session.json', 'utf8'));
+        await page.addInitScript((data) => {
+            Object.entries(data).forEach(([key, value]) => {
+                sessionStorage.setItem(key, value as string);
+            });
+        }, sessionData);
+    }
+  });
+
+  test.afterEach(async ({ page }, testInfo) => {
+    if (testInfo.status !== testInfo.expectedStatus) {
+      const screenshotPath = `test-results/failure-${testInfo.title.replace(/\s+/g, '-')}.png`;
+      await page.screenshot({ path: screenshotPath, fullPage: true });
+      console.log(`Screenshot saved to ${screenshotPath}`);
+      console.log(`Current URL: ${page.url()}`);
+      if (page.url() !== 'about:blank') {
+          try {
+              const sessionData = await page.evaluate(() => JSON.stringify(sessionStorage));
+              console.log(`Session Storage: ${sessionData}`);
+          } catch (e: any) {
+              console.log(`Failed to read session storage: ${e.message}`);
+          }
+      }
+    }
   });
 
   // Chuỗi ngẫu nhiên để tránh việc trùng lặp Email (Vì backend có thế bắt unique email)

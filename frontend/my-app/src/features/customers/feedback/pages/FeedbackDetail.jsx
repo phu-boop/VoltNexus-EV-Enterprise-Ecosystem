@@ -16,7 +16,6 @@ import {
   FiUserPlus,
   FiMessageSquare,
   FiFileText,
-  FiUsers,
 } from "react-icons/fi";
 import { toast } from "react-toastify";
 import Swal from "sweetalert2";
@@ -61,10 +60,30 @@ const FeedbackDetail = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Get role-based info
-  const rolesString = sessionStorage.getItem("roles");
-  const roles = rolesString ? JSON.parse(rolesString) : [];
-  const isManager = roles.includes("DEALER_MANAGER");
-  const isStaff = roles.includes("DEALER_STAFF");
+  const parseRoles = () => {
+    const rolesString = sessionStorage.getItem("roles");
+    if (!rolesString) return [];
+
+    try {
+      const parsed = JSON.parse(rolesString);
+      if (Array.isArray(parsed)) {
+        return parsed;
+      }
+    } catch {
+      // Fallback for non-JSON role formats (comma separated/plain string)
+    }
+
+    return rolesString
+      .replaceAll(/[[\]"]/g, "")
+      .split(",")
+      .map((r) => r.trim())
+      .filter(Boolean);
+  };
+
+  const normalizeRole = (role) => role.replace(/^ROLE_/, "");
+  const roles = new Set(parseRoles().map(normalizeRole));
+  const isManager = roles.has("DEALER_MANAGER");
+  const isStaff = roles.has("DEALER_STAFF");
 
   // Try multiple sources for dealerId and userId
   const dealerId =
@@ -76,6 +95,17 @@ const FeedbackDetail = () => {
     sessionStorage.getItem("memberId") ||
     sessionStorage.getItem("userId") ||
     sessionStorage.getItem("profileId");
+  const currentUserIds = new Set(
+    [
+      sessionStorage.getItem("id_user"),
+      sessionStorage.getItem("memberId"),
+      sessionStorage.getItem("userId"),
+      sessionStorage.getItem("profileId"),
+      currentUserId,
+    ]
+      .filter(Boolean)
+      .map((value) => String(value))
+  );
   const basePath = isManager ? "/dealer/manager" : "/dealer/staff";
 
   // Lock body scroll when any modal is open
@@ -115,19 +145,9 @@ const FeedbackDetail = () => {
 
     // Staff can only perform actions if they are assigned to this complaint
     if (isStaff) {
-      // Try to match by ID first
-      if (complaint.assignedStaffId === currentUserId) {
+      const assignedStaffId = String(complaint.assignedStaffId || "");
+      if (assignedStaffId && currentUserIds.has(assignedStaffId)) {
         return true;
-      }
-
-      // Try to find current user's staffId from staffList by matching email
-      const currentEmail = sessionStorage.getItem("email");
-      const currentStaff = staffList.find((s) => s.email === currentEmail);
-
-      if (currentStaff) {
-        if (currentStaff.staffId === complaint.assignedStaffId) {
-          return true;
-        }
       }
     }
 
@@ -136,8 +156,12 @@ const FeedbackDetail = () => {
 
   useEffect(() => {
     loadComplaint();
-    loadStaffList(); // Always load staff list
-  }, [id]);
+    if (isManager) {
+      loadStaffList();
+    } else {
+      setStaffList([]);
+    }
+  }, [id, isManager]);
 
   const loadComplaint = async () => {
     try {
@@ -155,12 +179,14 @@ const FeedbackDetail = () => {
   };
 
   const loadStaffList = async () => {
+    if (!isManager) {
+      setStaffList([]);
+      return;
+    }
+
     try {
       setLoadingStaff(true);
       const data = await staffService.getStaffByDealerId(dealerId);
-
-      if (data && data.length > 0) {
-      }
       setStaffList(data || []);
       if (!data || data.length === 0) {
         toast.warning("Không tìm thấy nhân viên nào");
@@ -186,7 +212,9 @@ const FeedbackDetail = () => {
       return;
     }
 
-    const selectedStaff = staffList.find((s) => s.staffId === selectedStaffId);
+    const selectedStaff = staffList.find(
+      (s) => String(s.staffId || s.memberId || s.id || "") === String(selectedStaffId)
+    );
     if (!selectedStaff) {
       toast.error("Không tìm thấy thông tin nhân viên");
       return;
@@ -200,8 +228,9 @@ const FeedbackDetail = () => {
       const displayName = `${staffName} (${selectedStaff.email})`;
 
       await assignComplaint(id, {
-        assignedStaffId: selectedStaffId,
+        assignedStaffId: String(selectedStaff.staffId || selectedStaff.memberId || selectedStaff.id || selectedStaffId),
         assignedStaffName: displayName,
+        status: "IN_PROGRESS",
         internalNotes: `Đã gán cho ${displayName}`,
       });
 
@@ -211,7 +240,14 @@ const FeedbackDetail = () => {
       loadComplaint();
     } catch (error) {
       console.error("Error assigning:", error);
-      toast.error("Không thể gán nhân viên");
+      const backendMessage =
+        error?.response?.data?.message ||
+        error?.response?.data?.error ||
+        error?.message;
+      const message = backendMessage
+        ? `Không thể gán nhân viên: ${backendMessage}`
+        : "Không thể gán nhân viên";
+      toast.error(message);
     } finally {
       setIsSubmitting(false);
     }
@@ -1069,11 +1105,14 @@ const FeedbackDetail = () => {
                 disabled={loadingStaff}
               >
                 <option value="">-- Chọn nhân viên --</option>
-                {staffList.map((staff) => {
+                {staffList
+                  .filter((staff) => staff.staffId || staff.memberId || staff.id)
+                  .map((staff) => {
                   // Format giống CreateCustomer: Tên (Email) - Position
                   const staffName = staff.fullName || staff.name || "N/A";
+                  const optionValue = String(staff.staffId || staff.memberId || staff.id);
                   return (
-                    <option key={staff.staffId} value={staff.staffId}>
+                    <option key={optionValue} value={optionValue}>
                       {staffName} ({staff.email})
                       {staff.position ? ` - ${staff.position}` : ""}
                     </option>

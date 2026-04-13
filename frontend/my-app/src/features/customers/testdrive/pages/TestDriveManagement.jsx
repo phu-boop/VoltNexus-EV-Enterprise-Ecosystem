@@ -279,7 +279,7 @@ const TestDriveManagement = () => {
         {/* Header */}
         <div className="mb-6">
           <h1 className="text-3xl font-bold text-gray-800 mb-2">
-            🚗 Quản Lý Lịch Hẹn Lái Thử Xe
+            Quản Lý Lịch Hẹn  Lái Thử Xe
           </h1>
           <p className="text-gray-600">
             Quản lý và theo dõi các lịch hẹn lái thử xe điện

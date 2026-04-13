@@ -87,8 +87,8 @@ class PromotionMapperTest {
         assertThat(response).isNotNull();
         assertThat(response.getPromotionId()).isEqualTo(promotion.getPromotionId());
         assertThat(response.getPromotionName()).isEqualTo(promotion.getPromotionName());
-        assertThat(response.getApplicableDealers()).containsOnly(dealerId);
-        assertThat(response.getApplicableModels()).containsOnly(101L, 102L);
+        assertThat(response.getApplicableDealers()).containsOnly(dealerId.toString());
+        assertThat(response.getApplicableModels()).containsOnly("101", "102");
         assertThat(response.getIsActive()).isTrue();
     }
 

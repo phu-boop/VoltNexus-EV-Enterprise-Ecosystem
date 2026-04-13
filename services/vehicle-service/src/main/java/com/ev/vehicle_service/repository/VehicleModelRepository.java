@@ -13,6 +13,10 @@ import java.util.Optional;
 
 @Repository
 public interface VehicleModelRepository extends JpaRepository<VehicleModel, Long> {
+        boolean existsByModelNameIgnoreCaseAndBrandIgnoreCase(String modelName, String brand);
+
+        boolean existsByModelNameIgnoreCaseAndBrandIgnoreCaseAndModelIdNot(String modelName, String brand, Long modelId);
+
     /**
      * Lấy tất cả các Model và tải sẵn (eagerly fetch) danh sách các Variant của
      * chúng

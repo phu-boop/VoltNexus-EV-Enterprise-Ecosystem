@@ -53,7 +53,7 @@ public class TestDriveController {
      * Lấy danh sách lịch hẹn theo dealer
      */
     @GetMapping("/dealer/{dealerId}")
-    @PreAuthorize("hasAnyRole('DEALER_MANAGER')")
+    @PreAuthorize("hasAnyRole('DEALER_MANAGER', 'DEALER_STAFF')")
     public ResponseEntity<ApiResponse<List<TestDriveResponse>>> getTestDrivesByDealer(@PathVariable String dealerId) {
         List<TestDriveResponse> appointments = testDriveService.getAppointmentsByDealerId(dealerId);
         return ResponseEntity.ok(ApiResponse.success(appointments));

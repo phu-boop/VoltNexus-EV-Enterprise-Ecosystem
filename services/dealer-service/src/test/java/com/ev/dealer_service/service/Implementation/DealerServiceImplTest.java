@@ -13,6 +13,9 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -75,6 +78,13 @@ class DealerServiceImplTest {
     @DisplayName("Đọc danh sách / tìm kiếm")
     class ReadListAndSearch {
 
+        /**
+         * Lấy danh sách tất cả đại lý
+         * - Tham số: Không có
+         * - Mục tiêu: Kiểm tra xem service có gọi repository và chuyển đổi danh sách entity sang DTO đúng cách không.
+         * - Cách thức: Giả lập repository trả về danh sách có 1 dealer, kiểm tra size và nội dung của kết quả.
+         * - Kết quả mong đợi: Trả về một danh sách DealerResponse có 1 phần tử với mã là "D001".
+         */
         @Test
         void getAllDealers_mapsEachEntityToResponse() {
             when(dealerRepository.findAll()).thenReturn(List.of(dealer));
@@ -86,6 +96,13 @@ class DealerServiceImplTest {
             assertThat(result.get(0).getDealerCode()).isEqualTo("D001");
         }
 
+        /**
+         * Lấy thông tin chi tiết đại lý theo ID - Trường hợp thành công
+         * - Tham số: UUID dealerId (ID của đại lý cần tìm)
+         * - Mục tiêu: Xác nhận service trả về đúng thông tin đại lý khi ID tồn tại trong DB.
+         * - Cách thức: Giả lập repo tìm thấy dealer theo ID, kiểm tra kết quả không null và đúng mã code.
+         * - Kết quả mong đợi: Trả về DealerResponse không null và dealerCode phải là "D001".
+         */
         @Test
         void getDealerById_success() {
             when(dealerRepository.findById(dealerId)).thenReturn(Optional.of(dealer));
@@ -97,6 +114,13 @@ class DealerServiceImplTest {
             assertEquals("D001", result.getDealerCode());
         }
 
+        /**
+         * Lấy thông tin chi tiết đại lý theo ID - Trường hợp không tìm thấy
+         * - Tham số: UUID dealerId (ID không tồn tại)
+         * - Mục tiêu: Đảm bảo service ném ra ngoại lệ ResourceNotFoundException khi không tìm thấy đại lý.
+         * - Cách thức: Giả lập repo trả về Optional.empty() cho ID cung cấp.
+         * - Kết quả mong đợi: Ném ra ResourceNotFoundException.
+         */
         @Test
         void getDealerById_notFound_throwsResourceNotFoundException() {
             when(dealerRepository.findById(dealerId)).thenReturn(Optional.empty());
@@ -104,39 +128,61 @@ class DealerServiceImplTest {
             assertThrows(ResourceNotFoundException.class, () -> dealerService.getDealerById(dealerId));
         }
 
-        @Test
-        void getDealerByCode_success() {
-            when(dealerRepository.findByDealerCode("D001")).thenReturn(Optional.of(dealer));
+        /**
+         * Lấy đại lý theo mã Code - Trường hợp thành công (Kiểm thử tham số hóa)
+         * - Tham số: String dealerCode (Các mã đại lý khác nhau: "D001", "DM-2024", "X-99")
+         * - Mục tiêu: Xác nhận tìm kiếm theo code hoạt động đúng với nhiều bộ dữ liệu đầu vào.
+         * - Cách thức: Chạy test nhiều lần với các giá trị code khác nhau, kiểm tra kết quả trả về đúng code đó.
+         * - Kết quả mong đợi: DealerResponse trả về có dealerCode khớp với tham số đầu vào.
+         */
+        @ParameterizedTest(name = "getDealerByCode — tìm thấy với code [{0}]")
+        @ValueSource(strings = {"D001", "DM-2024", "X-99"})
+        void getDealerByCode_success_parameterized(String dealerCode) {
+            dealer.setDealerCode(dealerCode);
+            response.setDealerCode(dealerCode);
+            when(dealerRepository.findByDealerCode(dealerCode)).thenReturn(Optional.of(dealer));
             when(modelMapper.map(dealer, DealerResponse.class)).thenReturn(response);
 
-            DealerResponse result = dealerService.getDealerByCode("D001");
+            DealerResponse result = dealerService.getDealerByCode(dealerCode);
 
-            assertEquals("D001", result.getDealerCode());
+            assertEquals(dealerCode, result.getDealerCode());
         }
 
-        @Test
-        void getDealerByCode_notFound_throwsResourceNotFoundException() {
-            when(dealerRepository.findByDealerCode("X")).thenReturn(Optional.empty());
+        /**
+         * @param missingCode mã không tồn tại — kỳ vọng thống nhất: {@link ResourceNotFoundException}
+         */
+        @ParameterizedTest(name = "getDealerByCode — không tìm thấy [{0}]")
+        @ValueSource(strings = {"X", "UNKNOWN", "__none__"})
+        void getDealerByCode_notFound_parameterized(String missingCode) {
+            when(dealerRepository.findByDealerCode(missingCode)).thenReturn(Optional.empty());
 
-            assertThrows(ResourceNotFoundException.class, () -> dealerService.getDealerByCode("X"));
+            assertThrows(ResourceNotFoundException.class, () -> dealerService.getDealerByCode(missingCode));
         }
 
-        @Test
-        void searchDealers_returnsMappedList() {
-            when(dealerRepository.searchDealers("Hanoi")).thenReturn(List.of(dealer));
+        /**
+         * @param searchText tham số search — cùng hành vi: gọi {@code searchDealers} và map từng bản ghi
+         */
+        @ParameterizedTest(name = "searchDealers — text=[{0}]")
+        @ValueSource(strings = {"Hanoi", "HCM", "EV dealer"})
+        void searchDealers_returnsMappedList_parameterized(String searchText) {
+            when(dealerRepository.searchDealers(searchText)).thenReturn(List.of(dealer));
             when(modelMapper.map(dealer, DealerResponse.class)).thenReturn(response);
 
-            List<DealerResponse> result = dealerService.searchDealers("Hanoi");
+            List<DealerResponse> result = dealerService.searchDealers(searchText);
 
             assertThat(result).hasSize(1);
         }
 
-        @Test
-        void getDealersByCity_returnsActiveInCity() {
-            when(dealerRepository.findActiveDealersByCity("HN")).thenReturn(List.of(dealer));
+        /**
+         * @param city mã / tên thành phố — ứng với {@code findActiveDealersByCity}
+         */
+        @ParameterizedTest(name = "getDealersByCity — city=[{0}]")
+        @CsvSource({"HN", "HCM", "Da Nang"})
+        void getDealersByCity_returnsActiveInCity_parameterized(String city) {
+            when(dealerRepository.findActiveDealersByCity(city)).thenReturn(List.of(dealer));
             when(modelMapper.map(dealer, DealerResponse.class)).thenReturn(response);
 
-            List<DealerResponse> result = dealerService.getDealersByCity("HN");
+            List<DealerResponse> result = dealerService.getDealersByCity(city);
 
             assertThat(result).hasSize(1);
         }
@@ -153,12 +199,21 @@ class DealerServiceImplTest {
             verifyNoInteractions(modelMapper);
         }
 
-        @Test
-        void getDealersByRegionAndName_delegatesToRepository() {
-            when(dealerRepository.findByRegionAndDealerName("North", "ACME"))
+        /**
+         * @param region vùng
+         * @param namePattern phần tên dealer dùng để lọc (theo repository)
+         */
+        @ParameterizedTest(name = "getDealersByRegionAndName — region={0}, name={1}")
+        @CsvSource(value = {
+                "North|ACME",
+                "South|BestEV",
+                "Central|"
+        }, delimiterString = "|")
+        void getDealersByRegionAndName_delegatesToRepository_parameterized(String region, String namePattern) {
+            when(dealerRepository.findByRegionAndDealerName(region, namePattern))
                     .thenReturn(List.of(dealer));
 
-            List<Dealer> result = dealerService.getDealersByRegionAndName("North", "ACME");
+            List<Dealer> result = dealerService.getDealersByRegionAndName(region, namePattern);
 
             assertThat(result).containsExactly(dealer);
         }
@@ -168,6 +223,13 @@ class DealerServiceImplTest {
     @DisplayName("Tạo / cập nhật / xóa")
     class WriteOperations {
 
+        /**
+         * Tạo mới đại lý - Trường hợp thành công
+         * - Tham số: DealerRequest request (Thông tin đại lý mới)
+         * - Mục tiêu: Kiểm tra quy trình tạo đại lý: check trùng mã, set trạng thái ACTIVE, lưu vào DB và trả về DTO.
+         * - Cách thức: Giả lập không trùng mã code, map request sang entity, lưu và map ngược lại response.
+         * - Kết quả mong đợi: Trả về DealerResponse không null, trạng thái dealer entity chuyển sang ACTIVE, repo.save được gọi.
+         */
         @Test
         void createDealer_success_setsActiveAndSaves() {
             when(dealerRepository.existsByDealerCode(request.getDealerCode())).thenReturn(false);
@@ -245,6 +307,13 @@ class DealerServiceImplTest {
     @DisplayName("Trạng thái ACTIVE / SUSPENDED")
     class StatusChanges {
 
+        /**
+         * Đình chỉ hoạt động đại lý (Suspend) - Trường hợp thành công
+         * - Tham số: UUID dealerId (ID đại lý cần đình chỉ)
+         * - Mục tiêu: Thay đổi trạng thái của đại lý từ bất kỳ sang SUSPENDED.
+         * - Cách thức: Tìm dealer, set status SUSPENDED, lưu lại.
+         * - Kết quả mong đợi: Trạng thái của dealer entity phải là SUSPENDED.
+         */
         @Test
         void suspendDealer_success() {
             when(dealerRepository.findById(dealerId)).thenReturn(Optional.of(dealer));
