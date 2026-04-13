@@ -9,6 +9,7 @@ import com.ev.common_lib.dto.respond.ApiRespond;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -17,7 +18,6 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @Slf4j
 @RestController
@@ -50,6 +50,29 @@ public class CustomerController {
             log.error("Error in getAllCustomers: ", e);
             throw e;
         }
+    }
+
+    @PreAuthorize("hasAnyRole('DEALER_MANAGER', 'DEALER_STAFF')")
+    @GetMapping("/dealer")
+    public ResponseEntity<ApiRespond<List<CustomerResponse>>> getCustomersByDealer(
+            @RequestParam(required = false) String search,
+            @RequestHeader(value = "X-User-DealerId", required = false) String currentUserDealerId) {
+        log.info("GET /customers/dealer - search: '{}', dealerId: '{}'", search, currentUserDealerId);
+
+        List<CustomerResponse> customers = customerService.getCustomersByDealer(search, currentUserDealerId);
+        return ResponseEntity.ok(ApiRespond.success("Dealer customers retrieved successfully", customers));
+    }
+
+    @PreAuthorize("hasAnyRole('DEALER_MANAGER', 'DEALER_STAFF')")
+    @GetMapping("/paged")
+    public ResponseEntity<ApiRespond<Page<CustomerResponse>>> getCustomersPaged(
+            @RequestParam(required = false) String search,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        log.info("GET /customers/paged - search: '{}', page: {}, size: {}", search, page, size);
+
+        Page<CustomerResponse> customers = customerService.getCustomersWithPagination(search, page, size);
+        return ResponseEntity.ok(ApiRespond.success("Customers retrieved", customers));
     }
 
     @PreAuthorize("hasAnyRole('CUSTOMER', 'ADMIN', 'EVM_STAFF', 'DEALER_MANAGER', 'DEALER_STAFF')")
@@ -92,7 +115,7 @@ public class CustomerController {
         return ResponseEntity.ok(ApiRespond.success("Customer updated successfully", customer));
     }
 
-    @PreAuthorize("hasAnyRole('DEALER_MANAGER', 'DEALER_STAFF')")
+    @PreAuthorize("hasAnyRole('DEALER_MANAGER')")
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiRespond<Void>> deleteCustomer(
             @PathVariable String id,
@@ -115,7 +138,7 @@ public class CustomerController {
                     "value", status.name(),
                     "displayName", status.getDisplayName()
                 ))
-                .collect(Collectors.toList());
+                .toList();
         
         return ResponseEntity.ok(ApiRespond.success("Customer statuses retrieved successfully", statuses));
     }
@@ -132,7 +155,7 @@ public class CustomerController {
                     "value", type.name(),
                     "displayName", type.getDisplayName()
                 ))
-                .collect(Collectors.toList());
+                .toList();
         
         return ResponseEntity.ok(ApiRespond.success("Customer types retrieved successfully", types));
     }

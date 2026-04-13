@@ -22,11 +22,15 @@ import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.convention.MatchingStrategies;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.kafka.core.KafkaTemplate;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -188,5 +192,37 @@ class CustomerServiceTest {
         when(customerRepository.searchCustomersByDealer("John", null)).thenReturn(List.of(customer));
         List<CustomerResponse> result = customerService.searchCustomers("John");
         assertThat(result).hasSize(1);
+    }
+
+    @Test
+    @DisplayName("Lấy customer theo đại lý thành công")
+    void getCustomersByDealer_success() {
+        UUID dealerId = UUID.randomUUID();
+        when(customerRepository.findByPreferredDealerId(dealerId)).thenReturn(List.of(customer));
+
+        List<CustomerResponse> result = customerService.getCustomersByDealer(null, dealerId.toString());
+
+        assertThat(result).hasSize(1);
+        verify(customerRepository).findByPreferredDealerId(dealerId);
+    }
+
+    @Test
+    @DisplayName("Lấy customer phân trang mặc định thành công")
+    void getCustomersWithPagination_success() {
+        Page<Customer> customerPage = new PageImpl<>(List.of(customer), PageRequest.of(0, 20), 1);
+        when(customerRepository.findAll(any(PageRequest.class))).thenReturn(customerPage);
+
+        Page<CustomerResponse> result = customerService.getCustomersWithPagination(null, 0, 20);
+
+        assertThat(result.getContent()).hasSize(1);
+        verify(customerRepository).findAll(any(PageRequest.class));
+    }
+
+    @Test
+    @DisplayName("Page size vượt quá giới hạn -> ném IllegalArgumentException")
+    void getCustomersWithPagination_exceedMaxSize() {
+        assertThatThrownBy(() -> customerService.getCustomersWithPagination(null, 0, 1000))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Page size exceeds maximum limit of 100");
     }
 }

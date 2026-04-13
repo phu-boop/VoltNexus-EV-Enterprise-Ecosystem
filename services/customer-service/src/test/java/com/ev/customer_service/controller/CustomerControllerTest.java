@@ -14,14 +14,13 @@ import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.UUID;
 import org.springframework.security.test.context.support.WithMockUser;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 
@@ -97,6 +96,59 @@ class CustomerControllerTest {
                 .andExpect(jsonPath("$.code").value("1000"))
                 .andExpect(jsonPath("$.data[0].firstName").value("John"));
     }
+
+    @Test
+    @WithMockUser(roles = "DEALER_MANAGER")
+    @DisplayName("Get customers by dealer")
+    void getCustomersByDealer() throws Exception {
+        when(customerService.getCustomersByDealer(eq("John"), any())).thenReturn(Arrays.asList(customerResponse));
+
+        mockMvc.perform(get("/customers/dealer")
+                .param("search", "John")
+                .header("X-User-DealerId", UUID.randomUUID().toString()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value("1000"))
+                .andExpect(jsonPath("$.message").value("Dealer customers retrieved successfully"))
+                .andExpect(jsonPath("$.data[0].email").value("john@example.com"));
+    }
+
+            @Test
+            @WithMockUser(roles = "DEALER_MANAGER")
+            @DisplayName("Get customers paged - default pagination")
+            void getCustomersPaged_default() throws Exception {
+            Page<CustomerResponse> paged = new PageImpl<>(Arrays.asList(customerResponse));
+            when(customerService.getCustomersWithPagination(any(), eq(0), eq(20))).thenReturn(paged);
+
+            mockMvc.perform(get("/customers/paged"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value("1000"))
+                .andExpect(jsonPath("$.message").value("Customers retrieved"))
+                .andExpect(jsonPath("$.data.content[0].email").value("john@example.com"));
+            }
+
+            @Test
+            @WithMockUser(roles = "DEALER_STAFF")
+            @DisplayName("Get customers paged - max valid size 100")
+            void getCustomersPaged_maxValidSize() throws Exception {
+            Page<CustomerResponse> paged = new PageImpl<>(Arrays.asList(customerResponse));
+            when(customerService.getCustomersWithPagination(any(), eq(0), eq(100))).thenReturn(paged);
+
+            mockMvc.perform(get("/customers/paged").param("size", "100"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value("Customers retrieved"));
+            }
+
+            @Test
+            @WithMockUser(roles = "DEALER_MANAGER")
+            @DisplayName("Get customers paged - invalid size exceeds max")
+            void getCustomersPaged_invalidSize() throws Exception {
+            when(customerService.getCustomersWithPagination(any(), anyInt(), eq(1000)))
+                .thenThrow(new IllegalArgumentException("Page size exceeds maximum limit of 100"));
+
+            mockMvc.perform(get("/customers/paged").param("size", "1000"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Page size exceeds maximum limit of 100"));
+            }
 
     @Test
     @DisplayName("Get customer by ID")
