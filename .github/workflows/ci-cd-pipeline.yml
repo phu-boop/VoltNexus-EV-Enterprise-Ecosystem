@@ -274,7 +274,7 @@ jobs:
           if [ -f newman/report.html ]; then cp -f newman/report.html ./; fi
           git add report.html
           git commit -m "Update test report [skip ci]" || exit 0
-          git push origin gh-pages
+          git push origin gh-pages --force
 
       - name: "Notify: Jira Bug on API Failure"
         if: always() && steps.postman_tests.outcome == 'failure'
