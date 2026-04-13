@@ -30,14 +30,14 @@ public class NotificationService {
     public void sendPromotionNotificationToAdmins(PromotionDTO dto) {
         List<UserDevice> adminDevices = userDeviceRepository.findAllAdminDevices();
 
-        for (UserDevice device : adminDevices) {
-            Notification notification = new Notification();
-            notification.setType("NEW_PROMOTION");
-            notification.setTitle("Khuyến mãi mới cần phê duyệt");
-            notification.setMessage(dto.getPromotionName() + " đang chờ phê duyệt");
-            notification.setPromotionId(dto.getId());
-            notificationRepository.save(notification);
+        Notification notification = new Notification();
+        notification.setType("NEW_PROMOTION");
+        notification.setTitle("Khuyến mãi mới cần phê duyệt");
+        notification.setMessage(dto.getPromotionName() + " đang chờ phê duyệt");
+        notification.setPromotionId(dto.getId());
+        notificationRepository.save(notification);
 
+        for (UserDevice device : adminDevices) {
             Message message = Message.builder()
                     .setToken(device.getFcmToken())
                     .setNotification(com.google.firebase.messaging.Notification.builder()

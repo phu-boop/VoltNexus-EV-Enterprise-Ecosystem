@@ -2,15 +2,14 @@ package com.ev.user_service.service;
 
 import com.ev.common_lib.exception.AppException;
 import com.ev.common_lib.exception.ErrorCode;
-import com.ev.user_service.controller.ProfileController;
 import com.ev.user_service.dto.respond.ApiResponseStaffDealer;
 import com.ev.user_service.entity.DealerManagerProfile;
 import com.ev.user_service.entity.DealerStaffProfile;
 import com.ev.user_service.repository.DealerManagerProfileRepository;
 import com.ev.user_service.repository.DealerStaffProfileRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -29,8 +28,9 @@ public class ProfileService {
         this.dealerStaffProfileRepository = dealerStaffProfileRepository;
     }
 
+    @Transactional(readOnly = true)
     public List<ApiResponseStaffDealer> getStaffDealerByIdDealer(UUID idDealer) {
-        List<DealerStaffProfile> dealerStaffProfiles = dealerStaffProfileRepository.findByDealerId(idDealer);
+        List<DealerStaffProfile> dealerStaffProfiles = dealerStaffProfileRepository.findByDealerIdWithUser(idDealer);
         return dealerStaffProfiles.stream()
                 .map(profile -> {
                     ApiResponseStaffDealer dto = new ApiResponseStaffDealer();
@@ -63,13 +63,30 @@ public class ProfileService {
                 .collect(Collectors.toList());
     }
 
-    //find idealer by idMember
+    /**
+     * Resolves dealer id from a dealer staff/manager profile id, or from the user id of that member.
+     */
     public UUID getIdDealerByIdMember(UUID idMember) {
         Optional<DealerStaffProfile> staffOpt = dealerStaffProfileRepository.findById(idMember);
         Optional<DealerManagerProfile> managerOpt = dealerManagerProfileRepository.findById(idMember);
+
+        if (staffOpt.isEmpty() && managerOpt.isEmpty()) {
+            return resolveDealerIdFromProfiles(
+                    dealerStaffProfileRepository.findByUserId(idMember),
+                    dealerManagerProfileRepository.findByUserId(idMember),
+                    idMember);
+        }
+
+        return resolveDealerIdFromProfiles(staffOpt, managerOpt, idMember);
+    }
+
+    private UUID resolveDealerIdFromProfiles(
+            Optional<DealerStaffProfile> staffOpt,
+            Optional<DealerManagerProfile> managerOpt,
+            UUID idForLog) {
+
         if (staffOpt.isPresent() && managerOpt.isPresent()) {
-            // Log warning instead of throwing exception
-            System.err.println("Duplicate profile found for ID: " + idMember + ". Preferring Manager Profile.");
+            System.err.println("Duplicate profile found for ID: " + idForLog + ". Preferring Manager Profile.");
             return managerOpt.get().getDealerId();
         }
 
