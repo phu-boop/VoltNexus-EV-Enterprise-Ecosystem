@@ -78,9 +78,9 @@ class PromotionMapperTest {
     void toResponse_ShouldMapCorrectly() throws Exception {
         UUID dealerId = UUID.fromString("de46d29b-8e10-4660-848e-20f9a2656976");
         when(objectMapper.readValue(eq(promotion.getDealerIdJson()), any(TypeReference.class)))
-                .thenReturn(List.of(dealerId));
+                .thenReturn(List.of(dealerId.toString()));  // Return String, matching List<String> in mapper
         when(objectMapper.readValue(eq(promotion.getApplicableModelsJson()), any(TypeReference.class)))
-                .thenReturn(List.of(101L, 102L));
+                .thenReturn(List.of("101", "102"));  // Return String, matching List<String> in mapper
 
         PromotionResponse response = promotionMapper.toResponse(promotion);
 
