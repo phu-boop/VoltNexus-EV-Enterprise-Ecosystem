@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FiArrowLeft, FiSave, FiX, FiUser, FiPhone, FiMail } from 'react-icons/fi';
 import { toast } from 'react-toastify';
@@ -29,7 +29,7 @@ const CreateFeedback = () => {
 
   const [formData, setFormData] = useState({
     customerId: '',
-    dealerId: 1, // TODO: Get from session
+    dealerId: sessionStorage.getItem('dealerId') || sessionStorage.getItem('profileId') || '',
     complaintType: '',
     severity: 'MEDIUM',
     channel: 'IN_STORE',
@@ -54,7 +54,7 @@ const CreateFeedback = () => {
   };
 
   const handleCustomerSelect = (customerId) => {
-    const customer = customers.find(c => c.customerId === parseInt(customerId));
+    const customer = customers.find(c => c.customerId === Number.parseInt(customerId, 10));
     setSelectedCustomer(customer);
     handleChange('customerId', customerId);
   };
@@ -87,9 +87,9 @@ const CreateFeedback = () => {
     try {
       const payload = {
         ...formData,
-        customerId: parseInt(formData.customerId),
-        dealerId: parseInt(formData.dealerId),
-        orderId: formData.orderId ? parseInt(formData.orderId) : null,
+        customerId: Number.parseInt(formData.customerId, 10),
+        dealerId: formData.dealerId,
+        orderId: formData.orderId ? Number.parseInt(formData.orderId, 10) : null,
       };
 
       await createComplaint(payload);
