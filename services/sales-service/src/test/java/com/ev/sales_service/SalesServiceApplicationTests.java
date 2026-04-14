@@ -1,19 +1,19 @@
 package com.ev.sales_service;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationContext;
-import static org.assertj.core.api.Assertions.assertThat;
-
-
 import org.junit.jupiter.api.Test;
-
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.ApplicationContext;
 import org.springframework.kafka.core.KafkaTemplate;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 /**
- * Removed  to avoid needing a live DB/Kafka on CI.
- * Real business logic tests should be in separate unit test classes.
+ * Lightweight context load test.
+ * KafkaTemplate is mocked to avoid needing a live broker on CI.
  */
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
 class SalesServiceApplicationTests {
 
 	@MockBean

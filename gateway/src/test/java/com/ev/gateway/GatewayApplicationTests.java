@@ -1,16 +1,18 @@
 package com.ev.gateway;
 
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.ApplicationContext;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
-
-import org.junit.jupiter.api.Test;
-
 /**
- * Removed  to avoid needing a live DB/Kafka on CI.
- * Real business logic tests should be in separate unit test classes.
+ * Lightweight Spring Boot context test.
+ * Uses webEnvironment=NONE to avoid starting a real HTTP server.
+ * No DB/Kafka connection needed for gateway.
  */
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
 class GatewayApplicationTests {
 
 	@Autowired
@@ -18,7 +20,7 @@ class GatewayApplicationTests {
 
 	@Test
 	void contextLoads() {
-	    assertThat(context).isNotNull();
+		assertThat(context).isNotNull();
 	}
 
 }
