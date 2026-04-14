@@ -27,13 +27,9 @@ public class OutboxScraper {
     @Scheduled(fixedDelay = 5000) // Chạy mỗi 5 giây
     @Transactional
     public void scrapeOutbox() {
-        // 1. Tìm các tin nhắn mới hoặc thất bại nhưng chưa quá giới hạn
         List<Outbox> pendingEvents = outboxRepository.findByStatusOrderByCreatedAtAsc("NEW", PageRequest.of(0, BATCH_SIZE));
         
         if (pendingEvents.isEmpty()) {
-            // Thử tìm thêm các tin nhắn FAILED để retry
-            // pendingEvents = outboxRepository.findByStatusOrderByCreatedAtAsc("FAILED", PageRequest.of(0, BATCH_SIZE));
-            // if (pendingEvents.isEmpty()) return;
             return;
         }
 
@@ -46,19 +42,27 @@ public class OutboxScraper {
 
     private void processEvent(Outbox event) {
         try {
-            // Xác định topic dựa trên aggregateType (ví dụ: ev.sales.promotion)
             String topic = "ev.sales." + event.getAggregateType().toLowerCase();
             
             log.info("Publishing event {} to topic {}", event.getId(), topic);
             
-            // Gửi lên Kafka đồng bộ để đảm bảo kết quả trước khi update DB
             kafkaTemplate.send(topic, event.getAggregateId(), event.getPayload()).get();
 
-            // Cập nhật trạng thái thành công
             event.setStatus("SENT");
             event.setSentAt(LocalDateTime.now());
             outboxRepository.save(event);
             
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            log.error("Failed to publish event {}: {}", event.getId(), e.getMessage());
+            
+            event.setAttempts(event.getAttempts() + 1);
+            event.setLastAttemptAt(LocalDateTime.now());
+            
+            if (event.getAttempts() >= MAX_ATTEMPTS) {
+                event.setStatus("FAILED");
+            }
+            outboxRepository.save(event);
         } catch (Exception e) {
             log.error("Failed to publish event {}: {}", event.getId(), e.getMessage());
             
