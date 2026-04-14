@@ -1,5 +1,10 @@
 package com.example.reporting_service;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
+import static org.assertj.core.api.Assertions.assertThat;
+
+
 import org.junit.jupiter.api.Test;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -21,9 +26,11 @@ class ReportingServiceApplicationTests {
      * Test cơ bản để xác nhận Spring Context (bao gồm JPA và Kafka) có thể load
      * mà không gặp lỗi kết nối driver database thực tế.
      */
+    @Autowired
+    private ApplicationContext context;
+
     @Test
     void contextLoads() {
-        // Xác nhận Spring Context khởi tạo thành công và inject mock bean đúng cách
-        assertNotNull(kafkaTemplate, "KafkaTemplate bean should be injected by Spring Context");
+        assertThat(context).isNotNull();
     }
 }

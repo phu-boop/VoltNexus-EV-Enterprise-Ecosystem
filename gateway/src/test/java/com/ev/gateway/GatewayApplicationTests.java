@@ -1,5 +1,10 @@
 package com.ev.gateway;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
+import static org.assertj.core.api.Assertions.assertThat;
+
+
 import org.junit.jupiter.api.Test;
 
 /**
@@ -8,8 +13,12 @@ import org.junit.jupiter.api.Test;
  */
 class GatewayApplicationTests {
 
+	@Autowired
+	private ApplicationContext context;
+
 	@Test
 	void contextLoads() {
+	    assertThat(context).isNotNull();
 	}
 
 }

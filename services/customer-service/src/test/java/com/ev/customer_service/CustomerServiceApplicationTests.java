@@ -1,5 +1,10 @@
 package com.ev.customer_service;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
+import static org.assertj.core.api.Assertions.assertThat;
+
+
 import org.junit.jupiter.api.Test;
 
 /**
@@ -8,8 +13,11 @@ import org.junit.jupiter.api.Test;
  */
 class CustomerServiceApplicationTests {
 
+	@Autowired
+	private ApplicationContext context;
+
 	@Test
 	void contextLoads() {
-		// No-op: actual tests are in CartServiceImplTest, etc.
+	    assertThat(context).isNotNull();
 	}
 }
