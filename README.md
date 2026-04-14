@@ -1,154 +1,286 @@
-<div align="center">
+# ⚡ VoltNexus EV Enterprise Ecosystem
 
-# 🚗 VoltNexus EV Enterprise Ecosystem
-### Enterprise-Grade Microservices Platform for Electric Vehicle Commerce
-
-[![Build Status](https://img.shields.io/badge/Build-Passing-brightgreen)](https://github.com/BinhLN1105/VMS-Commerce/actions)
-[![Context](https://img.shields.io/badge/Architecture-Microservices-blueviolet)](https://microservices.io/)
-[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.4-green)](https://spring.io/projects/spring-boot)
-[![Spring AI](https://img.shields.io/badge/Spring%20AI-1.1.2-blue)](https://spring.io/projects/spring-ai)
-[![React](https://img.shields.io/badge/React-18-61DAFB)](https://reactjs.org/)
-[![Docker](https://img.shields.io/badge/Docker-Ready-2496ED)](https://www.dock4️⃣ Test lần cuối
-Chạy toàn bộ hệ thống:
-
-Backend: mvn clean install
-
-Frontend: npm run build
-
-👉 Test:
-
-API login / register
-
-DB connect
-
-Web load OKer.com/)
-[![License](https://img.shields.io/badge/License-MIT-yellow)](LICENSE)
-
-**A high-performance, AI-driven digital ecosystem connecting EV Manufacturers (EVM) and Dealers, optimizing the entire sales lifecycle from production forecasting to customer delivery.**
-
-[🌐 Live Demo](https://customer-app-production-b93d.up.railway.app/) · [📘 Architecture Documentation](https://dangtrong2608.atlassian.net/wiki/spaces/upwork/pages/41222538/SWR+Y+u+c+u+h+th+ng+SRS+Use+Case+Diagram) · [📽️ Video Showcase](#)
-
----4️⃣ Test lần cuối
-Chạy toàn bộ hệ thống:
-
-Backend: mvn clean install
-
-Frontend: npm run build
-
-👉 Test:
-
-API login / register
-
-DB connect
-
-Web load OK
-
-![VoltNexus Hero Banner](docs/assets/forReadme.png)
-*(Replace this with a polished application dashboard screenshot or conceptual banner)*
-
-</div>
-
-## � Project at a Glance
-
-| Metric | Value                                  |
-| :--- |:---------------------------------------|
-| **Microservices** | 10 high-cohesion services TrongDang    |
-| **REST Endpoints** | 45+ Production-ready APIs              |
-| **DB Tables** | 30+ Normalized relational tables       |
-| **Messaging** | 15+ Kafka Topics for Eventing          |
-| **Stack** | Java 21, Spring Boot 3.4, React 18, AI |
+<p align="center">
+  <img src="https://img.shields.io/badge/Java-21-orange?style=for-the-badge&logo=openjdk" />
+  <img src="https://img.shields.io/badge/Spring_Boot-3.5.6-brightgreen?style=for-the-badge&logo=springboot" />
+  <img src="https://img.shields.io/badge/React-18-61DAFB?style=for-the-badge&logo=react" />
+  <img src="https://img.shields.io/badge/Kubernetes-K8s-326CE5?style=for-the-badge&logo=kubernetes" />
+  <img src="https://img.shields.io/badge/Kafka-Event_Driven-231F20?style=for-the-badge&logo=apachekafka" />
+  <img src="https://img.shields.io/badge/Google_Gemini-AI-4285F4?style=for-the-badge&logo=google" />
+  <img src="https://img.shields.io/badge/CI/CD-GitHub_Actions-2088FF?style=for-the-badge&logo=githubactions" />
+</p>
 
 ---
 
-## 💡 The Business Problem
+## Problem & Solution
 
-Managing an EV enterprise is complex. Traditionally, there's a significant **data gap** between the manufacturer and the dealer network. This leads to:
-- 📉 Inaccurate production planning due to poor visibility into regional demand.
-- 📦 Suboptimal inventory allocation across dealers.
-- 🐌 Slow response to market shifts and customer preferences.
+**Problem:** The electric vehicle industry lacks a unified, scalable enterprise platform to manage the complete lifecycle from vehicle catalog and dealership operations to customer engagement, B2B/B2C sales, payment processing, real-time notifications, and AI-driven demand forecasting.
 
-**VoltNexus bridges this gap** by providing a unified, real-time platform that synchronizes data across the entire supply chain.
+**Solution:** VoltNexus is a **production-grade, cloud-native microservices ecosystem** built for EV manufacturers and dealership networks. It provides a fully integrated platform covering every touchpoint of the EV business — from manufacturing production planning to customer test drive appointments — all orchestrated through a modern DevOps pipeline and enhanced with generative AI capabilities.
 
 ---
 
-## 🔥 Engineering Highlights
+## Architecture Overview
 
-Built with production-grade patterns to ensure reliability, scalability, and maintainability:
+VoltNexus is built on a **10-service microservices architecture** sitting behind a reactive API Gateway with JWT-based authentication, event-driven messaging via Apache Kafka, and real-time push notifications via WebSocket (STOMP/SockJS).
 
-- **Event-Driven Architecture (EDA):** Leverages **Apache Kafka** for asynchronous inter-service communication, ensuring loose coupling and high system availability.
-- **Transactional Outbox Pattern:** Guarantees eventual consistency between database updates and message publishing, preventing data loss during network failures.
-- **Distributed Caching Strategy:** Implemented through **Redis** to minimize database load and ensure sub-100ms response times for high-traffic endpoints.
-- **AI RAG Pipeline:** Uses **Spring AI** to integrate **Gemini 1.5 Flash** models with a **Redis Vector DB**, enabling context-aware demand forecasting and intelligent business insights.
-- **Stateless Authentication:** Secure RBAC (Role-Based Access Control) using **JWT** and **Spring Security**, distributed seamlessly via **Spring Cloud Gateway**.
+[![Architecture Diagram](docs/assets/diagram-export-4-13-2026-7_28_23-PM.png)](https://app.eraser.io/workspace/LC2RNO5DsnY3C6uncXiO)
+
+> 🔗 [View & edit full diagram on Eraser.io →](https://app.eraser.io/workspace/LC2RNO5DsnY3C6uncXiO)
 
 ---
 
-## ✨ Core Features
+## Technology Stack
 
-### � Enterprise Security
-*   **RBAC & JWT Auth:** Multi-tenant security ensuring data isolation between different dealers and headquarters.
-*   **Secure Payment Flow:** Full VNPAY integration with checksum verification and server-to-server IPN handling.
+### Backend
+| Technology | Version | Purpose |
+|---|---|---|
+| Spring Boot | 3.5.6 | Microservice framework |
+| Spring Cloud Gateway | Latest | Reactive API Gateway |
+| Spring Security + JWT (jjwt) | 0.12.6 | Authentication & Authorization |
+| Spring AI (Google Gemini) | 1.1.2 | LLM-powered forecasting & chatbot |
+| Spring Kafka | 3.3.10 | Async event-driven messaging |
+| Spring Data JPA (Hibernate) | Latest | ORM / data persistence |
+| Spring Data Redis | Latest | Caching, session & token blacklist |
+| Spring WebFlux | Latest | Reactive gateway & async processing |
+| Spring WebSocket (STOMP) | Latest | Real-time notifications |
+| MapStruct | 1.5.5 | DTO ↔ Entity mapping |
+| Lombok | 1.18.40 | Boilerplate reduction |
+| Bucket4j | 8.14.0 | Rate limiting |
+| Firebase Admin SDK | 9.3.0 | Push notifications (FCM) |
+| Dotenv Java | 3.0.0 | Environment config management |
+| SpringDoc OpenAPI | 2.8.13 | API documentation (Swagger) |
+| Java | 21 | Runtime (LTS) |
 
-### 🤖 AI-Driven Intelligence
-*   **Demand Forecasting:** Technical implementation using **Gemini API** with **RAG** (Retrieval-Augmented Generation) pipeline stored in **Redis Vector DB**.
-*   **Production Planning:** AI-generated recommendations based on real-time sales velocity and dealer stock levels.
+### Frontend
+| Technology | Purpose |
+|---|---|
+| React 18 | Admin dashboard (`my-app`) |
+| React 18 | Customer-facing app (`customer-app`) |
+| WebSocket / STOMP | Real-time notification consumption |
 
-### 📦 Supply Chain Control
-*   **Real-time Inventory Sync:** Automatic stock adjustments via Kafka events throughout the order lifecycle.
-*   **B2B Wholesale Workflow:** Specialized portal for dealers to place bulk orders from the manufacturer.
+### AI & Analytics
+| Technology | Purpose |
+|---|---|
+| Google Gemini (via Spring AI) | Sales forecasting, chatbot, production planning |
+| Apache Commons Math3 | Statistical demand modeling |
+| Spring AI Vector Store | Embedding / retrieval (Assumed based on structure) |
+
+### Infrastructure
+| Technology | Purpose |
+|---|---|
+| Apache Kafka 7.4.0 + Zookeeper | Event streaming / async communication |
+| Redis Stack | Caching, token blacklist, rate limiting state |
+| MySQL | Per-service relational databases |
+| Docker (multi-stage) | Containerization with common-lib caching |
+| Kubernetes + Minikube | Orchestration (staging & production) |
+| Prometheus + Grafana | Metrics & monitoring |
+| RedisInsight | Redis management UI |
+
+### DevOps & Quality
+| Technology | Purpose |
+|---|---|
+| GitHub Actions | CI/CD pipeline automation |
+| SonarCloud | Static code analysis & quality gates |
+| Trivy (Aqua Security) | Container & filesystem vulnerability scanning |
+| JaCoCo | Java code coverage reporting |
+| Newman (Postman CLI) | API integration testing |
+| Jira API | Automated bug creation on failure |
+| Docker Hub | Container image registry |
+| AWS EC2 | Production server |
+| GitHub Pages | Test report publishing |
+
+---
+
+## Microservices Breakdown
+
+| Service | Port | Database | Responsibilities |
+|---|---|---|---|
+| **Gateway** | 8080 | Redis | JWT validation, routing, rate limiting, CORS |
+| **User Service** | 8081 | MySQL (user_db) | Auth (JWT + OAuth2), user management, FCM tokens |
+| **Customer Service** | 8082 | MySQL (customer_db) | Customer profiles, test drives, complaints, cart, charging stations |
+| **Dealer Service** | 8083 | MySQL (dealer_db) | Dealer CRUD, locations, targets, performance, contracts |
+| **Inventory Service** | 8084 | MySQL (inventory_db) | Stock management, allocations, transfers, reorder alerts |
+| **Payment Service** | 8085 | MySQL (payment_db) | Invoices, VNPay gateway, installments, debt tracking |
+| **Sales Service** | 8086 | MySQL (sales_db) | B2B/B2C orders, quotations, contracts, promotions, WebSocket |
+| **Vehicle Service** | 8087 | MySQL (vehicle_db) | Vehicle models, variants, features, price history, images |
+| **Reporting Service** | 8088 | MySQL (reporting_db) | Sales reports, inventory analytics, AI-powered forecasting |
+| **AI Service** | 8500 (Docker) / 8089 (K8s) | MySQL (ai_db) | Gemini-powered chatbot, demand forecasting, production planning |
 
 ---
 
-## �‍💻 My Role & Contribution
-*Period: Dec 2025 - Present*
+## Key Features
 
-As the **Lead Software Architect**, my primary responsibilities included:
-- **System Design:** Architects the 10-microservice ecosystem and defined the Event-Driven communication protocols.
-- **AI Integration:** Implemented the `ai-service` using Spring AI to enable predictive analytics.
-- **Security & Gateway:** Configured the API Gateway and implemented the stateless JWT authentication system.
-- **Payment Orchestration:** Developed the robust integration with VNPAY for reliable financial transactions.
-
----
-
-## 📂 Project Organization
-
-A high-level overview of the monorepo structure:
-
-- **[common-lib/](common-lib/)**: Shared DTOs, Event definitions, and core utilities used across all Spring Boot services.
-- **[services/](services/)**: Domain-specific microservices (AI, Sales, Inventory, User, etc.).
-- **[gateway/](gateway/)**: Central entry point handles routing, security, and load balancing.
-- **[frontend/](frontend/)**: Contains the React applications for both Administration/Dealers and B2C Customers.
-- **[config/](config/)**: Environment variable templates for seamless local and cloud deployments.
-- **[sql/](sql/)**: Database schemas and lookup/seeding scripts for consistent environments.
-
-For a detailed file-by-file breakdown, see [PROJECT_STRUCTURE.md](PROJECT_STRUCTURE.md).
+- **Dual Frontend**: Separate React apps for admin/dealer staff (`my-app`) and end customers (`customer-app`)
+- **AI-Powered Sales Forecasting**: Google Gemini LLM analyzes real sales and inventory data to predict 30-day demand per vehicle variant
+- **AI Production Planning**: Automated manufacturing plan generation and approval workflow
+- **AI Chatbot**: Context-aware EV business assistant available at `/ai/chat/ask`
+- **Real-Time Notifications**: WebSocket (STOMP/SockJS) push for order status changes, staff assignments, and system alerts
+- **Transactional Outbox Pattern**: Guarantees at-least-once Kafka message delivery from sales-service
+- **VNPay Payment Gateway**: Full B2C online payment integration with IPN/return callbacks
+- **OAuth2 Social Login**: Google, Facebook, GitHub authentication
+- **Firebase Push Notifications**: Mobile FCM token management
+- **Role-Based Access Control**: 5 roles (ADMIN, CUSTOMER, DEALER_MANAGER, DEALER_STAFF, EVM_STAFF) with `@PreAuthorize` enforcement
+- **Rate Limiting**: Bucket4j-based guest rate limiting on AI chatbot endpoints via Gateway filter
+- **Token Blacklisting**: Logout invalidation via Redis
+- **Comprehensive Test Coverage**: 76+ test files across all services covering BVA, unit, integration, and controller tests
 
 ---
 
-## 🛠️ Installation & Setup
+## CI/CD Pipeline
 
-Please refer to the detailed [Setup Guide](docs/VNPAY.md#installation) in our documentation for prerequisites and step-by-step instructions using Docker Compose.
+> 🔗 [View & edit full pipeline diagram on Eraser.io →](https://app.eraser.io/workspace/znVIlzq56TwuQigJbgrc)
+
+```
+Push to main
+     │
+     ▼
+┌─────────────────────────────────────────────┐
+│          Stage 1: CI & Staging               │
+│                                             │
+│  1. Build common-lib (Maven)                │
+│  2. Unit Tests (mvn test -DskipITs)         │
+│  3. Frontend Tests (npm test)               │
+│  4. SonarCloud Quality Gate                 │
+│     └─ Jira Bug created on BLOCKER/CRITICAL │
+│  5. Trivy Security Scan (FS)                │
+│  6. Bootstrap Minikube                      │
+│  7. Docker Build (all 10 services)          │
+│  8. Docker Push → Docker Hub                │
+│  9. K8s Deploy (Staging via Minikube)       │
+│ 10. Newman API Tests → GitHub Pages Report  │
+│     └─ Jira Bug created on API failure      │
+└──────────────────┬──────────────────────────┘
+                   │ (on success)
+                   ▼
+┌─────────────────────────────────────────────┐
+│       Stage 2: Production Deployment         │
+│                                             │
+│  1. Manual Approval Gate (GitHub Env)       │
+│  2. SSH into AWS EC2                        │
+│  3. docker compose pull + up -d             │
+│  4. docker image prune                      │
+│  5. Prometheus/Grafana Health Check         │
+└─────────────────────────────────────────────┘
+```
 
 ---
 
-## 📸 Technical Showcase
+## Deployment Strategy
 
-### 🖥️ Enterprise Dashboard
-![Dashboard Screenshot](docs/assets/placeholder_dashboard.png)
-*Insightful real-time analytics for dealer managers.*
+### Staging (Automated)
+- Runs on every push to `main` via GitHub Actions
+- Deploys to **Minikube** (ephemeral Kubernetes cluster in CI runner)
+- Secrets injected per-service via `kubectl create secret`
+- Newman API collection validates end-to-end API contracts
 
-### 🤖 AI Prediction Interface
-![AI Prediction](docs/assets/placeholder_ai.png)
-*Visualized production planning based on predictive modeling (RAG-backed).*
+### Production
+- **Manual approval gate** — requires a named reviewer in the `production` GitHub Environment
+- Deploys to **AWS EC2** via SSH using `appleboy/ssh-action`
+- Production uses `docker compose` (not Kubernetes) for simplicity & cost
+- Zero-downtime rolling: `compose down → pull → up -d → prune`
+
+---
+
+## Project Structure
+
+```
+VoltNexus-EV-Enterprise-Ecosystem/
+├── .github/workflows/       # CI/CD pipeline (1 unified workflow)
+├── common-lib/              # Shared DTO, exceptions, error codes
+├── gateway/                 # Spring Cloud Gateway (reactive)
+├── services/
+│   ├── ai-service/          # Gemini AI: forecasting, chatbot, planning
+│   ├── customer-service/    # CRM: profiles, cart, test drives, complaints
+│   ├── dealer-service/      # Dealer management & contracts
+│   ├── inventory-service/   # Stock, allocations, transfers
+│   ├── payment-service/     # Invoices, VNPay, installments
+│   ├── reporting-service/   # Analytics, reports, AI forecasting
+│   ├── sales-service/       # Orders (B2B/B2C), quotations, outbox, WebSocket
+│   ├── user-service/        # Auth, users, OAuth2, FCM
+│   └── vehicle-service/     # Catalog, variants, features, images
+├── frontend/
+│   ├── my-app/              # Admin / Dealer Staff React app
+│   └── customer-app/        # Public customer React app
+├── k8s/
+│   ├── namespace.yaml       # voltnexus namespace
+│   ├── configmap.yaml       # Shared non-secret config
+│   ├── infrastructure/      # Redis, Kafka, Zookeeper K8s manifests
+│   └── services/            # All service Deployments + Services
+├── infrastructure/
+│   ├── prometheus/          # prometheus.yml scrape config
+│   └── grafana/             # Provisioning + dashboards
+├── docker-compose.yml       # Full local stack (dev)
+├── postman/                 # Postman collections & environments
+├── sql/                     # Database initialization scripts
+└── pom.xml                  # Maven multi-module parent
+```
 
 ---
 
-## 📜 License
+## Setup Instructions
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+### Prerequisites
+- Java 21, Maven 3.9+
+- Docker & Docker Compose
+- Node.js 18+
+
+### Local Development
+
+```bash
+# 1. Clone repository
+git clone https://github.com/phu-boop/VoltNexus-EV-Enterprise-Ecosystem.git
+cd VoltNexus-EV-Enterprise-Ecosystem
+
+# 2. Build common-lib (required first)
+mvn clean install -pl common-lib -DskipTests
+
+# 3. Configure environment files
+cp config/user-service.env.example config/user-service.env
+# ... edit each config/*.env with your credentials
+
+# 4. Start full stack
+docker compose up -d
+
+# 5. Start frontend (admin)
+cd frontend/my-app && npm install && npm run dev
+
+# 6. Start frontend (customer)
+cd frontend/customer-app && npm install && npm start
+```
+
+### Service Ports (Local)
+| Service | URL |
+|---|---|
+| API Gateway | http://localhost:8080 |
+| User Service | http://localhost:8081 |
+| Customer Service | http://localhost:8082 |
+| Dealer Service | http://localhost:8083 |
+| Inventory Service | http://localhost:8084 |
+| Payment Service | http://localhost:8085 |
+| Sales Service | http://localhost:8086 |
+| Vehicle Service | http://localhost:8087 |
+| Reporting Service | http://localhost:8088 |
+| AI Service | http://localhost:8500 |
+| Prometheus | http://localhost:9090 |
+| Grafana | http://localhost:3000 |
+| RedisInsight | http://localhost:5540 |
+
+### Running Tests
+
+```bash
+# All unit tests
+mvn test -DskipITs
+
+# Specific service
+mvn test -pl services/user-service
+
+# Frontend tests
+cd frontend/my-app && npm test -- --watchAll=false
+```
 
 ---
-<div align="center">
-  <sub>Built with ❤️ for the future of Electric Mobility</sub>
-</div>
-System Architecture
+
+## License
+
+See [LICENSE](LICENSE) file.

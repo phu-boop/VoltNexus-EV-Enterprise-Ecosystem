@@ -78,17 +78,17 @@ class PromotionMapperTest {
     void toResponse_ShouldMapCorrectly() throws Exception {
         UUID dealerId = UUID.fromString("de46d29b-8e10-4660-848e-20f9a2656976");
         when(objectMapper.readValue(eq(promotion.getDealerIdJson()), any(TypeReference.class)))
-                .thenReturn(List.of(dealerId));
+                .thenReturn(List.of(dealerId.toString()));  // Return String, matching List<String> in mapper
         when(objectMapper.readValue(eq(promotion.getApplicableModelsJson()), any(TypeReference.class)))
-                .thenReturn(List.of(101L, 102L));
+                .thenReturn(List.of("101", "102"));  // Return String, matching List<String> in mapper
 
         PromotionResponse response = promotionMapper.toResponse(promotion);
 
         assertThat(response).isNotNull();
         assertThat(response.getPromotionId()).isEqualTo(promotion.getPromotionId());
         assertThat(response.getPromotionName()).isEqualTo(promotion.getPromotionName());
-        assertThat(response.getApplicableDealers()).containsOnly(dealerId);
-        assertThat(response.getApplicableModels()).containsOnly(101L, 102L);
+        assertThat(response.getApplicableDealers()).containsOnly(dealerId.toString());
+        assertThat(response.getApplicableModels()).containsOnly("101", "102");
         assertThat(response.getIsActive()).isTrue();
     }
 

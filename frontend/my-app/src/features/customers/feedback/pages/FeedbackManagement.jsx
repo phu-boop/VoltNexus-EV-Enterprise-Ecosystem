@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { FiPlus, FiFilter, FiRefreshCw, FiBarChart2, FiSearch, FiMessageSquare } from 'react-icons/fi';
+import { getIddealerByIdMember } from '../../../auth/services/authService';
 
 // Import components
 import FeedbackCard from '../components/FeedbackCard';
@@ -10,9 +11,7 @@ import FeedbackFilter from '../components/FeedbackFilter';
 // Import services
 import {
   getComplaintsByDealer,
-  filterComplaints,
-  COMPLAINT_STATUSES,
-  COMPLAINT_SEVERITIES
+  filterComplaints
 } from '../services/feedbackService';
 
 const FeedbackManagement = () => {
@@ -27,6 +26,7 @@ const FeedbackManagement = () => {
   const [currentPage, setCurrentPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [totalElements, setTotalElements] = useState(0);
+  const [dealerId, setDealerId] = useState('');
   const pageSize = 10;
 
   // Get role-based base path
@@ -47,18 +47,54 @@ const FeedbackManagement = () => {
 
   const basePath = getBasePath();
 
-  // TODO: Get from session/context
-  const dealerId = 1;
-
   useEffect(() => {
-    loadAllForStats();
-    loadComplaints();
+    initializeData();
   }, []);
 
-  // Load all complaints for stats calculation (without pagination)
-  const loadAllForStats = async () => {
+  const resolveDealerId = async () => {
+    const storedDealerId = sessionStorage.getItem('dealerId');
+    if (storedDealerId) {
+      return storedDealerId;
+    }
+
+    const profileId = sessionStorage.getItem('profileId');
+    if (!profileId) {
+      return '';
+    }
+
     try {
-      const response = await getComplaintsByDealer(dealerId);
+      const response = await getIddealerByIdMember(profileId);
+      const resolved = response?.data || '';
+      if (resolved) {
+        sessionStorage.setItem('dealerId', resolved);
+      }
+      return resolved;
+    } catch (error) {
+      console.error('Error resolving dealerId from profileId:', error);
+      return profileId;
+    }
+  };
+
+  const initializeData = async () => {
+    const resolvedDealerId = await resolveDealerId();
+    if (!resolvedDealerId) {
+      toast.error('Không tìm thấy thông tin đại lý');
+      setLoading(false);
+      return;
+    }
+
+    setDealerId(resolvedDealerId);
+    await Promise.all([
+      loadAllForStats(resolvedDealerId),
+      loadComplaints(0, resolvedDealerId),
+    ]);
+  };
+
+  // Load all complaints for stats calculation (without pagination)
+  const loadAllForStats = async (currentDealerId = dealerId) => {
+    if (!currentDealerId) return;
+    try {
+      const response = await getComplaintsByDealer(currentDealerId);
       const data = response.data || [];
       setAllComplaints(data);
     } catch (error) {
@@ -66,12 +102,13 @@ const FeedbackManagement = () => {
     }
   };
 
-  const loadComplaints = async (page = 0) => {
+  const loadComplaints = async (page = 0, currentDealerId = dealerId) => {
+    if (!currentDealerId) return;
     try {
       setLoading(true);
       // Use filter API with pagination for list display
       const response = await filterComplaints({
-        dealerId,
+        dealerId: currentDealerId,
         page: page,
         size: pageSize,
         sortBy: 'createdAt',
@@ -92,6 +129,10 @@ const FeedbackManagement = () => {
   };
 
   const handleFilter = async (filterData) => {
+    if (!dealerId) {
+      toast.error('Không tìm thấy thông tin đại lý');
+      return;
+    }
     try {
       setLoading(true);
       setCurrentPage(0); // Reset to first page when filtering
@@ -122,12 +163,12 @@ const FeedbackManagement = () => {
     setSearchQuery('');
     setShowFilter(false);
     setCurrentPage(0);
-    loadComplaints(0);
+    Promise.all([loadAllForStats(dealerId), loadComplaints(0, dealerId)]);
   };
 
   const handlePageChange = (newPage) => {
     if (newPage >= 0 && newPage < totalPages) {
-      loadComplaints(newPage);
+      loadComplaints(newPage, dealerId);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
@@ -162,6 +203,32 @@ const FeedbackManagement = () => {
     inProgress: allComplaints.filter(c => c.status === 'IN_PROGRESS').length,
     resolved: allComplaints.filter(c => c.status === 'RESOLVED').length,
     critical: allComplaints.filter(c => c.severity === 'CRITICAL').length,
+  };
+
+  const buildPageItems = () => {
+    const items = [];
+    const hasLeftEllipsis = currentPage > 2;
+    const hasRightEllipsis = currentPage < totalPages - 3;
+
+    for (let page = 0; page < totalPages; page += 1) {
+      const isBoundary = page === 0 || page === totalPages - 1;
+      const isNearCurrent = page >= currentPage - 1 && page <= currentPage + 1;
+
+      if (isBoundary || isNearCurrent) {
+        items.push({ type: 'page', value: page, key: `page-${page + 1}` });
+        continue;
+      }
+
+      if (page === 1 && hasLeftEllipsis) {
+        items.push({ type: 'ellipsis', key: 'ellipsis-left' });
+      }
+
+      if (page === totalPages - 2 && hasRightEllipsis) {
+        items.push({ type: 'ellipsis', key: 'ellipsis-right' });
+      }
+    }
+
+    return items;
   };
 
   return (
@@ -310,7 +377,10 @@ const FeedbackManagement = () => {
                     key={complaint.complaintId}
                     complaint={complaint}
                     onViewDetail={handleViewDetail}
-                    onRefresh={() => loadComplaints(currentPage)}
+                    onRefresh={async () => {
+                      await loadAllForStats(dealerId);
+                      await loadComplaints(currentPage, dealerId);
+                    }}
                   />
                 ))}
               </div>
@@ -333,33 +403,24 @@ const FeedbackManagement = () => {
                       
                       {/* Page Numbers */}
                       <div className="flex space-x-1">
-                        {[...Array(totalPages)].map((_, index) => {
-                          // Show first page, last page, current page, and pages around current
-                          if (
-                            index === 0 || 
-                            index === totalPages - 1 || 
-                            (index >= currentPage - 1 && index <= currentPage + 1)
-                          ) {
-                            return (
-                              <button
-                                key={index}
-                                onClick={() => handlePageChange(index)}
-                                className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                                  currentPage === index
-                                    ? 'bg-blue-600 text-white'
-                                    : 'border border-gray-300 text-gray-700 hover:bg-gray-100'
-                                }`}
-                              >
-                                {index + 1}
-                              </button>
-                            );
-                          } else if (
-                            index === currentPage - 2 || 
-                            index === currentPage + 2
-                          ) {
-                            return <span key={index} className="px-2 text-gray-500">...</span>;
+                        {buildPageItems().map((item) => {
+                          if (item.type === 'ellipsis') {
+                            return <span key={item.key} className="px-2 text-gray-500">...</span>;
                           }
-                          return null;
+
+                          return (
+                            <button
+                              key={item.key}
+                              onClick={() => handlePageChange(item.value)}
+                              className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                                currentPage === item.value
+                                  ? 'bg-blue-600 text-white'
+                                  : 'border border-gray-300 text-gray-700 hover:bg-gray-100'
+                              }`}
+                            >
+                              {item.value + 1}
+                            </button>
+                          );
                         })}
                       </div>
 

@@ -1,59 +1,17 @@
 import { test, expect } from '@playwright/test';
+import * as fs from 'fs';
 
 test.describe('Function 110: backfillVehicleCache', () => {
 
-  // Hook này giả lập việc đăng nhập bằng tài khoản Admin trước mỗi test case, kèm theo Bypass ReCAPTCHA
   test.beforeEach(async ({ page }) => {
-    // Intercept the request to Google reCAPTCHA script and fake it
-    await page.route('https://www.google.com/recaptcha/api.js**', async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/javascript',
-        body: `
-          window.grecaptcha = {
-            ready: function(cb) { cb() },
-            render: function(element, options) {
-              if (options.callback) {
-                setTimeout(() => options.callback('mock-captcha-token'), 500);
-              }
-              return 0; 
-            },
-            reset: function() {},
-            execute: function() { return Promise.resolve('mock-captcha-token') },
-            getResponse: function() { return 'mock-captcha-token' }
-          };
-        `
-      });
-    });
-
-    // Thay đổi URL theo cấu hình Vite/React của bạn
-    await page.goto('http://localhost:5173/login'); 
-    await page.fill('input[name="email"]', 'admin@gmail.com');
-    await page.fill('input[name="password"]', '123123123'); // Thông tin từ file login.spec.ts
-    
-    // Đợi 1 chút cho mock captcha được inject
-    await page.waitForTimeout(1000);
-    await page.click('button[type="submit"]');
-    
-    // Đợi nhảy trang Dashboard HOẶC màn hình văng ra thông báo lỗi (ví dụ SweetAlert hoặc Connection refused)
-    await Promise.race([
-      page.waitForURL('**/evm/admin/dashboard', { timeout: 10000 }),
-      page.waitForSelector('text=Connection refused', { timeout: 10000, state: 'visible' }).catch(() => {}),
-      page.waitForSelector('.swal2-container', { timeout: 10000, state: 'visible' })
-    ]);
-
-    // Nếu Đăng nhập thành công, hệ thống sẽ văng ra một cái Bảng thông báo (SweetAlert) có nút "Truy cập ngay"
-    // Robot Playwright phải bấm nút đó thì Web mới nhảy sang trang Dashboard được!
-    const successPopup = page.locator('.swal2-container', { hasText: 'Đăng nhập thành công' });
-    if (await successPopup.isVisible()) {
-      await page.getByRole('button', { name: /Truy cập ngay/i }).click();
-      // Chờ Web thực sự nhảy sang trang Dashboard
-      await page.waitForURL('**/evm/admin/dashboard', { timeout: 10000 });
-    }
-
-    // Kiểm tra chốt chặn cuối cùng xem có vào được Dashboard chưa
-    if (!page.url().includes('dashboard')) {
-      throw new Error("⚠️ PHÁT HIỆN LỖI: Không chui vào được Dashboard! Lý do: Hoặc Server Backend sập, hoặc thông tin User/Pass sai.");
+    // Inject SessionStorage từ file đã lưu trong admin.setup.ts
+    if (fs.existsSync('playwright/.auth/admin-session.json')) {
+        const sessionData = JSON.parse(fs.readFileSync('playwright/.auth/admin-session.json', 'utf8'));
+        await page.addInitScript((data) => {
+            Object.entries(data).forEach(([key, value]) => {
+                sessionStorage.setItem(key, value as string);
+            });
+        }, sessionData);
     }
   });
 
@@ -63,7 +21,8 @@ test.describe('Function 110: backfillVehicleCache', () => {
     test.setTimeout(180000);
     
     // 1. Open the Data Backfill Tool page.
-    // Điều hướng trực tiếp bằng URL để đảm bảo 100% không bị kẹt ở các Menu đồ hoạ
+    // Điều hướng trực tiếp bằng URL để đảm bảo 100% không bị kẹt ở các Menu đồ hoạ.
+    // Lưu ý: User đã được xác thực nhờ admin.setup.ts (project e2e-admin).
     await page.goto('http://localhost:5173/evm/admin/system/data-backfill');
     
     // Đảm bảo trang Backfill đã load xong

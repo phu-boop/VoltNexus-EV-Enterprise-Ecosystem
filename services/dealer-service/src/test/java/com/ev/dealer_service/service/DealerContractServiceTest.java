@@ -13,6 +13,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -87,6 +89,13 @@ class DealerContractServiceTest {
     @DisplayName("Đọc hợp đồng")
     class Read {
 
+        /**
+         * Lấy danh sách hợp đồng theo ID đại lý
+         * - Tham số: UUID dealerId (ID của đại lý)
+         * - Mục tiêu: Kiểm tra xem service có truy xuất đúng danh sách hợp đồng thuộc về đại lý đó không.
+         * - Cách thức: Giả lập repository trả về danh sách hợp đồng, kiểm tra thông tin hợp đồng và thông tin đại lý đi kèm.
+         * - Kết quả mong đợi: Trả về danh sách DealerContractResponse có kích hoạt đúng các thông tin như contractNumber, dealerId và dealerName.
+         */
         @Test
         void getContractsByDealerId_returnsMappedResponses() {
             when(contractRepository.findByDealerDealerId(dealerId)).thenReturn(List.of(contract));
@@ -109,11 +118,15 @@ class DealerContractServiceTest {
             assertEquals("CNT-001", result.getContractNumber());
         }
 
-        @Test
-        void getContractById_notFound_throwsResourceNotFoundException() {
-            when(contractRepository.findById(99L)).thenReturn(Optional.empty());
+        /**
+         * @param missingContractId id không tồn tại — kỳ vọng thống nhất: {@link ResourceNotFoundException}
+         */
+        @ParameterizedTest(name = "getContractById — không tìm thấy id={0}")
+        @ValueSource(longs = {99L, 0L, Long.MAX_VALUE})
+        void getContractById_notFound_throwsResourceNotFoundException_parameterized(long missingContractId) {
+            when(contractRepository.findById(missingContractId)).thenReturn(Optional.empty());
 
-            assertThrows(ResourceNotFoundException.class, () -> contractService.getContractById(99L));
+            assertThrows(ResourceNotFoundException.class, () -> contractService.getContractById(missingContractId));
         }
     }
 
@@ -121,6 +134,13 @@ class DealerContractServiceTest {
     @DisplayName("Tạo hợp đồng")
     class Create {
 
+        /**
+         * Tạo mới hợp đồng - Trường hợp thành công
+         * - Tham số: DealerContractRequest request (Thông tin hợp đồng mới)
+         * - Mục tiêu: Kiểm tra quy trình tạo hợp đồng: check trùng số hợp đồng, kiểm tra đại lý tồn tại, lưu vào DB và gán ID.
+         * - Cách thức: Giả lập không trùng số, tìm thấy đại lý, save hợp đồng và dùng ArgumentCaptor để kiểm tra đối tượng được lưu.
+         * - Kết quả mong đợi: Trả về DealerContractResponse với ID mới (10L), số hợp đồng đúng và trạng thái là ACTIVE.
+         */
         @Test
         void createContract_success_persistsWithDealer() {
             when(contractRepository.existsByContractNumber("CNT-001")).thenReturn(false);
@@ -164,6 +184,13 @@ class DealerContractServiceTest {
     @DisplayName("Cập nhật hợp đồng")
     class Update {
 
+        /**
+         * Cập nhật hợp đồng - Trường hợp thành công
+         * - Tham số: Long contractId (ID hợp đồng), DealerContractRequest request (Thông tin cập nhật)
+         * - Mục tiêu: Kiểm tra khả năng cập nhật các thông tin của một hợp đồng đang tồn tại.
+         * - Cách thức: Tìm thấy hợp đồng và đại lý, thay đổi nội dung (terms), gọi save và kiểm tra kết quả.
+         * - Kết quả mong đợi: Trả về DealerContractResponse với nội dung terms đã được cập nhật thành "Updated terms".
+         */
         @Test
         void updateContract_success() {
             when(contractRepository.findById(1L)).thenReturn(Optional.of(contract));

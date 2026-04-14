@@ -23,7 +23,6 @@
         <module>services/sales-service</module>
         <module>services/user-service</module>
         <module>services/vehicle-service</module>
-
     </modules>
 
     <properties>
