@@ -30,6 +30,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -242,6 +243,10 @@ public class DealerPaymentServiceImpl implements IDealerPaymentService {
             log.debug("Full order data: {}", orderData);
 
             return orderData;
+        } catch (HttpClientErrorException.NotFound e) {
+            log.warn("Sales Service returned 404 for order validation - OrderId: {}, Error: {}",
+                orderId, e.getMessage());
+            throw new AppException(ErrorCode.ORDER_NOT_FOUND);
         } catch (RestClientException e) {
             log.error("Failed to fetch order from Sales Service - OrderId: {}, Error: {}",
                     orderId, e.getMessage());
