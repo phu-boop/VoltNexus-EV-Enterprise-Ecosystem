@@ -184,8 +184,27 @@ public class VnpayServiceImpl implements IVnpayService {
                 throw new AppException(ErrorCode.FORBIDDEN);
             }
 
+            String invoiceStatus = invoice.getStatus() != null ? invoice.getStatus().trim().toUpperCase() : "";
+            if ("PAID".equals(invoiceStatus)) {
+                log.error("Invoice is already PAID - InvoiceId: {}, DealerId: {}", invoiceId, dealerId);
+                throw new AppException(ErrorCode.INVALID_STATE);
+            }
+
             BigDecimal amountPaid = invoice.getAmountPaid() != null ? invoice.getAmountPaid() : BigDecimal.ZERO;
-            BigDecimal remaining = invoice.getTotalAmount().subtract(amountPaid);
+            List<DealerTransaction> allTransactions = dealerTransactionRepository
+                    .findByDealerInvoice_DealerInvoiceId(invoiceId);
+            BigDecimal pendingAmount = allTransactions.stream()
+                    .filter(t -> "PENDING_CONFIRMATION".equals(t.getStatus()) || "PENDING_GATEWAY".equals(t.getStatus()))
+                    .map(DealerTransaction::getAmount)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+            BigDecimal remaining = invoice.getTotalAmount().subtract(amountPaid).subtract(pendingAmount);
+
+            if (remaining.compareTo(BigDecimal.ZERO) <= 0) {
+                log.error("Invoice has no remaining amount for VNPAY payment - Invoice: {}, Remaining: {}, Paid: {}, Pending: {}",
+                        invoiceId, remaining, amountPaid, pendingAmount);
+                throw new AppException(ErrorCode.INVALID_STATE);
+            }
 
             if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
                 log.error("Invalid VNPAY amount {} for invoice {}", amount, invoiceId);
@@ -193,8 +212,8 @@ public class VnpayServiceImpl implements IVnpayService {
             }
 
             if (amount.compareTo(remaining) > 0) {
-                log.error("Attempt to pay more than remaining amount - Invoice: {}, Amount: {}, Remaining: {}",
-                        invoiceId, amount, remaining);
+                log.error("Attempt to pay more than remaining amount - Invoice: {}, Amount: {}, Remaining: {}, Pending: {}",
+                    invoiceId, amount, remaining, pendingAmount);
                 throw new AppException(ErrorCode.BAD_REQUEST);
             }
 

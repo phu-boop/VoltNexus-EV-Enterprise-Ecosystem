@@ -275,6 +275,12 @@ public class DealerPaymentServiceImpl implements IDealerPaymentService {
             throw new AppException(ErrorCode.FORBIDDEN);
         }
 
+        String invoiceStatus = invoice.getStatus() != null ? invoice.getStatus().trim().toUpperCase() : "";
+        if ("PAID".equals(invoiceStatus)) {
+            log.error("Invoice is already PAID - InvoiceId: {}, DealerId: {}", invoiceId, dealerId);
+            throw new AppException(ErrorCode.INVALID_STATE);
+        }
+
         // 3. Validate amount against remaining + pending amounts
         BigDecimal amountPaid = invoice.getAmountPaid() != null ? invoice.getAmountPaid() : BigDecimal.ZERO;
 
@@ -287,6 +293,12 @@ public class DealerPaymentServiceImpl implements IDealerPaymentService {
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         BigDecimal remainingAmount = invoice.getTotalAmount().subtract(amountPaid).subtract(pendingAmount);
+
+    if (remainingAmount.compareTo(BigDecimal.ZERO) <= 0) {
+        log.error("Invoice has no remaining amount for payment - InvoiceId: {}, Remaining: {}, Paid: {}, Pending: {}",
+            invoiceId, remainingAmount, amountPaid, pendingAmount);
+        throw new AppException(ErrorCode.INVALID_STATE);
+    }
 
         if (request.getAmount().compareTo(remainingAmount) > 0) {
             log.error(
