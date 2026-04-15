@@ -66,6 +66,7 @@ class ComplaintControllerTest {
 
                 mockMvc.perform(post("/customers/api/complaints")
                                 .with(csrf())
+                                .header("X-User-DealerId", "dealer-1")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(request)))
                                 .andExpect(status().isCreated())

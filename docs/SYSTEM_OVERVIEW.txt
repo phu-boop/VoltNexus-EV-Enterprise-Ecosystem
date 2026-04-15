@@ -1,0 +1,96 @@
+SYSTEM: VoltNexus EV Enterprise Ecosystem
+TYPE: Cloud-native enterprise microservices platform for electric vehicle manufacturers and dealership networks
+LANGUAGE: Java 21 (Spring Boot 3.5.6) + React 18 + Python (none, AI is via LLM API)
+ARCHITECTURE: 10-service microservices + reactive API Gateway + event-driven messaging
+
+SERVICES:
+- gateway (8080): Spring Cloud Gateway, JWT validation, Redis token blacklist, rate limiting, CORS, route rewriting
+- user-service (8081): Authentication (JWT + OAuth2: Google/Facebook/GitHub), user CRUD, 5-role RBAC, FCM push notifications, email (SMTP), Firebase Admin, Redis caching
+- customer-service (8082): Customer CRM, test drive appointments, complaints lifecycle, charging station map, shopping cart, vehicle reviews, audit trail, Kafka producer
+- dealer-service (8083): Dealer CRUD, locations, performance tracking, sales targets, dealer contracts
+- inventory-service (8084): Central + dealer stock management, VIN tracking, stock allocations, transfers, reorder alerts, Kafka consumer/producer
+- payment-service (8085): VNPay integration (B2C + B2B), dealer invoices, customer debt, installment plans, payment methods
+- sales-service (8086): B2B + B2C order lifecycle, quotation workflow, promotions, WebSocket (STOMP/SockJS) real-time notifications, Transactional Outbox → Kafka, email triggers
+- vehicle-service (8087): Vehicle catalog (models/variants/features), price history, image management, comparison tool, Redis caching
+- reporting-service (8088): Sales + inventory analytics, AI-powered forecasting via Gemini, Kafka consumer for data sync, dealer/vehicle data backfill
+- ai-service (8500): Google Gemini LLM (Spring AI 1.1.2), 30-day demand forecasting, production planning workflow, EV chatbot (rate-limited), analytics dashboard
+
+DATA:
+- MySQL: one database per service (DB-per-service pattern)
+- Redis Stack: token blacklist, session cache, catalog cache, rate limiter state
+- Apache Kafka 7.4.0 + Zookeeper: async event streaming (orders, inventory, notifications, promotions)
+- Transactional Outbox: sales-service guarantees at-least-once Kafka delivery
+
+SECURITY:
+- JWT (jjwt 0.12.6, HMAC-SHA256), short-lived access + refresh tokens
+- Redis-backed logout (token blacklisting)
+- 5 roles: ADMIN, CUSTOMER, DEALER_MANAGER, DEALER_STAFF, EVM_STAFF
+- @PreAuthorize on every endpoint
+- Gateway propagates X-User-Email, X-User-Role, X-User-Id, X-User-ProfileId, X-User-DealerId headers
+- Trivy vulnerability scanning, SonarCloud quality gates
+- VNPay HMAC-SHA512 callback verification
+- Bucket4j rate limiting on AI chatbot (gateway-level)
+
+AI:
+- Provider: Google Gemini via Spring AI ChatClient (NOT TensorFlow/YOLO/OpenCV)
+- Features: sales demand forecast (30-day, per variant), batch forecast (region-aware), chatbot, production planning, analytics dashboard
+- Data: fetches live sales history + inventory data via REST before each forecast
+- Output: structured JSON with prediction, confidence_score, reasoning
+- Secondary: GeminiForecastingService in reporting-service for narrative analytics reports
+
+DEVOPS:
+- CI: GitHub Actions single workflow (push to main), Java 21 Temurin, Maven multi-module
+- Build: mvn install common-lib → mvn test → SonarCloud → Trivy → Docker build (10 images) → Docker push
+- Staging: Minikube K8s cluster in CI runner, secrets injected as K8s Secrets, Newman API tests
+- Reports: HTML test report published to GitHub Pages
+- Jira automation: auto-create bugs on SonarCloud failure or Newman API failure
+- Production: manual approval gate → SSH to AWS EC2 → docker compose pull + up -d
+- Monitoring: Prometheus (scraping actuator) + Grafana dashboards
+
+TESTING:
+- 76+ test files across all services
+- JUnit 5 + Mockito + Spring Boot Test + H2 in-memory
+- BVA tests: email, password, quantity boundaries
+- @WebMvcTest for controller layer isolation
+- Newman/Postman collections for API contract testing (Postman Cloud)
+- JaCoCo code coverage integrated with SonarCloud
+- Frontend: Jest + React Testing Library
+
+REAL-TIME:
+- WebSocket (STOMP/SockJS) in sales-service for dealer staff notifications
+- Gateway routes /ws/** separately for HTTP handshake (SockJS) and WebSocket upgrade
+- Firebase FCM for mobile push notifications
+
+FRONTEND:
+- my-app: Admin/dealer staff React SPA (management dashboard)
+- customer-app: Public customer React SPA (browse, cart, orders)
+
+CONTAINER:
+- Multi-stage Dockerfiles (maven:3.9.9-eclipse-temurin-21 → eclipse-temurin:21-jre-alpine)
+- Build from root context (enables common-lib copy)
+- Images tagged with :latest and :<git-sha>
+- Docker Hub registry: <user>/voltnexus-<service>:latest
+
+KUBERNETES:
+- Namespace: voltnexus
+- Infrastructure: Redis, Kafka, Zookeeper in data-plane.yaml
+- Services: all 10 in backend.yaml; only Gateway is LoadBalancer, rest are ClusterIP
+- Secrets per service from GitHub Actions → kubectl create secret
+
+STRENGTHS:
+- Full EV business domain coverage (catalog → order → payment → customer → analytics)
+- LLM-augmented operational intelligence (Gemini AI)
+- Enterprise-grade DevOps (CI+staging+production gating+Jira+reporting)
+- Transactional Outbox guarantees event delivery reliability
+- Stateless services, scalable on K8s
+- Comprehensive test layering (unit + BVA + controller + API contract)
+- OAuth2 + JWT + Redis = secure, scalable auth
+
+NOTABLE PATTERNS:
+- Transactional Outbox (sales-service)
+- DB-per-service isolation
+- JWT header propagation (Gateway → Downstream)
+- Guest rate limiting on LLM endpoints
+- Redis multi-database isolation per service
+- Multi-stage Docker from monorepo root context
+- Audience-based notification routing (DEALER_STAFF vs EVM_STAFF)

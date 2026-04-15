@@ -4,6 +4,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.web.SecurityFilterChain;
@@ -11,6 +12,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity
 @Profile("!dev")
 public class ProductionSecurityConfig {
 
@@ -26,12 +28,11 @@ public class ProductionSecurityConfig {
         http
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(HttpMethod.GET, "/vehicle-models/**").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/vehicle-models")
+                .requestMatchers(HttpMethod.POST, "/vehicle-catalog/models")
                         .hasAnyAuthority("ROLE_EVM_STAFF", "ROLE_ADMIN")
-                        .requestMatchers(HttpMethod.PUT, "/vehicle-models/**")
+                .requestMatchers(HttpMethod.PUT, "/vehicle-catalog/models/**")
                         .hasAnyAuthority("ROLE_EVM_STAFF", "ROLE_ADMIN")
-                        .requestMatchers(HttpMethod.DELETE, "/vehicle-models/**")
+                .requestMatchers(HttpMethod.DELETE, "/vehicle-catalog/models/**")
                         .hasAnyAuthority("ROLE_EVM_STAFF", "ROLE_ADMIN")
                         .anyRequest().authenticated())
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

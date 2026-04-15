@@ -124,33 +124,37 @@ public class UserController {
     }
 
     @PreAuthorize("hasAnyRole('ADMIN')")
-    @PutMapping("/update/evmStaff")
+    @PutMapping("/update/evmStaff/{id}")
     public ResponseEntity<ApiRespond<UserRespond>> updateUserEvmStaff(
+            @PathVariable UUID id,
             @Valid @RequestBody UserUpdateRequest userRequest) {
         return ResponseEntity
-                .ok(ApiRespond.success("Update Successfully", userService.updateUserEvmStaff(userRequest)));
+                .ok(ApiRespond.success("Update Successfully", userService.updateUserEvmStaff(id, userRequest)));
     }
 
     @PreAuthorize("hasAnyRole('ADMIN')")
-    @PutMapping("/update/admin")
+    @PutMapping("/update/admin/{id}")
     public ResponseEntity<ApiRespond<UserRespond>> updateAdmin(
+            @PathVariable UUID id,
             @Valid @RequestBody AdminUpdateRequest request) {
-        return ResponseEntity.ok(ApiRespond.success("Update successfully", userService.updateUserEvmAdmin(request)));
+        return ResponseEntity.ok(ApiRespond.success("Update successfully", userService.updateUserEvmAdmin(id, request)));
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN','DEALER_STAFF')")
-    @PutMapping("/update/dealerManager")
+    @PreAuthorize("hasAnyRole('ADMIN', 'DEALER_MANAGER')")
+    @PutMapping("/update/dealerManager/{id}")
     public ResponseEntity<ApiRespond<UserRespond>> updateDealerManager(
+            @PathVariable UUID id,
             @Valid @RequestBody DealerManagerUpdateRequest request) {
         return ResponseEntity
-                .ok(ApiRespond.success("Update successfully", userService.updateUserDealerManager(request)));
+                .ok(ApiRespond.success("Update successfully", userService.updateUserDealerManager(id, request)));
     }
 
-    @PreAuthorize("hasAnyRole('DEALER_STAFF')")
-    @PutMapping("/update/dealerStaff")
+    @PreAuthorize("hasAnyRole('ADMIN', 'DEALER_MANAGER', 'DEALER_STAFF')")
+    @PutMapping("/update/dealerStaff/{id}")
     public ResponseEntity<ApiRespond<UserRespond>> updateDealerStaff(
+            @PathVariable UUID id,
             @Valid @RequestBody DealerStaffUpdateRequest request) {
-        return ResponseEntity.ok(ApiRespond.success("Update successfully", userService.updateUserDealerStaff(request)));
+        return ResponseEntity.ok(ApiRespond.success("Update successfully", userService.updateUserDealerStaff(id, request)));
     }
 
     @PreAuthorize("@userSecurity.isOwnerOrAdmin(authentication, #id)")

@@ -31,7 +31,7 @@ public class ProfileService {
 
     @Transactional(readOnly = true)
     public List<ApiResponseStaffDealer> getStaffDealerByIdDealer(UUID idDealer) {
-        List<DealerStaffProfile> dealerStaffProfiles = dealerStaffProfileRepository.findByDealerId(idDealer);
+        List<DealerStaffProfile> dealerStaffProfiles = dealerStaffProfileRepository.findByDealerIdWithUser(idDealer);
         return dealerStaffProfiles.stream()
                 .map(profile -> {
                     ApiResponseStaffDealer dto = new ApiResponseStaffDealer();
@@ -64,12 +64,32 @@ public class ProfileService {
                 .toList();
     }
 
+    /**
+     * Resolves dealer id from a dealer staff/manager profile id, or from the user id of that member.
+     */
     //find idealer by idMember
+    @Transactional(readOnly = true)
     public UUID getIdDealerByIdMember(UUID idMember) {
         Optional<DealerStaffProfile> staffOpt = dealerStaffProfileRepository.findById(idMember);
         Optional<DealerManagerProfile> managerOpt = dealerManagerProfileRepository.findById(idMember);
+
+        if (staffOpt.isEmpty() && managerOpt.isEmpty()) {
+            return resolveDealerIdFromProfiles(
+                    dealerStaffProfileRepository.findByUserId(idMember),
+                    dealerManagerProfileRepository.findByUserId(idMember),
+                    idMember);
+        }
+
+        return resolveDealerIdFromProfiles(staffOpt, managerOpt, idMember);
+    }
+
+    private UUID resolveDealerIdFromProfiles(
+            Optional<DealerStaffProfile> staffOpt,
+            Optional<DealerManagerProfile> managerOpt,
+            UUID idForLog) {
+
         if (staffOpt.isPresent() && managerOpt.isPresent()) {
-            log.warn("Duplicate profile found for ID {}. Preferring Manager Profile.", idMember);
+            System.err.println("Duplicate profile found for ID: " + idForLog + ". Preferring Manager Profile.");
             return managerOpt.get().getDealerId();
         }
 

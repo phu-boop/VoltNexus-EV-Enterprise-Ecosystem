@@ -191,7 +191,7 @@ public enum ErrorCode {
     // ===== 7xxx - Lỗi dịch vụ xe =====
     VEHICLE_MODEL_NOT_FOUND("7001", "Không tìm thấy mẫu xe", HttpStatus.NOT_FOUND),
 
-    VEHICLE_MODEL_ALREADY_EXISTS("7002", "Mẫu xe với tên và phiên bản này đã tồn tại", HttpStatus.CONFLICT),
+        VEHICLE_MODEL_ALREADY_EXISTS("7002", "Model name already exists", HttpStatus.CONFLICT),
 
     VEHICLE_VARIANT_NOT_FOUND("7003", "Không tìm thấy phiên bản xe", HttpStatus.NOT_FOUND),
 

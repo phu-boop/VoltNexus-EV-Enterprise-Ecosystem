@@ -1,5 +1,5 @@
 import { test as setup, expect } from '@playwright/test';
-
+import * as fs from 'fs';
 const authFile = 'playwright/.auth/admin.json';
 
 setup('authenticate as admin', async ({ page, request }) => {
@@ -39,8 +39,24 @@ setup('authenticate as admin', async ({ page, request }) => {
     sessionStorage.setItem("memberId", user.memberId || "");
     sessionStorage.setItem("avatarUrl", user.url || "");
     if (user.dealerId) sessionStorage.setItem("dealerId", user.dealerId);
+    sessionStorage.setItem("profileId", user.memberId || "");
   }, { token: jwtToken, roles: rolesArray, user: userData });
 
   // Lưu trạng thái sessionStorage vào file cục bộ
   await page.context().storageState({ path: authFile });
+
+  const sessionData = {
+    id_user: userData.id,
+    token: jwtToken,
+    roles: JSON.stringify(rolesArray),
+    email: userData.email || "",
+    name: userData.name || "",
+    fullName: userData.fullName || "",
+    userData: JSON.stringify(userData),
+    memberId: userData.memberId || "",
+    avatarUrl: userData.url || "",
+    dealerId: userData.dealerId || "",
+    profileId: userData.memberId || ""
+  };
+  fs.writeFileSync('playwright/.auth/admin-session.json', JSON.stringify(sessionData));
 });

@@ -198,8 +198,8 @@ public class UserService {
         return userMapper.usertoUserRespond(user);
     }
 
-    public UserRespond updateUserEvmStaff(UserUpdateRequest request) {
-        User user = userRepository.findByEmail(request.getEmail())
+    public UserRespond updateUserEvmStaff(UUID id, UserUpdateRequest request) {
+        User user = userRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
 
         if (request.getEmail() != null &&
@@ -250,8 +250,8 @@ public class UserService {
         return userMapper.usertoUserRespond(user);
     }
 
-    public UserRespond updateUserDealerStaff(DealerStaffUpdateRequest request) {
-        User user = userRepository.findByEmail(request.getEmail())
+    public UserRespond updateUserDealerStaff(UUID id, DealerStaffUpdateRequest request) {
+        User user = userRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
 
         if (request.getEmail() != null &&
@@ -310,8 +310,8 @@ public class UserService {
         return userMapper.usertoUserRespond(user);
     }
 
-    public UserRespond updateUserDealerManager(DealerManagerUpdateRequest request) {
-        User user = userRepository.findByEmail(request.getEmail())
+    public UserRespond updateUserDealerManager(UUID id, DealerManagerUpdateRequest request) {
+        User user = userRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
 
         if (request.getEmail() != null &&
@@ -366,8 +366,8 @@ public class UserService {
         return userMapper.usertoUserRespond(user);
     }
 
-    public UserRespond updateUserEvmAdmin(AdminUpdateRequest request) {
-        User user = userRepository.findByEmail(request.getEmail())
+    public UserRespond updateUserEvmAdmin(UUID id, AdminUpdateRequest request) {
+        User user = userRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
 
         if (request.getEmail() != null &&

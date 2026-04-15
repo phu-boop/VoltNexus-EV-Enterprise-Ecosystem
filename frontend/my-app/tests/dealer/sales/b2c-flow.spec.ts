@@ -1,6 +1,5 @@
 import { test, expect } from '@playwright/test';
-import fs from 'fs';
-import { injectDealerSession } from '../../helpers/auth-helper';
+import * as fs from 'fs';
 
 test.describe('Luồng Bán Hàng B2C (End-to-End)', () => {
 
@@ -9,7 +8,14 @@ test.describe('Luồng Bán Hàng B2C (End-to-End)', () => {
 
   test.beforeEach(async ({ page }) => {
     // Inject SessionStorage từ file đã lưu trong setup
-    await injectDealerSession(page);
+    if (fs.existsSync('playwright/.auth/dealer-session.json')) {
+        const sessionData = JSON.parse(fs.readFileSync('playwright/.auth/dealer-session.json', 'utf8'));
+        await page.addInitScript((data) => {
+            Object.entries(data).forEach(([key, value]) => {
+                sessionStorage.setItem(key, value as string);
+            });
+        }, sessionData);
+    }
   });
 
   test.afterEach(async ({ page }, testInfo) => {
@@ -18,49 +24,38 @@ test.describe('Luồng Bán Hàng B2C (End-to-End)', () => {
       await page.screenshot({ path: screenshotPath, fullPage: true });
       console.log(`Screenshot saved to ${screenshotPath}`);
       console.log(`Current URL: ${page.url()}`);
-      
-      const errorText = await page.locator('.text-red-700, .text-red-800').allTextContents();
-      if (errorText.length > 0) {
-          console.log(`PAGE ERRORS DETECTED: ${JSON.stringify(errorText)}`);
+      if (page.url() !== 'about:blank') {
+          try {
+              const sessionData = await page.evaluate(() => JSON.stringify(sessionStorage));
+              console.log(`Session Storage: ${sessionData}`);
+          } catch (e: any) {
+              console.log(`Failed to read session storage: ${e.message}`);
+          }
       }
-      
-      const sessionData = await page.evaluate(() => JSON.stringify(sessionStorage));
-      console.log(`Session Storage: ${sessionData}`);
     }
   });
 
   test('Quy trình: Tạo Báo giá -> Đơn hàng -> Hợp đồng -> Thanh toán', async ({ page, request }) => {
-    test.setTimeout(120000); // Tăng timeout lên 120s cho luồng dài này
     // --- BƯỚC 1: TẠO BÁO GIÁ (QUOTATION) ---
     console.log('Step 1: Creating Quotation...');
     
-    // Thử truy cập trang Quotation
+    // Thử truy cập trang Quotation (Dùng path chung cho cả Manager và Staff nếu cần)
     await page.goto('http://localhost:5173/dealer/manager/quotes/create');
-    
-    // Đợi UI cơ bản của React/Vite load xong
-    await page.waitForSelector('#root', { timeout: 20000 });
-    await page.waitForTimeout(5000); // Tăng lên 5s để tránh "video trắng"
-    
-    // Đợi page load nội dung chính
-    console.log('Waiting for Step 1 title or form...');
-    await page.waitForSelector('select[name="customerId"]', { timeout: 30000 });
-    
-    // Log số lượng options để debug
-    const optionsCount = await page.locator('select[name="customerId"] option').count();
-    console.log(`Found ${optionsCount} customers in select.`);
-    
-    if (optionsCount <= 1) {
-        console.log('No customers found. Retrying in 3s...');
-        await page.waitForTimeout(3000);
+    await page.waitForLoadState('networkidle');
+
+    // Nếu bị redirect (ví dụ sang /login hoặc /staff/dashboard), in ra để debug
+    const currentUrl = page.url();
+    console.log(`Navigated to: ${currentUrl}`);
+
+    if (currentUrl.includes('/login')) {
+        throw new Error('Redirected to Login! Authentication failed.');
     }
-    console.log('Form detected.');
-    
-    await expect(page.locator('body')).toContainText('Thông tin cơ bản', { timeout: 5000 });
+
+    // Đợi page load nội dung chính
+    await expect(page.locator('body')).toContainText('Thông tin cơ bản', { timeout: 30000 });
 
     // Chọn khách hàng (Chọn cái đầu tiên có trong list)
-    console.log('Selecting customer...');
-    const customerSelect = page.locator('select[name="customerId"]');
-    await customerSelect.selectOption({ index: 1 });
+    await page.locator('select[name="customerId"]').selectOption({ index: 1 });
     // Chọn mẫu xe
     await page.locator('select[name="modelId"]').selectOption({ index: 1 });
     // Đợi variant load
@@ -71,26 +66,20 @@ test.describe('Luồng Bán Hàng B2C (End-to-End)', () => {
     await page.getByRole('button', { name: /Tiếp Tục Tạo Báo Giá/i }).click();
     await expect(page.getByText('Tạo báo giá nháp thành công')).toBeVisible();
 
-    // Bước calculation: Nhấn "Xác Nhận Tính Toán"
+    // Bước calculation: Nhấn "Tính toán giá"
     await page.getByRole('button', { name: /Xác Nhận Tính Toán/i }).click();
-    // Chờ thông báo thành công hoặc chuyển sang bước 3
-    await page.waitForTimeout(2000);
+    await expect(page.getByText('Tính toán giá thành công')).toBeVisible();
 
-    // Bước Send: Xác nhận ngày và nhấn "Gửi Báo Giá"
-    const termsArea = page.locator('textarea[name="termsConditions"]');
-    await termsArea.fill('Điều khoản: Thanh toán 100% trước khi nhận xe. Bảo hành 5 năm.');
-    
+    // Bước Send: Xác nhận ngày và nhấn "Gửi báo giá"
+    await page.fill('textarea[name="termsConditions"]', 'Điều khoản test: Báo giá có hiệu lực trong 7 ngày.');
     await page.getByRole('button', { name: /Gửi Báo Giá/i }).click();
-    
-    // Chờ thông báo thành công hoặc Step 4 hiện ra
-    await expect(page.getByText(/thành công/i)).toBeVisible({ timeout: 15000 });
-    
-    // Đợi Step 4 render
-    await page.waitForSelector('text=Trạng Thái Báo Giá', { timeout: 15000 });
+    await expect(page.getByText('Gửi báo giá cho khách hàng thành công')).toBeVisible();
 
-    // Lấy Quotation ID từ UI Step 4
-    const idValueElement = page.locator('div.font-mono.font-semibold.text-gray-900').first();
-    quotationId = (await idValueElement.textContent())?.trim() || "";
+    // Lấy Quotation ID từ URL hoặc State (Page hoàn thành sẽ hiện ID)
+    const idElement = page.locator('text=/Mã báo giá:/');
+    await expect(idElement).toBeVisible();
+    const fullText = await idElement.textContent();
+    quotationId = (fullText || "").split(':')[1].trim();
     console.log(`Created Quotation ID: ${quotationId}`);
 
     // --- BƯỚC 2: MÔ PHỎNG KHÁCH HÀNG CHẤP NHẬN (ACCEPTED) ---
