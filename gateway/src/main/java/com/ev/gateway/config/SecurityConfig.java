@@ -7,6 +7,7 @@ import org.springframework.security.config.annotation.web.reactive.EnableWebFlux
 import org.springframework.security.config.web.server.ServerHttpSecurity;
 import org.springframework.security.web.server.SecurityWebFilterChain;
 import org.springframework.security.web.server.context.NoOpServerSecurityContextRepository;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.cors.reactive.CorsConfigurationSource;
 import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource;
 import org.springframework.web.cors.CorsConfiguration;
@@ -86,6 +87,17 @@ public class SecurityConfig {
                         .anyExchange().authenticated())
                 .formLogin(ServerHttpSecurity.FormLoginSpec::disable)
                 .httpBasic(ServerHttpSecurity.HttpBasicSpec::disable)
+                .exceptionHandling(exceptionHandlingSpec -> exceptionHandlingSpec
+                    .authenticationEntryPoint((exchange, ex) -> {
+                        var response = exchange.getResponse();
+                        response.setStatusCode(HttpStatus.UNAUTHORIZED);
+                        return response.setComplete();
+                    })
+                    .accessDeniedHandler((exchange, denied) -> {
+                        var response = exchange.getResponse();
+                        response.setStatusCode(HttpStatus.FORBIDDEN);
+                        return response.setComplete();
+                    }))
                 // Không tạo session
                 .securityContextRepository(NoOpServerSecurityContextRepository.getInstance())
                 .build();

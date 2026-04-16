@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { FiPlus, FiFilter, FiRefreshCw, FiBarChart2, FiSearch, FiMessageSquare } from 'react-icons/fi';
@@ -19,6 +19,7 @@ const FeedbackManagement = () => {
   const [complaints, setComplaints] = useState([]);
   const [allComplaints, setAllComplaints] = useState([]); // For stats calculation
   const [loading, setLoading] = useState(true);
+  const [initializing, setInitializing] = useState(true);
   const [showFilter, setShowFilter] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   
@@ -80,6 +81,7 @@ const FeedbackManagement = () => {
     if (!resolvedDealerId) {
       toast.error('Không tìm thấy thông tin đại lý');
       setLoading(false);
+      setInitializing(false);
       return;
     }
 
@@ -88,6 +90,7 @@ const FeedbackManagement = () => {
       loadAllForStats(resolvedDealerId),
       loadComplaints(0, resolvedDealerId),
     ]);
+    setInitializing(false);
   };
 
   // Load all complaints for stats calculation (without pagination)
@@ -133,6 +136,12 @@ const FeedbackManagement = () => {
       toast.error('Không tìm thấy thông tin đại lý');
       return;
     }
+
+    if (filterData.startDate && filterData.endDate && filterData.startDate > filterData.endDate) {
+      toast.error('Start date cannot be after end date');
+      return;
+    }
+
     try {
       setLoading(true);
       setCurrentPage(0); // Reset to first page when filtering
@@ -197,13 +206,13 @@ const FeedbackManagement = () => {
   });
 
   // Stats summary - calculated from ALL complaints, not just current page
-  const stats = {
+  const stats = useMemo(() => ({
     total: allComplaints.length,
     new: allComplaints.filter(c => c.status === 'NEW').length,
     inProgress: allComplaints.filter(c => c.status === 'IN_PROGRESS').length,
     resolved: allComplaints.filter(c => c.status === 'RESOLVED').length,
     critical: allComplaints.filter(c => c.severity === 'CRITICAL').length,
-  };
+  }), [allComplaints]);
 
   const buildPageItems = () => {
     const items = [];
@@ -334,8 +343,17 @@ const FeedbackManagement = () => {
 
         {/* Content Card */}
         <div className="bg-white rounded-2xl shadow-lg border border-gray-200/80 overflow-hidden">
+          {initializing && (
+            <div className="flex items-center justify-center py-20">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                <p className="text-gray-600">Đang khởi tạo trang...</p>
+              </div>
+            </div>
+          )}
+
           {/* Loading State */}
-          {loading && (
+          {!initializing && loading && (
             <div className="flex items-center justify-center py-20">
               <div className="text-center">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
@@ -345,7 +363,7 @@ const FeedbackManagement = () => {
           )}
 
           {/* Empty State */}
-          {!loading && filteredComplaints.length === 0 && (
+          {!initializing && !loading && filteredComplaints.length === 0 && (
             <div className="text-center py-20 px-6">
               <FiMessageSquare className="w-20 h-20 text-gray-300 mx-auto mb-6" />
               <h3 className="text-xl font-semibold text-gray-900 mb-2">
@@ -369,7 +387,7 @@ const FeedbackManagement = () => {
           )}
 
           {/* Complaints List */}
-          {!loading && filteredComplaints.length > 0 && (
+          {!initializing && !loading && filteredComplaints.length > 0 && (
             <>
               <div className="p-6 space-y-4">
                 {filteredComplaints.map(complaint => (

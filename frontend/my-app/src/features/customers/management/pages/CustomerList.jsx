@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { FiPlus, FiUser, FiSearch, FiMail, FiPhone, FiMapPin, FiCalendar, FiEye, FiEdit, FiTrash2, FiChevronLeft, FiChevronRight, FiUsers } from "react-icons/fi";
@@ -21,7 +21,6 @@ const CustomerList = () => {
   const {
     customers,
     loading,
-    error,
     searchTerm,
     setSearchTerm,
     deleteCustomer: removeCustomer,
@@ -29,7 +28,7 @@ const CustomerList = () => {
   } = useCustomers();
 
   const handleDelete = async (id) => {
-    if (window.confirm("Bạn có chắc muốn xóa khách hàng này?")) {
+    if (globalThis.confirm("Bạn có chắc muốn xóa khách hàng này?")) {
       const result = await removeCustomer(id);
       if (result.success) {
         toast.success("Xóa khách hàng thành công");
@@ -45,7 +44,6 @@ const CustomerList = () => {
 
   const handleView = (id) => navigate(`${base}/customers/${id}`);
   const handleEdit = (id) => navigate(`${base}/customers/${id}/edit`);
-  const handleCreate = () => navigate(`${base}/customers/create`);
   
   const handleAssignStaff = (customer) => {
     setSelectedCustomer(customer);
@@ -61,6 +59,15 @@ const CustomerList = () => {
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
+  const isSearching = searchTerm.trim().length > 0;
+  const emptyTitle = isSearching ? "No results found" : "Chưa có khách hàng";
+  const emptyDescription = isSearching
+    ? "Không tìm thấy khách hàng phù hợp với từ khóa tìm kiếm"
+    : "Bắt đầu bằng cách thêm khách hàng đầu tiên";
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 py-8 px-6 lg:px-8">
@@ -110,8 +117,8 @@ const CustomerList = () => {
         ) : customers.length === 0 ? (
           <div className="text-center py-12">
             <FiUser className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Chưa có khách hàng</h3>
-            <p className="text-gray-500">Bắt đầu bằng cách thêm khách hàng đầu tiên</p>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">{emptyTitle}</h3>
+            <p className="text-gray-500">{emptyDescription}</p>
           </div>
         ) : (
           <>
