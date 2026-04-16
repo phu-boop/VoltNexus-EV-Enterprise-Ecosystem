@@ -30,6 +30,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -242,6 +243,10 @@ public class DealerPaymentServiceImpl implements IDealerPaymentService {
             log.debug("Full order data: {}", orderData);
 
             return orderData;
+        } catch (HttpClientErrorException.NotFound e) {
+            log.warn("Sales Service returned 404 for order validation - OrderId: {}, Error: {}",
+                orderId, e.getMessage());
+            throw new AppException(ErrorCode.ORDER_NOT_FOUND);
         } catch (RestClientException e) {
             log.error("Failed to fetch order from Sales Service - OrderId: {}, Error: {}",
                     orderId, e.getMessage());
@@ -270,6 +275,12 @@ public class DealerPaymentServiceImpl implements IDealerPaymentService {
             throw new AppException(ErrorCode.FORBIDDEN);
         }
 
+        String invoiceStatus = invoice.getStatus() != null ? invoice.getStatus().trim().toUpperCase() : "";
+        if ("PAID".equals(invoiceStatus)) {
+            log.error("Invoice is already PAID - InvoiceId: {}, DealerId: {}", invoiceId, dealerId);
+            throw new AppException(ErrorCode.INVALID_STATE);
+        }
+
         // 3. Validate amount against remaining + pending amounts
         BigDecimal amountPaid = invoice.getAmountPaid() != null ? invoice.getAmountPaid() : BigDecimal.ZERO;
 
@@ -282,6 +293,12 @@ public class DealerPaymentServiceImpl implements IDealerPaymentService {
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         BigDecimal remainingAmount = invoice.getTotalAmount().subtract(amountPaid).subtract(pendingAmount);
+
+    if (remainingAmount.compareTo(BigDecimal.ZERO) <= 0) {
+        log.error("Invoice has no remaining amount for payment - InvoiceId: {}, Remaining: {}, Paid: {}, Pending: {}",
+            invoiceId, remainingAmount, amountPaid, pendingAmount);
+        throw new AppException(ErrorCode.INVALID_STATE);
+    }
 
         if (request.getAmount().compareTo(remainingAmount) > 0) {
             log.error(
