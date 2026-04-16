@@ -839,6 +839,7 @@ public class SalesOrderServiceB2BImpl implements SalesOrderServiceB2B {
 
     private void performCancel(SalesOrder order, String cancelledByEmail) {
         order.setOrderStatus(OrderStatusB2B.CANCELLED);
+        order.setPaymentStatus(PaymentStatus.CANCELLED);
         // order.setCancelledBy(cancelledByEmail); // Tùy chọn
 
         salesOrderRepositoryB2B.save(order);
