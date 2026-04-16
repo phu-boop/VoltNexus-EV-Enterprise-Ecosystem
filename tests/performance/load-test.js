@@ -16,10 +16,18 @@ export const options = {
 
 // 2. Định nghĩa các cấu hình môi trường
 const BASE_URL = 'http://host.docker.internal:8080'; // Trỏ về máy host qua Gateway
+const TOKEN = 'Bearer eyJhbGciOiJIUzI1NiJ9.eyJyb2xlIjoiQURNSU4iLCJwcm9maWxlSWQiOiI5NTQwMzllNi04OWViLTQxZjQtOGQ1NC0wMmFhMjFhYmM4N2YiLCJ1c2VySWQiOiI0ODc1NWVmMy1lNTFlLTQwOWItYTI5NC03NDg2YmJiYzMzZGYiLCJzdWIiOiJhZG1pbkBnbWFpbC5jb20iLCJpYXQiOjE3NzYzMzIzNTAsImV4cCI6MTc3NjMzNTk1MH0.IMm-LL5uPwSY8haxv4gtgX2s3p3P8YIGaOYJUDw_stE'; // token của bạn
+
+const headers = {
+    headers: {
+        Authorization: TOKEN,
+        'Content-Type': 'application/json',
+    },
+};
 
 export default function () {
     // Kịch bản: Người dùng truy cập hệ thống
-    
+    // http://localhost:8080/vehicles/vehicle-catalog/variants/all-for-backfill
     // Bước 1: Kiểm tra Health Check của Gateway
     let healthRes = http.get(`${BASE_URL}/actuator/health`);
     check(healthRes, {
@@ -29,7 +37,7 @@ export default function () {
     sleep(1);
 
     // Bước 2: Lấy danh sách xe (Vehicle Service)
-    let vehicleRes = http.get(`${BASE_URL}/api/v1/vehicles`);
+    let vehicleRes = http.get(`${BASE_URL}/vehicles/vehicle-catalog/variants/all-for-backfill`, headers);
     check(vehicleRes, {
         'Get vehicles success': (r) => r.status === 200,
         'Response time < 200ms': (r) => r.timings.duration < 200,
@@ -39,7 +47,8 @@ export default function () {
 
     // Bước 3: Mô phỏng xem chi tiết đơn hàng (Sales Service)
     // Giả lập ID ngẫu nhiên hoặc cố định để test tải DB
-    let orderRes = http.get(`${BASE_URL}/api/v1/sales/orders/b2c/recent`);
+    //http://localhost:8080/sales/api/v1/sales-orders/b2c
+    let orderRes = http.get(`${BASE_URL}/sales/api/v1/sales-orders/b2c`, headers);
     check(orderRes, {
         'Get recent orders success': (r) => r.status === 200 || r.status === 401, // 401 nếu chưa login cũng chấp nhận vì đang test tải network/gateway
     });
