@@ -87,7 +87,7 @@ public class DealerController {
     }
 
     // Xoá mềm dealer (chuyển Status sang SUSPENDED) - chỉ ADMIN
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'DEALER_MANAGER')")
     @PutMapping("/{id}/suspend")
     public ResponseEntity<ApiResponse<DealerResponse>> suspendDealer(@PathVariable UUID id) {
         DealerResponse dealer = dealerService.suspendDealer(id);
@@ -95,7 +95,7 @@ public class DealerController {
     }
 
     // Kích hoạt lại dealer (chuyển Status sang ACTIVE) - chỉ ADMIN
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'DEALER_MANAGER')")
     @PutMapping("/{id}/activate")
     public ResponseEntity<ApiResponse<DealerResponse>> activateDealer(@PathVariable UUID id) {
         DealerResponse dealer = dealerService.activateDealer(id);

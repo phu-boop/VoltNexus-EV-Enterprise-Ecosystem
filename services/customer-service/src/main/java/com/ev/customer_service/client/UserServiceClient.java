@@ -44,33 +44,50 @@ public class UserServiceClient {
      * Response: ApiRespond<UserRespond>
      */
     public StaffDTO getStaffById(String staffId) {
-        try {
-            String url = userServiceUrl + "/" + staffId;
-            log.info("Calling User Service to get staff info: {}", url);
+        String baseUrl = userServiceUrl.endsWith("/") ? userServiceUrl.substring(0, userServiceUrl.length() - 1) : userServiceUrl;
+        String[] candidateUrls = baseUrl.contains("/users")
+                ? new String[] {
+                baseUrl + "/internal/staff/" + staffId,
+                        baseUrl + "/internal/" + staffId,
+                        baseUrl + "/" + staffId
+                }
+                : new String[] {
+                baseUrl + "/users/internal/staff/" + staffId,
+                        baseUrl + "/users/internal/" + staffId,
+                        baseUrl + "/users/" + staffId
+                };
 
-            ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
-                    url,
-                    HttpMethod.GET,
-                    null,
-                    new ParameterizedTypeReference<Map<String, Object>>() {
-                    });
+        Exception lastException = null;
 
-            Map<String, Object> body = response.getBody();
-            if (body == null || !body.containsKey(KEY_DATA)) {
-                log.error("Invalid response from User Service: {}", body);
-                return null;
+        for (String url : candidateUrls) {
+            try {
+                log.info("Calling User Service to get staff info: {}", url);
+
+                ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
+                        url,
+                        HttpMethod.GET,
+                        null,
+                        new ParameterizedTypeReference<Map<String, Object>>() {
+                        });
+
+                Map<String, Object> body = response.getBody();
+                if (body == null || !body.containsKey(KEY_DATA)) {
+                    log.warn("Invalid response from User Service for {}: {}", url, body);
+                    continue;
+                }
+
+                Map<String, Object> userData = (Map<String, Object>) body.get(KEY_DATA);
+                StaffDTO staff = mapToStaffDTO(userData);
+
+                log.info("Successfully fetched staff: {}", staff.getFullName());
+                return staff;
+            } catch (Exception e) {
+                lastException = e;
+                log.warn("Error calling User Service URL {} for staffId {}: {}", url, staffId, e.getMessage());
             }
-
-            Map<String, Object> userData = (Map<String, Object>) body.get(KEY_DATA);
-            StaffDTO staff = mapToStaffDTO(userData);
-
-            log.info("Successfully fetched staff: {}", staff.getFullName());
-            return staff;
-
-        } catch (Exception e) {
-            log.error("Error calling User Service for staffId {}: {}", staffId, e.getMessage(), e);
-            throw new RuntimeException("Unable to fetch staff information from User Service: " + e.getMessage(), e);
         }
+
+        throw new RuntimeException("Unable to fetch staff information from User Service", lastException);
     }
 
     /**
@@ -125,12 +142,10 @@ public class UserServiceClient {
      * Kiểm tra xem nhân viên có tồn tại và đang hoạt động không
      */
     public boolean isStaffActive(String staffId) {
-        try {
-            StaffDTO staff = getStaffById(staffId);
-            return staff != null && Boolean.TRUE.equals(staff.getActive());
-        } catch (Exception e) {
-            log.error("Error checking staff status for staffId {}: {}", staffId, e.getMessage());
-            return false;
+        StaffDTO staff = getStaffById(staffId);
+        if (staff == null) {
+            throw new IllegalArgumentException("Staff not found");
         }
+        return Boolean.TRUE.equals(staff.getActive());
     }
 }
