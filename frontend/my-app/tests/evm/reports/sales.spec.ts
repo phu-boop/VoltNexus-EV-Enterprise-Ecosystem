@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { loginAsAdmin } from '../fixtures/auth';
+import { loginAsAdmin } from '../../fixtures/auth';
 
 test.describe('Sales Reporting & Recording Tests', () => {
 

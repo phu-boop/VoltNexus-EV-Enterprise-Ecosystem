@@ -13,14 +13,14 @@ export default defineConfig({
   /* Reporter to use - HTML report helps with viewing test results */
   reporter: [
     ['list'],
-    ['json', { outputFile: 'test-results/results.json' }],
+    ['json', {  outputFile: 'test-results/results.json' }],
     ['junit', { outputFile: 'test-results/results.xml' }],
     ['html', { open: 'never', outputFolder: 'playwright-report' }]
   ],
   /* Shared settings for all the projects below. */
   use: {
     /* Base URL to use in actions like `await page.goto('')`. */
-    baseURL: "http://localhost:5173",
+    baseURL: "http://localhost:5174",
 
     /* Collect trace when retrying the failed test. */
     trace: "retain-on-failure",
@@ -32,49 +32,36 @@ export default defineConfig({
   projects: [
     { name: "setup", testMatch: /.*\.setup\.ts/ },
 
-    // Public - Test giao diện công khai (không cần login)
+    // Smoke tests - Quick checks for public pages
     {
-      name: "public",
-      testDir: "./tests/public",
+      name: "smoke",
+      testMatch: /.*smoke\.spec\.ts/,
       use: { ...devices["Desktop Chrome"] },
     },
 
-    // E2E Admin - Test Admin EVM
+    // E2E tests - Complex multi-step user flows
     {
-      name: "e2e-admin",
-      testDir: "./tests/evm",
-      use: {
+      name: "e2e:desktop",
+      testDir: "./tests/e2e",
+      use: { ...devices["Desktop Chrome"] },
+    },
+    
+    // Protected routes requiring authentication
+    {
+      name: "e2e:protected",
+      testMatch: /.*protected\.spec\.ts/,
+      use: { 
         ...devices["Desktop Chrome"],
-        storageState: "playwright/.auth/admin.json",
+        storageState: "playwright/.auth/user.json",
       },
       dependencies: ["setup"],
-    },
-
-    // E2E Dealer - Test CRM Đại lý & Bàn hàng B2C
-    {
-      name: "e2e-dealer",
-      testDir: "./tests/dealer",
-      use: {
-        ...devices["Desktop Chrome"],
-        storageState: "playwright/.auth/dealer.json",
-      },
-      dependencies: ["setup"],
-    },
-
-    // ITC smoke - API-focused checks mapped from test case sheet
-    {
-      name: "e2e-itc",
-      testDir: "./tests/e2e/itc",
-      use: {
-        ...devices["Desktop Chrome"],
-      },
     },
   ],
 
   /* Run your local dev server before starting the tests */
   webServer: {
     command: "npm run dev",
-    url: "http://localhost:5173",
+    url: "http://localhost:5174",
     reuseExistingServer: !process.env.CI,
   },
 });
