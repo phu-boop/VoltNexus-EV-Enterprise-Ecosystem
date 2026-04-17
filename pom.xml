@@ -13,7 +13,7 @@
 
     <modules>
         <module>common-lib</module>
-
+        <module>gateway</module>
     </modules>
 
     <properties>

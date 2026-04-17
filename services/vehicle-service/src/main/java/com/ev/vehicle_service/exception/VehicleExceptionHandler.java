@@ -18,8 +18,7 @@ public class VehicleExceptionHandler {
         ApiRespond<?> apiRespond = new ApiRespond<>();
         apiRespond.setCode(ErrorCode.BAD_REQUEST.getCode());
 
-        String detailMessage = ex.getMostSpecificCause() != null ? ex.getMostSpecificCause().getMessage()
-                : ex.getMessage();
+        String detailMessage = ex.getMostSpecificCause().getMessage();
 
         if (detailMessage != null && detailMessage.contains("Duplicate entry")
                 && detailMessage.contains("for key 'vehicle_variants")) {

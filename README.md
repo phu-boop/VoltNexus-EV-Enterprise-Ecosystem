@@ -129,8 +129,6 @@ VoltNexus is built on a **10-service microservices architecture** sitting behind
 
 ## CI/CD Pipeline
 
-[![CI/CD Pipeline Diagram](https://app.eraser.io/workspace/znVIlzq56TwuQigJbgrc/preview)](https://app.eraser.io/workspace/znVIlzq56TwuQigJbgrc)
-
 > 🔗 [View & edit full pipeline diagram on Eraser.io →](https://app.eraser.io/workspace/znVIlzq56TwuQigJbgrc)
 
 ```

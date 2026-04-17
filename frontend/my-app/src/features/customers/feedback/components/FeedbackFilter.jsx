@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import PropTypes from 'prop-types';
 import { FiX } from 'react-icons/fi';
 import { COMPLAINT_TYPES, COMPLAINT_SEVERITIES, COMPLAINT_STATUSES } from '../services/feedbackService';
 
@@ -11,15 +12,25 @@ const FeedbackFilter = ({ onFilter, onCancel }) => {
     startDate: '',
     endDate: ''
   });
+  const [dateError, setDateError] = useState('');
 
   const handleChange = (field, value) => {
     setFilterData(prev => ({
       ...prev,
       [field]: value
     }));
+
+    if ((field === 'startDate' || field === 'endDate') && dateError) {
+      setDateError('');
+    }
   };
 
   const handleApply = () => {
+    if (filterData.startDate && filterData.endDate && filterData.startDate > filterData.endDate) {
+      setDateError('Start date cannot be after end date');
+      return;
+    }
+
     // Remove empty fields
     const cleanedFilter = {};
     Object.keys(filterData).forEach(key => {
@@ -39,6 +50,7 @@ const FeedbackFilter = ({ onFilter, onCancel }) => {
       startDate: '',
       endDate: ''
     });
+    setDateError('');
   };
 
   return (
@@ -48,9 +60,9 @@ const FeedbackFilter = ({ onFilter, onCancel }) => {
         <div className="flex flex-wrap items-start gap-6">
           {/* Status Filter */}
           <div className="flex-1 min-w-[300px]">
-            <label className="block text-sm font-semibold text-gray-700 mb-3">
+            <p className="block text-sm font-semibold text-gray-700 mb-3">
               Trạng thái
-            </label>
+            </p>
             <div className="flex flex-wrap gap-2">
               <button
                 onClick={() => handleChange('status', '')}
@@ -80,9 +92,9 @@ const FeedbackFilter = ({ onFilter, onCancel }) => {
 
           {/* Severity Filter */}
           <div className="flex-1 min-w-[300px]">
-            <label className="block text-sm font-semibold text-gray-700 mb-3">
+            <p className="block text-sm font-semibold text-gray-700 mb-3">
               Mức độ
-            </label>
+            </p>
             <div className="flex flex-wrap gap-2">
               <button
                 onClick={() => handleChange('severity', '')}
@@ -116,10 +128,11 @@ const FeedbackFilter = ({ onFilter, onCancel }) => {
 
         {/* Type Filter */}
         <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">
+          <label htmlFor="complaintTypeFilter" className="block text-sm font-semibold text-gray-700 mb-2">
             Loại phản hồi
           </label>
           <select
+            id="complaintTypeFilter"
             value={filterData.complaintType}
             onChange={(e) => handleChange('complaintType', e.target.value)}
             className="w-full px-3 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50 hover:bg-white transition-colors"
@@ -135,10 +148,11 @@ const FeedbackFilter = ({ onFilter, onCancel }) => {
 
         {/* Start Date */}
         <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">
+          <label htmlFor="startDateFilter" className="block text-sm font-semibold text-gray-700 mb-2">
             Từ ngày
           </label>
           <input
+            id="startDateFilter"
             type="date"
             value={filterData.startDate}
             onChange={(e) => handleChange('startDate', e.target.value)}
@@ -148,10 +162,11 @@ const FeedbackFilter = ({ onFilter, onCancel }) => {
 
         {/* End Date */}
         <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">
+          <label htmlFor="endDateFilter" className="block text-sm font-semibold text-gray-700 mb-2">
             Đến ngày
           </label>
           <input
+            id="endDateFilter"
             type="date"
             value={filterData.endDate}
             onChange={(e) => handleChange('endDate', e.target.value)}
@@ -159,6 +174,12 @@ const FeedbackFilter = ({ onFilter, onCancel }) => {
           />
         </div>
       </div>
+
+      {dateError && (
+        <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {dateError}
+        </div>
+      )}
 
       {/* Action Buttons */}
       <div className="flex justify-end space-x-3">
@@ -187,3 +208,8 @@ const FeedbackFilter = ({ onFilter, onCancel }) => {
 };
 
 export default FeedbackFilter;
+
+FeedbackFilter.propTypes = {
+  onFilter: PropTypes.func.isRequired,
+  onCancel: PropTypes.func.isRequired,
+};

@@ -6,9 +6,8 @@ import com.ev.customer_service.enums.ComplaintType;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.springframework.format.annotation.DateTimeFormat;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 
 /**
  * Request DTO để lọc danh sách phản hồi
@@ -31,11 +30,9 @@ public class ComplaintFilterRequest {
 
     private Long customerId; // Lọc theo khách hàng
 
-    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
-    private LocalDateTime startDate;
+    private LocalDate startDate;
 
-    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
-    private LocalDateTime endDate;
+    private LocalDate endDate;
 
     // Pagination
     private Integer page = 0;
