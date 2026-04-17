@@ -5,6 +5,7 @@ import com.ev.customer_service.dto.response.AssignmentResponse;
 import com.ev.customer_service.dto.response.StaffDTO;
 import com.ev.customer_service.entity.Customer;
 import com.ev.customer_service.exception.ResourceNotFoundException;
+import com.ev.customer_service.client.UserServiceClient;
 import com.ev.customer_service.repository.CustomerRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,6 +23,7 @@ import java.time.LocalDateTime;
 public class StaffAssignmentService {
 
     private final CustomerRepository customerRepository;
+    private final UserServiceClient userServiceClient;
 
     private static final String CUSTOMER_NOT_FOUND_PREFIX = "Customer not found with id: ";
 
@@ -51,9 +53,15 @@ public class StaffAssignmentService {
                             "Expected: UUID format (e.g., '123e4567-e89b-12d3-a456-426614174000')");
         }
 
-        // 3. LƯU GHI CHÚ: Không validate staff với User Service vì cần ADMIN role
-        // Frontend đã validate khi chọn từ dropdown (chỉ ACTIVE staff)
-        // Backend chỉ lưu UUID vào database
+        // 3. Kiểm tra staff tồn tại và đang hoạt động trước khi gán
+        StaffDTO staff = userServiceClient.getStaffById(request.getStaffId());
+        if (staff == null) {
+            throw new IllegalArgumentException("Staff not found");
+        }
+
+        if (!Boolean.TRUE.equals(staff.getActive())) {
+            throw new IllegalArgumentException("Cannot assign to inactive staff");
+        }
 
         // 4. Cập nhật phân công
         customer.setAssignedStaffId(request.getStaffId());
@@ -137,10 +145,17 @@ public class StaffAssignmentService {
             return null;
         }
 
-        // Chỉ trả về staffId, frontend sẽ gọi User Service để lấy thông tin chi tiết
-        StaffDTO staffInfo = new StaffDTO();
-        staffInfo.setId(customer.getAssignedStaffId());
-        return staffInfo;
+        try {
+            return userServiceClient.getStaffById(customer.getAssignedStaffId());
+        } catch (Exception e) {
+            log.warn("Unable to resolve full staff details for customer {} and staff {}: {}",
+                    customerId, customer.getAssignedStaffId(), e.getMessage());
+
+            // Fallback tối thiểu để frontend vẫn biết có staff được gán.
+            StaffDTO staffInfo = new StaffDTO();
+            staffInfo.setId(customer.getAssignedStaffId());
+            return staffInfo;
+        }
     }
 
 }
