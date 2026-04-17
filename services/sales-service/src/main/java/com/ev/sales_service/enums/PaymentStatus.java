@@ -18,6 +18,11 @@ public enum PaymentStatus {
      * Đã thanh toán một phần
      */
     PARTIALLY_PAID,
+
+    /**
+     * Thanh toán bị hủy (đơn hàng đã bị hủy)
+     */
+    CANCELLED,
     
     /**
      * Đã thanh toán đầy đủ

@@ -29,6 +29,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
@@ -49,7 +50,6 @@ public class CustomerPaymentServiceImpl implements ICustomerPaymentService {
     private final PaymentMethodRepository paymentMethodRepository;
     private final TransactionMapper transactionMapper;
     private final IPaymentRecordService paymentRecordService;
-    private final com.ev.payment_service.repository.CustomerRepository customerRepository;
 
     // === DYNAMIC CALL (SỬ DỤNG RestTemplate) ===
     private final RestTemplate restTemplate;
@@ -738,6 +738,8 @@ public class CustomerPaymentServiceImpl implements ICustomerPaymentService {
             return BigDecimal.ZERO;
         }
 
+        validateCustomerExists(customerId);
+
         // Lấy tất cả PaymentRecord của khách hàng
         List<PaymentRecord> records = paymentRecordRepository.findByCustomerId(customerId);
 
@@ -758,6 +760,33 @@ public class CustomerPaymentServiceImpl implements ICustomerPaymentService {
 
         log.info("Total debt for customer {}: {} (from {} records)", customerId, totalDebt, records.size());
         return totalDebt;
+    }
+
+    private void validateCustomerExists(Long customerId) {
+        String customerServiceUrl = customerServiceBaseUrl + "/customers/" + customerId;
+        ParameterizedTypeReference<ApiRespond<CustomerInfo>> responseType = new ParameterizedTypeReference<ApiRespond<CustomerInfo>>() {
+        };
+
+        try {
+            ResponseEntity<ApiRespond<CustomerInfo>> response = restTemplate.exchange(
+                    customerServiceUrl,
+                    HttpMethod.GET,
+                    null,
+                    responseType);
+
+            ApiRespond<CustomerInfo> apiResponse = response.getBody();
+            if (apiResponse == null || apiResponse.getData() == null) {
+                log.error("Customer service returned empty payload for customer validation - customerId: {}", customerId);
+                throw new AppException(ErrorCode.DOWNSTREAM_SERVICE_UNAVAILABLE);
+            }
+        } catch (HttpClientErrorException.NotFound e) {
+            log.warn("Customer service returned 404 for customer validation - customerId: {}", customerId);
+            throw new AppException(ErrorCode.CUSTOMER_NOT_FOUND);
+        } catch (RestClientException e) {
+            log.error("Failed to validate customer with customer-service - customerId: {}, error: {}", customerId,
+                    e.getMessage());
+            throw new AppException(ErrorCode.DOWNSTREAM_SERVICE_UNAVAILABLE);
+        }
     }
 
     @Override

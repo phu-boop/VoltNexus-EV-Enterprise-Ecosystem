@@ -60,6 +60,9 @@ public class DealerPaymentServiceImpl implements IDealerPaymentService {
     @Value("${sales-service.url}") // Lấy URL từ application.properties
     private String salesServiceUrl;
 
+    @Value("${dealer-service.url}")
+    private String dealerServiceUrl;
+
     @Override
     @Transactional
     public DealerInvoiceResponse createDealerInvoice(CreateDealerInvoiceRequest request, UUID staffId) {
@@ -517,6 +520,30 @@ public class DealerPaymentServiceImpl implements IDealerPaymentService {
 
     @Override
     @Transactional(readOnly = true)
+    public DealerDebtSummaryResponse getDealerDebtSummaryByDealerId(UUID dealerId) {
+        log.info("Getting dealer debt summary by dealerId - DealerId: {}", dealerId);
+
+        if (!isDealerExists(dealerId)) {
+            log.error("Dealer not found when querying debt summary - DealerId: {}", dealerId);
+            throw new AppException(ErrorCode.DATA_NOT_FOUND);
+        }
+
+        Optional<DealerDebtRecord> debtRecordOpt = dealerDebtRecordRepository.findById(dealerId);
+        if (debtRecordOpt.isPresent()) {
+            return dealerPaymentMapper.toDebtSummaryResponse(debtRecordOpt.get());
+        }
+
+        DealerDebtSummaryResponse emptySummary = new DealerDebtSummaryResponse();
+        emptySummary.setDealerId(dealerId);
+        emptySummary.setTotalOwed(BigDecimal.ZERO);
+        emptySummary.setTotalPaid(BigDecimal.ZERO);
+        emptySummary.setCurrentBalance(BigDecimal.ZERO);
+        emptySummary.setLastUpdated(LocalDateTime.now());
+        return emptySummary;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public boolean hasInvoiceForOrder(UUID orderId) {
         log.info("Checking if order has invoice - OrderId: {}", orderId);
 
@@ -587,6 +614,28 @@ public class DealerPaymentServiceImpl implements IDealerPaymentService {
         } catch (RestClientException e) {
             log.error("Failed to update payment status in Sales Service - OrderId: {}, Status: {}, Error: {}",
                     orderId, paymentStatus, e.getMessage(), e);
+            throw new AppException(ErrorCode.DOWNSTREAM_SERVICE_UNAVAILABLE);
+        }
+    }
+
+    private boolean isDealerExists(UUID dealerId) {
+        String url = UriComponentsBuilder.fromHttpUrl(dealerServiceUrl)
+                .path("/api/dealers/{dealerId}")
+                .buildAndExpand(dealerId)
+                .toUriString();
+
+        try {
+            ResponseEntity<String> response = restTemplate.exchange(
+                    url,
+                    HttpMethod.GET,
+                    null,
+                    String.class);
+            return response.getStatusCode().is2xxSuccessful();
+        } catch (HttpClientErrorException.NotFound e) {
+            return false;
+        } catch (RestClientException e) {
+            log.error("Failed to validate dealer existence from dealer-service - DealerId: {}, Error: {}",
+                    dealerId, e.getMessage(), e);
             throw new AppException(ErrorCode.DOWNSTREAM_SERVICE_UNAVAILABLE);
         }
     }
