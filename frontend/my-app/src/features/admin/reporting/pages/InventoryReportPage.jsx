@@ -1,8 +1,9 @@
-﻿// File: InventoryReportPage.jsx (COMMIT ĐỢT 4: Thêm nút Xuất Excel - Hoàn tất)
+// File: InventoryReportPage.jsx (COMMIT ĐỢT 4: Thêm nút Xuất Excel - Hoàn tất)
 
 import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { getInventoryVelocity, getCentralInventory, getCentralTransactionHistory } from "../services/reportingService";
+import { getInventoryVelocity, getCentralInventory, getCentralTransactionHistory, syncInventoryData } from "../services/reportingService";
 import InventoryReportTable from "../components/InventoryReportTable";
+import Swal from "sweetalert2";
 
 // --- Import Ant Design ---
 import { Card, Row, Col, Typography, Space, Select, Button, Tabs, Table, Tag, Statistic } from "antd";
@@ -120,6 +121,30 @@ const InventoryReportPage = () => {
       fetchCentralReport();
     }
   }, [activeTab, fetchCentralReport]);
+
+  const handleSyncInventoryRecord = async () => {
+    try {
+      Swal.fire({
+        title: 'Đang đồng bộ...',
+        text: 'Vui lòng chờ trong giây lát',
+        allowOutsideClick: false,
+        didOpen: () => {
+          Swal.showLoading();
+        }
+      });
+      await syncInventoryData();
+      Swal.fire({
+        title: "Thành công",
+        text: "Inventory data synchronization completed successfully",
+        icon: "success",
+        confirmButtonText: "Đóng"
+      });
+      fetchReport();
+    } catch (err) {
+      console.error(err);
+      Swal.fire("Lỗi", "Không thể đồng bộ dữ liệu tồn kho.", "error");
+    }
+  };
 
   // --- LOCAL FILTER ---
   const handleRegionChange = (val) => setApiFilters(prev => ({ ...prev, region: val }));
@@ -406,6 +431,9 @@ const InventoryReportPage = () => {
                   <Select placeholder="Chọn mẫu xe" style={{ width: 150 }} onChange={handleModelFilterLocal} allowClear value={selectedModel}>
                     {uniqueModels.map(m => <Option key={m} value={m}>{m}</Option>)}
                   </Select>
+                  <Button onClick={handleSyncInventoryRecord}>
+                    Sync Data
+                  </Button>
                   <Button type="primary" onClick={handleExportExcel} disabled={loading || displayData.length === 0}>
                     Xuất Excel
                   </Button>
