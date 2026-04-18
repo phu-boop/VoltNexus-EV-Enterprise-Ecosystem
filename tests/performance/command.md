@@ -74,3 +74,14 @@ devphu@devphu:~$ kubectl --namespace monitoring get secrets monitoring-grafana \
 -o jsonpath="{.data.admin-password}" | base64 --decode ; echo
 5HWgruapsdCcuUNGYItHyig4o2i9HfQtIEmQfMdo
 devphu@devphu:~$ 
+
+
+// monitor
+kubectl port-forward svc/monitoring-grafana 3000:80 -n monitoring
+
+
+// k6 
+
+kubectl apply -f k8s/performance/k6-configmap.yaml && \
+kubectl delete job k6-load-test -n voltnexus --ignore-not-found=true && \
+kubectl apply -f k8s/performance/k6-job.yaml

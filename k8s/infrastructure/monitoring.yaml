@@ -1,0 +1,30 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: voltnexus-monitoring
+  namespace: voltnexus
+  labels:
+    release: monitoring
+spec:
+  selector:
+    matchExpressions:
+      - key: app
+        operator: In
+        values:
+          - gateway
+          - user-service
+          - customer-service
+          - dealer-service
+          - inventory-service
+          - payment-service
+          - sales-service
+          - vehicle-service
+          - reporting-service
+          - ai-service
+  endpoints:
+    - port: http # This matches the name in the Service objects if defined, or we can use targetPort
+      path: /actuator/prometheus
+      interval: 15s
+  namespaceSelector:
+    matchNames:
+      - voltnexus

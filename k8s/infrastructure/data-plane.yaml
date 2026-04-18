@@ -52,7 +52,7 @@ spec:
     spec:
       containers:
         - name: kafka
-          image: bitnami/kafka:3.4.0
+          image: bitnamilegacy/kafka:3.4.0
           env:
             - name: KAFKA_ENABLE_KRAFT
               value: "yes"

@@ -1,49 +1,46 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: k6-test-script
-  namespace: voltnexus
+    name: k6-test-script
+    namespace: voltnexus
 data:
-  load-test.js: |
-    import http from 'k6/http';
-    import { check, sleep } from 'k6';
+    load-test.js: |
+        import http from 'k6/http';
+        import { check, sleep } from 'k6';
 
-    export const options = {
-        stages: [
-            { duration: '30s', target: 20 },
-            { duration: '1m', target: 50 },
-            { duration: '20s', target: 0 },
-        ],
-        thresholds: {
-            http_req_failed: ['rate<0.01'], 
-            http_req_duration: ['p(95)<500'],
-        },
-    };
+        export const options = {
+            scenarios: {
+                ram_killer: {
+                    executor: 'constant-arrival-rate',
+                    rate: 1000,              // 1000 request mỗi giây
+                    timeUnit: '1s',
+                    duration: '5m',          // Chạy trong 5 phút
+                    preAllocatedVUs: 500,    // Chuẩn bị sẵn 500 users
+                    maxVUs: 2000,            // Tối đa 2000 users nếu cần
+                },
+            },
+            thresholds: {
+                http_req_failed: ['rate<0.01'], 
+                http_req_duration: ['p(95)<40000'],
+            },
+        };
 
-    // Trong K8s, gọi trực tiếp Service Name 'gateway'
-    const BASE_URL = 'http://gateway:8080'; 
-    const TOKEN = 'Bearer eyJhbGciOiJIUzI1NiJ9.eyJyb2xlIjoiQURNSU4iLCJwcm9maWxlSWQiOiI5NTQwMzllNi04OWViLTQxZjQtOGQ1NC0wMmFhMjFhYmM4N2YiLCJzdWIiOiJhZG1pbkBnbWFpbC5jb20iLCJpYXQiOjE3NzY0MTEyMzIsImV4cCI6MjA5MTc3MTIzMn0.Z6plQjnKcnOhcitN_E4gcnX4tOoeg15zGyyQHqUjFkQ';
+        // Trong K8s, gọi trực tiếp Service Name 'gateway'
+        const BASE_URL = 'http://gateway:8080'; 
+        const TOKEN = 'Bearer eyJhbGciOiJIUzI1NiJ9.eyJyb2xlIjoiQURNSU4iLCJwcm9maWxlSWQiOiI5NTQwMzllNi04OWViLTQxZjQtOGQ1NC0wMmFhMjFhYmM4N2YiLCJzdWIiOiJhZG1pbkBnbWFpbC5jb20iLCJpYXQiOjE3NzY0MTEyMzIsImV4cCI6MjA5MTc3MTIzMn0.Z6plQjnKcnOhcitN_E4gcnX4tOoeg15zGyyQHqUjFkQ';
 
-    const params = {
-        headers: {
-            'Authorization': TOKEN,
-            'Content-Type': 'application/json',
-        },
-    };
+        const params = {
+            headers: {
+                'Authorization': TOKEN,
+                'Content-Type': 'application/json',
+            },
+        };
 
-    export default function () {
-        // Bước 1: Health Check Gateway
-        let healthRes = http.get(`${BASE_URL}/actuator/health`);
-        check(healthRes, { 'Gateway is UP': (r) => r.status === 200 });
+        export default function () {
+            // Bước 1: Health Check Gateway (Duy trì để track sập hay chưa)
+            http.get(`${BASE_URL}/actuator/health`);
 
-        sleep(1);
-
-        // Bước 2: Lấy danh sách xe qua Gateway (Dùng URL thực tế từ Local Script)
-        let vehicleRes = http.get(`${BASE_URL}/vehicles/vehicle-catalog/variants/all-for-backfill`, params);
-        check(vehicleRes, { 
-            'Get vehicles success': (r) => r.status === 200,
-            'Response time < 200ms': (r) => r.timings.duration < 200 
-        });
-
-        sleep(2);
-    }
+            // Bước 2: Gọi API trả về nhiều dữ liệu nhất (search?page=0&size=20&keyword=VF2)
+            // Không dùng sleep() để ép gateway phải handle liên tục
+            http.get(`${BASE_URL}/vehicles/vehicle-catalog/variants/search?page=0&size=20&keyword=VF2`, params);
+        }

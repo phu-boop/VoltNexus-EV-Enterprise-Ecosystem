@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-datasource-system
+  namespace: monitoring
+  labels:
+    grafana_datasource: "1"
+data:
+  prometheus-system.yaml: |-
+    apiVersion: 1
+    datasources:
+    - name: PROMETHEUS-SYSTEM
+      type: prometheus
+      access: proxy
+      url: http://monitoring-kube-prometheus-prometheus.monitoring:9090
+      isDefault: false
+      editable: false

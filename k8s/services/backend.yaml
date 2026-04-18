@@ -38,11 +38,14 @@ kind: Service
 metadata:
   name: gateway
   namespace: voltnexus
+  labels:
+    app: gateway
 spec:
   selector:
     app: gateway
   ports:
-    - protocol: TCP
+    - name: http
+      protocol: TCP
       port: 8080
       targetPort: 8080
   type: LoadBalancer
@@ -80,11 +83,14 @@ kind: Service
 metadata:
   name: user-service
   namespace: voltnexus
+  labels:
+    app: user-service
 spec:
   selector:
     app: user-service
   ports:
-    - protocol: TCP
+    - name: http
+      protocol: TCP
       port: 8081
       targetPort: 8081
   type: ClusterIP
@@ -122,11 +128,14 @@ kind: Service
 metadata:
   name: customer-service
   namespace: voltnexus
+  labels:
+    app: customer-service
 spec:
   selector:
     app: customer-service
   ports:
-    - protocol: TCP
+    - name: http
+      protocol: TCP
       port: 8082
       targetPort: 8082
   type: ClusterIP
@@ -164,11 +173,14 @@ kind: Service
 metadata:
   name: dealer-service
   namespace: voltnexus
+  labels:
+    app: dealer-service
 spec:
   selector:
     app: dealer-service
   ports:
-    - protocol: TCP
+    - name: http
+      protocol: TCP
       port: 8083
       targetPort: 8083
   type: ClusterIP
@@ -206,11 +218,14 @@ kind: Service
 metadata:
   name: inventory-service
   namespace: voltnexus
+  labels:
+    app: inventory-service
 spec:
   selector:
     app: inventory-service
   ports:
-    - protocol: TCP
+    - name: http
+      protocol: TCP
       port: 8084
       targetPort: 8084
   type: ClusterIP
@@ -248,11 +263,14 @@ kind: Service
 metadata:
   name: payment-service
   namespace: voltnexus
+  labels:
+    app: payment-service
 spec:
   selector:
     app: payment-service
   ports:
-    - protocol: TCP
+    - name: http
+      protocol: TCP
       port: 8085
       targetPort: 8085
   type: ClusterIP
@@ -297,11 +315,14 @@ kind: Service
 metadata:
   name: sales-service
   namespace: voltnexus
+  labels:
+    app: sales-service
 spec:
   selector:
     app: sales-service
   ports:
-    - protocol: TCP
+    - name: http
+      protocol: TCP
       port: 8086
       targetPort: 8086
   type: ClusterIP
@@ -339,11 +360,14 @@ kind: Service
 metadata:
   name: vehicle-service
   namespace: voltnexus
+  labels:
+    app: vehicle-service
 spec:
   selector:
     app: vehicle-service
   ports:
-    - protocol: TCP
+    - name: http
+      protocol: TCP
       port: 8087
       targetPort: 8087
   type: ClusterIP
@@ -381,11 +405,14 @@ kind: Service
 metadata:
   name: reporting-service
   namespace: voltnexus
+  labels:
+    app: reporting-service
 spec:
   selector:
     app: reporting-service
   ports:
-    - protocol: TCP
+    - name: http
+      protocol: TCP
       port: 8088
       targetPort: 8088
   type: ClusterIP
@@ -423,11 +450,14 @@ kind: Service
 metadata:
   name: ai-service
   namespace: voltnexus
+  labels:
+    app: ai-service
 spec:
   selector:
     app: ai-service
   ports:
-    - protocol: TCP
+    - name: http
+      protocol: TCP
       port: 8089
       targetPort: 8089
   type: ClusterIP
