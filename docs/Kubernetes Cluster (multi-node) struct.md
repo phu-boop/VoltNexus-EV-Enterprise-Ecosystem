@@ -182,3 +182,9 @@ Client (browser/app)
 2	Redis/Kafka không có PVC — mất data khi restart	🟠 High
 3	Chưa có Ingress config	🟡 Medium
 4	Chưa có health probes / resource limits	🟡 Medium
+
+
+## Kubernetes Local Test
+
+Sơ đồ chi tiết:  
+👉 https://app.eraser.io/workspace/LozaneJIRywceayznhGb
