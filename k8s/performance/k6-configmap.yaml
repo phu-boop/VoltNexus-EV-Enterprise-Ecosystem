@@ -10,18 +10,18 @@ data:
 
         export const options = {
             scenarios: {
-                ram_killer: {
+                demo_load: {
                     executor: 'constant-arrival-rate',
-                    rate: 1000,              // 1000 request mỗi giây
+                    rate: 50,                // 50 request mỗi giây (mức an toàn cho Minikube)
                     timeUnit: '1s',
-                    duration: '5m',          // Chạy trong 5 phút
-                    preAllocatedVUs: 500,    // Chuẩn bị sẵn 500 users
-                    maxVUs: 2000,            // Tối đa 2000 users nếu cần
+                    duration: '2m',          // Chạy trong 2 phút để biểu đồ Grafana hiện đẹp
+                    preAllocatedVUs: 10,     // Chuẩn bị sẵn 10 users
+                    maxVUs: 50,              // Tối đa 50 users
                 },
             },
             thresholds: {
                 http_req_failed: ['rate<0.01'], 
-                http_req_duration: ['p(95)<40000'],
+                http_req_duration: ['p(95)<2000'], // 95% request phải phản hồi dưới 2 giây
             },
         };
 

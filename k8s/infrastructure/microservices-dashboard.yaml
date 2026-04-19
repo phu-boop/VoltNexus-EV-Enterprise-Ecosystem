@@ -97,7 +97,7 @@ data:
             {
               "datasource": "PROMETHEUS-SYSTEM",
               "exemplar": true,
-              "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=\"voltnexus\", pod=~\"$pod.*\", container!=\"\"}[5m])) by (pod)",
+              "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=\"voltnexus\", pod=~\"$pod.*\"}[5m])) by (pod)",
               "interval": "",
               "legendFormat": "{{pod}}",
               "refId": "A"
@@ -176,7 +176,7 @@ data:
             {
               "datasource": "PROMETHEUS-SYSTEM",
               "exemplar": true,
-              "expr": "sum(container_memory_working_set_bytes{namespace=\"voltnexus\", pod=~\"$pod.*\", container!=\"\"}) by (pod)",
+              "expr": "sum(container_memory_working_set_bytes{namespace=\"voltnexus\", pod=~\"$pod.*\"}) by (pod)",
               "interval": "",
               "legendFormat": "{{pod}}",
               "refId": "A"

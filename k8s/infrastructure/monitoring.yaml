@@ -25,6 +25,9 @@ spec:
     - port: http # This matches the name in the Service objects if defined, or we can use targetPort
       path: /actuator/prometheus
       interval: 15s
+      relabelings:
+        - targetLabel: cluster
+          replacement: minikube
   namespaceSelector:
     matchNames:
       - voltnexus
