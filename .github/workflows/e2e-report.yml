@@ -48,6 +48,14 @@ jobs:
           # Chạy test với bản build chính thức để ổn định nhất
           npx playwright test --project=public || true
 
+      - name: Upload Report Artifact (Zip)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: frontend/my-app/playwright-report/
+          retention-days: 30
+
       - name: Publish to GitHub Pages
         if: always()
         run: |
