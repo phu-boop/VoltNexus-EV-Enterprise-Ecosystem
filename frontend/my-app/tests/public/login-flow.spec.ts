@@ -26,12 +26,17 @@ test.describe('Authentication & Session Tests', () => {
         });
     });
 
-    test('ITC_122.2: Truy cập trang Admin khi chưa đăng nhập sẽ redirect về Login', async ({ page }) => {
+    test('ITC_122.2: Hiển thị thông báo khi truy cập trang bảo mật mà chưa đăng nhập', async ({ page }) => {
         // 1. Truy cập trực tiếp trang Admin Dashboard mà không đăng nhập
         await page.goto('http://localhost:5173/evm/admin/dashboard');
 
-        // 2. ProtectedRoute sẽ redirect về trang Login
-        await expect(page).toHaveURL(/.*\/login/, { timeout: 10000 });
+        // 2. Kiểm tra hiển thị bảng thông báo "Chưa đăng nhập"
+        // Sử dụng heading và text để xác nhận dialog SweetAlert hoặc Modal xuất hiện
+        const dialogHeading = page.getByRole('heading', { name: 'Chưa đăng nhập' });
+        await expect(dialogHeading).toBeVisible({ timeout: 10000 });
+
+        const loginBtn = page.getByRole('button', { name: 'Đăng nhập' });
+        await expect(loginBtn).toBeVisible();
     });
 
     test('Admin Login Happy Path', async ({ page }) => {

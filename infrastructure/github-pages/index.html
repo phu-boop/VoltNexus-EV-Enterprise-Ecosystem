@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VoltNexus - Report Portal</title>
+    <style>
+        :root {
+            --primary: #00f2ff;
+            --bg: #0a0a0c;
+            --card-bg: #16161a;
+            --text: #ffffff;
+            --text-muted: #a0a0a8;
+        }
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+        .container {
+            text-align: center;
+            z-index: 1;
+        }
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(90deg, #fff, var(--primary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        p {
+            color: var(--text-muted);
+            margin-bottom: 3rem;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 2rem;
+            max-width: 800px;
+        }
+        .card {
+            background: var(--card-bg);
+            padding: 2.5rem;
+            border-radius: 20px;
+            border: 1px solid #ffffff10;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            color: inherit;
+            display: block;
+        }
+        .card:hover {
+            transform: translateY(-10px);
+            border-color: var(--primary);
+            box-shadow: 0 10px 30px -10px var(--primary);
+        }
+        .icon {
+            font-size: 3rem;
+            margin-bottom: 1.5rem;
+            display: block;
+        }
+        .card h2 {
+            margin: 0 0 0.5rem 0;
+            font-size: 1.5rem;
+        }
+        .card span {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+        .bg-glow {
+            position: absolute;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(0,242,255,0.15) 0%, rgba(0,242,255,0) 70%);
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-glow"></div>
+    <div class="container">
+        <h1>VoltNexus Enterprise</h1>
+        <p>Hệ thống giám sát và báo cáo chất lượng tự động</p>
+        
+        <div class="grid">
+            <a href="api-report/index.html" class="card">
+                <span class="icon">📡</span>
+                <h2>API Reports</h2>
+                <span>Postman / Newman Integration</span>
+            </a>
+            <a href="e2e-report/index.html" class="card">
+                <span class="icon">🎭</span>
+                <h2>E2E Reports</h2>
+                <span>Playwright Automation Suite</span>
+            </a>
+        </div>
+    </div>
+</body>
+</html>

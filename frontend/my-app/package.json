@@ -12,6 +12,9 @@
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:report": "playwright show-report",
+    "test:zip": "powershell Compress-Archive -Path playwright-report -DestinationPath playwright-report.zip -Force",
+    "test:full": "npm run test:e2e && npm run test:zip",
+    "test:e2e:ci": "playwright test --project=public --project=e2e-itc",
     "test:e2e:smoke": "playwright test tests/e2e/itc/smoke --project=e2e-itc"
   },
   "jest": {

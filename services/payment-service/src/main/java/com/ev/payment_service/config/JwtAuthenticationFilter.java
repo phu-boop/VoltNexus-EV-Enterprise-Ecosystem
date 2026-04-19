@@ -26,6 +26,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String email = request.getHeader("X-User-Email");
         String role = request.getHeader("X-User-Role");
         String profileIdHeader = request.getHeader("X-User-ProfileId");
+        String userIdHeader = request.getHeader("X-User-Id");
         String dealerIdHeader = request.getHeader("X-User-DealerId");
 
         if (email != null && role != null) {
@@ -34,6 +35,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     .email(email)
                     .role(normalizedRole)
                     .profileId(parseUuid(profileIdHeader))
+                    .userId(parseUuid(userIdHeader))
                     .dealerId(parseUuid(dealerIdHeader))
                     .build();
 

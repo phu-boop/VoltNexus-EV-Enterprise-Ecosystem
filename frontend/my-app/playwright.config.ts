@@ -22,10 +22,9 @@ export default defineConfig({
     /* Base URL to use in actions like `await page.goto('')`. */
     baseURL: "http://localhost:5173",
 
-    /* Collect trace when retrying the failed test. */
-    trace: "retain-on-failure",
-    /* Record video for tests */
-    video: "retain-on-failure",
+    /* Cấu hình để luôn ghi lại Trace và Video (giúp demo báo cáo đầy đủ hơn) */
+    trace: "on",
+    video: "on",
   },
 
   /* Configure projects */
