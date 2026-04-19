@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Xác nhận chấp nhận báo giá</title>
+  <style>
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background-color: #f8fafc;
+      margin: 0;
+      padding: 0;
+      color: #1e293b;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .wrapper {
+      width: 100%;
+      table-layout: fixed;
+      padding: 40px 0;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      background-color: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .header {
+      padding: 40px 40px 20px;
+      text-align: left;
+    }
+
+    .brand {
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: #64748b;
+      margin-bottom: 8px;
+    }
+
+    .header h1 {
+      font-size: 24px;
+      font-weight: 600;
+      margin: 0;
+      color: #0f172a;
+    }
+
+    .content {
+      padding: 20px 40px 40px;
+      line-height: 1.6;
+    }
+
+    .greeting {
+      font-size: 16px;
+      margin-bottom: 24px;
+    }
+
+    .success-card {
+      background-color: #f0fdf4;
+      border: 1px solid #dcfce7;
+      border-radius: 6px;
+      padding: 32px;
+      text-align: center;
+      margin-bottom: 24px;
+    }
+
+    .success-icon {
+      color: #15803d;
+      font-size: 32px;
+      margin-bottom: 12px;
+    }
+
+    .success-title {
+      font-weight: 600;
+      font-size: 18px;
+      color: #166534;
+      margin-bottom: 8px;
+    }
+
+    .quotation-tag {
+      display: inline-block;
+      background-color: #1e293b;
+      color: #ffffff;
+      padding: 4px 12px;
+      border-radius: 4px;
+      font-size: 13px;
+      font-weight: 600;
+      margin-top: 12px;
+    }
+
+    .next-steps {
+      border-top: 1px solid #e2e8f0;
+      margin-top: 32px;
+      padding-top: 24px;
+    }
+
+    .next-steps h2 {
+      font-size: 14px;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: #64748b;
+      margin-bottom: 12px;
+      letter-spacing: 0.025em;
+    }
+
+    .next-steps p {
+      margin: 0;
+      color: #475569;
+      font-size: 15px;
+    }
+
+    .footer {
+      padding: 32px 40px;
+      background-color: #f8fafc;
+      border-top: 1px solid #e2e8f0;
+      color: #64748b;
+      font-size: 12px;
+      text-align: center;
+    }
+
+    .footer p {
+      margin: 4px 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <div class="container">
+      <div class="header">
+        <div class="brand">EV Automotive</div>
+        <h1>Xác nhận chấp nhận báo giá</h1>
+      </div>
+
+      <div class="content">
+        <p class="greeting">
+          Xin chào <strong th:text="${customer.fullName}">Quý khách</strong>,
+        </p>
+
+        <div class="success-card">
+          <div class="success-icon">✓</div>
+          <div class="success-title">Báo giá đã được chấp nhận</div>
+          <p style="margin: 0; color: #166534; font-size: 14px;">
+            Hệ thống đã ghi nhận phản hồi đồng ý cho báo giá mã:
+          </p>
+          <div class="quotation-tag" th:text="${quotation.quotationId}">Q-12345</div>
+        </div>
+
+        <div class="next-steps">
+          <h2>Bước tiếp theo</h2>
+          <p>
+            Đội ngũ tư vấn của EV Automotive sẽ sớm liên hệ trực tiếp với bạn để trao đổi về các thủ tục hoàn tất hợp đồng và kế hoạch bàn giao sản phẩm.
+          </p>
+        </div>
+
+        <p style="margin-top: 32px; font-size: 14px; color: #64748b; text-align: center;">
+          Cảm ơn bạn đã tin tưởng lựa chọn dịch vụ của chúng tôi.
+        </p>
+      </div>
+
+      <div class="footer">
+        <p><strong>Đội ngũ EV Automotive</strong></p>
+        <p>Email: support@ev-automotive.com | Hotline: 1800 1234</p>
+        <p>&copy; 2024 EV Automotive. Vietnam.</p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Xác Nhận Đơn Hàng</title>
+  <style>
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background-color: #f8fafc;
+      margin: 0;
+      padding: 0;
+      color: #1e293b;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .wrapper {
+      width: 100%;
+      table-layout: fixed;
+      padding: 40px 0;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      background-color: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .header {
+      padding: 40px 40px 20px;
+      text-align: left;
+    }
+
+    .brand {
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: #64748b;
+      margin-bottom: 8px;
+    }
+
+    .header h1 {
+      font-size: 24px;
+      font-weight: 600;
+      margin: 0;
+      color: #0f172a;
+    }
+
+    .content {
+      padding: 20px 40px 40px;
+      line-height: 1.6;
+    }
+
+    .greeting {
+      font-size: 16px;
+      margin-bottom: 24px;
+    }
+
+    .order-card {
+      background-color: #f1f5f9;
+      border-radius: 6px;
+      padding: 24px;
+      margin-bottom: 24px;
+    }
+
+    .order-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    .order-row:last-child {
+      margin-bottom: 0;
+      padding-top: 12px;
+      border-top: 1px solid #e2e8f0;
+    }
+
+    .label {
+      color: #64748b;
+      font-size: 14px;
+    }
+
+    .value {
+      font-weight: 600;
+      color: #0f172a;
+      font-size: 14px;
+    }
+
+    .total-label {
+      font-weight: 600;
+      color: #0f172a;
+    }
+
+    .total-value {
+      font-size: 18px;
+      color: #0f172a;
+    }
+
+    .note {
+      font-size: 13px;
+      color: #64748b;
+      padding: 16px;
+      border-left: 2px solid #e2e8f0;
+      margin-bottom: 32px;
+    }
+
+    .button-container {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+
+    .button {
+      display: inline-block;
+      background-color: #0f172a;
+      color: #ffffff !important;
+      padding: 14px 32px;
+      border-radius: 6px;
+      text-decoration: none;
+      font-weight: 500;
+      font-size: 15px;
+    }
+
+    .footer {
+      padding: 32px 40px;
+      background-color: #f8fafc;
+      border-top: 1px solid #e2e8f0;
+      color: #64748b;
+      font-size: 12px;
+      text-align: center;
+    }
+
+    .footer p {
+      margin: 4px 0;
+    }
+
+    .link-alt {
+      font-size: 11px;
+      color: #94a3b8;
+      text-align: center;
+      word-break: break-all;
+      margin-top: 16px;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <div class="container">
+      <div class="header">
+        <div class="brand">EV Automotive</div>
+        <h1>Xác nhận đơn hàng</h1>
+      </div>
+
+      <div class="content">
+        <p class="greeting">
+          Xin chào <strong th:text="${customer.fullName}">Quý khách</strong>,
+        </p>
+        <p>
+          Cảm ơn bạn đã lựa chọn EV Automotive. Đơn hàng của bạn đã được ghi nhận và đang chờ xác nhận từ hệ thống.
+        </p>
+
+        <div class="order-card">
+          <div class="order-row">
+            <span class="label">Mã đơn hàng</span>
+            <span class="value" th:text="'#' + ${salesOrder.orderId}">#12345</span>
+          </div>
+          <div class="order-row">
+            <span class="label">Ngày đặt hàng</span>
+            <span class="value" th:text="${orderDate}">01/01/2024</span>
+          </div>
+          <div class="order-row">
+            <span class="total-label">Tổng thanh toán</span>
+            <span class="value total-value" th:text="${#numbers.formatDecimal(salesOrder.totalAmount, 0, 'COMMA', 0, 'POINT') + ' VND'}">0 VND</span>
+          </div>
+        </div>
+
+        <div class="note">
+          <strong>Lưu ý:</strong> Vui lòng xác nhận đơn hàng trong vòng 24 giờ để chúng tôi có thể xử lý giao dịch sớm nhất.
+        </div>
+
+        <div class="button-container">
+          <a th:href="${confirmUrl}" class="button">Xác nhận đơn hàng ngay</a>
+        </div>
+
+        <div class="link-alt">
+          Nếu nút không hoạt động, bạn có thể sao chép liên kết vào trình duyệt:<br/>
+          <span th:text="${confirmUrl}"></span>
+        </div>
+      </div>
+
+      <div class="footer">
+        <p><strong>Đội ngũ EV Automotive</strong></p>
+        <p>Hotline: 1800 1234 | support@ev-automotive.com</p>
+        <p>&copy; 2024 EV Automotive. Vietnam.</p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

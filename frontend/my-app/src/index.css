@@ -1,0 +1,768 @@
+@import "tailwindcss";
+/* src/index.css */
+/* @tailwind base;
+@tailwind components;
+@tailwind utilities; */
+
+/* Thêm vào file CSS global */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9) translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.3s ease-out;
+}
+
+.animate-scaleIn {
+  animation: scaleIn 0.4s ease-out;
+}
+
+/* Notification Scrollbar */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+/* Line clamp utilities */
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.line-clamp-1 {
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Custom animation cho progress bar */
+@keyframes progress {
+  0% {
+    width: 100%;
+  }
+  100% {
+    width: 0%;
+  }
+}
+
+/* Line clamp utilities nếu chưa có */
+.line-clamp-1 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+}
+
+.line-clamp-2 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.line-clamp-3 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
+/* Đảm bảo toast hiển thị trên cùng mọi thứ */
+.Toastify__toast-container {
+  z-index: 9999 !important;
+}
+
+/* Ẩn thanh cuộn cho Chrome, Safari and Opera */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Ẩn thanh cuộn cho IE, Edge and Firefox */
+.no-scrollbar {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+
+/* Profile Dropdown Animations và Styles */
+@keyframes scaleIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.95) translateY(-8px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes fadeInUp {
+  0% {
+    opacity: 0;
+    transform: translateY(15px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInFromTop {
+  0% {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes pulseGlow {
+  0%,
+  100% {
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.1);
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(59, 130, 246, 0.2);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
+/* Main Styles */
+.animate-scaleIn {
+  animation: scaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.animate-fadeIn {
+  animation: fadeInUp 0.5s ease-out both;
+}
+
+.animate-slideIn {
+  animation: slideInFromTop 0.4s ease-out;
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+.glass-effect {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.gradient-border {
+  position: relative;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 2px;
+  border-radius: 1rem;
+}
+
+.gradient-border::before {
+  content: "";
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  background: linear-gradient(
+    45deg,
+    #ff6b6b,
+    #ee5a24,
+    #feca57,
+    #ff9ff3,
+    #48dbfb,
+    #1dd1a1
+  );
+  border-radius: 1rem;
+  z-index: -1;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.gradient-border:hover::before {
+  opacity: 1;
+  animation: pulseGlow 2s infinite;
+}
+
+/* Enhanced Avatar Styles */
+.avatar-glow {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  box-shadow: 0 8px 25px -8px rgba(59, 130, 246, 0.4),
+    0 4px 12px -4px rgba(59, 130, 246, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  position: relative;
+  overflow: hidden;
+}
+
+.avatar-glow::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.4),
+    transparent
+  );
+  transition: left 0.6s;
+}
+
+.avatar-glow:hover::before {
+  left: 100%;
+}
+
+/* Enhanced Dropdown Styles */
+.enhanced-dropdown {
+  background: rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(40px) saturate(200%);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15),
+    0 0 0 1px rgba(255, 255, 255, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.2),
+    0 20px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+.enhanced-dropdown::before {
+  content: "";
+  position: absolute;
+  top: -6px;
+  right: 20px;
+  width: 12px;
+  height: 12px;
+  background: rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(40px);
+  transform: rotate(45deg);
+  border-left: 1px solid rgba(255, 255, 255, 0.3);
+  border-top: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+/* Role Badge Enhancements */
+.role-badge-enhanced {
+  background: linear-gradient(135deg, #3b82f6, #6366f1);
+  background-size: 200% 200%;
+  animation: shimmer 3s infinite linear;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 2px 4px rgba(0, 0, 0, 0.1);
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.role-badge-enhanced::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.3),
+    transparent
+  );
+  transition: left 0.6s;
+}
+
+.role-badge-enhanced:hover::before {
+  left: 100%;
+}
+
+.role-badge-enhanced:hover {
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 8px 20px rgba(59, 130, 246, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+/* Action Button Enhancements */
+.action-btn-enhanced {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.action-btn-enhanced::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  background: radial-gradient(
+    circle,
+    rgba(59, 130, 246, 0.1) 0%,
+    transparent 70%
+  );
+  transition: all 0.4s;
+  transform: translate(-50%, -50%);
+}
+
+.action-btn-enhanced:hover::before {
+  width: 300px;
+  height: 300px;
+}
+
+.action-btn-enhanced:hover {
+  background: rgba(255, 255, 255, 0.95);
+  border-color: rgba(59, 130, 246, 0.3);
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 0 12px 25px -8px rgba(59, 130, 246, 0.3),
+    0 6px 15px -6px rgba(0, 0, 0, 0.1);
+}
+
+/* Logout Button Enhancements */
+.logout-btn-enhanced {
+  background: linear-gradient(
+    135deg,
+    rgba(220, 38, 38, 0.05),
+    rgba(185, 28, 28, 0.02)
+  );
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(220, 38, 38, 0.1);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.logout-btn-enhanced::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  background: radial-gradient(
+    circle,
+    rgba(220, 38, 38, 0.1) 0%,
+    transparent 70%
+  );
+  transition: all 0.4s;
+  transform: translate(-50%, -50%);
+}
+
+.logout-btn-enhanced:hover::before {
+  width: 300px;
+  height: 300px;
+}
+
+.logout-btn-enhanced:hover {
+  background: linear-gradient(
+    135deg,
+    rgba(220, 38, 38, 0.08),
+    rgba(185, 28, 28, 0.04)
+  );
+  border-color: rgba(220, 38, 38, 0.3);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px -8px rgba(220, 38, 38, 0.2),
+    0 4px 12px -4px rgba(0, 0, 0, 0.1);
+}
+
+/* Text Gradients */
+.text-gradient-primary {
+  background: linear-gradient(135deg, #1e40af, #7c3aed);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.text-gradient-secondary {
+  background: linear-gradient(135deg, #6b7280, #9ca3af);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Hover Effects */
+.hover-lift {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.hover-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+/* Custom Scrollbar */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, #3b82f6, #6366f1);
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, #2563eb, #5b21b6);
+}
+
+/* Dark Mode Support */
+@media (prefers-color-scheme: dark) {
+  .glass-effect {
+    background: rgba(17, 24, 39, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .enhanced-dropdown {
+    background: rgba(17, 24, 39, 0.98);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .enhanced-dropdown::before {
+    background: rgba(17, 24, 39, 0.98);
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+
+  .action-btn-enhanced {
+    background: rgba(31, 41, 55, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .action-btn-enhanced:hover {
+    background: rgba(55, 65, 81, 0.95);
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 640px) {
+  .enhanced-dropdown {
+    width: 90vw;
+    max-width: 300px;
+    right: 50%;
+    transform: translateX(50%);
+  }
+
+  .enhanced-dropdown::before {
+    right: 50%;
+    transform: translateX(50%) rotate(45deg);
+  }
+}
+/* EV Dealer Logo - Circuit & Leaf */
+@keyframes spin-slow {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes float-logo {
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-12px);
+  }
+}
+
+@keyframes pulse-soft {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+.animate-spin-slow {
+  animation: spin-slow 10s linear infinite;
+}
+
+.animate-float-logo {
+  animation: float-logo 4s ease-in-out infinite;
+}
+
+.animate-pulse-soft {
+  animation: pulse-soft 3s ease-in-out infinite;
+}
+
+.logo-glow {
+  filter: drop-shadow(0 0 8px rgba(16, 185, 129, 0.5));
+}
+
+.text-glow {
+  text-shadow: 0 0 10px rgba(16, 185, 129, 0.7);
+}
+
+/* Logo Container Styles */
+.ev-logo-container {
+  position: relative;
+  cursor: pointer;
+}
+
+.ev-logo-outer-glow {
+  position: absolute;
+  inset: -1rem;
+  background: linear-gradient(
+    to right,
+    rgba(16, 185, 129, 0.2),
+    rgba(5, 150, 105, 0.2)
+  );
+  border-radius: 50%;
+  filter: blur(1.5rem);
+  opacity: 0.7;
+  transition: all 0.5s ease;
+}
+
+.ev-logo-outer-glow:hover {
+  opacity: 1;
+  filter: blur(2rem);
+}
+
+.ev-logo-main {
+  position: relative;
+  background: rgba(31, 41, 55, 0.8);
+  backdrop-filter: blur(1rem);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  border-radius: 2rem;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  transition: all 0.5s ease;
+}
+
+.ev-logo-main:hover {
+  transform: scale(1.05);
+  border-color: rgba(16, 185, 129, 0.5);
+}
+
+/* Logo Elements */
+.ev-logo-outer-ring {
+  position: absolute;
+  border: 4px solid rgba(16, 185, 129, 0.4);
+  border-radius: 50%;
+  animation: pulse-soft 3s ease-in-out infinite;
+}
+
+.ev-logo-main-circle {
+  position: absolute;
+  border: 4px solid rgba(16, 185, 129, 0.8);
+  border-radius: 50%;
+  filter: drop-shadow(0 0 8px rgba(16, 185, 129, 0.5));
+}
+
+.ev-logo-circuit-primary {
+  position: absolute;
+  border: 2px solid rgb(16, 185, 129);
+  border-top-color: transparent;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: spin-slow 10s linear infinite;
+}
+
+.ev-logo-circuit-secondary {
+  position: absolute;
+  border: 1px solid rgba(16, 185, 129, 0.6);
+  border-bottom-color: transparent;
+  border-left-color: transparent;
+  border-radius: 50%;
+  animation: spin-slow 15s linear infinite reverse;
+}
+
+.ev-logo-leaf {
+  color: rgb(16, 185, 129);
+  filter: drop-shadow(0 0 8px rgba(16, 185, 129, 0.5));
+  animation: float-logo 4s ease-in-out infinite;
+}
+
+.ev-logo-car {
+  color: rgba(16, 185, 129, 0.8);
+  position: absolute;
+}
+
+/* Text Styles for EV Dealer */
+.ev-dealer-text {
+  font-weight: bold;
+  background: linear-gradient(to right, rgb(16, 185, 129), rgb(5, 150, 105));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.ev-dealer-subtitle {
+  color: rgb(156, 163, 175);
+}
+
+/* Compact version for headers */
+.ev-logo-compact {
+  width: 3rem;
+  height: 3rem;
+  position: relative;
+}
+
+.ev-logo-compact .ev-logo-main-circle {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-width: 2px;
+}
+
+.ev-logo-compact .ev-logo-circuit-primary {
+  width: 1.875rem;
+  height: 1.875rem;
+  border-width: 1px;
+}
+
+.ev-logo-compact .ev-logo-leaf {
+  font-size: 1.25rem;
+}
+
+.ev-logo-compact .ev-logo-car {
+  font-size: 0.75rem;
+  bottom: -0.25rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .ev-logo-main {
+    padding: 1.5rem;
+  }
+
+  .ev-logo-outer-glow {
+    inset: -0.5rem;
+  }
+}
+
+/* Toast Notification Styles - Simple & Clean */
+.Toastify__toast-container {
+  z-index: 9999 !important;
+}
+
+.Toastify__toast {
+  border-radius: 8px !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto",
+    sans-serif !important;
+  padding: 16px 20px !important;
+  min-height: 64px !important;
+  border-left: 4px solid !important;
+}
+
+.Toastify__toast--success {
+  background: #ffffff !important;
+  border-left-color: #10b981 !important;
+  color: #1f2937 !important;
+}
+
+.Toastify__toast--error {
+  background: #ffffff !important;
+  border-left-color: #ef4444 !important;
+  color: #1f2937 !important;
+}
+
+.Toastify__toast--warning {
+  background: #ffffff !important;
+  border-left-color: #f59e0b !important;
+  color: #1f2937 !important;
+}
+
+.Toastify__toast--info {
+  background: #ffffff !important;
+  border-left-color: #3b82f6 !important;
+  color: #1f2937 !important;
+}
+
+.Toastify__toast-body {
+  color: #1f2937 !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  padding: 0 !important;
+}
+
+.Toastify__close-button {
+  color: #6b7280 !important;
+  opacity: 0.6 !important;
+}
+
+.Toastify__close-button:hover {
+  opacity: 1 !important;
+  color: #1f2937 !important;
+}
+
+.Toastify__progress-bar--success {
+  background: #10b981 !important;
+}
+
+.Toastify__progress-bar--error {
+  background: #ef4444 !important;
+}
+
+.Toastify__progress-bar--warning {
+  background: #f59e0b !important;
+}
+
+.Toastify__progress-bar--info {
+  background: #3b82f6 !important;
+}
+
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-text-fill-color: #fff !important;
+  box-shadow: 0 0 0px 1000px transparent inset !important;
+  font-family: "Poppins", sans-serif !important;
+  background-color: transparent !important;
+  transition: background-color 5000s ease-in-out 0s;
+}

@@ -1,0 +1,261 @@
+version: "3.8"
+name: VoltNexus-EV-Enterprise-Ecosystem
+services:
+  zookeeper:
+    image: confluentinc/cp-zookeeper:latest
+    container_name: zookeeper
+    ports:
+      - "2181:2181"
+    environment:
+      ZOOKEEPER_CLIENT_PORT: session.2181
+    networks:
+      - app-network
+
+  kafka:
+    image: confluentinc/cp-kafka:7.4.0
+    container_name: kafka
+    ports:
+      - "9092:9092"
+      - "29092:29092"
+    environment:
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,EXTERNAL://localhost:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    depends_on:
+      - zookeeper
+    networks:
+      - app-network
+
+  redis-db:
+    image: redis/redis-stack-server:latest
+    container_name: redis-db
+    ports:
+      - "6380:6379"
+    restart: always
+    networks:
+      - app-network
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  redisinsight:
+    image: redis/redisinsight:latest
+    container_name: redisinsight
+    ports:
+      - "5540:5540"
+    restart: always
+    networks:
+      - app-network
+    depends_on:
+      redis-db:
+        condition: service_healthy
+
+  user-service:
+    image: my-user-service:latest
+    build:
+      context: .
+      dockerfile: services/user-service/Dockerfile
+    ports:
+      - "8081:8081"
+    env_file:
+      - ./config/user-service.env
+    networks:
+      - app-network
+    depends_on:
+      - redis-db
+      - kafka
+
+  customer-service:
+    image: my-customer-service:latest
+    build:
+      context: .
+      dockerfile: services/customer-service/Dockerfile
+    ports:
+      - "8082:8082"
+    env_file:
+      - ./config/customer-service.env
+    networks:
+      - app-network
+    depends_on:
+      - kafka
+
+  dealer-service:
+    image: my-dealer-service:latest
+    build:
+      context: .
+      dockerfile: services/dealer-service/Dockerfile
+    ports:
+      - "8083:8083"
+    env_file:
+      - ./config/dealer-service.env
+    networks:
+      - app-network
+    depends_on:
+      - kafka
+
+  inventory-service:
+    image: my-inventory-service:latest
+    build:
+      context: .
+      dockerfile: services/inventory-service/Dockerfile
+    ports:
+      - "8084:8084"
+    env_file:
+      - ./config/inventory-service.env
+    networks:
+      - app-network
+    depends_on:
+      redis-db:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+
+  payment-service:
+    image: my-payment-service:latest
+    build:
+      context: .
+      dockerfile: services/payment-service/Dockerfile
+    ports:
+      - "8085:8085"
+    env_file:
+      - ./config/payment-service.env
+    networks:
+      - app-network
+    depends_on:
+      - kafka
+
+  sales-service:
+    image: my-sales-service:latest
+    build:
+      context: .
+      dockerfile: services/sales-service/Dockerfile
+    ports:
+      - "8086:8086"
+    env_file:
+      - ./config/sales-service.env
+    networks:
+      - app-network
+    depends_on:
+      - kafka
+
+  vehicle-service:
+    image: my-vehicle-service:latest
+    build:
+      context: .
+      dockerfile: services/vehicle-service/Dockerfile
+    ports:
+      - "8087:8087"
+    env_file:
+      - ./config/vehicle-service.env
+    networks:
+      - app-network
+    depends_on:
+      redis-db:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+
+  reporting-service:
+    image: my-reporting-service:latest
+    build:
+      context: .
+      dockerfile: services/reporting-service/Dockerfile
+    ports:
+      - "8088:8088"
+    env_file:
+      - ./config/reporting-service.env
+    networks:
+      - app-network
+    depends_on:
+      - kafka
+
+  ai-service:
+    image: my-ai-service:latest
+    build:
+      context: .
+      dockerfile: services/ai-service/Dockerfile
+    ports:
+      - "8500:8500"
+    env_file:
+      - ./config/ai-service.env
+    networks:
+      - app-network
+    depends_on:
+      - kafka
+
+  gateway:
+    image: my-gateway:latest
+    build:
+      context: .
+      dockerfile: gateway/Dockerfile
+    ports:
+      - "8080:8080"
+    env_file:
+      - ./config/gateway.env
+    networks:
+      - app-network
+    depends_on:
+      redis-db:
+        condition: service_healthy
+      user-service:
+        condition: service_started
+      customer-service:
+        condition: service_started
+      dealer-service:
+        condition: service_started
+      vehicle-service:
+        condition: service_started
+      inventory-service:
+        condition: service_started
+      sales-service:
+        condition: service_started
+      payment-service:
+        condition: service_started
+      reporting-service:
+        condition: service_started
+      ai-service:
+        condition: service_started
+
+  frontend:
+    build:
+      context: ./frontend/my-app
+      dockerfile: Dockerfile
+    ports:
+      - "5173:80"
+    networks:
+      - app-network
+    depends_on:
+      - gateway
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./infrastructure/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    networks:
+      - app-network
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - ./infrastructure/grafana/provisioning:/etc/grafana/provisioning
+      - ./infrastructure/grafana/dashboards:/var/lib/grafana/dashboards
+    networks:
+      - app-network
+    depends_on:
+      - prometheus
+
+networks:
+  app-network:
+    driver: bridge

@@ -1,0 +1,19 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: "voltnexus-microservices"
+    metrics_path: "/actuator/prometheus"
+    static_configs:
+      - targets:
+          - "gateway:8080"
+          - "user-service:8081"
+          - "customer-service:8082"
+          - "dealer-service:8083"
+          - "inventory-service:8084"
+          - "payment-service:8085"
+          - "sales-service:8086"
+          - "vehicle-service:8087"
+          - "reporting-service:8088"
+          - "ai-service:8500"

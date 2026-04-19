@@ -1,0 +1,433 @@
+# Gateway
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gateway
+  namespace: voltnexus
+spec:
+  replicas: 2 # Nâng lên 2 để demo load balancing
+  selector:
+    matchLabels:
+      app: gateway
+  template:
+    metadata:
+      labels:
+        app: gateway
+    spec:
+      containers:
+        - name: gateway
+          image: my-gateway:latest # Khớp với image bạn đã build
+          imagePullPolicy: IfNotPresent
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+          ports:
+            - containerPort: 8080
+          envFrom:
+            - configMapRef:
+                name: voltnexus-config
+            - secretRef:
+                name: gateway-secret
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gateway
+  namespace: voltnexus
+spec:
+  selector:
+    app: gateway
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080
+  type: LoadBalancer
+---
+# User Service
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: user-service
+  namespace: voltnexus
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: user-service
+  template:
+    metadata:
+      labels:
+        app: user-service
+    spec:
+      containers:
+        - name: user-service
+          image: my-user-service:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8081
+          envFrom:
+            - configMapRef:
+                name: voltnexus-config
+            - secretRef:
+                name: user-service-secret
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: user-service
+  namespace: voltnexus
+spec:
+  selector:
+    app: user-service
+  ports:
+    - protocol: TCP
+      port: 8081
+      targetPort: 8081
+  type: ClusterIP
+---
+# Customer Service
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: customer-service
+  namespace: voltnexus
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: customer-service
+  template:
+    metadata:
+      labels:
+        app: customer-service
+    spec:
+      containers:
+        - name: customer-service
+          image: my-customer-service:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8082
+          envFrom:
+            - configMapRef:
+                name: voltnexus-config
+            - secretRef:
+                name: customer-service-secret
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: customer-service
+  namespace: voltnexus
+spec:
+  selector:
+    app: customer-service
+  ports:
+    - protocol: TCP
+      port: 8082
+      targetPort: 8082
+  type: ClusterIP
+---
+# Dealer Service
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dealer-service
+  namespace: voltnexus
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: dealer-service
+  template:
+    metadata:
+      labels:
+        app: dealer-service
+    spec:
+      containers:
+        - name: dealer-service
+          image: my-dealer-service:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8083
+          envFrom:
+            - configMapRef:
+                name: voltnexus-config
+            - secretRef:
+                name: dealer-service-secret
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dealer-service
+  namespace: voltnexus
+spec:
+  selector:
+    app: dealer-service
+  ports:
+    - protocol: TCP
+      port: 8083
+      targetPort: 8083
+  type: ClusterIP
+---
+# Inventory Service
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: inventory-service
+  namespace: voltnexus
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: inventory-service
+  template:
+    metadata:
+      labels:
+        app: inventory-service
+    spec:
+      containers:
+        - name: inventory-service
+          image: my-inventory-service:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8084
+          envFrom:
+            - configMapRef:
+                name: voltnexus-config
+            - secretRef:
+                name: inventory-service-secret
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: inventory-service
+  namespace: voltnexus
+spec:
+  selector:
+    app: inventory-service
+  ports:
+    - protocol: TCP
+      port: 8084
+      targetPort: 8084
+  type: ClusterIP
+---
+# Payment Service
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: payment-service
+  namespace: voltnexus
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: payment-service
+  template:
+    metadata:
+      labels:
+        app: payment-service
+    spec:
+      containers:
+        - name: payment-service
+          image: my-payment-service:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8085
+          envFrom:
+            - configMapRef:
+                name: voltnexus-config
+            - secretRef:
+                name: payment-service-secret
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: payment-service
+  namespace: voltnexus
+spec:
+  selector:
+    app: payment-service
+  ports:
+    - protocol: TCP
+      port: 8085
+      targetPort: 8085
+  type: ClusterIP
+---
+# Sales Service
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sales-service
+  namespace: voltnexus
+spec:
+  replicas: 2 # Sales Service thường chịu tải cao nhất
+  selector:
+    matchLabels:
+      app: sales-service
+  template:
+    metadata:
+      labels:
+        app: sales-service
+    spec:
+      containers:
+        - name: sales-service
+          image: my-sales-service:latest
+          imagePullPolicy: IfNotPresent
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+          ports:
+            - containerPort: 8086
+          envFrom:
+            - configMapRef:
+                name: voltnexus-config
+            - secretRef:
+                name: sales-service-secret
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sales-service
+  namespace: voltnexus
+spec:
+  selector:
+    app: sales-service
+  ports:
+    - protocol: TCP
+      port: 8086
+      targetPort: 8086
+  type: ClusterIP
+---
+# Vehicle Service
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vehicle-service
+  namespace: voltnexus
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: vehicle-service
+  template:
+    metadata:
+      labels:
+        app: vehicle-service
+    spec:
+      containers:
+        - name: vehicle-service
+          image: my-vehicle-service:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8087
+          envFrom:
+            - configMapRef:
+                name: voltnexus-config
+            - secretRef:
+                name: vehicle-service-secret
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: vehicle-service
+  namespace: voltnexus
+spec:
+  selector:
+    app: vehicle-service
+  ports:
+    - protocol: TCP
+      port: 8087
+      targetPort: 8087
+  type: ClusterIP
+---
+# Reporting Service
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: reporting-service
+  namespace: voltnexus
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: reporting-service
+  template:
+    metadata:
+      labels:
+        app: reporting-service
+    spec:
+      containers:
+        - name: reporting-service
+          image: my-reporting-service:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8088
+          envFrom:
+            - configMapRef:
+                name: voltnexus-config
+            - secretRef:
+                name: reporting-service-secret
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: reporting-service
+  namespace: voltnexus
+spec:
+  selector:
+    app: reporting-service
+  ports:
+    - protocol: TCP
+      port: 8088
+      targetPort: 8088
+  type: ClusterIP
+---
+# AI Service
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ai-service
+  namespace: voltnexus
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ai-service
+  template:
+    metadata:
+      labels:
+        app: ai-service
+    spec:
+      containers:
+        - name: ai-service
+          image: my-ai-service:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8089
+          envFrom:
+            - configMapRef:
+                name: voltnexus-config
+            - secretRef:
+                name: ai-service-secret
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ai-service
+  namespace: voltnexus
+spec:
+  selector:
+    app: ai-service
+  ports:
+    - protocol: TCP
+      port: 8089
+      targetPort: 8089
+  type: ClusterIP

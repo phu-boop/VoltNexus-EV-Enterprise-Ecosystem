@@ -1,0 +1,59 @@
+import axios from "axios";
+
+const apiConstSaleService = axios.create({
+  baseURL: `${import.meta.env.VITE_API_BASE_URL}/sales/`,
+  headers: { "Content-Type": "application/json" },
+  withCredentials: true,
+});
+
+// Lấy token từ sessionStorage
+apiConstSaleService.interceptors.request.use((config) => {
+  const token = sessionStorage.getItem("token");
+  if (token) config.headers.Authorization = `Bearer ${token}`;
+
+  const email = sessionStorage.getItem("email");
+  const role = sessionStorage.getItem("roles");
+  const roles = sessionStorage.getItem("roles");
+  const userId = sessionStorage.getItem("userId") || sessionStorage.getItem("id_user");
+  const profileId = sessionStorage.getItem("profileId");
+  const dealerId = sessionStorage.getItem("dealerId");
+
+  if (email) config.headers["X-User-Email"] = email;
+  if (role) config.headers["X-User-Role"] = role;
+  if (roles) config.headers["X-User-Roles"] = roles;
+  if (userId) config.headers["X-User-Id"] = userId;
+  if (profileId) config.headers["X-User-ProfileId"] = profileId;
+  if (dealerId) config.headers["X-User-DealerId"] = dealerId;
+
+  return config;
+});
+
+// Xử lý khi token hết hạn
+apiConstSaleService.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    if (error.response && error.response.status === 401) {
+      try {
+        // Gọi refresh API
+        const res = await axios.post(
+          `${import.meta.env.VITE_API_BASE_URL}/auth/refresh`,
+          {},
+          { withCredentials: true }
+        );
+
+        // Lấy accessToken mới
+        const newToken = res.data.data.accessToken;
+        sessionStorage.setItem("token", newToken);
+        // Gửi lại request cũ với token mới
+        error.config.headers["Authorization"] = `Bearer ${newToken}`;
+        return apiConstSaleService(error.config);
+      } catch (refreshError) {
+        sessionStorage.removeItem("token");
+        window.location.href = "/login";
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
+export default apiConstSaleService;

@@ -1,0 +1,3 @@
+testCase,test_email,test_password,role,expectedStatus,bugType,description
+VALID_ADMIN,admin@gmail.com,123123123,ADMIN,200,PASS,Valid admin login
+
