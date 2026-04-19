@@ -37,12 +37,16 @@ jobs:
           cd frontend/my-app
           npx playwright install --with-deps
 
-      # Lưu ý: Ở đây chúng ta không bật full backend vì giới hạn RAM của GitHub.
-      # Chúng ta chỉ chạy test những phần "Public" hoặc dùng Mock.
+      - name: Build Frontend
+        run: |
+          cd frontend/my-app
+          npm run build
+
       - name: Run Playwright Tests (Smoke)
         run: |
           cd frontend/my-app
-          npm run test:e2e:ci || true
+          # Chạy test với bản build chính thức để ổn định nhất
+          npx playwright test --project=public || true
 
       - name: Publish to GitHub Pages
         if: always()
