@@ -58,3 +58,19 @@ export const getCentralTransactionHistory = (filters) => {
     params: filters,
   });
 };
+
+/**
+ * Đồng bộ dữ liệu doanh số.
+ * Tương ứng với: POST /api/sync/sales
+ */
+export const syncSalesData = () => {
+  return apiConstReportService.post("/api/sync/sales");
+};
+
+/**
+ * Đồng bộ dữ liệu tồn kho.
+ * Tương ứng với: POST /api/sync/inventory
+ */
+export const syncInventoryData = () => {
+  return apiConstReportService.post("/api/sync/inventory");
+};

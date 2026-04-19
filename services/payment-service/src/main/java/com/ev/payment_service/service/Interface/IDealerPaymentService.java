@@ -43,6 +43,11 @@ public interface IDealerPaymentService {
     Page<DealerDebtSummaryResponse> getDealerDebtSummary(Pageable pageable);
 
     /**
+     * Lấy tổng hợp công nợ theo dealerId
+     */
+    DealerDebtSummaryResponse getDealerDebtSummaryByDealerId(UUID dealerId);
+
+    /**
      * Kiểm tra xem đơn hàng đã có hóa đơn chưa
      */
     boolean hasInvoiceForOrder(UUID orderId);

@@ -35,19 +35,12 @@ public class VnpayGatewayController {
     public ResponseEntity<Map<String, String>> initiateB2CPayment(
             @RequestBody VnpayInitiateRequest body,
             HttpServletRequest request) {
+        log.info("Received initiate-b2c request - CustomerId: {}, OrderId: {}, PaymentAmount: {}",
+            body.getCustomerId(), body.getOrderId(), body.getPaymentAmount());
+        String ipAddr = getClientIpAddr(request); // Lấy IP
+        String paymentUrl = vnpayService.initiateB2CPayment(body, ipAddr);
 
-        try {
-            log.info("Received initiate-b2c request - CustomerId: {}, OrderId: {}, PaymentAmount: {}",
-                    body.getCustomerId(), body.getOrderId(), body.getPaymentAmount());
-            String ipAddr = getClientIpAddr(request); // Lấy IP
-            String paymentUrl = vnpayService.initiateB2CPayment(body, ipAddr);
-
-            return ResponseEntity.status(HttpStatus.CREATED).body(Map.of("url", paymentUrl));
-        } catch (Exception e) {
-            log.error("Error initiating VNPAY payment - Error: {}", e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("message", "Internal error: " + e.getMessage()));
-        }
+        return ResponseEntity.status(HttpStatus.CREATED).body(Map.of("url", paymentUrl));
     }
 
     /**
