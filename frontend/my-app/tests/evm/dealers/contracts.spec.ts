@@ -1,18 +1,29 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
 
-test.describe('Contracts Management', () => {
+test.describe('EVM Dealer Contracts', () => {
+    let page: Page;
 
-    test.beforeEach(async ({ page }) => {
-        // TODO: Login logic or session restoring
-        // e.g., await page.goto('/evm/admin/dashboard') OR /dealer/dashboard
+    test.beforeAll(async ({ browser }) => {
+        page = await browser.newPage();
+
+        // Login as Admin
+        await page.goto('http://localhost:5173/login');
+        await page.fill('input[name="email"]', 'admin@gmail.com');
+        await page.fill('input[name="password"]', '123123123');
+        await page.click('button[type="submit"]');
+
+        const confirmBtn = page.getByRole('button', { name: /Truy cập ngay/i });
+        await expect(confirmBtn).toBeVisible({ timeout: 15000 });
+        await confirmBtn.click();
     });
 
-    test('should load the main page correctly', async ({ page }) => {
-        // TODO: Implement proper assertion
-        // await expect(page.locator('h1')).toBeVisible();
+    test.afterAll(async () => {
+        if (page) await page.close();
     });
 
-    test('should perform main action successfully', async ({ page }) => {
-        // TODO: Implement happy path testing logic
+    test('should manage dealer contracts', async () => {
+        await page.goto('http://localhost:5173/evm/admin/dealers/contracts');
+        await expect(page.locator('h1', { hasText: /Hợp Đồng Hệ Thống/i })).toBeVisible();
+        await expect(page.locator('table')).toBeVisible();
     });
 });
