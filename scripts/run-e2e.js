@@ -14,16 +14,17 @@ const runFolderName = `run-${timestamp}`;
 
 // 3. Khai báo các đường dẫn thư mục
 const projectRoot = path.join(__dirname, '..');
+const frontendRoot = path.join(projectRoot, 'frontend', 'my-app');
 const reportBaseDir = path.join(projectRoot, 'e2e-report');
 const runDir = path.join(reportBaseDir, runFolderName);
-const defaultReportDir = path.join(projectRoot, 'playwright-report');
+const defaultReportDir = path.join(frontendRoot, 'playwright-report');
 
 // Hàm chạy test an toàn (không crash script khi test fail)
 function runTests() {
   try {
     console.log(`\n🚀 Bắt đầu chạy Playwright test cho: ${folder || 'Toàn bộ dự án'}`);
-    // Chạy Playwright và inherit stdio để log hiển thị lên terminal
-    execSync(`npx playwright test ${folder}`, { stdio: 'inherit', cwd: projectRoot });
+    // Sử dụng npm exec thay vì npx để tránh npx tự tải sai phiên bản Playwright gây lỗi test.describe()
+    execSync(`npm exec playwright -- test ${folder}`, { stdio: 'inherit', cwd: frontendRoot });
     console.log(`\n✅ Tất cả test cases đều PASS!`);
   } catch (error) {
     console.error(`\n⚠️ Có một số test FAILED. Tiến hành xuất report để kiểm tra lỗi...`);
