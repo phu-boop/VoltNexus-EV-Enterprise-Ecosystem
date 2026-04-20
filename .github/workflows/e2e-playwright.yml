@@ -1,0 +1,60 @@
+name: Playwright E2E Tests
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+  workflow_dispatch: # Cho phép trigger bằng tay trên giao diện GitHub
+
+# Cho phép GitHub Actions deploy lên GitHub Pages
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+jobs:
+  e2e-tests:
+    timeout-minutes: 60
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 1️⃣ Checkout Source Code (Pull code từ nhánh hiện tại)
+        uses: actions/checkout@v4
+
+      - name: 2️⃣ Checkout old GitHub Pages data (Để giữ History)
+        # Bước này cực kỳ quan trọng: Lấy lại các report cũ từ nhánh gh-pages
+        # và để vào folder e2e-report. Nhờ đó script Nodejs sẽ gộp báo cáo cũ + báo cáo mới.
+        uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          path: e2e-report
+        continue-on-error: true # Sẽ lỗi ở lần chạy đầu tiên vì chưa có nhánh gh-pages, bỏ qua lỗi này.
+
+      - name: 3️⃣ Cài đặt Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: 4️⃣ Cài đặt Dependencies dự án
+        # Dùng 'npm install' thay cho 'npm ci' nếu bạn chưa commit package-lock.json. Thực tế nên dùng 'npm ci'
+        run: npm install
+
+      - name: 5️⃣ Cài đặt Playwright Browser (Chromium, Firefox, Webkit)
+        run: npx playwright install --with-deps
+
+      - name: 6️⃣ Chạy Script Test E2E và Build Dashboard
+        # Lời gọi script ta đã viết ở trên
+        run: node scripts/run-e2e.js
+
+      - name: 7️⃣ Deploy Báo Cáo lên GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        # Luôn chạy việc publish report, kể cả khi test fail (Rất quan trọng cho QA)
+        if: always()
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./e2e-report
+          # Tính năng Keep Files giúp KHÔNG ghi đè thư mục cũ.
+          # Tuy ta đã gộp bằng script rồi, nhưng bật cái này vẫn an toàn hơn
+          keep_files: true
+          commit_message: "docs(e2e): update playwright report dashboard"
