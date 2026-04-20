@@ -1,0 +1,1 @@
+npx gh-pages -d playwright-report --dest e2e-report --add

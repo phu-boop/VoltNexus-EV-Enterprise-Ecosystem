@@ -271,10 +271,18 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git fetch
           git checkout gh-pages || git checkout --orphan gh-pages
-          find . -maxdepth 1 -not -name 'report.html' -not -name '.git' -not -name '.' -delete || true
-          if [ -f newman/report.html ]; then cp -f newman/report.html ./; fi
-          git add report.html
-          git commit -m "Update test report [skip ci]" || exit 0
+          
+          # Cập nhật thư mục api-report và portal index.html
+          mkdir -p api-report
+          if [ -f newman/report.html ]; then 
+            cp -f newman/report.html api-report/index.html
+          fi
+          if [ -f infrastructure/github-pages/index.html ]; then
+            cp -f infrastructure/github-pages/index.html ./index.html
+          fi
+          
+          git add api-report index.html
+          git commit -m "Update API test report & Portal [skip ci]" || exit 0
           git push origin gh-pages --force
 
       - name: "Notify: Jira Bug on API Failure"

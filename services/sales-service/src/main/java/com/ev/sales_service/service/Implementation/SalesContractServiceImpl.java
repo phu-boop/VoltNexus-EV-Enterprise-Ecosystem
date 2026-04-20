@@ -8,6 +8,7 @@ import com.ev.sales_service.entity.SalesContract;
 import com.ev.sales_service.entity.SalesOrder;
 import com.ev.sales_service.enums.ContractStatus;
 import com.ev.sales_service.enums.OrderStatusB2C;
+import com.ev.sales_service.enums.PaymentStatus;
 import com.ev.sales_service.repository.SalesContractRepository;
 import com.ev.sales_service.repository.SalesOrderRepositoryB2C;
 import com.ev.sales_service.service.Interface.SalesContractService;
@@ -272,6 +273,7 @@ public class SalesContractServiceImpl implements SalesContractService {
         SalesOrder salesOrder = salesOrderRepository.findById(contract.getSalesOrder().getOrderId())
                 .orElseThrow(() -> new AppException(ErrorCode.DATABASE_ERROR));
         salesOrder.setOrderStatusB2C(OrderStatusB2C.CANCELLED);
+        salesOrder.setPaymentStatus(PaymentStatus.CANCELLED);
         salesOrderRepository.save(salesOrder);
         salesContractRepository.save(contract);
     }

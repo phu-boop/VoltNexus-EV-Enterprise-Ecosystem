@@ -5,7 +5,7 @@ metadata:
   name: gateway
   namespace: voltnexus
 spec:
-  replicas: 1
+  replicas: 2 # Nâng lên 2 để demo load balancing
   selector:
     matchLabels:
       app: gateway
@@ -16,8 +16,15 @@ spec:
     spec:
       containers:
         - name: gateway
-          image: my-gateway:latest
+          image: my-gateway:latest # Khớp với image bạn đã build
           imagePullPolicy: IfNotPresent
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
           ports:
             - containerPort: 8080
           envFrom:
@@ -257,7 +264,7 @@ metadata:
   name: sales-service
   namespace: voltnexus
 spec:
-  replicas: 1
+  replicas: 2 # Sales Service thường chịu tải cao nhất
   selector:
     matchLabels:
       app: sales-service
@@ -270,6 +277,13 @@ spec:
         - name: sales-service
           image: my-sales-service:latest
           imagePullPolicy: IfNotPresent
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
           ports:
             - containerPort: 8086
           envFrom:

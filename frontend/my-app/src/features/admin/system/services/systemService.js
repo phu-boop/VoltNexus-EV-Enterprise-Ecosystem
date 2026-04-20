@@ -17,3 +17,11 @@ export const callBackfillDealers = () => {
 export const callBackfillVehicles = () => {
   return apiConstReportService.post("/api/v1/admin/backfill/vehicles");
 };
+
+/**
+ * Đồng bộ Metadata Hệ thống.
+ * Tương ứng với: POST /api/sync/metadata
+ */
+export const syncMetadata = () => {
+  return apiConstReportService.post("/api/sync/metadata");
+};

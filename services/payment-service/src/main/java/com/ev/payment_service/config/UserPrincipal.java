@@ -21,6 +21,7 @@ public class UserPrincipal implements Serializable {
     private String email;
     private String role; // "ADMIN", "DEALER_STAFF"
     private UUID profileId; // profileId của (Admin, EVMStaff, DealerStaff, DealerManager)
+    private UUID userId;
     private UUID dealerId; // (Sẽ dùng sau)
 
     public Collection<? extends GrantedAuthority> getAuthorities() {

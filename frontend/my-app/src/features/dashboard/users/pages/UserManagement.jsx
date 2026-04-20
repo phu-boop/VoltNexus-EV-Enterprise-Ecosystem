@@ -124,10 +124,11 @@ export default function UserManagement() {
 
   const handleViewUser = async (user) => {
     try {
-      // Fetch detailed profile
-      const response = await mngUserService.getProfile(user.id);
+      // Fetch detailed profile for the selected user
+      const response = await mngUserService.getById(user.id);
       if (response.data.code === "1000") {
-        setViewingUser(response.data.data.user);
+        const userDetail = response.data.data?.user || response.data.data;
+        setViewingUser(userDetail);
         setMode("view");
         setModalOpen(true);
       }

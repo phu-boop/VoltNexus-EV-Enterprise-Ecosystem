@@ -36,7 +36,7 @@ public class GatewayHeaderFilter extends OncePerRequestFilter {
     private static final String HEADER_USER_ID = "X-User-Id";
     private static final String HEADER_PROFILE_ID = "X-User-ProfileId";
 
-    @Value("${jwt.secret-key}")
+    @Value("${jwt.secret-key:404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}")
     private String secretKey;
 
     @Override
