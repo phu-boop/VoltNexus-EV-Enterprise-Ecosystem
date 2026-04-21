@@ -347,6 +347,13 @@ spec:
         - name: vehicle-service
           image: my-vehicle-service:latest
           imagePullPolicy: IfNotPresent
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
           ports:
             - containerPort: 8087
           envFrom:

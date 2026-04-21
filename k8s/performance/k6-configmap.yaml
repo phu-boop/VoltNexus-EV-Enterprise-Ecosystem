@@ -16,7 +16,7 @@ data:
                     timeUnit: '1s',
                     duration: '2m',          // Chạy trong 2 phút để biểu đồ Grafana hiện đẹp
                     preAllocatedVUs: 10,     // Chuẩn bị sẵn 10 users
-                    maxVUs: 50,              // Tối đa 50 users
+                    maxVUs: 100,              // Tối đa 50 users
                 },
             },
             thresholds: {
