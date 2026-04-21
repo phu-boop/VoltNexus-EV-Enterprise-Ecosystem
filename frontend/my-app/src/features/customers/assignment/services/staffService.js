@@ -1,6 +1,24 @@
 // Service để lấy thông tin nhân viên từ User Service
 import apiConstUserService from "../../../../services/apiConstUserService";
 
+const isUuid = (value) =>
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+    String(value || "")
+  );
+
+const resolveStaffId = (staff) => {
+  // Ưu tiên userId thực để tương thích endpoint assign của customer-service.
+  const candidates = [
+    staff.id_user,
+    staff.id,
+    staff.userId,
+    staff.memberId,
+    staff.staffId,
+  ];
+  const preferred = candidates.find((candidate) => isUuid(candidate));
+  return preferred ? String(preferred) : "";
+};
+
 const normalizeStaffList = (rawList) => {
   if (!Array.isArray(rawList)) {
     return [];
@@ -8,9 +26,8 @@ const normalizeStaffList = (rawList) => {
 
   return rawList.map((staff) => ({
     ...staff,
-    // Endpoint /users/dealer-staffs trả memberId thay vì staffId.
-    staffId: String(staff.staffId || staff.memberId || staff.id || staff.userId || ""),
-  }));
+    staffId: resolveStaffId(staff),
+  })).filter((staff) => !!staff.staffId);
 };
 
 const getActiveStaff = (staffList) =>
@@ -54,16 +71,17 @@ const staffService = {
       const resolvedDealerId = await resolveDealerId(dealerId);
 
       try {
-        const response = await apiConstUserService.get(
-          `/users/profile/${resolvedDealerId}`
-        );
-        const staffList = normalizeStaffList(response?.data?.data || []);
-        return getActiveStaff(staffList);
-      } catch {
-        // Fallback: dùng endpoint dealer-staffs nếu profile endpoint lỗi 5xx.
+        // Ưu tiên endpoint này vì trả id (userId) ổn định cho flow phân công.
         const response = await apiConstUserService.get("/users/dealer-staffs", {
           params: { dealerId: resolvedDealerId },
         });
+        const staffList = normalizeStaffList(response?.data?.data || []);
+        return getActiveStaff(staffList);
+      } catch {
+        // Fallback: giữ tương thích endpoint profile cũ.
+        const response = await apiConstUserService.get(
+          `/users/profile/${resolvedDealerId}`
+        );
         const staffList = normalizeStaffList(response?.data?.data || []);
         return getActiveStaff(staffList);
       }

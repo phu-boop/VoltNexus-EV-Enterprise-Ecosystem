@@ -42,7 +42,7 @@ export const mngUserService = {
     // 🔹 NEW: Search & Page (đã fix backend)
     search: (params) => apiConst.get('/users/search', { params }),
 
-    getById: (id) => apiConst.get(`/users/${id}`),
+    getById: (id) => apiConst.get(`/users/internal/${id}`),
 
     // ----- CREATE -----
     createAmind: (userData) => apiConst.post('/users/register/admin', userData),

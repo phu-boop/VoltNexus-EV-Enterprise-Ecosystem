@@ -102,6 +102,18 @@ public class UserService {
         return userMapper.usertoUserRespond(user);
     }
 
+    public UserRespond getUserByDealerStaffId(UUID staffId) {
+        DealerStaffProfile profile = dealerStaffProfileRepository.findById(staffId)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+
+        User user = profile.getUser();
+        if (user == null) {
+            throw new AppException(ErrorCode.USER_NOT_FOUND);
+        }
+
+        return userMapper.usertoUserRespond(user);
+    }
+
     public UserRespond createUser(UserRequest userRequest) {
         if (userRepository.existsByEmail(userRequest.getEmail())) {
             throw new AppException(ErrorCode.EMAIL_ALREADY_EXISTS);
@@ -458,6 +470,16 @@ public class UserService {
         }
 
         userRepository.delete(targetUser);
+    }
+
+    public UserRespond changeUserStatus(UUID id, UserStatus status) {
+        User targetUser = userRepository.findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+
+        targetUser.setStatus(status);
+        userRepository.save(targetUser);
+
+        return userMapper.usertoUserRespond(targetUser);
     }
 
     public ProfileRespond getCurrentProfileByIdUser(UUID id_user) {

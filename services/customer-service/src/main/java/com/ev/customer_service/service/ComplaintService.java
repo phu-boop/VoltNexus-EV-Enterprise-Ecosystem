@@ -30,6 +30,7 @@ import java.time.format.DateTimeFormatter;
 import java.security.SecureRandom;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.time.LocalDate;
 
 /**
  * Service xử lý logic nghiệp vụ cho Quản lý Phản hồi & Khiếu nại
@@ -249,7 +250,9 @@ public class ComplaintService {
             spec = spec.and(ComplaintSpecification.hasCustomerId(filter.getCustomerId()));
         }
         if (filter.getStartDate() != null && filter.getEndDate() != null) {
-            spec = spec.and(ComplaintSpecification.createdBetween(filter.getStartDate(), filter.getEndDate()));
+            LocalDateTime startDateTime = filter.getStartDate().atStartOfDay();
+            LocalDateTime endDateTime = filter.getEndDate().atTime(23, 59, 59);
+            spec = spec.and(ComplaintSpecification.createdBetween(startDateTime, endDateTime));
         }
 
         // Sorting

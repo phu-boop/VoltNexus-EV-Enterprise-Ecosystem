@@ -124,10 +124,11 @@ export default function UserManagement() {
 
   const handleViewUser = async (user) => {
     try {
-      // Fetch detailed profile
-      const response = await mngUserService.getProfile(user.id);
+      // Fetch detailed profile for the selected user
+      const response = await mngUserService.getById(user.id);
       if (response.data.code === "1000") {
-        setViewingUser(response.data.data.user);
+        const userDetail = response.data.data?.user || response.data.data;
+        setViewingUser(userDetail);
         setMode("view");
         setModalOpen(true);
       }
@@ -162,6 +163,24 @@ export default function UserManagement() {
     }
   };
 
+  const handleToggleUserStatus = async (user) => {
+    const nextStatus = user.status === "ACTIVE" ? "INACTIVE" : "ACTIVE";
+
+    try {
+      await mngUserService.changeStatus(user.id, nextStatus);
+      showMessage(
+        nextStatus === "ACTIVE"
+          ? "Đã kích hoạt tài khoản"
+          : "Đã ngừng hoạt động tài khoản"
+      );
+      fetchUsers();
+      fetchStatistics();
+    } catch (error) {
+      console.error("Error toggling user status:", error);
+      Swal.fire("Lỗi!", "Không thể cập nhật trạng thái tài khoản.", "error");
+    }
+  };
+
   const handleSubmitUser = async (userData) => {
     try {
       if (mode === "edit") {
@@ -187,6 +206,7 @@ export default function UserManagement() {
           managementLevel: userData.managementLevel || "",
           approvalLimit: userData.approvalLimit || "",
           specialization: userData.specialization || "",
+          status: userData.status || editingUser?.status || "ACTIVE",
         };
 
         // 🧩 Bỏ roles nếu có (tránh gửi lên API)
@@ -263,6 +283,11 @@ export default function UserManagement() {
               break;
             default:
               throw new Error("Unknown user role");
+          }
+
+          const targetUserId = userData.id || editingUser?.id;
+          if (targetUserId && updateData.status) {
+            await mngUserService.changeStatus(targetUserId, updateData.status);
           }
 
           showMessage("Cập nhật user thành công");
@@ -456,6 +481,7 @@ export default function UserManagement() {
         onEdit={handleEditUser}
         onView={handleViewUser}
         onDelete={handleDeleteUser}
+        onToggleStatus={handleToggleUserStatus}
         isLoading={loading}
         selectedUsers={selectedUsers}
         onSelectionChange={setSelectedUsers}

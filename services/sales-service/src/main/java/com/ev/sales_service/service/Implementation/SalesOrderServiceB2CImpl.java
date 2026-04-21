@@ -865,6 +865,7 @@ public class SalesOrderServiceB2CImpl implements SalesOrderServiceB2C {
         }
 
         salesOrder.setOrderStatusB2C(OrderStatusB2C.CANCELLED);
+        salesOrder.setPaymentStatus(PaymentStatus.CANCELLED);
 
         // Add tracking entry
         OrderTracking tracking = OrderTracking.builder()
@@ -1026,6 +1027,7 @@ public class SalesOrderServiceB2CImpl implements SalesOrderServiceB2C {
             log.info("Order {} confirmed by customer", orderId);
         } else {
             order.setOrderStatusB2C(OrderStatusB2C.CANCELLED);
+            order.setPaymentStatus(PaymentStatus.CANCELLED);
             log.info("Order {} cancelled by customer", orderId);
         }
 

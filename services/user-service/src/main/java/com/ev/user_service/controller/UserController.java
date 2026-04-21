@@ -83,6 +83,13 @@ public class UserController {
         return ResponseEntity.ok(ApiRespond.success("Get User Successfully", userService.getUserById(id)));
     }
 
+    @GetMapping("/internal/staff/{staffId}")
+    public ResponseEntity<ApiRespond<UserRespond>> getUserByDealerStaffIdInternal(@PathVariable UUID staffId) {
+        return ResponseEntity.ok(ApiRespond.success(
+                "Get Dealer Staff Successfully",
+                userService.getUserByDealerStaffId(staffId)));
+    }
+
     @PreAuthorize("hasAnyRole('ADMIN')")
     @PostMapping("/register")
     public ResponseEntity<ApiRespond<UserRespond>> createUser(
@@ -171,6 +178,16 @@ public class UserController {
     public ResponseEntity<ApiRespond<Void>> deleteUser(@PathVariable UUID id) {
         userService.deleteUser(id);
         return ResponseEntity.ok(ApiRespond.success("Delete User Successfully", null));
+    }
+
+    @PreAuthorize("hasAnyRole('ADMIN', 'EVM_STAFF', 'DEALER_MANAGER')")
+    @PatchMapping("/{id}/status")
+    public ResponseEntity<ApiRespond<UserRespond>> changeUserStatus(
+            @PathVariable UUID id,
+            @Valid @RequestBody ChangeUserStatusRequest request) {
+        return ResponseEntity.ok(ApiRespond.success(
+                "Update user status successfully",
+                userService.changeUserStatus(id, request.getStatus())));
     }
 
     @PostMapping("/{userId}/fcm-token")

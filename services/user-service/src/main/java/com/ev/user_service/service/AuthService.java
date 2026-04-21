@@ -78,6 +78,11 @@ public class AuthService {
     public LoginRespond login(String email, String password) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+
+        if (user.getStatus() != UserStatus.ACTIVE) {
+            throw new AppException(ErrorCode.ACCOUNT_LOCKED);
+        }
+
         if (passwordEncoder.matches(password, user.getPassword())) {
             // === 4. LOGIC MỚI ĐỂ LẤY DEALER ID ===
 

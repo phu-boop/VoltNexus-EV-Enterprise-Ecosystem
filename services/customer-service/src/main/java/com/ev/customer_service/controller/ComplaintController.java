@@ -118,7 +118,7 @@ public class ComplaintController {
     @PreAuthorize("hasAnyRole('CUSTOMER', 'DEALER_STAFF', 'DEALER_MANAGER')")
     public ResponseEntity<ApiResponse<ComplaintResponse>> getComplaintById(@PathVariable Long id) {
         ComplaintResponse response = complaintService.getComplaintById(id);
-        return ResponseEntity.ok(ApiResponse.success(response));
+        return ResponseEntity.ok(ApiResponse.success("Complaint retrieved successfully", response));
     }
 
     /**
@@ -140,6 +140,10 @@ public class ComplaintController {
     @PreAuthorize("hasAnyRole('DEALER_STAFF', 'DEALER_MANAGER', 'ADMIN', 'EVM_STAFF')")
     public ResponseEntity<ApiResponse<Page<ComplaintResponse>>> filterComplaints(
             @Valid @RequestBody ComplaintFilterRequest filter) {
+        if (filter.getStartDate() != null && filter.getEndDate() != null && filter.getStartDate().isAfter(filter.getEndDate())) {
+            throw new IllegalArgumentException("Start date cannot be after end date");
+        }
+
         log.info("Filtering complaints with criteria: {}", filter);
         Page<ComplaintResponse> page = complaintService.filterComplaints(filter);
         return ResponseEntity.ok(ApiResponse.success(page));
@@ -164,9 +168,13 @@ public class ComplaintController {
             endDate = LocalDateTime.now();
         }
 
+        if (startDate.isAfter(endDate)) {
+            throw new IllegalArgumentException("Start date cannot be after end date");
+        }
+
         log.info("Getting complaint statistics for dealer {} from {} to {}", dealerId, startDate, endDate);
         ComplaintStatisticsResponse statistics = complaintService.getStatistics(dealerId, startDate, endDate);
-        return ResponseEntity.ok(ApiResponse.success(statistics));
+        return ResponseEntity.ok(ApiResponse.success("Statistics loaded successfully", statistics));
     }
 
     /**
