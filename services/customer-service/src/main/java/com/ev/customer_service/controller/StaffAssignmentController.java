@@ -86,10 +86,10 @@ public class StaffAssignmentController {
             StaffDTO staff = staffAssignmentService.getAssignedStaff(customerId);
             
             if (staff == null) {
-                return ResponseEntity.ok(ApiRespond.success("No staff assigned to this customer", null));
+                return ResponseEntity.ok(ApiRespond.success("Staff assignments loaded", null));
             }
             
-            return ResponseEntity.ok(ApiRespond.success("Assigned staff retrieved successfully", staff));
+            return ResponseEntity.ok(ApiRespond.success("Staff assignments loaded", staff));
         } catch (Exception e) {
             log.error("Error getting assigned staff: ", e);
             throw e;

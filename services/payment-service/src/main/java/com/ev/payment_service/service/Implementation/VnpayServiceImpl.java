@@ -12,6 +12,7 @@ import com.ev.payment_service.repository.DealerInvoiceRepository;
 import com.ev.payment_service.repository.DealerTransactionRepository;
 import com.ev.payment_service.repository.DealerDebtRecordRepository;
 import com.ev.payment_service.service.Interface.IVnpayService;
+import com.ev.common_lib.dto.respond.ApiRespond;
 import com.ev.common_lib.exception.AppException;
 import com.ev.common_lib.exception.ErrorCode;
 import javax.crypto.Mac;
@@ -33,6 +34,10 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.RestClientException;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -77,11 +82,15 @@ public class VnpayServiceImpl implements IVnpayService {
             // 1. Tìm hoặc tạo PaymentRecord (công nợ)
             PaymentRecord record = null;
             if (request.getOrderId() != null) {
+                validateB2COrderForPayment(request.getOrderId());
+
                 log.info("Creating PaymentRecord for orderId: {}", request.getOrderId());
                 record = paymentRecordService.findOrCreateRecord(
                         request.getOrderId(),
                         request.getCustomerId(),
                         request.getTotalAmount());
+
+                validateRecordCanInitiateB2CPayment(record, request.getOrderId());
             } else {
                 // Tạo PaymentRecord tạm cho booking deposit (chưa có orderId)
                 log.info("No orderId provided - Creating temporary PaymentRecord for booking deposit");
@@ -168,6 +177,76 @@ public class VnpayServiceImpl implements IVnpayService {
         }
     }
 
+    private void validateB2COrderForPayment(UUID orderId) {
+        String url = UriComponentsBuilder.fromHttpUrl(salesServiceUrl)
+                .path("/api/v1/sales-orders/{orderId}")
+                .buildAndExpand(orderId)
+                .toUriString();
+
+        ParameterizedTypeReference<ApiRespond<Map<String, Object>>> responseType =
+                new ParameterizedTypeReference<ApiRespond<Map<String, Object>>>() {
+                };
+
+        try {
+            ResponseEntity<ApiRespond<Map<String, Object>>> response = restTemplate.exchange(
+                    url,
+                    HttpMethod.GET,
+                    null,
+                    responseType);
+
+            ApiRespond<Map<String, Object>> apiResponse = response.getBody();
+            if (apiResponse == null || apiResponse.getData() == null) {
+                log.error("Sales order validation failed - Empty response for OrderId: {}", orderId);
+                throw new AppException(ErrorCode.DOWNSTREAM_SERVICE_UNAVAILABLE);
+            }
+
+            Map<String, Object> orderData = apiResponse.getData();
+            String orderType = asUpperCase(orderData.get("typeOder"));
+            String paymentStatus = asUpperCase(orderData.get("paymentStatus"));
+            String orderStatusB2C = asUpperCase(orderData.get("orderStatusB2C"));
+
+            if (!"B2C".equals(orderType)) {
+                log.error("Invalid order type for initiate B2C payment - OrderId: {}, typeOder: {}", orderId, orderType);
+                throw new AppException(ErrorCode.INVALID_ORDER_TYPE);
+            }
+
+            if ("PAID".equals(paymentStatus)) {
+                log.error("Order is already paid - OrderId: {}", orderId);
+                throw new AppException(ErrorCode.INVALID_STATE);
+            }
+
+            if ("CANCELLED".equals(orderStatusB2C)) {
+                log.error("Order is cancelled, cannot initiate payment - OrderId: {}", orderId);
+                throw new AppException(ErrorCode.INVALID_STATE);
+            }
+        } catch (HttpClientErrorException.NotFound e) {
+            log.warn("Sales order not found while initiating B2C payment - OrderId: {}", orderId);
+            throw new AppException(ErrorCode.ORDER_NOT_FOUND);
+        } catch (RestClientException e) {
+            log.error("Failed to validate sales order - OrderId: {}, Error: {}", orderId, e.getMessage(), e);
+            throw new AppException(ErrorCode.DOWNSTREAM_SERVICE_UNAVAILABLE);
+        }
+    }
+
+    private void validateRecordCanInitiateB2CPayment(PaymentRecord record, UUID orderId) {
+        String recordStatus = asUpperCase(record.getStatus());
+        BigDecimal amountPaid = record.getAmountPaid() != null ? record.getAmountPaid() : BigDecimal.ZERO;
+        BigDecimal totalAmount = record.getTotalAmount() != null ? record.getTotalAmount() : BigDecimal.ZERO;
+        BigDecimal remainingAmount = record.getRemainingAmount() != null
+                ? record.getRemainingAmount()
+                : totalAmount.subtract(amountPaid);
+
+        if ("PAID".equals(recordStatus) || remainingAmount.compareTo(BigDecimal.ZERO) <= 0) {
+            log.error("PaymentRecord is fully paid, cannot initiate new payment - OrderId: {}, RecordId: {}",
+                    orderId, record.getRecordId());
+            throw new AppException(ErrorCode.INVALID_STATE);
+        }
+    }
+
+    private String asUpperCase(Object value) {
+        return value == null ? "" : value.toString().trim().toUpperCase(Locale.ROOT);
+    }
+
     @Override
     @Transactional
     public String initiateDealerInvoicePayment(UUID invoiceId,
@@ -184,8 +263,27 @@ public class VnpayServiceImpl implements IVnpayService {
                 throw new AppException(ErrorCode.FORBIDDEN);
             }
 
+            String invoiceStatus = invoice.getStatus() != null ? invoice.getStatus().trim().toUpperCase() : "";
+            if ("PAID".equals(invoiceStatus)) {
+                log.error("Invoice is already PAID - InvoiceId: {}, DealerId: {}", invoiceId, dealerId);
+                throw new AppException(ErrorCode.INVALID_STATE);
+            }
+
             BigDecimal amountPaid = invoice.getAmountPaid() != null ? invoice.getAmountPaid() : BigDecimal.ZERO;
-            BigDecimal remaining = invoice.getTotalAmount().subtract(amountPaid);
+            List<DealerTransaction> allTransactions = dealerTransactionRepository
+                    .findByDealerInvoice_DealerInvoiceId(invoiceId);
+            BigDecimal pendingAmount = allTransactions.stream()
+                    .filter(t -> "PENDING_CONFIRMATION".equals(t.getStatus()) || "PENDING_GATEWAY".equals(t.getStatus()))
+                    .map(DealerTransaction::getAmount)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+            BigDecimal remaining = invoice.getTotalAmount().subtract(amountPaid).subtract(pendingAmount);
+
+            if (remaining.compareTo(BigDecimal.ZERO) <= 0) {
+                log.error("Invoice has no remaining amount for VNPAY payment - Invoice: {}, Remaining: {}, Paid: {}, Pending: {}",
+                        invoiceId, remaining, amountPaid, pendingAmount);
+                throw new AppException(ErrorCode.INVALID_STATE);
+            }
 
             if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
                 log.error("Invalid VNPAY amount {} for invoice {}", amount, invoiceId);
@@ -193,8 +291,8 @@ public class VnpayServiceImpl implements IVnpayService {
             }
 
             if (amount.compareTo(remaining) > 0) {
-                log.error("Attempt to pay more than remaining amount - Invoice: {}, Amount: {}, Remaining: {}",
-                        invoiceId, amount, remaining);
+                log.error("Attempt to pay more than remaining amount - Invoice: {}, Amount: {}, Remaining: {}, Pending: {}",
+                    invoiceId, amount, remaining, pendingAmount);
                 throw new AppException(ErrorCode.BAD_REQUEST);
             }
 

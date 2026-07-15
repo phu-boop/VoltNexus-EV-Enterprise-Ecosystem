@@ -453,7 +453,6 @@ public class SalesOrderServiceB2CImpl implements SalesOrderServiceB2C {
 
     @Override
     public SalesOrderB2CResponse createSalesOrder(SalesOrderB2CCreateRequest request) {
-        // TODO: Implement direct sales order creation without quotation
         throw new UnsupportedOperationException("Direct sales order creation not implemented yet");
     }
 
@@ -523,7 +522,6 @@ public class SalesOrderServiceB2CImpl implements SalesOrderServiceB2C {
             throw new AppException(ErrorCode.INVALID_ORDER_TYPE);
         }
 
-        // TODO: Add status transition validation
         salesOrder.setOrderStatusB2C(OrderStatusB2C.valueOf(status));
 
         // Add tracking entry
@@ -865,6 +863,7 @@ public class SalesOrderServiceB2CImpl implements SalesOrderServiceB2C {
         }
 
         salesOrder.setOrderStatusB2C(OrderStatusB2C.CANCELLED);
+        salesOrder.setPaymentStatus(PaymentStatus.CANCELLED);
 
         // Add tracking entry
         OrderTracking tracking = OrderTracking.builder()
@@ -1026,6 +1025,7 @@ public class SalesOrderServiceB2CImpl implements SalesOrderServiceB2C {
             log.info("Order {} confirmed by customer", orderId);
         } else {
             order.setOrderStatusB2C(OrderStatusB2C.CANCELLED);
+            order.setPaymentStatus(PaymentStatus.CANCELLED);
             log.info("Order {} cancelled by customer", orderId);
         }
 

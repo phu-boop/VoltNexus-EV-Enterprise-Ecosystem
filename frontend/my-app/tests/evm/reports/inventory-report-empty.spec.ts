@@ -106,9 +106,7 @@ test.describe('Function 111: getInventoryReport - Empty State', () => {
     // Nếu empty message xuất hiện → đó là kết quả lý tưởng nhất
     const isEmptyState = await emptyMessage.isVisible();
     if (isEmptyState) {
-      console.log('✅ Empty State đã được trigger thành công: Bảng hiển thị "Không có dữ liệu."');
     } else {
-      console.log('ℹ️ Filter vẫn còn data. UI không crash = PASS. Để test đúng empty state, cần xóa hết data DB.');
     }
 
     // Dù empty hay có data, UI phải không crash - đây là assertion cốt lõi

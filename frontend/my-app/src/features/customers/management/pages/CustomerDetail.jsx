@@ -11,7 +11,6 @@ import {
   FiUsers,
 } from "react-icons/fi";
 import customerService from "../services/customerService";
-import staffService from "../../assignment/services/staffService";
 import { useAuthContext } from "../../../auth/AuthProvider";
 import AssignStaffModal from "../../assignment/components/AssignStaffModal";
 
@@ -31,9 +30,6 @@ const CustomerDetail = () => {
 
   // Check if user is DEALER_MANAGER
   const isDealerManager = roles?.includes("DEALER_MANAGER");
-  const dealerId =
-    sessionStorage.getItem("dealerId") || sessionStorage.getItem("profileId");
-
   useEffect(() => {
     const fetchCustomer = async () => {
       try {
@@ -42,8 +38,8 @@ const CustomerDetail = () => {
         setCustomer(data);
 
         // Fetch staff info if assigned
-        if (data.assignedStaffId && dealerId) {
-          fetchStaffInfo(data.assignedStaffId);
+        if (data.assignedStaffId) {
+          fetchAssignedStaffInfo();
         }
       } catch (err) {
         console.error(err);
@@ -52,24 +48,14 @@ const CustomerDetail = () => {
       }
     };
     fetchCustomer();
-  }, [id, dealerId]);
+  }, [id]);
 
-  const fetchStaffInfo = async (staffId) => {
+  const fetchAssignedStaffInfo = async () => {
     try {
       setLoadingStaff(true);
 
-      // Get all staff from dealer, then find the assigned one
-      const staffList = await staffService.getStaffByDealerId(dealerId);
-
-      // So sánh UUID case-insensitive
-      const staff = staffList.find((s) => {
-        const match =
-          s.staffId && s.staffId.toLowerCase() === staffId.toLowerCase();
-
-        return match;
-      });
-
-      setAssignedStaffInfo(staff);
+      const staff = await customerService.getAssignedStaff(id);
+      setAssignedStaffInfo(staff?.id ? staff : null);
     } catch (err) {
       console.error("Error fetching staff info:", err);
       setAssignedStaffInfo(null);
@@ -84,8 +70,8 @@ const CustomerDetail = () => {
       setCustomer(data);
 
       // Refresh staff info
-      if (data.assignedStaffId && dealerId) {
-        fetchStaffInfo(data.assignedStaffId);
+      if (data.assignedStaffId) {
+        fetchAssignedStaffInfo();
       } else {
         setAssignedStaffInfo(null);
       }

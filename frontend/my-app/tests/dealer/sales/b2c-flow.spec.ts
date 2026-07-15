@@ -22,14 +22,10 @@ test.describe('Luồng Bán Hàng B2C (End-to-End)', () => {
     if (testInfo.status !== testInfo.expectedStatus) {
       const screenshotPath = `test-results/failure-${testInfo.title.replace(/\s+/g, '-')}.png`;
       await page.screenshot({ path: screenshotPath, fullPage: true });
-      console.log(`Screenshot saved to ${screenshotPath}`);
-      console.log(`Current URL: ${page.url()}`);
       if (page.url() !== 'about:blank') {
           try {
               const sessionData = await page.evaluate(() => JSON.stringify(sessionStorage));
-              console.log(`Session Storage: ${sessionData}`);
           } catch (e: any) {
-              console.log(`Failed to read session storage: ${e.message}`);
           }
       }
     }
@@ -37,7 +33,6 @@ test.describe('Luồng Bán Hàng B2C (End-to-End)', () => {
 
   test('Quy trình: Tạo Báo giá -> Đơn hàng -> Hợp đồng -> Thanh toán', async ({ page, request }) => {
     // --- BƯỚC 1: TẠO BÁO GIÁ (QUOTATION) ---
-    console.log('Step 1: Creating Quotation...');
     
     // Thử truy cập trang Quotation (Dùng path chung cho cả Manager và Staff nếu cần)
     await page.goto('http://localhost:5173/dealer/manager/quotes/create');
@@ -45,7 +40,6 @@ test.describe('Luồng Bán Hàng B2C (End-to-End)', () => {
 
     // Nếu bị redirect (ví dụ sang /login hoặc /staff/dashboard), in ra để debug
     const currentUrl = page.url();
-    console.log(`Navigated to: ${currentUrl}`);
 
     if (currentUrl.includes('/login')) {
         throw new Error('Redirected to Login! Authentication failed.');
@@ -80,11 +74,9 @@ test.describe('Luồng Bán Hàng B2C (End-to-End)', () => {
     await expect(idElement).toBeVisible();
     const fullText = await idElement.textContent();
     quotationId = (fullText || "").split(':')[1].trim();
-    console.log(`Created Quotation ID: ${quotationId}`);
 
     // --- BƯỚC 2: MÔ PHỎNG KHÁCH HÀNG CHẤP NHẬN (ACCEPTED) ---
     // Vì không có UI cho khách hàng trong DashBoard Dealer, ta gọi API trực tiếp từ Test
-    console.log('Step 2: Simulating Customer Acceptance via API...');
     const token = await page.evaluate(() => sessionStorage.getItem('token'));
     await request.put(`http://localhost:8080/api/v1/quotations/${quotationId}/customer-response`, {
       data: { accepted: true, customerNote: "Tôi đồng ý mua xe này!" },
@@ -92,7 +84,6 @@ test.describe('Luồng Bán Hàng B2C (End-to-End)', () => {
     });
 
     // --- BƯỚC 3: CHUYỂN ĐỔI SANG ĐƠN HÀNG (SALES ORDER) ---
-    console.log('Step 3: Converting to Sales Order...');
     await page.goto('http://localhost:5173/dealer/manager/list/quotations');
     // Tìm báo giá vừa tạo trong list (Có thể cần reload hoặc search)
     await page.fill('input[placeholder*="Tìm kiếm"]', quotationId);
@@ -109,10 +100,8 @@ test.describe('Luồng Bán Hàng B2C (End-to-End)', () => {
     // Đợi redirect sang trang Order Detail
     await expect(page).toHaveURL(/.*\/orders\/.*/, { timeout: 20000 });
     orderId = page.url().split('/').pop() || "";
-    console.log(`Created Sales Order ID: ${orderId}`);
 
     // --- BƯỚC 4: DUYỆT ĐƠN HÀNG ---
-    console.log('Step 4: Approving Sales Order...');
     // Trạng thái đơn hàng mới B2C thường là PENDING. Phải "Gửi quản lý duyệt"
     await page.getByRole('button', { name: /Gửi quản lý duyệt/i }).click();
     await expect(page.getByText(/thành công/i)).toBeVisible();
@@ -126,7 +115,6 @@ test.describe('Luồng Bán Hàng B2C (End-to-End)', () => {
     await page.reload();
 
     // --- BƯỚC 5: TẠO HỢP ĐỒNG (CONTRACT) ---
-    console.log('Step 5: Creating Contract...');
     const createContractBtn = page.getByRole('button', { name: /Tạo hợp đồng/i });
     await expect(createContractBtn).toBeVisible();
     await createContractBtn.click();
@@ -150,7 +138,6 @@ test.describe('Luồng Bán Hàng B2C (End-to-End)', () => {
     await expect(page.getByText('Hợp đồng đã được ký')).toBeVisible();
 
     // --- BƯỚC 6: THANH TOÁN (PAYMENT) ---
-    console.log('Step 6: Payment simulation (Cash)...');
     // Điều hướng sang trang thanh toán cho Đơn hàng này
     await page.goto(`http://localhost:5173/dealer/manager/payments/pay/b2c/${orderId}`);
     
@@ -163,7 +150,6 @@ test.describe('Luồng Bán Hàng B2C (End-to-End)', () => {
     await page.getByRole('button', { name: /Xác nhận thanh toán/i }).click();
     
     await expect(page.getByText(/thành công/i)).toBeVisible();
-    console.log('B2C Sales Flow Test Completed Successfully!');
   });
 
 });

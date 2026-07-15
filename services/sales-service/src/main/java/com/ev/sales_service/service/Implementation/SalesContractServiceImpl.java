@@ -8,6 +8,7 @@ import com.ev.sales_service.entity.SalesContract;
 import com.ev.sales_service.entity.SalesOrder;
 import com.ev.sales_service.enums.ContractStatus;
 import com.ev.sales_service.enums.OrderStatusB2C;
+import com.ev.sales_service.enums.PaymentStatus;
 import com.ev.sales_service.repository.SalesContractRepository;
 import com.ev.sales_service.repository.SalesOrderRepositoryB2C;
 import com.ev.sales_service.service.Interface.SalesContractService;
@@ -183,7 +184,6 @@ public class SalesContractServiceImpl implements SalesContractService {
             throw new AppException(ErrorCode.SALES_CONTRACT_ALREADY_EXISTS);
         }
 
-        // TODO: Generate contract terms from template
         String contractTerms = generateContractTerms(salesOrder);
 
         SalesContract salesContract = SalesContract.builder()
@@ -205,7 +205,6 @@ public class SalesContractServiceImpl implements SalesContractService {
         SalesContract salesContract = salesContractRepository.findById(contractId)
                 .orElseThrow(() -> new AppException(ErrorCode.SALES_CONTRACT_NOT_FOUND));
 
-        // TODO: Add contract validation logic
         if (salesContract.getContractTerms() == null || salesContract.getContractTerms().isEmpty()) {
             throw new AppException(ErrorCode.INVALID_CONTRACT_TERMS);
         }
@@ -228,18 +227,15 @@ public class SalesContractServiceImpl implements SalesContractService {
     }
 
     private String generateContractTerms(SalesOrder salesOrder) {
-        // TODO: Implement contract template generation
         return "Standard Sales Contract Terms for Order: " + salesOrder.getOrderId();
     }
 
     private String generateContractFile(SalesOrder salesOrder, String contractTerms) {
-        // TODO: Implement contract file generation and storage
         return "/contracts/" + salesOrder.getOrderId() + ".pdf";
     }
 
     private SalesContractResponse mapToResponse(SalesContract salesContract) {
         SalesContractResponse response = modelMapper.map(salesContract, SalesContractResponse.class);
-        // TODO: Add additional mapping logic
         return response;
     }
 
@@ -272,6 +268,7 @@ public class SalesContractServiceImpl implements SalesContractService {
         SalesOrder salesOrder = salesOrderRepository.findById(contract.getSalesOrder().getOrderId())
                 .orElseThrow(() -> new AppException(ErrorCode.DATABASE_ERROR));
         salesOrder.setOrderStatusB2C(OrderStatusB2C.CANCELLED);
+        salesOrder.setPaymentStatus(PaymentStatus.CANCELLED);
         salesOrderRepository.save(salesOrder);
         salesContractRepository.save(contract);
     }

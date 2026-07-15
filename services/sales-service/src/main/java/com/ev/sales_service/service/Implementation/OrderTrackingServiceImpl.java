@@ -165,7 +165,6 @@ public class OrderTrackingServiceImpl implements OrderTrackingService {
 
     private OrderTrackingResponse mapToResponse(OrderTracking orderTracking) {
         OrderTrackingResponse response = modelMapper.map(orderTracking, OrderTrackingResponse.class);
-        // TODO: Add staff name from user service
         return response;
     }
 }

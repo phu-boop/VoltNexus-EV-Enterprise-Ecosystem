@@ -7,7 +7,7 @@ services:
     ports:
       - "2181:2181"
     environment:
-      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_CLIENT_PORT: session.2181
     networks:
       - app-network
 

@@ -374,6 +374,21 @@ public class DealerPaymentController {
     }
 
     /**
+     * API 5.1: Lấy công nợ theo dealerId
+     * GET /api/v1/payments/dealer/{dealerId}/debt-summary
+     */
+    @GetMapping("/{dealerId}/debt-summary")
+    @PreAuthorize("hasAnyRole('ADMIN', 'EVM_STAFF')")
+    public ResponseEntity<DealerDebtSummaryResponse> getDealerDebtSummaryByDealerId(
+            @PathVariable UUID dealerId) {
+
+        log.info("[DealerPaymentController] GET /{}/debt-summary", dealerId);
+
+        DealerDebtSummaryResponse response = dealerPaymentService.getDealerDebtSummaryByDealerId(dealerId);
+        return ResponseEntity.ok(response);
+    }
+
+    /**
      * API 6: Kiểm tra xem đơn hàng đã có hóa đơn chưa
      * GET /api/v1/payments/dealer/orders/{orderId}/has-invoice
      */

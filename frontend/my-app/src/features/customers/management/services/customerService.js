@@ -114,6 +114,16 @@ const customerService = {
   async unassignStaffFromCustomer(customerId) {
     const response = await apiConstCustomerService.delete(`/${customerId}/assign-staff`);
     return response.data.data;
+  },
+
+  /**
+   * Lấy thông tin nhân viên đã phân công cho khách hàng
+   * @param {number} customerId - Mã khách hàng
+   * @returns {Promise<Object|null>} Thông tin nhân viên đã phân công
+   */
+  async getAssignedStaff(customerId) {
+    const response = await apiConstCustomerService.get(`/${customerId}/assigned-staff`);
+    return response.data.data;
   }
 };
 

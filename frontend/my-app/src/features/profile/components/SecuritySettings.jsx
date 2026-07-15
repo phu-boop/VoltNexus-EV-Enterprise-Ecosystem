@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
-import { Shield, CheckCircle, XCircle, User, Eye, EyeOff, AlertCircle, Check, Hand } from 'lucide-react';
+import { Shield, CheckCircle, XCircle, User, Eye, EyeOff, AlertCircle, Check, Hand, RefreshCw } from 'lucide-react';
 import PasswordChangeForm from './PasswordChangeForm';
 import profileService from '../services/profileService.js';
 import { useAuthContext } from '../../../features/auth/AuthProvider.jsx';
+import { syncMetadata } from '../../admin/system/services/systemService';
+import Swal from 'sweetalert2';
 import './SecuritySettings.css';
 
 const SecuritySettings = () => {
@@ -102,6 +104,29 @@ const SecuritySettings = () => {
     setMessage('Tính năng quản lý phiên đăng nhập đang được phát triển. Vui lòng chờ cập nhật trong thời gian tới!');
   };
 
+  const handleSyncMetadata = async () => {
+    try {
+      Swal.fire({
+        title: 'Đang làm mới...',
+        text: 'Vui lòng chờ trong giây lát',
+        allowOutsideClick: false,
+        didOpen: () => {
+          Swal.showLoading();
+        }
+      });
+      await syncMetadata();
+      Swal.fire({
+        title: "Thành công",
+        text: "Metadata synchronization completed",
+        icon: "success",
+        confirmButtonText: "Đóng"
+      });
+    } catch (err) {
+      console.error(err);
+      Swal.fire("Lỗi", "Không thể làm mới metadata hệ thống.", "error");
+    }
+  };
+
   return (
     <div className="security-container">
       <div className="security-header">
@@ -163,6 +188,24 @@ const SecuritySettings = () => {
               passwordStrength={passwordStrength}
             />
             
+            {/* System Metadata Section for ADMIN (or ANY User if needed for test) */}
+            <div className="mt-8 p-6 bg-blue-50 rounded-xl border border-blue-100">
+                <h3 className="text-lg font-semibold flex items-center text-blue-800 mb-4">
+                  <RefreshCw className="w-5 h-5 mr-2" />
+                  Cấu hình Hệ thống
+                </h3>
+                <p className="text-blue-600 mb-4 text-sm">
+                  Cập nhật các siêu dữ liệu cấu hình hệ thống từ máy chủ. Chỉ thực hiện khi được yêu cầu.
+                </p>
+                <button
+                  onClick={handleSyncMetadata}
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg flex items-center transition-colors text-sm font-medium"
+                >
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                  Refresh System Metadata
+                </button>
+            </div>
+
             {/* Security Tips Section */}
             <div className="security-tips">
               <h3 className="text-lg font-semibold flex items-center">

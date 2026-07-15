@@ -1,11 +1,12 @@
 import React from "react";
-import { Edit3, Trash2, Eye, User, CheckSquare, Square } from "lucide-react";
+import { Edit3, Trash2, Eye, User, CheckSquare, Power } from "lucide-react";
 
 export default function UserTable({ 
     users, 
     onEdit, 
     onView, 
     onDelete, 
+    onToggleStatus,
     isLoading,
     selectedUsers = [],
     onSelectionChange 
@@ -201,6 +202,17 @@ export default function UserTable({
                                             title="Xóa"
                                         >
                                             <Trash2 size={16} />
+                                        </button>
+                                        <button
+                                            onClick={() => onToggleStatus(user)}
+                                            className={`flex items-center justify-center w-8 h-8 rounded-lg transition-colors ${
+                                                user.status === "ACTIVE"
+                                                    ? "text-amber-600 hover:text-amber-900 hover:bg-amber-50"
+                                                    : "text-green-600 hover:text-green-900 hover:bg-green-50"
+                                            }`}
+                                            title={user.status === "ACTIVE" ? "Ngừng hoạt động" : "Kích hoạt"}
+                                        >
+                                            <Power size={16} />
                                         </button>
                                     </div>
                                 </td>

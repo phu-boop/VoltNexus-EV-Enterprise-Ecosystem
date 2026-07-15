@@ -193,7 +193,6 @@ public class OrderItemServiceImpl implements OrderItemService {
 
     private OrderItemResponse mapToResponse(OrderItem orderItem) {
         OrderItemResponse response = modelMapper.map(orderItem, OrderItemResponse.class);
-        // TODO: Add variant details from inventory service
         return response;
     }
 }

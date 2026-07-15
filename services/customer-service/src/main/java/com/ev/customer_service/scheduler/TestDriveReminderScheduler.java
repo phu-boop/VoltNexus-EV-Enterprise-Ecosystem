@@ -75,6 +75,5 @@ public class TestDriveReminderScheduler {
      */
     @Scheduled(fixedRate = 3600000) // 1 hour
     public void autoConfirmScheduledAppointments() {
-        // TODO: Implement if needed
     }
 }

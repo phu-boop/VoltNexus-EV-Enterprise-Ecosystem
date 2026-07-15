@@ -48,8 +48,9 @@ public class RestTemplateConfig {
                     if (headerNames != null) {
                         while (headerNames.hasMoreElements()) {
                             String name = headerNames.nextElement();
+                            String nameLower = name.toLowerCase();
                             // Chỉ sao chép các header ta cần
-                            if (name.equalsIgnoreCase("Authorization") || name.startsWith("X-User-")) {
+                            if (nameLower.equals("authorization") || nameLower.startsWith("x-user-")) {
                                 // Thêm header vào request mới (sắp được RestTemplate gửi đi)
                                 request.getHeaders().add(name, originalRequest.getHeader(name));
                             }

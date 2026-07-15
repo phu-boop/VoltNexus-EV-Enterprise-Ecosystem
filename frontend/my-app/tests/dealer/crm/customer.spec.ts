@@ -19,14 +19,10 @@ test.describe('CRM - Quản lý Khách Hàng (Dealer Manager)', () => {
     if (testInfo.status !== testInfo.expectedStatus) {
       const screenshotPath = `test-results/failure-${testInfo.title.replace(/\s+/g, '-')}.png`;
       await page.screenshot({ path: screenshotPath, fullPage: true });
-      console.log(`Screenshot saved to ${screenshotPath}`);
-      console.log(`Current URL: ${page.url()}`);
       if (page.url() !== 'about:blank') {
           try {
               const sessionData = await page.evaluate(() => JSON.stringify(sessionStorage));
-              console.log(`Session Storage: ${sessionData}`);
           } catch (e: any) {
-              console.log(`Failed to read session storage: ${e.message}`);
           }
       }
     }

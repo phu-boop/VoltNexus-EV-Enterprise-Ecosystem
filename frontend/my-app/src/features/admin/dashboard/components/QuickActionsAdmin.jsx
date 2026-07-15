@@ -8,7 +8,10 @@ import {
   FiArchive,
   FiTruck,
   FiFileText,
+  FiRefreshCw
 } from "react-icons/fi";
+import Swal from "sweetalert2";
+import { syncSalesData } from "../../reporting/services/reportingService";
 
 /**
  * Quick Actions Component cho ADMIN
@@ -18,6 +21,29 @@ const QuickActionsAdmin = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const prefix = location.pathname.includes('/admin/') ? '/evm/admin' : '/evm/staff';
+
+  const handleSyncSales = async () => {
+    try {
+      Swal.fire({
+        title: 'Đang đồng bộ...',
+        text: 'Vui lòng chờ trong giây lát',
+        allowOutsideClick: false,
+        didOpen: () => {
+          Swal.showLoading();
+        }
+      });
+      await syncSalesData();
+      Swal.fire({
+        title: "Thành công",
+        text: "Sales data synchronization completed successfully",
+        icon: "success",
+        confirmButtonText: "Đóng"
+      });
+    } catch (err) {
+      console.error(err);
+      Swal.fire("Lỗi", "Không thể đồng bộ dữ liệu doanh số.", "error");
+    }
+  };
 
   const actions = [
     // Nhóm: Quản lý hệ thống
@@ -89,6 +115,15 @@ const QuickActionsAdmin = () => {
       bgColor: "bg-gray-50",
       description: "Quản lý phương thức thanh toán",
     },
+    // Nhóm: Đồng bộ
+    {
+      icon: FiRefreshCw,
+      label: "Sync Sales Data",
+      onClick: handleSyncSales,
+      color: "from-yellow-400 to-orange-500",
+      bgColor: "bg-yellow-50",
+      description: "Đồng bộ dữ liệu doanh số",
+    },
   ];
 
   const handleActionClick = (path) => {
@@ -111,7 +146,7 @@ const QuickActionsAdmin = () => {
           return (
             <button
               key={index}
-              onClick={() => handleActionClick(action.path)}
+              onClick={() => action.onClick ? action.onClick() : handleActionClick(action.path)}
               className="group relative bg-white rounded-xl shadow-md p-6 border border-gray-100 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 text-left"
             >
               {/* Icon với gradient background */}
@@ -154,4 +189,5 @@ const QuickActionsAdmin = () => {
 };
 
 export default QuickActionsAdmin;
+
 

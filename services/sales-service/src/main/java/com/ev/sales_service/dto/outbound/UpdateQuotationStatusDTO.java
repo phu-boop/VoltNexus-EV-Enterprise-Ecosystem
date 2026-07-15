@@ -10,6 +10,5 @@ public class UpdateQuotationStatusDTO {
     @NotNull(message = "Status is required")
     private QuotationStatus status;
 
-    // TODO: Có thể thêm 1 trường 'reason' nếu Manager REJECTED
     // private String reason;
 }

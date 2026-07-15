@@ -15,6 +15,7 @@ export default function UserForm({ isOpen, onClose, onSubmit, initialData, mode 
         birthday: "",
         gender: "MALE",
         role: "",
+        status: "ACTIVE",
     });
 
     const [errors, setErrors] = useState({});
@@ -62,7 +63,8 @@ export default function UserForm({ isOpen, onClose, onSubmit, initialData, mode 
                 ...initialData,
                 role: mainRole,
                 password: "", // Luôn để password trống khi edit
-                gender: initialData.gender || 'MALE' // Đảm bảo gender không null
+                gender: initialData.gender || 'MALE', // Đảm bảo gender không null
+                status: initialData.status || 'ACTIVE'
             };
 
             // Thêm dữ liệu profile-specific
@@ -90,6 +92,7 @@ export default function UserForm({ isOpen, onClose, onSubmit, initialData, mode 
                 birthday: "",
                 gender: "MALE", // Mặc định là MALE
                 role: "",
+                status: "ACTIVE",
                 // Dealer Staff fields
                 dealerId: "",
                 position: "",
@@ -131,6 +134,10 @@ export default function UserForm({ isOpen, onClose, onSubmit, initialData, mode 
         // Đảm bảo gender không null
         if (!formData.gender) {
             newErrors.gender = "Giới tính là bắt buộc";
+        }
+
+        if (!formData.status) {
+            newErrors.status = "Trạng thái là bắt buộc";
         }
 
         // Role-specific validation
@@ -457,6 +464,27 @@ export default function UserForm({ isOpen, onClose, onSubmit, initialData, mode 
                                     </option>
                                 ))}
                             </select>
+                        </div>
+
+                        <div className="mt-4">
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Trạng thái *
+                            </label>
+                            <select
+                                name="status"
+                                value={formData.status || "ACTIVE"}
+                                onChange={handleChange}
+                                disabled={isReadOnly}
+                                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.status ? "border-red-500" : "border-gray-300"
+                                    } ${isReadOnly ? "bg-gray-100 cursor-not-allowed" : "bg-white"}`}
+                            >
+                                <option value="ACTIVE">Đang hoạt động</option>
+                                <option value="SUSPENDED">Tạm khóa</option>
+                                <option value="INACTIVE">Ngừng hoạt động</option>
+                            </select>
+                            {errors.status && (
+                                <p className="mt-1 text-sm text-red-600">{errors.status}</p>
+                            )}
                         </div>
 
                         {formData.role === "EVM_STAFF" && (

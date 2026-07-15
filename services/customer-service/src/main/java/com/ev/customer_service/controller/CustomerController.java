@@ -45,7 +45,11 @@ public class CustomerController {
         
         try {
             List<CustomerResponse> customers = customerService.getCustomersWithFilter(search, roles, currentUserDealerId);
-            return ResponseEntity.ok(ApiRespond.success("Customers retrieved successfully", customers));
+            boolean hasSearchQuery = search != null && !search.trim().isEmpty();
+            String message = hasSearchQuery && customers.isEmpty()
+                    ? "No results found"
+                    : "Customers retrieved successfully";
+            return ResponseEntity.ok(ApiRespond.success(message, customers));
         } catch (Exception e) {
             log.error("Error in getAllCustomers: ", e);
             throw e;

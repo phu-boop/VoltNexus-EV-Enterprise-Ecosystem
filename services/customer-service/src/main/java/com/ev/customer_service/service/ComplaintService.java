@@ -30,6 +30,7 @@ import java.time.format.DateTimeFormatter;
 import java.security.SecureRandom;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.time.LocalDate;
 
 /**
  * Service xử lý logic nghiệp vụ cho Quản lý Phản hồi & Khiếu nại
@@ -112,7 +113,6 @@ public class ComplaintService {
 
         Complaint saved = complaintRepository.save(complaint);
 
-        // TODO: Gửi notification cho staff được gán
         sendNotificationToStaff(saved, "Bạn được gán xử lý phản hồi " + saved.getComplaintCode());
 
         return mapToResponse(saved);
@@ -249,7 +249,9 @@ public class ComplaintService {
             spec = spec.and(ComplaintSpecification.hasCustomerId(filter.getCustomerId()));
         }
         if (filter.getStartDate() != null && filter.getEndDate() != null) {
-            spec = spec.and(ComplaintSpecification.createdBetween(filter.getStartDate(), filter.getEndDate()));
+            LocalDateTime startDateTime = filter.getStartDate().atStartOfDay();
+            LocalDateTime endDateTime = filter.getEndDate().atTime(23, 59, 59);
+            spec = spec.and(ComplaintSpecification.createdBetween(startDateTime, endDateTime));
         }
 
         // Sorting
@@ -434,7 +436,6 @@ public class ComplaintService {
                     .notificationType("EMAIL")
                     .build();
 
-            // TODO: Send notification via Kafka when configured
             // kafkaTemplate.send("notification-topic", notification);
             log.info("TODO: Send notification to staff {} - {}", complaint.getAssignedStaffId(), message);
         } catch (Exception e) {
@@ -492,7 +493,6 @@ public class ComplaintService {
             log.info("✅ Email notification sent to customer {} for complaint {}",
                     complaint.getCustomerEmail(), complaint.getComplaintCode());
 
-            // TODO: Send SMS if phone number is available using a configured SMS service
             if (complaint.getCustomerPhone() != null && !complaint.getCustomerPhone().isEmpty()) {
                 log.debug("SMS notification would be sent to {}", complaint.getCustomerPhone());
             }

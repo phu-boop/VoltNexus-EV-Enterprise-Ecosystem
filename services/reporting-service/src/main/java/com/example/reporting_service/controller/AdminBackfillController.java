@@ -13,6 +13,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
+import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
@@ -47,14 +50,21 @@ public class AdminBackfillController {
     @PostMapping("/dealers")
     @PreAuthorize("hasRole('ADMIN')")
     @Transactional
-    public ResponseEntity<String> backfillDealers() {
+    public ResponseEntity<String> backfillDealers(HttpServletRequest request) {
         log.info("Bắt đầu tác vụ backfill dữ liệu Đại lý...");
         
+        // 0. Chuẩn bị header xác thực để chuyển tiếp sang dealer-service
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("Authorization", request.getHeader("Authorization"));
+        headers.set("X-User-Email", request.getHeader("X-User-Email"));
+        headers.set("X-User-Role", request.getHeader("X-User-Role"));
+        HttpEntity<Void> entity = new HttpEntity<>(headers);
+
         // 1. Gọi API "list-all" từ DealerController
         String url = dealerServiceUrl + "/api/dealers/list-all";
         
         ResponseEntity<ApiRespond<List<DealerBasicDto>>> response = restTemplate.exchange(
-            url, HttpMethod.GET, null,
+            url, HttpMethod.GET, entity,
             // Sử dụng ParameterizedTypeReference để đọc cấu trúc ApiRespond<List<...>>
             new ParameterizedTypeReference<ApiRespond<List<DealerBasicDto>>>() {} 
         );
@@ -91,14 +101,21 @@ public class AdminBackfillController {
     @PostMapping("/vehicles")
     @PreAuthorize("hasRole('ADMIN')")
     @Transactional
-    public ResponseEntity<String> backfillVehicles() {
+    public ResponseEntity<String> backfillVehicles(HttpServletRequest request) {
         log.info("Bắt đầu tác vụ backfill dữ liệu Xe (Vehicles)...");
         
+        // 0. Chuẩn bị header xác thực để chuyển tiếp sang vehicle-service
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("Authorization", request.getHeader("Authorization"));
+        headers.set("X-User-Email", request.getHeader("X-User-Email"));
+        headers.set("X-User-Role", request.getHeader("X-User-Role"));
+        HttpEntity<Void> entity = new HttpEntity<>(headers);
+
         // 1. Gọi API "all-for-backfill" từ VehicleCatalogController
         String url = vehicleServiceUrl + "/vehicle-catalog/variants/all-for-backfill";
         
         ResponseEntity<ApiRespond<List<VariantDetailDto>>> response = restTemplate.exchange(
-            url, HttpMethod.GET, null,
+            url, HttpMethod.GET, entity,
             new ParameterizedTypeReference<ApiRespond<List<VariantDetailDto>>>() {}
         );
         
