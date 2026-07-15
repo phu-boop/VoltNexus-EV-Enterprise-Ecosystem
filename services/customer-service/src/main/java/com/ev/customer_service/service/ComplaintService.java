@@ -113,7 +113,6 @@ public class ComplaintService {
 
         Complaint saved = complaintRepository.save(complaint);
 
-        // TODO: Gửi notification cho staff được gán
         sendNotificationToStaff(saved, "Bạn được gán xử lý phản hồi " + saved.getComplaintCode());
 
         return mapToResponse(saved);
@@ -437,7 +436,6 @@ public class ComplaintService {
                     .notificationType("EMAIL")
                     .build();
 
-            // TODO: Send notification via Kafka when configured
             // kafkaTemplate.send("notification-topic", notification);
             log.info("TODO: Send notification to staff {} - {}", complaint.getAssignedStaffId(), message);
         } catch (Exception e) {
@@ -495,7 +493,6 @@ public class ComplaintService {
             log.info("✅ Email notification sent to customer {} for complaint {}",
                     complaint.getCustomerEmail(), complaint.getComplaintCode());
 
-            // TODO: Send SMS if phone number is available using a configured SMS service
             if (complaint.getCustomerPhone() != null && !complaint.getCustomerPhone().isEmpty()) {
                 log.debug("SMS notification would be sent to {}", complaint.getCustomerPhone());
             }

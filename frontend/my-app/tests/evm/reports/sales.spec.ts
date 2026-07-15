@@ -105,12 +105,10 @@ test.describe('Sales Reporting & Recording Tests', () => {
     //    Hiện tại test được đánh dấu skip (.skip) để không làm đỏ pipeline CI.
     // ============================================================
     test.skip('ITC_5.116.2: Record Sale with missing required fields (Blocked - form chưa có)', async ({ page }) => {
-        // TODO: Cập nhật URL khi form Sales Recording được implement
         await page.goto('http://localhost:5173/evm/admin/sales/record');
         await expect(page.locator('h4')).toBeVisible({ timeout: 15000 });
 
         // Bỏ trống trường Order ID, điền các trường còn lại
-        // TODO: Thay selector giả định bằng selector thực từ form component
         await page.locator('#totalAmount').fill('500000000');
         await page.locator('#dealerName').fill('Đại lý Hà Nội');
         await page.locator('#variantId').fill('1');

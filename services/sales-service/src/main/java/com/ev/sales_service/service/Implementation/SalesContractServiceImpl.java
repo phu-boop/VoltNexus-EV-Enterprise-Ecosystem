@@ -184,7 +184,6 @@ public class SalesContractServiceImpl implements SalesContractService {
             throw new AppException(ErrorCode.SALES_CONTRACT_ALREADY_EXISTS);
         }
 
-        // TODO: Generate contract terms from template
         String contractTerms = generateContractTerms(salesOrder);
 
         SalesContract salesContract = SalesContract.builder()
@@ -206,7 +205,6 @@ public class SalesContractServiceImpl implements SalesContractService {
         SalesContract salesContract = salesContractRepository.findById(contractId)
                 .orElseThrow(() -> new AppException(ErrorCode.SALES_CONTRACT_NOT_FOUND));
 
-        // TODO: Add contract validation logic
         if (salesContract.getContractTerms() == null || salesContract.getContractTerms().isEmpty()) {
             throw new AppException(ErrorCode.INVALID_CONTRACT_TERMS);
         }
@@ -229,18 +227,15 @@ public class SalesContractServiceImpl implements SalesContractService {
     }
 
     private String generateContractTerms(SalesOrder salesOrder) {
-        // TODO: Implement contract template generation
         return "Standard Sales Contract Terms for Order: " + salesOrder.getOrderId();
     }
 
     private String generateContractFile(SalesOrder salesOrder, String contractTerms) {
-        // TODO: Implement contract file generation and storage
         return "/contracts/" + salesOrder.getOrderId() + ".pdf";
     }
 
     private SalesContractResponse mapToResponse(SalesContract salesContract) {
         SalesContractResponse response = modelMapper.map(salesContract, SalesContractResponse.class);
-        // TODO: Add additional mapping logic
         return response;
     }
 

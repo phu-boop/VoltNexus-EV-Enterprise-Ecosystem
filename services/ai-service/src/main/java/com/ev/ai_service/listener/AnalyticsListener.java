@@ -73,7 +73,6 @@ public class AnalyticsListener {
         log.info("    Variant ID: {}", event.getVariantId());
         log.info("    New Price: {}", event.getNewPrice());
 
-        // TODO: Update product information in data warehouse
     }
 
     /**

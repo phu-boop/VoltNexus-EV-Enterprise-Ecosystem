@@ -113,11 +113,6 @@ public class SecurityConfig {
 
             if (!trimmed.isEmpty()) {
                 corsConfig.addAllowedOrigin(trimmed);
-
-                // 👇 LOG RA
-                System.out.println("✅ CORS allowed origin: " + trimmed);
-            } else {
-                System.out.println("⚠️ Found empty origin entry!");
             }
         }
         corsConfig.addAllowedMethod("*");

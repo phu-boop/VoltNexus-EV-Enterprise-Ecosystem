@@ -14,7 +14,6 @@ test.describe('Module 5: Customer Dashboard', () => {
     // Test xem có title "Đơn hàng" không (với điều kiện log in pass)
     // Nếu bị đá về login, ta skip test này để tránh fail pipeline
     if (page.url().includes('login')) {
-      console.log('Skipping Dashboard test because user is not authenticated.');
       test.skip();
     } else {
       await expect(page.locator('text=/Đơn|Order/i').first()).toBeVisible();

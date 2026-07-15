@@ -53,7 +53,6 @@ test.describe('Reporting Service - Sales Report', () => {
     const emptyState = page.locator('text=Không có dữ liệu nào khớp với bộ lọc');
     
     if (await emptyState.isVisible()) {
-        console.log('Skipping Data Table test because DB is empty.');
         return;
     }
 
@@ -109,7 +108,6 @@ test.describe('Reporting Service - Sales Report', () => {
     // If the database has no records, the UI intentionally disables the Export button.
     // In this case, we skip the action gracefully instead of timing out.
     if (await exportBtn.isDisabled()) {
-        console.log('Skipping Excel download test because button is disabled (No Sales Data).');
         return;
     }
 

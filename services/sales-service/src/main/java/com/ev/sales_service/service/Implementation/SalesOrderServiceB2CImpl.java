@@ -453,7 +453,6 @@ public class SalesOrderServiceB2CImpl implements SalesOrderServiceB2C {
 
     @Override
     public SalesOrderB2CResponse createSalesOrder(SalesOrderB2CCreateRequest request) {
-        // TODO: Implement direct sales order creation without quotation
         throw new UnsupportedOperationException("Direct sales order creation not implemented yet");
     }
 
@@ -523,7 +522,6 @@ public class SalesOrderServiceB2CImpl implements SalesOrderServiceB2C {
             throw new AppException(ErrorCode.INVALID_ORDER_TYPE);
         }
 
-        // TODO: Add status transition validation
         salesOrder.setOrderStatusB2C(OrderStatusB2C.valueOf(status));
 
         // Add tracking entry

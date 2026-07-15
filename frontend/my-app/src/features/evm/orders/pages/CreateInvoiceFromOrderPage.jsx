@@ -34,7 +34,6 @@ const CreateInvoiceFromOrderPage = () => {
 
   useEffect(() => {
     if (!order && orderId) {
-      // TODO: Fetch order details if needed
     }
   }, [order, orderId]);
 

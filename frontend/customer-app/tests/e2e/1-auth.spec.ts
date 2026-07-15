@@ -91,7 +91,6 @@ test.describe('Module 1: Authentication & User Accounts', () => {
     // Bắt buộc đợi Tín hiệu trả về từ Server để chắc chắn Account đã insert vào DB
     const res = await responsePromise;
     if (!res) {
-      console.log('Cảnh báo: Không nhận được phản hồi 200 OK từ Server. Đăng ký có thể đã xịt do không bật Backend hoặc lỗi Validations.');
     }
     
     // App có set tự động login sau đăng ký, nên ta phải dọn dẹp Storage để thử tay màn hình Login

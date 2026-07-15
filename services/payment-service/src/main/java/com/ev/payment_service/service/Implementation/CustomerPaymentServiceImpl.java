@@ -575,7 +575,6 @@ public class CustomerPaymentServiceImpl implements ICustomerPaymentService {
             // B2B orders thường không có endpoint update status riêng trong payment flow
             // Chỉ log warning, không throw error vì payment đã thành công
             log.info("B2B orders typically don't require status update from payment service - OrderId: {}", orderId);
-            // TODO: Nếu B2B cần update status, implement B2B endpoint update logic here
         }
     }
 
@@ -850,7 +849,6 @@ public class CustomerPaymentServiceImpl implements ICustomerPaymentService {
 
         // Trường hợp tổng quát: lấy tất cả và filter trong memory (simple
         // implementation)
-        // TODO: Nên dùng JPA Specification cho performance tốt hơn
         List<PaymentRecord> allRecords = paymentRecordRepository.findAll();
 
         java.util.stream.Stream<PaymentRecord> stream = allRecords.stream();

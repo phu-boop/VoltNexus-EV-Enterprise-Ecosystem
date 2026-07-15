@@ -57,7 +57,6 @@ const ContractListPage = () => {
 
   const handleExport = () => {
     message.info('Tính năng xuất Excel sẽ được triển khai sau');
-    // TODO: Implement export functionality
   };
 
   const handleDelete = async (contractId) => {

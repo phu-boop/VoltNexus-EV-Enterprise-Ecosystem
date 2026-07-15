@@ -80,7 +80,6 @@ test.describe('Module 2: Vehicle Discovery & Configuration', () => {
       }
 
     } catch(e) {
-      console.log('Configurator check skipped or failed: ', e);
     }
   });
 

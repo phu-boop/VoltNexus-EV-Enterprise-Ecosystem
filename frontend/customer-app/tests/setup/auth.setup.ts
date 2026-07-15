@@ -28,5 +28,4 @@ setup('authenticate', async ({ page }) => {
   // Ghi lại toàn bộ state (cookies, localStorage, session) vào file để các test sau tái sử dụng
   // await page.context().storageState({ path: authFile });
   
-  console.log('Setup: Login credentials template. Please implement actual login steps in tests/setup/auth.setup.ts');
 });

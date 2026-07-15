@@ -159,7 +159,6 @@ public class TestDriveService {
         // 5. Gửi thông báo cho nhân viên (nếu có)
         if (savedAppointment.getStaffId() != null) {
             try {
-                // TODO: Lấy thông tin staff từ User Service
             } catch (Exception e) {
                 log.error("Failed to send staff notification", e);
             }

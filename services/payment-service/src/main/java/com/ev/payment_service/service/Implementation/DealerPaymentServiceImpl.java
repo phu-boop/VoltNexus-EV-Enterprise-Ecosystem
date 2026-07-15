@@ -459,7 +459,6 @@ public class DealerPaymentServiceImpl implements IDealerPaymentService {
         log.info("DealerDebtRecord updated - DealerId: {}, TotalPaid increased by: {}",
                 invoice.getDealerId(), transaction.getAmount());
 
-        // TODO: Emit event DEALER_PAYMENT_CONFIRMED (nếu cần)
 
         // 6. Map to response
         return dealerPaymentMapper.toTransactionResponse(savedTransaction);

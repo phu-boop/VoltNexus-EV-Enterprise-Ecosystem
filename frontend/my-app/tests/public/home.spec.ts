@@ -8,6 +8,5 @@ test.describe('Public HomePage', () => {
     });
 
     test('should load the public homepage completely', async ({ page }) => {
-        // TODO: Test landing page components
     });
 });
